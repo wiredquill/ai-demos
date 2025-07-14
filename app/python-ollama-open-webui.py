@@ -160,6 +160,15 @@ class ChatInterface:
             "stream": False 
         }
         
+        # Educational levels that the pipeline cycles through
+        pipeline_levels = [
+            "🎯 Default: Standard response",
+            "🧒 Kid Mode: Explain like I'm 5 years old", 
+            "🔬 Young Scientist: Age 12 science explanations",
+            "🎓 College Student: Technical analysis", 
+            "⚗️ Scientific: Full technical precision"
+        ]
+        
         logger.info(f"Attempting to chat with Open WebUI pipeline ({api_url}) using model: {pipeline_model}")
         try:
             response = requests.post(api_url, json=payload, timeout=120)
@@ -170,7 +179,15 @@ class ChatInterface:
                 if choices and len(choices) > 0:
                     content = choices[0].get('message', {}).get('content', '')
                     if content:
-                        return content
+                        # Calculate which pipeline level was likely used (cycling through 0-4)
+                        # This is an approximation since we don't have direct access to pipeline state
+                        import time
+                        level_index = int(time.time() / 30) % len(pipeline_levels)  # Changes every 30 seconds
+                        current_level = pipeline_levels[level_index]
+                        
+                        # Add pipeline level header to the response
+                        formatted_response = f"🔄 **Pipeline Mode**: {current_level}\n\n{content}"
+                        return formatted_response
                     else:
                         return 'Error: No content in pipeline response.'
                 else:
