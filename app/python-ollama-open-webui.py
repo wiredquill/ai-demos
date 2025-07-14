@@ -369,17 +369,24 @@ class ChatInterface:
             # Send messages to models only if enabled
             if self.automation_send_messages:
                 # 1. Send to Ollama
+                logger.info("About to call Ollama...")
                 ollama_reply = self.chat_with_ollama([{"role": "user", "content": current_prompt}], model)
+                logger.info(f"Ollama replied: {ollama_reply[:100]}...")
                 
                 # 2. Send to Open WebUI
+                logger.info("About to call Open WebUI...")
                 webui_reply = self.chat_with_open_webui([{"role": "user", "content": current_prompt}], model)
+                logger.info(f"Open WebUI replied: {webui_reply[:100]}...")
             else:
                 logger.info("Skipping message sending - automation_send_messages is disabled")
             
             # 3. Always check providers (this is the ping/monitoring functionality)
+            logger.info("About to check provider statuses...")
             provider_statuses = self.update_all_provider_status()
+            logger.info("Provider status check completed")
 
             # Create result package
+            logger.info("Creating automation result package...")
             result = {
                 "timestamp": time.strftime('%Y-%m-%d %H:%M:%S'),
                 "prompt": current_prompt if self.automation_send_messages else "Monitoring only",
@@ -391,6 +398,7 @@ class ChatInterface:
             # Store latest result and put in queue for the UI to pick up
             self.latest_automation_result = result
             self.results_queue.put(result)
+            logger.info("Automation result stored in queue successfully")
             
             # Wait for the next interval
             self.stop_event.wait(interval)
@@ -882,13 +890,16 @@ def create_interface():
             # Auto-update UI every 3 seconds to check for automation results
             def update_ui_from_queue():
                 """Checks the queue and updates the results and provider status display."""
+                logger.info("UI update_ui_from_queue called - checking results queue")
                 try:
                     latest_result = chat_instance.results_queue.get_nowait()
+                    logger.info(f"Found new automation result: {latest_result.get('timestamp', 'unknown time')}")
                     results_html = chat_instance.format_automation_results_html(latest_result)
                     status_html = chat_instance.get_provider_status_html()
                     return gr.HTML(value=results_html), gr.HTML(value=status_html)
                 except queue.Empty:
                     # No new results, but maintain current display with latest result
+                    logger.info("No new results in queue, using latest stored result")
                     results_html = chat_instance.format_automation_results_html(chat_instance.latest_automation_result)
                     status_html = chat_instance.get_provider_status_html()
                     return gr.HTML(value=results_html), gr.HTML(value=status_html)
