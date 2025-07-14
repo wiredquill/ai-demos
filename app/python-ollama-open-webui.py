@@ -147,39 +147,88 @@ class ChatInterface:
             return f"Error communicating with Ollama: {str(e)}"
 
     def chat_with_open_webui(self, messages: List[Dict[str, str]], model: str) -> str:
-        """Sends a conversation history through Open WebUI with pipeline-modified prompts for response level cycling."""
-        if not self.open_webui_base_url:
-            return "Open WebUI URL not configured. Check OPEN_WEBUI_BASE_URL environment variable."
+        """Sends a conversation history through the pipeline service for response level cycling."""
+        # Get pipeline service URL from environment or use default
+        pipeline_base_url = os.getenv("PIPELINES_BASE_URL", "http://pipelines-service:9099")
+        pipeline_api_key = os.getenv("PIPELINE_API_KEY", "0p3n-w3bu!")
         
         # Educational levels that the pipeline cycles through
         pipeline_levels = [
-            {"name": "🎯 Default", "modifier": ""},
-            {"name": "🧒 Kid Mode", "modifier": "Explain like I'm 5 years old using simple words, fun examples, and easy-to-understand concepts."},
-            {"name": "🔬 Young Scientist", "modifier": "Explain like I'm 12 years old with some science details but keep it understandable and engaging."},
-            {"name": "🎓 College Student", "modifier": "Explain like I'm a college student with technical context, examples, and deeper analysis."},
-            {"name": "⚗️ Scientific", "modifier": "Give me the full scientific explanation with precise terminology, detailed mechanisms, and technical accuracy."}
+            "🎯 Default: Standard response",
+            "🧒 Kid Mode: Explain like I'm 5 years old", 
+            "🔬 Young Scientist: Age 12 science explanations",
+            "🎓 College Student: Technical analysis", 
+            "⚗️ Scientific: Full technical precision"
         ]
         
-        # Calculate which pipeline level to use (cycling through 0-4 every 30 seconds)
+        # Calculate which level indicator to show (cycling every 30 seconds)
         import time
         level_index = int(time.time() / 30) % len(pipeline_levels)
-        current_level = pipeline_levels[level_index]
+        current_level_display = pipeline_levels[level_index]
         
-        # Modify the last message with the pipeline level instruction
+        # First try the pipeline service for actual pipeline processing
+        try:
+            api_url = f"{pipeline_base_url}/v1/chat/completions"
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {pipeline_api_key}"
+            }
+            payload = { 
+                "model": "response_level", 
+                "messages": messages, 
+                "stream": False 
+            }
+            
+            logger.info(f"Attempting to chat with Pipeline service ({api_url}) using response_level model")
+            response = requests.post(api_url, json=payload, headers=headers, timeout=120)
+            logger.info(f"Pipeline response status: {response.status_code}")
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                choices = response_data.get('choices', [])
+                if choices and len(choices) > 0:
+                    content = choices[0].get('message', {}).get('content', '')
+                    if content:
+                        # Add pipeline level header to the response
+                        formatted_response = f"🔄 **Pipeline Mode**: {current_level_display}\n\n{content}"
+                        logger.info(f"Pipeline response successful with level: {current_level_display}")
+                        return formatted_response
+            
+            # If pipeline fails, log and fall through to Open WebUI fallback
+            logger.warning(f"Pipeline service failed ({response.status_code}): {response.text}")
+            
+        except Exception as e:
+            logger.warning(f"Pipeline service failed: {str(e)}")
+        
+        # Fallback to Open WebUI with client-side level modification
+        if not self.open_webui_base_url:
+            logger.warning("No Open WebUI URL configured, falling back to direct Ollama")
+            return self.chat_with_ollama(messages, model)
+        
+        # Apply client-side pipeline level modification as fallback
+        level_modifiers = [
+            "",
+            "Explain like I'm 5 years old using simple words, fun examples, and easy-to-understand concepts.",
+            "Explain like I'm 12 years old with some science details but keep it understandable and engaging.", 
+            "Explain like I'm a college student with technical context, examples, and deeper analysis.",
+            "Give me the full scientific explanation with precise terminology, detailed mechanisms, and technical accuracy."
+        ]
+        
         modified_messages = messages.copy()
-        if modified_messages and current_level["modifier"]:
+        level_modifier = level_modifiers[level_index]
+        if modified_messages and level_modifier:
             last_message = modified_messages[-1]
             if last_message["role"] == "user":
                 modified_messages[-1] = {
                     "role": "user",
-                    "content": f"{last_message['content']} {current_level['modifier']}"
+                    "content": f"{last_message['content']} {level_modifier}"
                 }
         
         # Use Open WebUI's Ollama proxy endpoint
         api_url = f"{self.open_webui_base_url}/ollama/api/chat"
         payload = { "model": model, "messages": modified_messages, "stream": False }
         
-        logger.info(f"Attempting to chat with Open WebUI via pipeline-modified prompt ({api_url}) level: {current_level['name']}")
+        logger.info(f"Fallback: Attempting Open WebUI with client-side pipeline level: {current_level_display}")
         try:
             response = requests.post(api_url, json=payload, timeout=120)
             if response.status_code == 200:
@@ -187,15 +236,13 @@ class ChatInterface:
                 content = response_data.get('message', {}).get('content', 'Error: Unexpected response format from Open WebUI.')
                 
                 # Add pipeline level header to the response
-                formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']}: {current_level['modifier'] or 'Standard response'}\n\n{content}"
-                logger.info(f"Open WebUI response with pipeline level: {current_level['name']}")
+                formatted_response = f"🔄 **Pipeline Mode**: {current_level_display} (Fallback)\n\n{content}"
+                logger.info(f"Open WebUI fallback successful with level: {current_level_display}")
                 return formatted_response
             else:
-                # Fallback: if Open WebUI proxy fails, use direct Ollama connection
                 logger.warning(f"Open WebUI proxy failed ({response.status_code}), falling back to direct Ollama")
                 return self.chat_with_ollama(messages, model)
         except Exception as e:
-            # Fallback: if Open WebUI fails completely, use direct Ollama connection
             logger.warning(f"Open WebUI failed: {str(e)}, falling back to direct Ollama")
             return self.chat_with_ollama(messages, model)
 
@@ -744,6 +791,32 @@ def create_interface():
             return status_html, models_dd
         
         interface.load(initial_load, outputs=[provider_status_html, model_dropdown])
+
+        # Add a simple auto-refresh for provider status every 10 seconds
+        def refresh_provider_status():
+            """Refresh provider status display."""
+            chat_instance.update_all_provider_status()
+            return gr.HTML(value=chat_instance.get_provider_status_html())
+            
+        # Set up periodic refresh using a simple timer approach
+        import threading
+        import time
+        
+        def start_periodic_provider_refresh():
+            def refresh_loop():
+                while True:
+                    time.sleep(10)  # Update every 10 seconds
+                    try:
+                        # This will update the internal status, the UI will be updated on next interaction
+                        chat_instance.update_all_provider_status()
+                    except Exception as e:
+                        logger.warning(f"Periodic provider refresh failed: {e}")
+            
+            refresh_thread = threading.Thread(target=refresh_loop, daemon=True)
+            refresh_thread.start()
+        
+        # Start the periodic refresh
+        start_periodic_provider_refresh()
 
         # --- NEW: Automation Event Handlers ---
         if chat_instance.automation_enabled:
