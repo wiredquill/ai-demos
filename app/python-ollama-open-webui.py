@@ -147,27 +147,41 @@ class ChatInterface:
             return f"Error communicating with Ollama: {str(e)}"
 
     def chat_with_open_webui(self, messages: List[Dict[str, str]], model: str) -> str:
-        """Sends a conversation history to the Open WebUI API chat completions endpoint."""
+        """Sends a conversation history to Open WebUI through the pipeline-enabled chat completions endpoint."""
         if not self.open_webui_base_url:
             return "Open WebUI URL not configured. Check OPEN_WEBUI_BASE_URL environment variable."
         
-        # Try the Ollama endpoint through Open WebUI proxy first
-        api_url = f"{self.open_webui_base_url}/ollama/api/chat"
-        payload = { "model": model, "messages": messages, "stream": False }
+        # Use OpenAI-compatible chat completions endpoint with response_level pipeline model
+        api_url = f"{self.open_webui_base_url}/api/v1/chat/completions"
+        pipeline_model = "response_level"  # Pipeline model for educational response levels
+        payload = { 
+            "model": pipeline_model, 
+            "messages": messages, 
+            "stream": False 
+        }
         
-        logger.info(f"Attempting to chat with Open WebUI via Ollama proxy ({api_url}) model: {model}")
+        logger.info(f"Attempting to chat with Open WebUI pipeline ({api_url}) using model: {pipeline_model}")
         try:
             response = requests.post(api_url, json=payload, timeout=120)
             if response.status_code == 200:
                 response_data = response.json()
-                return response_data.get('message', {}).get('content', 'Error: Unexpected response format from Open WebUI.')
+                # Extract content from OpenAI-compatible response format
+                choices = response_data.get('choices', [])
+                if choices and len(choices) > 0:
+                    content = choices[0].get('message', {}).get('content', '')
+                    if content:
+                        return content
+                    else:
+                        return 'Error: No content in pipeline response.'
+                else:
+                    return 'Error: No choices in pipeline response.'
             else:
-                # Fallback: if Open WebUI proxy fails, use direct Ollama connection
-                logger.warning(f"Open WebUI proxy failed ({response.status_code}), falling back to direct Ollama")
+                # Fallback: if pipeline fails, use direct Ollama connection
+                logger.warning(f"Open WebUI pipeline failed ({response.status_code}), falling back to direct Ollama")
                 return self.chat_with_ollama(messages, model)
         except Exception as e:
             # Fallback: if Open WebUI fails completely, use direct Ollama connection
-            logger.warning(f"Open WebUI failed: {str(e)}, falling back to direct Ollama")
+            logger.warning(f"Open WebUI pipeline failed: {str(e)}, falling back to direct Ollama")
             return self.chat_with_ollama(messages, model)
 
     def check_provider_status(self, provider_name: str, provider_info) -> dict:
