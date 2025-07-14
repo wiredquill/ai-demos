@@ -1,12 +1,15 @@
 name: Publish Helm Charts to GitHub Releases
 
+# Temporarily disabled - chart publishing not critical for main functionality
+# Re-enable once repository permissions are properly configured for chart releases
 on:
-  workflow_run:
-    workflows: ["Build, Push, and Update K8s Manifests (upstream & SUSE)"]
-    types:
-      - completed
-    branches:
-      - main
+  # workflow_run:
+  #   workflows: ["Build, Push, and Update K8s Manifests (upstream & SUSE)"]
+  #   types:
+  #     - completed
+  #   branches:
+  #     - main
+  workflow_dispatch:
 
 permissions:
   contents: write
