@@ -4,7 +4,8 @@ kind: Job
 metadata:
   name: {{ include "llm-comm-upstream.fullname" . }}-configure-pipelines
   labels:
-    {{- include "llm-comm-upstream.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "llm-comm-upstream.fullname" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/component: pipeline-configurator
   annotations:
     "helm.sh/hook": post-install,post-upgrade
@@ -14,7 +15,8 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "llm-comm-upstream.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ include "llm-comm-upstream.fullname" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/component: pipeline-configurator
     spec:
       restartPolicy: OnFailure

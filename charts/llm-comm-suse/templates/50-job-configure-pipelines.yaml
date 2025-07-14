@@ -2,9 +2,10 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "llm-comm-suse.fullname" . }}-configure-pipelines
+  name: {{ .Release.Name }}-llm-comm-suse-configure-pipelines
   labels:
-    {{- include "llm-comm-suse.labels" . | nindent 4 }}
+    app.kubernetes.io/name: llm-comm-suse
+    app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/component: pipeline-configurator
   annotations:
     "helm.sh/hook": post-install,post-upgrade
@@ -14,7 +15,8 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "llm-comm-suse.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/name: llm-comm-suse
+        app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/component: pipeline-configurator
     spec:
       restartPolicy: OnFailure

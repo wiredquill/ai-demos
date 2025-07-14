@@ -4,7 +4,8 @@ kind: ConfigMap
 metadata:
   name: {{ include "llm-comm-upstream.fullname" . }}-pipeline-config
   labels:
-    {{- include "llm-comm-upstream.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "llm-comm-upstream.fullname" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/component: pipeline-config
 data:
   pipeline-setup.sh: |
