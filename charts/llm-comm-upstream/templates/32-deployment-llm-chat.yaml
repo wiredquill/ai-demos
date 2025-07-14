@@ -35,6 +35,8 @@ spec:
               value: "{{ .Values.llmChat.automation.defaultPrompt }}"
             - name: AUTOMATION_INTERVAL
               value: "{{ .Values.llmChat.automation.intervalSeconds }}"
+            - name: AUTOMATION_SEND_MESSAGES
+              value: "{{ .Values.llmChat.automation.sendMessages }}"
           volumeMounts:
             - name: config-volume
               mountPath: /app/config.json

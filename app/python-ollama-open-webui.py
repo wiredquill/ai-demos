@@ -62,6 +62,7 @@ class ChatInterface:
         # Read automation settings from environment variables
         self.automation_enabled = os.getenv("AUTOMATION_ENABLED", "false").lower() == "true"
         self.automation_interval = int(os.getenv("AUTOMATION_INTERVAL", "30"))
+        self.automation_send_messages = os.getenv("AUTOMATION_SEND_MESSAGES", "true").lower() == "true"
         
         # Built-in rotating prompts for automation
         self.automation_prompts = [
@@ -358,24 +359,33 @@ class ChatInterface:
             current_prompt = self.automation_prompts[self.current_prompt_index]
             self.current_prompt_index = (self.current_prompt_index + 1) % len(self.automation_prompts)
             
-            logger.info(f"Running automated task with prompt: '{current_prompt}'")
+            logger.info(f"Running automated task with prompt: '{current_prompt}' (send_messages: {self.automation_send_messages})")
             
-            # 1. Send to Ollama
-            ollama_reply = self.chat_with_ollama([{"role": "user", "content": current_prompt}], model)
+            # Initialize response variables
+            ollama_reply = "Message sending disabled"
+            webui_reply = "Message sending disabled"
             
-            # 2. Send to Open WebUI
-            webui_reply = self.chat_with_open_webui([{"role": "user", "content": current_prompt}], model)
+            # Send messages to models only if enabled
+            if self.automation_send_messages:
+                # 1. Send to Ollama
+                ollama_reply = self.chat_with_ollama([{"role": "user", "content": current_prompt}], model)
+                
+                # 2. Send to Open WebUI
+                webui_reply = self.chat_with_open_webui([{"role": "user", "content": current_prompt}], model)
+            else:
+                logger.info("Skipping message sending - automation_send_messages is disabled")
             
-            # 3. Check providers
+            # 3. Always check providers (this is the ping/monitoring functionality)
             provider_statuses = self.update_all_provider_status()
 
             # Create result package
             result = {
                 "timestamp": time.strftime('%Y-%m-%d %H:%M:%S'),
-                "prompt": current_prompt,
+                "prompt": current_prompt if self.automation_send_messages else "Monitoring only",
                 "ollama_response": ollama_reply,
                 "open_webui_response": webui_reply,
-                "provider_status": provider_statuses
+                "provider_status": provider_statuses,
+                "send_messages_enabled": self.automation_send_messages
             }
             # Put the result in the queue for the UI to pick up
             self.results_queue.put(result)
@@ -384,7 +394,7 @@ class ChatInterface:
             self.stop_event.wait(interval)
         logger.info("Automation thread stopped.")
 
-    def start_automation(self, model: str, interval: int):
+    def start_automation(self, model: str, interval: int, send_messages: bool = None):
         """Starts the automation thread."""
         if self.automation_thread and self.automation_thread.is_alive():
             logger.warning("Automation is already running.")
@@ -394,6 +404,11 @@ class ChatInterface:
             logger.error("Cannot start automation without a valid model selected.")
             return gr.Button(interactive=True), gr.Button(interactive=False)
 
+        # Update send messages setting if provided
+        if send_messages is not None:
+            self.automation_send_messages = send_messages
+            logger.info(f"Automation send messages setting updated to: {send_messages}")
+
         self.stop_event.clear()
         self.automation_thread = threading.Thread(
             target=self._automation_loop,
@@ -401,7 +416,7 @@ class ChatInterface:
             daemon=True
         )
         self.automation_thread.start()
-        logger.info("Automation started.")
+        logger.info(f"Automation started with interval {interval}s, send_messages: {self.automation_send_messages}")
         # UI update to show it's running
         return gr.Button(interactive=False), gr.Button(interactive=True)
 
@@ -619,10 +634,7 @@ def create_interface():
                     # Automation and Config Controls Row
                     with gr.Row():
                         with gr.Column(scale=1):
-                            if chat_instance.automation_enabled:
-                                with gr.Row():
-                                    start_auto_btn = gr.Button("▶️ Start Auto", size="sm", scale=1)
-                                    stop_auto_btn = gr.Button("⏹️ Stop Auto", interactive=False, elem_classes="stop-btn", size="sm", scale=1)
+                            # Automation buttons moved to config panel for better organization
                         with gr.Column(scale=1):
                             config_btn = gr.Button("⚙️ Config", size="sm")
                     
@@ -693,7 +705,25 @@ def create_interface():
             
             # Automation settings
             if chat_instance.automation_enabled:
-                automation_interval_input = gr.Number(label="Automation Interval (seconds)", value=chat_instance.automation_interval, precision=0)
+                gr.HTML("<h4 style='color: #73ba25; margin: 15px 0 10px 0;'>🤖 Automation Settings</h4>")
+                
+                with gr.Row():
+                    automation_interval_input = gr.Number(
+                        label="Interval (seconds)", 
+                        value=chat_instance.automation_interval, 
+                        precision=0,
+                        minimum=5,
+                        maximum=300
+                    )
+                    automation_send_messages_input = gr.Checkbox(
+                        label="Send test messages to models", 
+                        value=chat_instance.automation_send_messages,
+                        info="When enabled, sends test questions to Ollama and Open WebUI"
+                    )
+                
+                with gr.Row():
+                    start_auto_btn = gr.Button("▶️ Start Automation", variant="primary", size="sm")
+                    stop_auto_btn = gr.Button("⏹️ Stop Automation", variant="secondary", size="sm", interactive=False)
                 
                 # Automation results display (visible to show requests and responses)
                 gr.HTML("""
@@ -755,31 +785,34 @@ def create_interface():
             chat_instance.update_all_provider_status()
             return gr.HTML(value=chat_instance.get_provider_status_html())
             
-        # Set up periodic refresh using a simple timer approach
-        import threading
-        import time
-        
-        def start_periodic_provider_refresh():
-            def refresh_loop():
-                while True:
-                    time.sleep(10)  # Update every 10 seconds
-                    try:
-                        # This will update the internal status, the UI will be updated on next interaction
-                        chat_instance.update_all_provider_status()
-                    except Exception as e:
-                        logger.warning(f"Periodic provider refresh failed: {e}")
+        # Set up periodic refresh only if automation is enabled
+        if chat_instance.automation_enabled:
+            import threading
+            import time
             
-            refresh_thread = threading.Thread(target=refresh_loop, daemon=True)
-            refresh_thread.start()
-        
-        # Start the periodic refresh
-        start_periodic_provider_refresh()
+            def start_periodic_provider_refresh():
+                def refresh_loop():
+                    while True:
+                        time.sleep(10)  # Update every 10 seconds
+                        try:
+                            # This will update the internal status, the UI will be updated on next interaction
+                            chat_instance.update_all_provider_status()
+                        except Exception as e:
+                            logger.warning(f"Periodic provider refresh failed: {e}")
+                
+                refresh_thread = threading.Thread(target=refresh_loop, daemon=True)
+                refresh_thread.start()
+            
+            # Start the periodic refresh
+            start_periodic_provider_refresh()
+        else:
+            logger.info("Automation disabled - skipping periodic provider refresh")
 
         # --- NEW: Automation Event Handlers ---
         if chat_instance.automation_enabled:
             start_auto_btn.click(
                 chat_instance.start_automation,
-                inputs=[model_dropdown, automation_interval_input],
+                inputs=[model_dropdown, automation_interval_input, automation_send_messages_input],
                 outputs=[start_auto_btn, stop_auto_btn]
             )
             stop_auto_btn.click(

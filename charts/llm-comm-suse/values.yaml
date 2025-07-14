@@ -94,3 +94,4 @@ llmChat:
     enabled: true
     defaultPrompt: "Why is the sky blue? Be concise."
     intervalSeconds: 30
+    sendMessages: true  # Enable/disable sending test messages to models
