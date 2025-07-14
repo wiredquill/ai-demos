@@ -74,13 +74,13 @@ spec:
             cpu: "500m"
         readinessProbe:
           httpGet:
-            path: /health
+            path: /
             port: {{ .Values.pipelines.service.port }}
           initialDelaySeconds: 10
           periodSeconds: 5
         livenessProbe:
           httpGet:
-            path: /health
+            path: /
             port: {{ .Values.pipelines.service.port }}
           initialDelaySeconds: 30
           periodSeconds: 10
