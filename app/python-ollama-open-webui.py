@@ -651,12 +651,19 @@ def create_interface():
                 value="", 
                 allow_custom_value=True
             )
-            refresh_models_btn = gr.Button("🔄 Refresh Models", elem_classes="refresh-btn", size="sm")
             
             # Automation settings
             if chat_instance.automation_enabled:
                 automation_interval_input = gr.Number(label="Automation Interval (seconds)", value=chat_instance.automation_interval, precision=0)
-                automation_results_display = gr.JSON(label="Latest Result", visible=False)
+                
+                # Automation results display (visible to show requests and responses)
+                gr.HTML("""
+                <div style='background: linear-gradient(135deg, rgba(115, 186, 37, 0.1) 0%, rgba(115, 186, 37, 0.05) 100%); border: 1px solid rgba(115, 186, 37, 0.2); border-radius: 12px; padding: 12px; margin: 10px 0;'>
+                    <h4 style='color: #73ba25; margin: 0 0 8px 0; font-size: 1.1em; font-weight: 600;'>🔄 Automation Test Results</h4>
+                    <p style='color: #ffffff; margin: 0; font-size: 0.9em; opacity: 0.8;'>Live results from automated provider testing and AI responses</p>
+                </div>
+                """)
+                automation_results_display = gr.JSON(label="Latest Test Results", visible=True, show_label=True)
             
 
         # --- Event Handlers ---
@@ -687,7 +694,6 @@ def create_interface():
         clear_btn.click(lambda: ("", "", ""), outputs=[ollama_output, webui_output, msg_input])
         
         refresh_providers_btn.click(chat_instance.refresh_providers, outputs=[provider_status_html])
-        refresh_models_btn.click(chat_instance.refresh_ollama_models, outputs=[model_dropdown])
         config_btn.click(toggle_config_panel, outputs=[config_panel])
 
         def initial_load():
@@ -719,8 +725,9 @@ def create_interface():
                     status_html = chat_instance.get_provider_status_html()
                     return gr.JSON(value=latest_result, visible=True), gr.HTML(value=status_html)
                 except queue.Empty:
-                    # No new results, return no update  
-                    return gr.JSON(value=None, visible=False), gr.HTML(value=chat_instance.get_provider_status_html())
+                    # No new results, keep previous results visible
+                    status_html = chat_instance.get_provider_status_html()
+                    return gr.JSON(visible=True), gr.HTML(value=status_html)
 
             # Manual refresh button (since this Gradio version doesn't support auto-refresh)
             refresh_btn = gr.Button("🔄 Refresh Results", variant="secondary", size="sm")
