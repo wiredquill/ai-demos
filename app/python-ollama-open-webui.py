@@ -8,6 +8,8 @@ import logging
 import queue
 from typing import Dict, List, Any
 
+# Build trigger comment - automation runner visibility improvements
+
 # --- Logging Configuration ---
 logging.basicConfig(
     level=logging.INFO,
