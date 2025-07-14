@@ -635,6 +635,7 @@ def create_interface():
                     with gr.Row():
                         with gr.Column(scale=1):
                             # Automation buttons moved to config panel for better organization
+                            pass
                         with gr.Column(scale=1):
                             config_btn = gr.Button("⚙️ Config", size="sm")
                     
