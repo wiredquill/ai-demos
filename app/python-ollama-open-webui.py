@@ -920,24 +920,8 @@ def create_interface():
                 outputs=[automation_results_display, provider_status_html]
             )
             
-            # Simple JavaScript auto-refresh for automation results
-            gr.HTML("""
-            <script>
-            // Simple continuous refresh for automation results
-            setTimeout(() => {
-                setInterval(function() {
-                    // Find and click the hidden auto-refresh button
-                    const buttons = document.querySelectorAll('button');
-                    buttons.forEach(btn => {
-                        if (btn.textContent.includes('Auto Refresh') && !btn.style.display) {
-                            console.log('Clicking auto-refresh button');
-                            btn.click();
-                        }
-                    });
-                }, 5000); // Refresh every 5 seconds
-            }, 2000); // Start after 2 seconds
-            </script>
-            """)
+            # For now, let's test with manual refresh only
+            # Will add back auto-refresh once manual works
             
             # Auto-refresh every 5 seconds when automation is running
             # Removed periodic refresh - provider status updates are handled by automation loop
