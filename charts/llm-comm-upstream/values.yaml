@@ -1,0 +1,85 @@
+# Default values for the chart
+
+# -- Global image pull policy
+imagePullPolicy: Always
+# -- Default pull secrets (can be overridden, e.g., for SUSE chart)
+imagePullSecrets: []
+# -- Application settings
+ollama:
+  image:
+    repository: ollama/ollama
+    tag: "0.6.8"
+  service:
+    port: 11434
+    type: ClusterIP
+  # -- Hardware Configuration for Ollama
+  hardware:
+    type: "nvidia" # Options: "nvidia", "apple"
+  gpu:
+    enabled: false
+  # -- Resource allocation for the main Ollama container
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "2Gi"
+    limits:
+      cpu: "4"
+      memory: "16Gi"
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClassName: "" # Use default if empty, or specify a storage class
+  # Model caching options
+  modelCache:
+    # NFS-based model caching for shared storage across deployments
+    nfs:
+      enabled: false
+      server: "10.0.9.10" # NFS server IP/hostname
+      path: "/data/ai-models" # NFS share path for caching models
+openWebui:
+  image:
+    repository: ghcr.io/open-webui/open-webui
+    tag: "0.5.0"  # Pipeline-enabled version
+  service:
+    port: 8080
+    type: NodePort
+  # Pipeline integration settings
+  pipelines:
+    enabled: true
+    url: "http://pipelines-service:9099"
+
+# Open WebUI Pipelines Service
+pipelines:
+  enabled: true
+  image:
+    repository: ghcr.io/open-webui/pipelines
+    tag: "0.5.0"
+  service:
+    port: 9099
+    type: ClusterIP
+  # Pipeline deployment from git repo
+  git:
+    enabled: true
+    repo: "https://github.com/wiredquill/ai-demos.git"
+    branch: "main"
+    path: "pipelines"
+  # Pipeline configuration
+  config:
+    pipelineMode: "auto-cycle"
+    logLevel: "INFO"
+llmChat:
+  image:
+    repository: ghcr.io/wiredquill/ai-demos
+    tag: "ea92b19"
+  service:
+    port: 7860
+    type: NodePort
+  persistence:
+    enabled: false
+    size: 10Gi
+    storageClassName: "" # Use default if empty, or specify a storage class
+  # Automation settings for the recurring test runner
+  automation:
+    enabled: true
+    defaultPrompt: "Why is the sky blue? Be concise."
+    intervalSeconds: 30

@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # --- ADDED RUNTIMECLASSNAME BLOCK ---
+      # This will add runtimeClassName: nvidia only when GPU is enabled for NVIDIA
+      {{- if and .Values.ollama.gpu.enabled (eq .Values.ollama.hardware.type "nvidia") }}
+      runtimeClassName: nvidia
+      {{- end }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                {{- if eq .Values.ollama.hardware.type "apple" }}
+                - arm64
+                {{- else }}
+                - amd64
+                {{- end }}
+      initContainers:
+      - name: ollama-pull-model
+        image: "{{ .Values.ollama.image.repository }}:{{ .Values.ollama.image.tag }}"
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        command: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull tinyllama:latest"]
+        volumeMounts:
+        - name: ollama-models
+          mountPath: /root/.ollama
+        resources:
+          limits:
+            memory: "4Gi"
+            cpu: "2"
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+      containers:
+      - name: ollama
+        image: "{{ .Values.ollama.image.repository }}:{{ .Values.ollama.image.tag }}"
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        command: ["ollama", "serve"]
+        ports:
+        - containerPort: {{ .Values.ollama.service.port }}
+          name: http
+        volumeMounts:
+        - name: ollama-models
+          mountPath: /root/.ollama
+        resources:
+          requests:
+            memory: {{ .Values.ollama.resources.requests.memory | quote }}
+            cpu: {{ .Values.ollama.resources.requests.cpu | quote }}
+          limits:
+            memory: {{ .Values.ollama.resources.limits.memory | quote }}
+            cpu: {{ .Values.ollama.resources.limits.cpu | quote }}
+            {{- if and .Values.ollama.gpu.enabled (eq .Values.ollama.hardware.type "nvidia") }}
+            nvidia.com/gpu: 1
+            {{- end }}
+        readinessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.ollama.service.port }}
+          initialDelaySeconds: 15
+          periodSeconds: 15
+      volumes:
+      - name: ollama-models
+        {{- if .Values.ollama.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "llm-comm-suse.fullname" . }}-ollama-models-pvc
+        {{- else }}
+        emptyDir: {}
+        {{- end }}

@@ -1,0 +1,15 @@
+{{- if .Values.llmChat.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "llm-comm-upstream.fullname" . }}-app-code-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.llmChat.persistence.size }}
+  {{- if .Values.llmChat.persistence.storageClassName }}
+  storageClassName: {{ .Values.llmChat.persistence.storageClassName }}
+  {{- end }}
+{{- end }}

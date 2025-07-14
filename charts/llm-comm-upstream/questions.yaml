@@ -1,0 +1,210 @@
+questions:
+# Networking Group - For configuring how services are exposed
+- variable: llmChat.service.type
+  group: "Networking"
+  label: "LLM Chat Service Type"
+  description: "Method to expose the LLM Chat service."
+  type: "enum"
+  required: true
+  default: "NodePort"
+  options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"
+
+- variable: openWebui.service.type
+  group: "Networking"
+  label: "Open WebUI Service Type"
+  description: "Method to expose the Open WebUI service."
+  type: "enum"
+  required: true
+  default: "NodePort"
+  options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"
+
+- variable: ollama.service.type
+  group: "Networking"
+  label: "Ollama Service Type"
+  description: "Method to expose the Ollama service. 'ClusterIP' is recommended."
+  type: "enum"
+  required: true
+  default: "ClusterIP"
+  options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"
+
+# Ollama Settings Group
+- variable: ollama.hardware.type
+  group: "Ollama Settings"
+  label: "Target Hardware for Ollama"
+  description: "Select the target hardware architecture for the Ollama deployment."
+  type: "enum"
+  required: true
+  default: "nvidia"
+  options:
+    - label: "NVIDIA GPU (amd64)"
+      value: "nvidia"
+    - label: "Apple Silicon / CPU (arm64)"
+      value: "apple"
+
+- variable: ollama.gpu.enabled
+  group: "Ollama Settings"
+  label: "Enable NVIDIA GPU Acceleration"
+  description: "Requires a node with NVIDIA drivers and the k8s device plugin installed."
+  type: "boolean"
+  default: false
+  show_if: "ollama.hardware.type=nvidia"
+
+- variable: ollama.resources.requests.cpu
+  group: "Ollama Settings"
+  label: "Ollama CPU Request"
+  description: "The amount of CPU to reserve for the main Ollama container (e.g., '500m', '1')."
+  type: "string"
+  default: "2"
+
+- variable: ollama.resources.requests.memory
+  group: "Ollama Settings"
+  label: "Ollama Memory Request"
+  description: "The amount of memory to reserve for the main Ollama container (e.g., '1Gi', '2048Mi')."
+  type: "string"
+  default: "2Gi"
+
+- variable: ollama.resources.limits.cpu
+  group: "Ollama Settings"
+  label: "Ollama CPU Limit"
+  description: "The maximum amount of CPU the main Ollama container can use."
+  type: "string"
+  default: "4"
+
+- variable: ollama.resources.limits.memory
+  group: "Ollama Settings"
+  label: "Ollama Memory Limit"
+  description: "The maximum amount of memory the main Ollama container can use."
+  type: "string"
+  default: "16Gi"
+
+# Ollama Settings Group
+- variable: ollama.persistence.enabled
+  group: "Ollama Settings"
+  label: "Enable Ollama Model Persistence"
+  description: "If true, a PersistentVolumeClaim will be created to store Ollama models."
+  type: "boolean"
+  default: false
+
+- variable: ollama.persistence.size
+  group: "Ollama Settings"
+  label: "Ollama Model Storage Size"
+  description: "The size of the PersistentVolumeClaim for Ollama models (e.g., '10Gi', '50Gi')."
+  type: "string"
+  default: "10Gi"
+  show_if: "ollama.persistence.enabled=true"
+
+- variable: ollama.persistence.storageClassName
+  group: "Ollama Settings"
+  label: "Ollama Model Storage Class Name"
+  description: "The storage class name for the Ollama models PVC. Leave empty to use the default storage class."
+  type: "string"
+  default: ""
+  show_if: "ollama.persistence.enabled=true"
+
+# Model Caching Group  
+- variable: ollama.modelCache.nfs.enabled
+  group: "Model Caching"
+  label: "Enable NFS Model Caching"
+  description: "Use NFS share to cache AI models across deployments for faster startup times. Models are downloaded once and shared across all pods."
+  type: "boolean"
+  default: false
+
+- variable: ollama.modelCache.nfs.server
+  group: "Model Caching"
+  label: "NFS Server IP/Hostname"
+  description: "NFS server hostname or IP address (e.g., 10.0.9.10)"
+  type: "string"
+  default: "10.0.9.10"
+  show_if: "ollama.modelCache.nfs.enabled=true"
+
+- variable: ollama.modelCache.nfs.path
+  group: "Model Caching"
+  label: "NFS Share Path"
+  description: "Path to the NFS share directory for caching models (e.g., /data/ai-models)"
+  type: "string"
+  default: "/data/ai-models"
+  show_if: "ollama.modelCache.nfs.enabled=true"
+
+# Pipeline Integration Group
+- variable: pipelines.enabled
+  group: "Pipeline Integration"
+  label: "Enable Open WebUI Pipelines"
+  description: "Enable pipeline processing for response modification and enhanced AI capabilities."
+  type: "boolean"
+  default: true
+
+- variable: pipelines.config.pipelineMode
+  group: "Pipeline Integration"
+  label: "Pipeline Mode"
+  description: "How the response level pipeline operates"
+  type: "enum"
+  default: "auto-cycle"
+  options:
+    - label: "Auto-Cycle (cycles through all levels automatically)"
+      value: "auto-cycle"
+    - label: "Manual (stays on selected level)"
+      value: "manual"
+  show_if: "pipelines.enabled=true"
+
+- variable: pipelines.git.enabled
+  group: "Pipeline Integration"
+  label: "Auto-Deploy Pipelines from Git"
+  description: "Automatically download and deploy pipelines from the git repository"
+  type: "boolean"
+  default: true
+  show_if: "pipelines.enabled=true"
+
+# Images Group
+- variable: ollama.image.tag
+  group: "Images"
+  label: "Ollama Image Tag"
+  description: "The container image tag for Ollama."
+  type: "string"
+  default: "0.6.8"
+
+- variable: openWebui.image.tag
+  group: "Images"
+  label: "Open WebUI Image Tag"
+  description: "The container image tag for Open WebUI."
+  type: "string"
+  default: "main"
+
+- variable: llmChat.image.tag
+  group: "Images"
+  label: "LLM Chat Image Tag"
+  description: "The container image tag for the LLM Chat App."
+  type: "string"
+  default: "latest"
+
+# LLM Chat App Group
+- variable: llmChat.automation.enabled
+  group: "LLM Chat App Settings"
+  label: "Enable Automated Runner"
+  description: "If true, the application will automatically run a test on a timer."
+  type: "boolean"
+  default: true
+
+- variable: llmChat.automation.defaultPrompt
+  group: "LLM Chat App Settings"
+  label: "Automated Runner Prompt"
+  description: "The recurring prompt to send to Ollama and Open WebUI."
+  type: "string"
+  default: "Why is the sky blue? Be concise."
+  show_if: "llmChat.automation.enabled=true"
+
+- variable: llmChat.automation.intervalSeconds
+  group: "LLM Chat App Settings"
+  label: "Automated Runner Interval (Seconds)"
+  description: "The time in seconds between each automated test run."
+  type: "int"
+  default: 30
+  show_if: "llmChat.automation.enabled=true"

@@ -1,0 +1,58 @@
+# Open WebUI Pipeline Configuration
+# This file defines the Response Level Pipeline for the SUSE AI Demo
+
+pipeline:
+  name: "Response Level Pipeline"
+  id: "response_level"
+  description: "Automatically cycles through different response complexity levels for testing and demonstration"
+  version: "1.0.0"
+  author: "SUSE Technical Marketing"
+  
+  # Pipeline type and compatibility
+  type: "filter"  # Modifies user input before sending to LLM
+  compatible_versions:
+    - "0.5.0"
+    - "0.5.x"
+  
+  # Configuration options
+  config:
+    mode: "auto-cycle"  # Options: "auto-cycle", "manual"
+    levels:
+      - name: "Default"
+        description: "Standard response without modification"
+        modifier: ""
+      
+      - name: "Kid Mode"
+        description: "Simple explanations perfect for young children"
+        modifier: "Explain like I'm 5 years old using simple words, fun examples, and easy-to-understand concepts."
+        target_age: 5
+        
+      - name: "Young Scientist"
+        description: "Age-appropriate science explanations for curious pre-teens"
+        modifier: "Explain like I'm 12 years old with some science details but keep it understandable and engaging."
+        target_age: 12
+        
+      - name: "College Student"
+        description: "Detailed technical explanations with educational context"
+        modifier: "Explain like I'm a college student with technical context, examples, and deeper analysis."
+        target_age: 18
+        
+      - name: "Scientific"
+        description: "Complete technical detail for scientific understanding"
+        modifier: "Give me the full scientific explanation with precise terminology, detailed mechanisms, and technical accuracy."
+        target_age: "adult"
+
+  # Environment variables
+  environment:
+    PIPELINE_MODE: "auto-cycle"
+    LOG_LEVEL: "INFO"
+    
+  # Health check endpoints
+  health:
+    enabled: true
+    endpoint: "/health"
+    
+  # Metrics and monitoring
+  metrics:
+    enabled: true
+    endpoint: "/metrics"

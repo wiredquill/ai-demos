@@ -1,0 +1,162 @@
+# .github/workflows/ci-cd.yaml
+name: Build, Push, and Update K8s Manifests (upstream & SUSE)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'app/**'
+      - 'charts/**'
+      - '.github/workflows/ci-cd.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build-and-push-images:
+    runs-on: ubuntu-latest
+    outputs:
+      IMAGE_TAG: ${{ steps.image_meta.outputs.IMAGE_TAG }}
+    steps:
+      - name: Notify build start
+        run: |
+          curl -d "GitHub Actions started - Building SUSE AI Demo images..." ntfy.sh/wq_task
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate image tag and lowercase owner
+        id: image_meta
+        run: |
+          TAG=$(echo $GITHUB_SHA | cut -c1-7)
+          echo "Generated tag: $TAG"
+          echo "GITHUB_SHA: $GITHUB_SHA"
+          
+          # Fallback to 'latest' if TAG is empty
+          if [ -z "$TAG" ]; then
+            TAG="latest"
+            echo "Warning: GITHUB_SHA was empty, using 'latest' as fallback"
+          fi
+          
+          echo "IMAGE_TAG=$TAG" >> $GITHUB_ENV
+          echo "IMAGE_TAG=$TAG" >> $GITHUB_OUTPUT
+          echo "Final tag: $TAG"
+
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "OWNER_LC=$OWNER_LC" >> $GITHUB_ENV
+          echo "Lowercase Owner: $OWNER_LC"
+          
+          echo "BASE_IMAGE_NAME=${{ github.event.repository.name }}" >> $GITHUB_ENV
+          echo "SUSE_IMAGE_NAME=${{ github.event.repository.name }}-suse" >> $GITHUB_ENV
+
+      - name: Build and push upstream Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: app/Dockerfile.upstream
+          push: true
+          tags: |
+            ghcr.io/${{ env.OWNER_LC }}/${{ env.BASE_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ghcr.io/${{ env.OWNER_LC }}/${{ env.BASE_IMAGE_NAME }}:latest
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push SUSE Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: app/Dockerfile.suse
+          push: true
+          tags: |
+            ghcr.io/${{ env.OWNER_LC }}/${{ env.SUSE_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ghcr.io/${{ env.OWNER_LC }}/${{ env.SUSE_IMAGE_NAME }}:latest
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+
+  update-and-commit-charts:
+    needs: build-and-push-images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install yq
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
+          yq --version
+
+      - name: Update Helm Chart values.yaml
+        run: |
+          UPSTREAM_VALUES_PATH="charts/llm-comm-upstream/values.yaml"
+          SUSE_VALUES_PATH="charts/llm-comm-suse/values.yaml"
+          NEW_IMAGE_TAG="${{ needs.build-and-push-images.outputs.IMAGE_TAG }}"
+
+          echo "Updating $UPSTREAM_VALUES_PATH with image tag: $NEW_IMAGE_TAG"
+          yq eval ".llmChat.image.tag = \"$NEW_IMAGE_TAG\"" -i "$UPSTREAM_VALUES_PATH"
+          cat "$UPSTREAM_VALUES_PATH"
+
+          echo "Updating $SUSE_VALUES_PATH with image tag: $NEW_IMAGE_TAG"
+          yq eval ".llmChat.image.tag = \"$NEW_IMAGE_TAG\"" -i "$SUSE_VALUES_PATH"
+          cat "$SUSE_VALUES_PATH"
+
+      - name: Increment Chart.yaml versions
+        run: |
+          UPSTREAM_CHART_PATH="charts/llm-comm-upstream/Chart.yaml"
+          SUSE_CHART_PATH="charts/llm-comm-suse/Chart.yaml"
+
+          increment_version() {
+            local chart_path=$1
+            local current_version=$(yq eval '.version' "$chart_path")
+            IFS='.' read -r major minor patch <<< "$current_version"
+            new_patch=$((patch + 1))
+            new_version="$major.$minor.$new_patch"
+            yq eval ".version = \"$new_version\"" -i "$chart_path"
+            echo "Updated $chart_path to version: $new_version"
+            cat "$chart_path"
+          }
+
+          increment_version "$UPSTREAM_CHART_PATH"
+          increment_version "$SUSE_CHART_PATH"
+
+      - name: Commit and push updated Helm chart files
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          git add "charts/llm-comm-upstream/values.yaml" "charts/llm-comm-suse/values.yaml" "charts/llm-comm-upstream/Chart.yaml" "charts/llm-comm-suse/Chart.yaml"
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit in Helm chart files."
+          else
+            git commit -m "CI: Update Helm chart image tags to ${{ needs.build-and-push-images.outputs.IMAGE_TAG }} and increment chart versions"
+            git push
+            echo "Pushed updated Helm chart files to repository."
+          fi
+
+      - name: Notify build completion
+        run: |
+          curl -d "GitHub Actions build complete - SUSE AI Demo updated with tag ${{ needs.build-and-push-images.outputs.IMAGE_TAG }}" ntfy.sh/wq_task
+

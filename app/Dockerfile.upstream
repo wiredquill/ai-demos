@@ -1,0 +1,26 @@
+# Start with the official Debian-based slim Python image
+FROM python:3.11-slim
+
+# Install bash and git, which are useful for debugging and dependencies
+RUN apt-get update && apt-get install -y bash git --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory in the container
+WORKDIR /app
+
+# CORRECTED: The path to the source file now includes the 'app/' prefix
+# to match the location within the build context (the repository root).
+COPY app/requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# CORRECTED: The path to the source file now includes the 'app/' prefix.
+# The destination is '.', which corresponds to the WORKDIR '/app'.
+COPY app/python-ollama-open-webui.py .
+# Expose the port Gradio will run on
+EXPOSE 7860
+
+# Command to run the application using unbuffered python output for better logging
+CMD ["python", "-u", "python-ollama-open-webui.py"]
+# Trigger CI/CD build again and again
