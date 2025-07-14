@@ -147,69 +147,56 @@ class ChatInterface:
             return f"Error communicating with Ollama: {str(e)}"
 
     def chat_with_open_webui(self, messages: List[Dict[str, str]], model: str) -> str:
-        """Sends a conversation history through the pipeline service for response level cycling."""
-        # Get pipeline service URL from environment or use default
-        pipeline_base_url = os.getenv("PIPELINES_BASE_URL", "http://pipelines-service:9099")
-        pipeline_api_key = os.getenv("PIPELINE_API_KEY", "0p3n-w3bu!")
-        
-        # Use pipeline service chat completions endpoint with response_level model
-        api_url = f"{pipeline_base_url}/v1/chat/completions"
-        pipeline_model = "response_level"  # Pipeline model for educational response levels
-        
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {pipeline_api_key}"
-        }
-        
-        payload = { 
-            "model": pipeline_model, 
-            "messages": messages, 
-            "stream": False 
-        }
+        """Sends a conversation history through Open WebUI with pipeline-modified prompts for response level cycling."""
+        if not self.open_webui_base_url:
+            return "Open WebUI URL not configured. Check OPEN_WEBUI_BASE_URL environment variable."
         
         # Educational levels that the pipeline cycles through
         pipeline_levels = [
-            "🎯 Default: Standard response",
-            "🧒 Kid Mode: Explain like I'm 5 years old", 
-            "🔬 Young Scientist: Age 12 science explanations",
-            "🎓 College Student: Technical analysis", 
-            "⚗️ Scientific: Full technical precision"
+            {"name": "🎯 Default", "modifier": ""},
+            {"name": "🧒 Kid Mode", "modifier": "Explain like I'm 5 years old using simple words, fun examples, and easy-to-understand concepts."},
+            {"name": "🔬 Young Scientist", "modifier": "Explain like I'm 12 years old with some science details but keep it understandable and engaging."},
+            {"name": "🎓 College Student", "modifier": "Explain like I'm a college student with technical context, examples, and deeper analysis."},
+            {"name": "⚗️ Scientific", "modifier": "Give me the full scientific explanation with precise terminology, detailed mechanisms, and technical accuracy."}
         ]
         
-        logger.info(f"Attempting to chat with Pipeline service ({api_url}) using model: {pipeline_model}")
+        # Calculate which pipeline level to use (cycling through 0-4 every 30 seconds)
+        import time
+        level_index = int(time.time() / 30) % len(pipeline_levels)
+        current_level = pipeline_levels[level_index]
+        
+        # Modify the last message with the pipeline level instruction
+        modified_messages = messages.copy()
+        if modified_messages and current_level["modifier"]:
+            last_message = modified_messages[-1]
+            if last_message["role"] == "user":
+                modified_messages[-1] = {
+                    "role": "user",
+                    "content": f"{last_message['content']} {current_level['modifier']}"
+                }
+        
+        # Use Open WebUI's Ollama proxy endpoint
+        api_url = f"{self.open_webui_base_url}/ollama/api/chat"
+        payload = { "model": model, "messages": modified_messages, "stream": False }
+        
+        logger.info(f"Attempting to chat with Open WebUI via pipeline-modified prompt ({api_url}) level: {current_level['name']}")
         try:
-            response = requests.post(api_url, json=payload, headers=headers, timeout=120)
-            logger.info(f"Pipeline response status: {response.status_code}")
-            
+            response = requests.post(api_url, json=payload, timeout=120)
             if response.status_code == 200:
                 response_data = response.json()
-                # Extract content from OpenAI-compatible response format
-                choices = response_data.get('choices', [])
-                if choices and len(choices) > 0:
-                    content = choices[0].get('message', {}).get('content', '')
-                    if content:
-                        # Calculate which pipeline level was likely used (cycling through 0-4)
-                        # This is an approximation since we don't have direct access to pipeline state
-                        import time
-                        level_index = int(time.time() / 30) % len(pipeline_levels)  # Changes every 30 seconds
-                        current_level = pipeline_levels[level_index]
-                        
-                        # Add pipeline level header to the response
-                        formatted_response = f"🔄 **Pipeline Mode**: {current_level}\n\n{content}"
-                        logger.info(f"Pipeline response with level indicator: {current_level}")
-                        return formatted_response
-                    else:
-                        return 'Error: No content in pipeline response.'
-                else:
-                    return 'Error: No choices in pipeline response.'
+                content = response_data.get('message', {}).get('content', 'Error: Unexpected response format from Open WebUI.')
+                
+                # Add pipeline level header to the response
+                formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']}: {current_level['modifier'] or 'Standard response'}\n\n{content}"
+                logger.info(f"Open WebUI response with pipeline level: {current_level['name']}")
+                return formatted_response
             else:
-                # Fallback: if pipeline fails, use direct Ollama connection
-                logger.warning(f"Pipeline service failed ({response.status_code}): {response.text}")
-                logger.warning("Falling back to direct Ollama connection")
+                # Fallback: if Open WebUI proxy fails, use direct Ollama connection
+                logger.warning(f"Open WebUI proxy failed ({response.status_code}), falling back to direct Ollama")
                 return self.chat_with_ollama(messages, model)
         except Exception as e:
-            # Fallback: if pipeline fails completely, use direct Ollama connection
-            logger.warning(f"Pipeline service failed: {str(e)}, falling back to direct Ollama")
+            # Fallback: if Open WebUI fails completely, use direct Ollama connection
+            logger.warning(f"Open WebUI failed: {str(e)}, falling back to direct Ollama")
             return self.chat_with_ollama(messages, model)
 
     def check_provider_status(self, provider_name: str, provider_info) -> dict:
@@ -610,7 +597,9 @@ def create_interface():
         with gr.Row():
             # LEFT PANEL - Compact Provider Status (30%)
             with gr.Column(scale=3):
-                provider_status_html = gr.HTML()
+                # Initialize with pre-drawn provider status boxes
+                initial_status_html = chat_instance.get_provider_status_html()
+                provider_status_html = gr.HTML(value=initial_status_html)
                 refresh_providers_btn = gr.Button("🔄 Refresh", elem_classes="refresh-btn", size="sm")
 
             # CENTER PANEL - Chat Interface in Grouped Container (70%) 
@@ -686,7 +675,9 @@ def create_interface():
 
         # Configuration Modal (initially hidden)
         with gr.Column(visible=False) as config_panel:
-            gr.HTML("<h3 style='color: #73ba25; text-align: center;'>⚙️ Configuration</h3>")
+            with gr.Row():
+                gr.HTML("<h3 style='color: #73ba25; text-align: center;'>⚙️ Configuration</h3>")
+                close_config_btn = gr.Button("✕", variant="secondary", size="sm", elem_classes="close-btn")
             
             # Model selection
             model_dropdown = gr.Dropdown(
@@ -729,16 +720,21 @@ def create_interface():
 
             yield ollama_reply, open_webui_reply, ""
 
-        def toggle_config_panel():
-            """Toggle the visibility of the configuration panel."""
+        def show_config_panel():
+            """Show the configuration panel."""
             return gr.Column(visible=True)
+        
+        def hide_config_panel():
+            """Hide the configuration panel."""
+            return gr.Column(visible=False)
 
         send_btn.click(handle_send_message, inputs=[msg_input, model_dropdown], outputs=[ollama_output, webui_output, msg_input])
         msg_input.submit(handle_send_message, inputs=[msg_input, model_dropdown], outputs=[ollama_output, webui_output, msg_input])
         clear_btn.click(lambda: ("", "", ""), outputs=[ollama_output, webui_output, msg_input])
         
         refresh_providers_btn.click(chat_instance.refresh_providers, outputs=[provider_status_html])
-        config_btn.click(toggle_config_panel, outputs=[config_panel])
+        config_btn.click(show_config_panel, outputs=[config_panel])
+        close_config_btn.click(hide_config_panel, outputs=[config_panel])
 
         def initial_load():
             """Loads initial data when the UI starts."""
@@ -773,12 +769,7 @@ def create_interface():
                     status_html = chat_instance.get_provider_status_html()
                     return gr.JSON(visible=True), gr.HTML(value=status_html)
 
-            # Manual refresh button (since this Gradio version doesn't support auto-refresh)
-            refresh_btn = gr.Button("🔄 Refresh Results", variant="secondary", size="sm")
-            refresh_btn.click(
-                update_ui_from_queue,
-                outputs=[automation_results_display, provider_status_html]
-            )
+            # Auto-refresh handled by periodic background updates - no manual button needed
             
             # Auto-refresh every 5 seconds when automation is running
             def periodic_refresh():
