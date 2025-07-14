@@ -37,6 +37,24 @@ spec:
               value: "{{ .Values.llmChat.automation.intervalSeconds }}"
             - name: AUTOMATION_SEND_MESSAGES
               value: "{{ .Values.llmChat.automation.sendMessages }}"
+          # Health checks to ensure proper startup sequencing
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.llmChat.service.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.llmChat.service.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
           volumeMounts:
             - name: config-volume
               mountPath: /app/config.json

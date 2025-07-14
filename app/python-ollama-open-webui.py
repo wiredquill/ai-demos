@@ -603,7 +603,33 @@ def create_interface():
         border-radius: 12px !important;
     }
     .gr-button {
-        border-radius: 10px !important;
+        border-radius: 12px !important;
+        transition: all 0.3s ease !important;
+        font-weight: 600 !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+    }
+    .gr-button:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
+    }
+    .send-button {
+        background: linear-gradient(135deg, #30ba78 0%, #28a745 100%) !important;
+        border: none !important;
+        color: white !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        padding: 12px 20px !important;
+        min-height: 48px !important;
+    }
+    .input-box .gr-textbox {
+        border: 2px solid rgba(115, 186, 37, 0.3) !important;
+        border-radius: 15px !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        transition: all 0.3s ease !important;
+    }
+    .input-box .gr-textbox:focus-within {
+        border-color: #73ba25 !important;
+        box-shadow: 0 0 0 3px rgba(115, 186, 37, 0.1) !important;
     }
     .gr-dropdown {
         border-radius: 12px !important;
@@ -639,13 +665,15 @@ def create_interface():
                     
                     # Automation and Config Controls Row
                     with gr.Row():
-                        with gr.Column(scale=1):
-                            # Automation buttons moved to config panel for better organization
-                            pass
+                        with gr.Column(scale=2):
+                            if chat_instance.automation_enabled:
+                                with gr.Row():
+                                    start_auto_btn = gr.Button("▶️ Start Automation", variant="primary", size="sm")
+                                    stop_auto_btn = gr.Button("⏹️ Stop Automation", variant="secondary", size="sm", interactive=False)
                         with gr.Column(scale=1):
                             config_btn = gr.Button("⚙️ Config", size="sm")
                     
-                    # Input section
+                    # Input section with improved styling
                     with gr.Row():
                         with gr.Column(scale=5):
                             msg_input = gr.Textbox(
@@ -653,10 +681,11 @@ def create_interface():
                                 placeholder="💭 Ask a question to compare responses...", 
                                 lines=2, 
                                 show_label=False,
-                                container=False
+                                container=True,
+                                elem_classes="input-box"
                             )
                         with gr.Column(scale=1, min_width=80):
-                            send_btn = gr.Button("Send ❯", variant="primary", size="lg")
+                            send_btn = gr.Button("Send ❯", variant="primary", size="lg", elem_classes="send-button")
                     
                     # Response comparison panels with enhanced styling
                     with gr.Row():
@@ -728,9 +757,7 @@ def create_interface():
                         info="When enabled, sends test questions to Ollama and Open WebUI"
                     )
                 
-                with gr.Row():
-                    start_auto_btn = gr.Button("▶️ Start Automation", variant="primary", size="sm")
-                    stop_auto_btn = gr.Button("⏹️ Stop Automation", variant="secondary", size="sm", interactive=False)
+                # Automation controls moved to main screen for better UX
                 
                 # Automation results display (visible to show requests and responses)
                 gr.HTML("""
@@ -831,18 +858,35 @@ def create_interface():
             # Auto-refresh every 5 seconds when automation is running
             # Removed periodic refresh - provider status updates are handled by automation loop
             
-            # Auto-start automation in background thread (delayed start to allow interface to load)
+            # Auto-start automation in background thread (delayed start with retry logic)
             if chat_instance.automation_enabled:
                 def delayed_auto_start():
                     import time
-                    time.sleep(3)  # Wait for interface to fully load
-                    models = chat_instance.get_ollama_models()
-                    if models and len(models) > 0:
-                        model = models[0]
-                        logger.info(f"Auto-starting automation with model: {model}")
-                        chat_instance.start_automation(model, chat_instance.automation_interval)
-                    else:
-                        logger.warning("Automation enabled but no models available for auto-start")
+                    # Wait for interface and services to fully load
+                    time.sleep(10)
+                    
+                    # Retry logic for Ollama readiness
+                    max_retries = 6
+                    retry_delay = 10
+                    
+                    for attempt in range(max_retries):
+                        try:
+                            logger.info(f"Auto-start attempt {attempt + 1}/{max_retries} - checking for Ollama models...")
+                            models = chat_instance.get_ollama_models()
+                            if models and len(models) > 0 and "Error" not in models[0]:
+                                model = models[0]
+                                logger.info(f"Auto-starting automation with model: {model}")
+                                chat_instance.start_automation(model, chat_instance.automation_interval)
+                                return
+                            else:
+                                logger.info(f"No valid models found on attempt {attempt + 1}, retrying in {retry_delay}s...")
+                        except Exception as e:
+                            logger.warning(f"Auto-start attempt {attempt + 1} failed: {e}")
+                        
+                        if attempt < max_retries - 1:
+                            time.sleep(retry_delay)
+                    
+                    logger.warning("Auto-start failed after all retries - Ollama may not be ready or no models available")
                 
                 # Start auto-start in background thread
                 import threading
