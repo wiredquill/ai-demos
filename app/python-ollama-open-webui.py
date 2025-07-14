@@ -147,13 +147,20 @@ class ChatInterface:
             return f"Error communicating with Ollama: {str(e)}"
 
     def chat_with_open_webui(self, messages: List[Dict[str, str]], model: str) -> str:
-        """Sends a conversation history to Open WebUI through the pipeline-enabled chat completions endpoint."""
-        if not self.open_webui_base_url:
-            return "Open WebUI URL not configured. Check OPEN_WEBUI_BASE_URL environment variable."
+        """Sends a conversation history through the pipeline service for response level cycling."""
+        # Get pipeline service URL from environment or use default
+        pipeline_base_url = os.getenv("PIPELINES_BASE_URL", "http://pipelines-service:9099")
+        pipeline_api_key = os.getenv("PIPELINE_API_KEY", "0p3n-w3bu!")
         
-        # Use OpenAI-compatible chat completions endpoint with response_level pipeline model
-        api_url = f"{self.open_webui_base_url}/api/v1/chat/completions"
+        # Use pipeline service chat completions endpoint with response_level model
+        api_url = f"{pipeline_base_url}/v1/chat/completions"
         pipeline_model = "response_level"  # Pipeline model for educational response levels
+        
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {pipeline_api_key}"
+        }
+        
         payload = { 
             "model": pipeline_model, 
             "messages": messages, 
@@ -169,9 +176,11 @@ class ChatInterface:
             "⚗️ Scientific: Full technical precision"
         ]
         
-        logger.info(f"Attempting to chat with Open WebUI pipeline ({api_url}) using model: {pipeline_model}")
+        logger.info(f"Attempting to chat with Pipeline service ({api_url}) using model: {pipeline_model}")
         try:
-            response = requests.post(api_url, json=payload, timeout=120)
+            response = requests.post(api_url, json=payload, headers=headers, timeout=120)
+            logger.info(f"Pipeline response status: {response.status_code}")
+            
             if response.status_code == 200:
                 response_data = response.json()
                 # Extract content from OpenAI-compatible response format
@@ -187,6 +196,7 @@ class ChatInterface:
                         
                         # Add pipeline level header to the response
                         formatted_response = f"🔄 **Pipeline Mode**: {current_level}\n\n{content}"
+                        logger.info(f"Pipeline response with level indicator: {current_level}")
                         return formatted_response
                     else:
                         return 'Error: No content in pipeline response.'
@@ -194,11 +204,12 @@ class ChatInterface:
                     return 'Error: No choices in pipeline response.'
             else:
                 # Fallback: if pipeline fails, use direct Ollama connection
-                logger.warning(f"Open WebUI pipeline failed ({response.status_code}), falling back to direct Ollama")
+                logger.warning(f"Pipeline service failed ({response.status_code}): {response.text}")
+                logger.warning("Falling back to direct Ollama connection")
                 return self.chat_with_ollama(messages, model)
         except Exception as e:
-            # Fallback: if Open WebUI fails completely, use direct Ollama connection
-            logger.warning(f"Open WebUI pipeline failed: {str(e)}, falling back to direct Ollama")
+            # Fallback: if pipeline fails completely, use direct Ollama connection
+            logger.warning(f"Pipeline service failed: {str(e)}, falling back to direct Ollama")
             return self.chat_with_ollama(messages, model)
 
     def check_provider_status(self, provider_name: str, provider_info) -> dict:

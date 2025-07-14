@@ -23,6 +23,11 @@ spec:
               value: "http://ollama-service:11434"
             - name: OPEN_WEBUI_BASE_URL
               value: "http://open-webui-service:8080"
+            # Pipeline service configuration
+            - name: PIPELINES_BASE_URL
+              value: "http://pipelines-service:9099"
+            - name: PIPELINE_API_KEY
+              value: "{{ .Values.pipelines.autoConfig.apiKey }}"
             # --- NEW ENVIRONMENT VARIABLES ---
             - name: AUTOMATION_ENABLED
               value: "{{ .Values.llmChat.automation.enabled }}"
