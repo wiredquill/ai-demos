@@ -78,6 +78,7 @@ class ChatInterface:
         self.automation_thread = None
         self.stop_event = threading.Event()
         self.results_queue = queue.Queue()
+        self.latest_automation_result = None
 
         logger.info(f"ChatInterface initialized. Ollama URL: {self.ollama_base_url}, Open WebUI URL: {self.open_webui_base_url}")
         if self.automation_enabled:
@@ -387,7 +388,8 @@ class ChatInterface:
                 "provider_status": provider_statuses,
                 "send_messages_enabled": self.automation_send_messages
             }
-            # Put the result in the queue for the UI to pick up
+            # Store latest result and put in queue for the UI to pick up
+            self.latest_automation_result = result
             self.results_queue.put(result)
             
             # Wait for the next interval
@@ -432,6 +434,49 @@ class ChatInterface:
                 logger.info("Automation thread stopped successfully")
         logger.info("Automation stopping.")
         return gr.Button(interactive=True), gr.Button(interactive=False)
+
+    def format_automation_results_html(self, result):
+        """Formats automation results as readable HTML."""
+        if not result:
+            return "<div style='text-align: center; color: #888; padding: 20px;'>No automation results yet...</div>"
+        
+        # Truncate responses for display
+        def truncate_text(text, max_length=150):
+            if len(text) > max_length:
+                return text[:max_length] + "..."
+            return text
+        
+        ollama_response = truncate_text(result.get('ollama_response', 'N/A'))
+        webui_response = truncate_text(result.get('open_webui_response', 'N/A'))
+        
+        html = f"""
+        <div style='background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; margin: 10px 0;'>
+            <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;'>
+                <span style='color: #73ba25; font-weight: 600; font-size: 0.9em;'>🕐 {result.get('timestamp', 'N/A')}</span>
+                <span style='color: #888; font-size: 0.8em;'>{'Messages Enabled' if result.get('send_messages_enabled', False) else 'Monitoring Only'}</span>
+            </div>
+            
+            <div style='margin-bottom: 12px;'>
+                <div style='color: #fff; font-weight: 500; margin-bottom: 5px;'>❓ Test Question:</div>
+                <div style='background: rgba(115,186,37,0.1); padding: 8px; border-radius: 6px; color: #e0e0e0; font-size: 0.9em;'>
+                    {result.get('prompt', 'N/A')}
+                </div>
+            </div>
+            
+            <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 10px;'>
+                <div style='background: rgba(76,175,80,0.1); padding: 10px; border-radius: 6px; border-left: 3px solid #4CAF50;'>
+                    <div style='color: #4CAF50; font-weight: 600; font-size: 0.8em; margin-bottom: 5px;'>🤖 OLLAMA RESPONSE</div>
+                    <div style='color: #e0e0e0; font-size: 0.8em; line-height: 1.4;'>{ollama_response}</div>
+                </div>
+                
+                <div style='background: rgba(33,150,243,0.1); padding: 10px; border-radius: 6px; border-left: 3px solid #2196F3;'>
+                    <div style='color: #2196F3; font-weight: 600; font-size: 0.8em; margin-bottom: 5px;'>🌐 OPEN WEBUI RESPONSE</div>
+                    <div style='color: #e0e0e0; font-size: 0.8em; line-height: 1.4;'>{webui_response}</div>
+                </div>
+            </div>
+        </div>
+        """
+        return html
 
 def create_interface():
     logger.info("Creating Gradio interface.")
@@ -766,7 +811,7 @@ def create_interface():
                     <p style='color: #ffffff; margin: 0; font-size: 0.9em; opacity: 0.8;'>Live results from automated provider testing and AI responses</p>
                 </div>
                 """)
-                automation_results_display = gr.JSON(label="Latest Test Results", visible=True, show_label=True)
+                automation_results_display = gr.HTML(value="<div style='text-align: center; color: #888; padding: 20px;'>Automation not started yet...</div>")
             
 
         # --- Event Handlers ---
@@ -834,17 +879,19 @@ def create_interface():
                 outputs=[start_auto_btn, stop_auto_btn]
             )
 
-            # Auto-update UI every 2 seconds to check for automation results
+            # Auto-update UI every 3 seconds to check for automation results
             def update_ui_from_queue():
                 """Checks the queue and updates the results and provider status display."""
                 try:
                     latest_result = chat_instance.results_queue.get_nowait()
+                    results_html = chat_instance.format_automation_results_html(latest_result)
                     status_html = chat_instance.get_provider_status_html()
-                    return gr.JSON(value=latest_result, visible=True), gr.HTML(value=status_html)
+                    return gr.HTML(value=results_html), gr.HTML(value=status_html)
                 except queue.Empty:
-                    # No new results, keep previous results visible
+                    # No new results, but maintain current display with latest result
+                    results_html = chat_instance.format_automation_results_html(chat_instance.latest_automation_result)
                     status_html = chat_instance.get_provider_status_html()
-                    return gr.JSON(visible=True), gr.HTML(value=status_html)
+                    return gr.HTML(value=results_html), gr.HTML(value=status_html)
 
             # Add hidden button for auto-refresh trigger
             auto_refresh_btn = gr.Button("Auto Refresh", visible=False)
@@ -853,7 +900,59 @@ def create_interface():
                 outputs=[automation_results_display, provider_status_html]
             )
             
-            # Removed JavaScript auto-refresh - all updates handled by automation loop
+            # JavaScript auto-refresh specifically for automation results (when automation is running)
+            gr.HTML("""
+            <script>
+            let automationRefreshInterval = null;
+            
+            function startAutomationRefresh() {
+                if (automationRefreshInterval) return; // Already running
+                
+                automationRefreshInterval = setInterval(function() {
+                    // Find and click the hidden auto-refresh button for automation results
+                    const buttons = document.querySelectorAll('button');
+                    buttons.forEach(btn => {
+                        if (btn.textContent.includes('Auto Refresh') && btn.style.display === 'none') {
+                            btn.click();
+                        }
+                    });
+                }, 3000); // Refresh every 3 seconds when automation is active
+            }
+            
+            function stopAutomationRefresh() {
+                if (automationRefreshInterval) {
+                    clearInterval(automationRefreshInterval);
+                    automationRefreshInterval = null;
+                }
+            }
+            
+            // Monitor for automation start/stop button states
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'aria-disabled') {
+                        const target = mutation.target;
+                        if (target.textContent.includes('Start Automation')) {
+                            if (target.getAttribute('aria-disabled') === 'true') {
+                                startAutomationRefresh(); // Automation is running
+                            } else {
+                                stopAutomationRefresh(); // Automation is stopped
+                            }
+                        }
+                    }
+                });
+            });
+            
+            // Start observing button state changes
+            setTimeout(() => {
+                const buttons = document.querySelectorAll('button');
+                buttons.forEach(btn => {
+                    if (btn.textContent.includes('Start Automation')) {
+                        observer.observe(btn, { attributes: true });
+                    }
+                });
+            }, 1000);
+            </script>
+            """)
             
             # Auto-refresh every 5 seconds when automation is running
             # Removed periodic refresh - provider status updates are handled by automation loop
