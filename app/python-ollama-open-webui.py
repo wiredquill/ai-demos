@@ -424,6 +424,12 @@ class ChatInterface:
         """Stops the automation thread."""
         if self.automation_thread and self.automation_thread.is_alive():
             self.stop_event.set()
+            # Wait a short time for thread to finish gracefully
+            self.automation_thread.join(timeout=2)
+            if self.automation_thread.is_alive():
+                logger.warning("Automation thread did not stop gracefully")
+            else:
+                logger.info("Automation thread stopped successfully")
         logger.info("Automation stopping.")
         return gr.Button(interactive=True), gr.Button(interactive=False)
 
