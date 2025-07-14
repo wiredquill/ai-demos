@@ -893,18 +893,22 @@ def create_interface():
             # Auto-update UI every 3 seconds to check for automation results
             def update_ui_from_queue():
                 """Checks the queue and updates the results and provider status display."""
-                logger.info("UI update_ui_from_queue called - checking results queue")
+                logger.info("🔄 UI update_ui_from_queue called - checking results queue")
+                logger.info(f"Queue size: {chat_instance.results_queue.qsize()}")
+                logger.info(f"Latest result available: {chat_instance.latest_automation_result is not None}")
                 try:
                     latest_result = chat_instance.results_queue.get_nowait()
-                    logger.info(f"Found new automation result: {latest_result.get('timestamp', 'unknown time')}")
+                    logger.info(f"✅ Found new automation result: {latest_result.get('timestamp', 'unknown time')}")
                     results_html = chat_instance.format_automation_results_html(latest_result)
                     status_html = chat_instance.get_provider_status_html()
+                    logger.info("🎨 Generated HTML for display")
                     return gr.HTML(value=results_html), gr.HTML(value=status_html)
                 except queue.Empty:
                     # No new results, but maintain current display with latest result
-                    logger.info("No new results in queue, using latest stored result")
+                    logger.info("📭 No new results in queue, using latest stored result")
                     results_html = chat_instance.format_automation_results_html(chat_instance.latest_automation_result)
                     status_html = chat_instance.get_provider_status_html()
+                    logger.info("🎨 Generated HTML from stored result")
                     return gr.HTML(value=results_html), gr.HTML(value=status_html)
 
             # Add hidden button for auto-refresh trigger
@@ -914,14 +918,26 @@ def create_interface():
                 outputs=[automation_results_display, provider_status_html]
             )
             
-            # Connect manual refresh button
+            # Connect manual refresh button with debugging
+            def manual_refresh_clicked():
+                logger.info("🖱️ MANUAL REFRESH BUTTON CLICKED!")
+                return update_ui_from_queue()
+            
             manual_refresh_btn.click(
-                update_ui_from_queue,
+                manual_refresh_clicked,
                 outputs=[automation_results_display, provider_status_html]
             )
             
-            # For now, let's test with manual refresh only
-            # Will add back auto-refresh once manual works
+            # Add a test button to check queue status
+            def check_queue_status():
+                logger.info(f"🔍 Queue status check - Size: {chat_instance.results_queue.qsize()}")
+                logger.info(f"🔍 Latest result exists: {chat_instance.latest_automation_result is not None}")
+                if chat_instance.latest_automation_result:
+                    logger.info(f"🔍 Latest result timestamp: {chat_instance.latest_automation_result.get('timestamp', 'N/A')}")
+                return "Queue checked - see logs"
+            
+            test_queue_btn = gr.Button("🔍 Check Queue Status", size="sm")
+            test_queue_btn.click(check_queue_status, outputs=gr.Textbox(visible=False))
             
             # Auto-refresh every 5 seconds when automation is running
             # Removed periodic refresh - provider status updates are handled by automation loop
