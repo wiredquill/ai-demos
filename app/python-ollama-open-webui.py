@@ -786,28 +786,8 @@ def create_interface():
             chat_instance.update_all_provider_status()
             return gr.HTML(value=chat_instance.get_provider_status_html())
             
-        # Set up periodic refresh only if automation is enabled
-        if chat_instance.automation_enabled:
-            import threading
-            import time
-            
-            def start_periodic_provider_refresh():
-                def refresh_loop():
-                    while True:
-                        time.sleep(10)  # Update every 10 seconds
-                        try:
-                            # This will update the internal status, the UI will be updated on next interaction
-                            chat_instance.update_all_provider_status()
-                        except Exception as e:
-                            logger.warning(f"Periodic provider refresh failed: {e}")
-                
-                refresh_thread = threading.Thread(target=refresh_loop, daemon=True)
-                refresh_thread.start()
-            
-            # Start the periodic refresh
-            start_periodic_provider_refresh()
-        else:
-            logger.info("Automation disabled - skipping periodic provider refresh")
+        # Only set up UI refresh mechanism - no background pinging unless automation is running
+        logger.info("UI refresh mechanism ready - background processes controlled by automation state")
 
         # --- NEW: Automation Event Handlers ---
         if chat_instance.automation_enabled:
@@ -840,42 +820,10 @@ def create_interface():
                 outputs=[automation_results_display, provider_status_html]
             )
             
-            # JavaScript to trigger auto-refresh every 10 seconds
-            gr.HTML("""
-            <script>
-            setInterval(function() {
-                // Find and click the hidden auto-refresh button
-                const buttons = document.querySelectorAll('button');
-                buttons.forEach(btn => {
-                    if (btn.textContent.includes('Auto Refresh')) {
-                        btn.click();
-                    }
-                });
-            }, 10000); // Every 10 seconds
-            </script>
-            """)
+            # Removed JavaScript auto-refresh - all updates handled by automation loop
             
             # Auto-refresh every 5 seconds when automation is running
-            def periodic_refresh():
-                """Periodic refresh for provider status when automation is active."""
-                import threading
-                import time
-                
-                def refresh_loop():
-                    while True:
-                        time.sleep(5)  # Refresh every 5 seconds
-                        if chat_instance.automation_thread and chat_instance.automation_thread.is_alive():
-                            try:
-                                # Update just the provider status
-                                chat_instance.update_all_provider_status()
-                            except Exception as e:
-                                logger.warning(f"Auto-refresh failed: {e}")
-                
-                refresh_thread = threading.Thread(target=refresh_loop, daemon=True)
-                refresh_thread.start()
-            
-            # Start the periodic refresh
-            periodic_refresh()
+            # Removed periodic refresh - provider status updates are handled by automation loop
             
             # Auto-start automation in background thread (delayed start to allow interface to load)
             if chat_instance.automation_enabled:
