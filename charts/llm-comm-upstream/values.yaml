@@ -39,7 +39,7 @@ ollama:
 openWebui:
   image:
     repository: ghcr.io/open-webui/open-webui
-    tag: "0.5.0" # Pipeline-enabled version
+    tag: "0.6.9" # Pipeline-enabled version
   service:
     port: 8080
     type: NodePort
