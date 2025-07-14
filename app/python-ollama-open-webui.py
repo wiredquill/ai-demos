@@ -726,19 +726,27 @@ def create_interface():
                         with gr.Column(scale=1):
                             config_btn = gr.Button("⚙️ Config", size="sm")
                     
-                    # Input section with improved styling
+                    # Input section with beautiful styling
                     with gr.Row():
-                        with gr.Column(scale=5):
-                            msg_input = gr.Textbox(
-                                label="", 
-                                placeholder="💭 Ask a question to compare responses...", 
-                                lines=2, 
-                                show_label=False,
-                                container=True,
-                                elem_classes="input-box"
-                            )
-                        with gr.Column(scale=1, min_width=80):
-                            send_btn = gr.Button("Send ❯", variant="primary", size="lg", elem_classes="send-button")
+                        with gr.Column():
+                            gr.HTML("""
+                            <div style='background: linear-gradient(135deg, rgba(115, 186, 37, 0.1) 0%, rgba(115, 186, 37, 0.05) 100%); border: 1px solid rgba(115, 186, 37, 0.2); border-radius: 12px; padding: 12px; margin: 10px 0;'>
+                                <h4 style='color: #73ba25; margin: 0 0 8px 0; font-size: 1.1em; font-weight: 600;'>💭 Ask Your Question</h4>
+                                <p style='color: #ffffff; margin: 0; font-size: 0.9em; opacity: 0.8;'>Compare responses from Direct Ollama and Open WebUI</p>
+                            </div>
+                            """)
+                            with gr.Row():
+                                with gr.Column(scale=5):
+                                    msg_input = gr.Textbox(
+                                        label="", 
+                                        placeholder="Type your question here to compare AI responses...", 
+                                        lines=2, 
+                                        show_label=False,
+                                        container=True,
+                                        elem_classes="input-box"
+                                    )
+                                with gr.Column(scale=1, min_width=80):
+                                    send_btn = gr.Button("Send ❯", variant="primary", size="lg", elem_classes="send-button")
                     
                     # Response comparison panels with enhanced styling
                     with gr.Row():
@@ -777,6 +785,22 @@ def create_interface():
                             )
                     
                     clear_btn = gr.Button("🗑️ Clear All", variant="secondary", size="sm")
+                    
+                    # Automation results display on main page (moved from config)
+                    if chat_instance.automation_enabled:
+                        with gr.Row():
+                            with gr.Column():
+                                gr.HTML("""
+                                <div style='background: linear-gradient(135deg, rgba(115, 186, 37, 0.1) 0%, rgba(115, 186, 37, 0.05) 100%); border: 1px solid rgba(115, 186, 37, 0.2); border-radius: 12px; padding: 12px; margin: 15px 0;'>
+                                    <h4 style='color: #73ba25; margin: 0 0 8px 0; font-size: 1.1em; font-weight: 600;'>🔄 Live Automation Test Results</h4>
+                                    <p style='color: #ffffff; margin: 0; font-size: 0.9em; opacity: 0.8;'>Real-time results from automated AI testing and provider monitoring</p>
+                                </div>
+                                """)
+                                automation_results_display = gr.HTML(value="<div style='text-align: center; color: #888; padding: 20px;'>Start automation to see live test results...</div>")
+                                
+                                # Manual refresh button for automation results
+                                with gr.Row():
+                                    manual_refresh_btn = gr.Button("🔄 Refresh Results", size="sm", visible=True)
 
         # Configuration Modal (initially hidden)
         with gr.Column(visible=False) as config_panel:
@@ -810,19 +834,7 @@ def create_interface():
                         info="When enabled, sends test questions to Ollama and Open WebUI"
                     )
                 
-                # Automation controls moved to main screen for better UX
-                
-                # Automation results display (visible to show requests and responses)
-                gr.HTML("""
-                <div style='background: linear-gradient(135deg, rgba(115, 186, 37, 0.1) 0%, rgba(115, 186, 37, 0.05) 100%); border: 1px solid rgba(115, 186, 37, 0.2); border-radius: 12px; padding: 12px; margin: 10px 0;'>
-                    <h4 style='color: #73ba25; margin: 0 0 8px 0; font-size: 1.1em; font-weight: 600;'>🔄 Automation Test Results</h4>
-                    <p style='color: #ffffff; margin: 0; font-size: 0.9em; opacity: 0.8;'>Live results from automated provider testing and AI responses</p>
-                </div>
-                """)
-                automation_results_display = gr.HTML(value="<div style='text-align: center; color: #888; padding: 20px;'>Automation not started yet...</div>")
-                
-                # Manual refresh button for testing
-                manual_refresh_btn = gr.Button("🔄 Refresh Results", size="sm", visible=True)
+                # Automation controls and results moved to main screen for better UX
             
 
         # --- Event Handlers ---
@@ -928,16 +940,23 @@ def create_interface():
                 outputs=[automation_results_display, provider_status_html]
             )
             
-            # Add a test button to check queue status
-            def check_queue_status():
-                logger.info(f"🔍 Queue status check - Size: {chat_instance.results_queue.qsize()}")
-                logger.info(f"🔍 Latest result exists: {chat_instance.latest_automation_result is not None}")
-                if chat_instance.latest_automation_result:
-                    logger.info(f"🔍 Latest result timestamp: {chat_instance.latest_automation_result.get('timestamp', 'N/A')}")
-                return "Queue checked - see logs"
-            
-            test_queue_btn = gr.Button("🔍 Check Queue Status", size="sm")
-            test_queue_btn.click(check_queue_status, outputs=gr.Textbox(visible=False))
+            # Add auto-refresh using JavaScript since manual refresh works
+            gr.HTML("""
+            <script>
+            // Auto-refresh automation results every 5 seconds
+            setTimeout(() => {
+                setInterval(function() {
+                    const buttons = document.querySelectorAll('button');
+                    buttons.forEach(btn => {
+                        if (btn.textContent.includes('🔄 Refresh Results')) {
+                            console.log('Auto-refreshing automation results');
+                            btn.click();
+                        }
+                    });
+                }, 5000); // Every 5 seconds
+            }, 3000); // Start after 3 seconds
+            </script>
+            """)
             
             # Auto-refresh every 5 seconds when automation is running
             # Removed periodic refresh - provider status updates are handled by automation loop
