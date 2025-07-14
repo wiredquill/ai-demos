@@ -820,6 +820,9 @@ def create_interface():
                 </div>
                 """)
                 automation_results_display = gr.HTML(value="<div style='text-align: center; color: #888; padding: 20px;'>Automation not started yet...</div>")
+                
+                # Manual refresh button for testing
+                manual_refresh_btn = gr.Button("🔄 Refresh Results", size="sm", visible=True)
             
 
         # --- Event Handlers ---
@@ -911,57 +914,28 @@ def create_interface():
                 outputs=[automation_results_display, provider_status_html]
             )
             
-            # JavaScript auto-refresh specifically for automation results (when automation is running)
+            # Connect manual refresh button
+            manual_refresh_btn.click(
+                update_ui_from_queue,
+                outputs=[automation_results_display, provider_status_html]
+            )
+            
+            # Simple JavaScript auto-refresh for automation results
             gr.HTML("""
             <script>
-            let automationRefreshInterval = null;
-            
-            function startAutomationRefresh() {
-                if (automationRefreshInterval) return; // Already running
-                
-                automationRefreshInterval = setInterval(function() {
-                    // Find and click the hidden auto-refresh button for automation results
+            // Simple continuous refresh for automation results
+            setTimeout(() => {
+                setInterval(function() {
+                    // Find and click the hidden auto-refresh button
                     const buttons = document.querySelectorAll('button');
                     buttons.forEach(btn => {
-                        if (btn.textContent.includes('Auto Refresh') && btn.style.display === 'none') {
+                        if (btn.textContent.includes('Auto Refresh') && !btn.style.display) {
+                            console.log('Clicking auto-refresh button');
                             btn.click();
                         }
                     });
-                }, 3000); // Refresh every 3 seconds when automation is active
-            }
-            
-            function stopAutomationRefresh() {
-                if (automationRefreshInterval) {
-                    clearInterval(automationRefreshInterval);
-                    automationRefreshInterval = null;
-                }
-            }
-            
-            // Monitor for automation start/stop button states
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    if (mutation.type === 'attributes' && mutation.attributeName === 'aria-disabled') {
-                        const target = mutation.target;
-                        if (target.textContent.includes('Start Automation')) {
-                            if (target.getAttribute('aria-disabled') === 'true') {
-                                startAutomationRefresh(); // Automation is running
-                            } else {
-                                stopAutomationRefresh(); // Automation is stopped
-                            }
-                        }
-                    }
-                });
-            });
-            
-            // Start observing button state changes
-            setTimeout(() => {
-                const buttons = document.querySelectorAll('button');
-                buttons.forEach(btn => {
-                    if (btn.textContent.includes('Start Automation')) {
-                        observer.observe(btn, { attributes: true });
-                    }
-                });
-            }, 1000);
+                }, 5000); // Refresh every 5 seconds
+            }, 2000); // Start after 2 seconds
             </script>
             """)
             
