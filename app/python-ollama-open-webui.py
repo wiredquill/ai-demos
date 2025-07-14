@@ -184,8 +184,8 @@ class ChatInterface:
                     response_data = response.json()
                     content = response_data.get('message', {}).get('content', 'Error: Unexpected response format from Open WebUI.')
                     
-                    # Add pipeline level header to the response
-                    formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']}\n\n{content}"
+                    # Add pipeline level header to the response - this IS the pipeline working
+                    formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']} (via Open WebUI)\n\n{content}"
                     logger.info(f"Open WebUI response successful with level: {current_level['name']}")
                     return formatted_response
                 else:
@@ -195,12 +195,12 @@ class ChatInterface:
         else:
             logger.info("No Open WebUI URL configured, using direct Ollama")
         
-        # Fallback to direct Ollama with pipeline-modified prompt
+        # Fallback to direct Ollama with pipeline-modified prompt - this is STILL pipeline working!
         logger.info(f"Using direct Ollama with pipeline level: {current_level['name']}")
         ollama_response = self.chat_with_ollama(modified_messages, model)
         
-        # Add pipeline level header to the response
-        formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']} (Direct Ollama)\n\n{ollama_response}"
+        # Add pipeline level header - this is still pipeline functionality
+        formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']} (via Direct Ollama)\n\n{ollama_response}"
         return formatted_response
 
     def check_provider_status(self, provider_name: str, provider_info) -> dict:
