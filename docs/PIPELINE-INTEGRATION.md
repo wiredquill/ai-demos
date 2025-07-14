@@ -11,21 +11,27 @@ This guide explains how to configure and use the Open WebUI Pipeline integration
 
 ## 📋 Configuration Steps
 
-### 1. Open WebUI Admin Configuration
+### ✅ Automated Setup (Default)
+
+**Pipeline configuration is now automated!** When you deploy with `pipelines.enabled=true` (default), the following happens automatically:
+
+1. **🚀 Pipeline Service Deployment**: Response Level Pipeline service starts with auto-cycle mode
+2. **🔧 Auto-Configuration Job**: Helm post-install job validates pipeline connectivity  
+3. **📋 Configuration Ready**: All connection details are provided in job logs
+4. **🎓 Education Levels Active**: 5 response complexity levels ready for use
+
+### Manual Configuration (If Needed)
+
+If auto-configuration is disabled (`pipelines.autoConfig.enabled=false`), manually configure:
 
 1. **Access Open WebUI**: Navigate to your Open WebUI instance
 2. **Admin Panel**: Go to Admin Panel → Settings → Connections
 3. **Add Pipeline Connection**: Click the `+` button to add a new connection
 4. **Configure Pipeline**:
    - **API URL**: `http://pipelines-service:9099`
-   - **API Key**: `0p3n-w3bu!` (default Open WebUI pipelines key)
+   - **API Key**: `0p3n-w3bu!` (configurable via `pipelines.autoConfig.apiKey`)
    - **Name**: `Response Level Pipeline`
-
-### 2. Enable Pipeline in Models
-
-1. **Models Section**: Go to Admin Panel → Models
-2. **Add Pipeline Model**: The `response_level` model should appear
-3. **Enable Model**: Make sure it's enabled for users
+5. **Enable Pipeline Model**: Go to Admin Panel → Models and enable `response_level`
 
 ### 3. Using the Pipeline
 

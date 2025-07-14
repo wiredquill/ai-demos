@@ -67,6 +67,12 @@ pipelines:
   config:
     pipelineMode: "auto-cycle"
     logLevel: "INFO"
+  # Auto-configuration settings
+  autoConfig:
+    enabled: true
+    apiKey: "0p3n-w3bu!"
+    modelId: "response_level"
+    connectionName: "Response Level Pipeline"
 llmChat:
   image:
     repository: ghcr.io/wiredquill/ai-demos-suse

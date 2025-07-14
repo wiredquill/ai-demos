@@ -163,6 +163,22 @@ questions:
   default: true
   show_if: "pipelines.enabled=true"
 
+- variable: pipelines.autoConfig.enabled
+  group: "Pipeline Integration"
+  label: "Auto-Configure Open WebUI Connection"
+  description: "Automatically set up pipeline connection in Open WebUI during deployment"
+  type: "boolean"
+  default: true
+  show_if: "pipelines.enabled=true"
+
+- variable: pipelines.autoConfig.apiKey
+  group: "Pipeline Integration"
+  label: "Pipeline API Key"
+  description: "API key for Open WebUI to connect to the pipeline service"
+  type: "string"
+  default: "0p3n-w3bu!"
+  show_if: "pipelines.autoConfig.enabled=true"
+
 # Images Group
 - variable: ollama.image.tag
   group: "Images"
