@@ -53,7 +53,7 @@ pipelines:
   enabled: true
   image:
     repository: dp.apps.rancher.io/containers/open-webui-pipelines
-    tag: "0.5.0"
+    tag: "main"
   service:
     port: 9099
     type: ClusterIP

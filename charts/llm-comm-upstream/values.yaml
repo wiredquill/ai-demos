@@ -52,7 +52,7 @@ pipelines:
   enabled: true
   image:
     repository: ghcr.io/open-webui/pipelines
-    tag: "0.5.0"
+    tag: "main"
   service:
     port: 9099
     type: ClusterIP
