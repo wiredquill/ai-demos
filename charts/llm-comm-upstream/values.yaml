@@ -39,7 +39,7 @@ ollama:
 openWebui:
   image:
     repository: ghcr.io/open-webui/open-webui
-    tag: "0.5.0"  # Pipeline-enabled version
+    tag: "0.5.0" # Pipeline-enabled version
   service:
     port: 8080
     type: NodePort
@@ -47,7 +47,6 @@ openWebui:
   pipelines:
     enabled: true
     url: "http://pipelines-service:9099"
-
 # Open WebUI Pipelines Service
 pipelines:
   enabled: true
@@ -70,7 +69,7 @@ pipelines:
 llmChat:
   image:
     repository: ghcr.io/wiredquill/ai-demos
-    tag: "ea92b19"
+    tag: "4b8b9cf"
   service:
     port: 7860
     type: NodePort

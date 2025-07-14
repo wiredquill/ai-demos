@@ -2,5 +2,5 @@ apiVersion: v2
 name: llm-comm-suse
 description: A Helm chart for deploying the SUSE LLM communication stack.
 type: application
-version: 0.1.66
+version: 0.1.67
 appVersion: "1.0.0"
