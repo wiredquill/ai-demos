@@ -936,28 +936,33 @@ def create_interface():
             
             # Use Gradio's built-in auto-update functionality
             if chat_instance.automation_enabled:
-                # Create an invisible timer that triggers UI updates
+                # Create an invisible timer that triggers UI updates ONLY when automation is running
                 def auto_update_timer():
                     """Timer function that returns automation results for UI update"""
                     try:
-                        if chat_instance.results_queue.qsize() > 0:
-                            latest_result = chat_instance.results_queue.get_nowait()
-                            question = latest_result.get('prompt', '')
-                            ollama_response = latest_result.get('ollama_response', '')
-                            webui_response = latest_result.get('open_webui_response', '')
-                            timestamp = latest_result.get('timestamp', '')
-                            question_with_timestamp = f"🤖 Automation Test [{timestamp}]: {question}"
-                            status_html = chat_instance.get_provider_status_html()
-                            logger.info(f"Auto-timer: Updated UI with result from {timestamp}")
-                            return question_with_timestamp, ollama_response, webui_response, status_html
+                        # Only update if automation is actually running
+                        if chat_instance.automation_thread and chat_instance.automation_thread.is_alive():
+                            if chat_instance.results_queue.qsize() > 0:
+                                latest_result = chat_instance.results_queue.get_nowait()
+                                question = latest_result.get('prompt', '')
+                                ollama_response = latest_result.get('ollama_response', '')
+                                webui_response = latest_result.get('open_webui_response', '')
+                                timestamp = latest_result.get('timestamp', '')
+                                question_with_timestamp = f"🤖 Automation Test [{timestamp}]: {question}"
+                                status_html = chat_instance.get_provider_status_html()
+                                logger.info(f"Auto-timer: Updated UI with result from {timestamp}")
+                                return question_with_timestamp, ollama_response, webui_response, status_html
+                            else:
+                                # Automation running but no new results, just update provider status
+                                status_html = chat_instance.get_provider_status_html()
+                                return gr.Textbox(), gr.Textbox(), gr.Textbox(), gr.HTML(value=status_html)
                         else:
-                            # No new results, return current values without change
-                            status_html = chat_instance.get_provider_status_html()
-                            return gr.Textbox(), gr.Textbox(), gr.Textbox(), gr.HTML(value=status_html)
+                            # Automation not running, don't update anything
+                            logger.debug("Auto-timer: Automation not running, skipping update")
+                            return gr.Textbox(), gr.Textbox(), gr.Textbox(), gr.HTML()
                     except Exception as e:
                         logger.error(f"Auto-timer error: {e}")
-                        status_html = chat_instance.get_provider_status_html()
-                        return gr.Textbox(), gr.Textbox(), gr.Textbox(), gr.HTML(value=status_html)
+                        return gr.Textbox(), gr.Textbox(), gr.Textbox(), gr.HTML()
                 
                 # Set up auto-refresh every 3 seconds
                 interface.load(
