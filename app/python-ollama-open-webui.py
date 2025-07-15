@@ -187,8 +187,9 @@ class ChatInterface:
         if self.pipelines_base_url:
             # Use dedicated Pipelines service for enhanced processing
             api_url = f"{self.pipelines_base_url}/api/v1/chat/completions"
+            # Use the response_level pipeline which handles the educational level modifications
             payload = { 
-                "model": model, 
+                "model": "response_level", 
                 "messages": modified_messages, 
                 "stream": False,
                 "max_tokens": 1000
