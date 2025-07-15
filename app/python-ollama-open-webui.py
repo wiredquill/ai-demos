@@ -678,6 +678,21 @@ def create_interface():
     body, html, #root, .gradio-container {
         background: #0a2f26 !important;
     }
+    /* Super aggressive white background fixes */
+    * {
+        background-color: transparent !important;
+    }
+    /* Only keep specific colored backgrounds */
+    .ollama-response .gr-textbox, .webui-response .gr-textbox {
+        background: linear-gradient(145deg, #e8f5e8 0%, #f3f9f3 100%) !important;
+    }
+    .webui-response .gr-textbox {
+        background: linear-gradient(145deg, #e3f2fd 0%, #f3f9ff 100%) !important;
+    }
+    /* Ensure Gradio blocks don't have white backgrounds */
+    .gr-blocks, .gr-app, .gr-interface {
+        background: transparent !important;
+    }
     .gr-button {
         border-radius: 12px !important;
         transition: all 0.3s ease !important;
@@ -959,6 +974,39 @@ def create_interface():
                 outputs=[msg_input, ollama_output, webui_output, provider_status_html]
             )
             
+            # Add a Python-based auto-refresh as fallback
+            def auto_refresh_fallback():
+                """Fallback Python-based auto-refresh when automation is running."""
+                if chat_instance.automation_thread and chat_instance.automation_thread.is_alive():
+                    logger.info("🔄 Python auto-refresh fallback triggered")
+                    return update_ui_from_queue()
+                else:
+                    # Return current state if automation is not running
+                    status_html = chat_instance.get_provider_status_html()
+                    return gr.Textbox(), gr.Textbox(), gr.Textbox(), gr.HTML(value=status_html)
+            
+            # Set up Python-based auto-refresh every 6 seconds
+            import gradio as gr
+            gr.HTML("""
+            <div id="python-auto-refresh-trigger" style="display: none;"></div>
+            <script>
+            // Trigger Python auto-refresh
+            setInterval(() => {
+                const trigger = document.getElementById('python-auto-refresh-trigger');
+                if (trigger) {
+                    trigger.click();
+                }
+            }, 6000);
+            </script>
+            """)
+            
+            # Create hidden button for Python auto-refresh
+            python_auto_refresh_btn = gr.Button("", elem_id="python-auto-refresh-trigger", visible=False)
+            python_auto_refresh_btn.click(
+                auto_refresh_fallback,
+                outputs=[msg_input, ollama_output, webui_output, provider_status_html]
+            )
+            
             # Create a simple demo of manual refresh to test JavaScript
             demo_refresh_btn = gr.Button("🔄 DEMO Refresh (For Testing)", size="sm", visible=True, elem_id="demo-refresh-btn")
             demo_refresh_btn.click(
@@ -966,62 +1014,78 @@ def create_interface():
                 outputs=gr.Textbox(visible=False)
             )
             
-            # Use a simpler, more direct JavaScript approach
+            # Use a more robust JavaScript approach with multiple strategies
             if chat_instance.automation_enabled:
                 gr.HTML("""
                 <script>
-                // Ultra-simple auto-refresh - just find any refresh button and click it
-                setTimeout(() => {
-                    console.log('=== STARTING AUTO-REFRESH DEBUG ===');
+                // Auto-refresh solution with multiple strategies
+                let refreshInterval;
+                let refreshAttempts = 0;
+                const maxRefreshAttempts = 5;
+                
+                function findAndClickRefreshButton() {
+                    console.log('=== Auto-refresh attempt ===');
                     
-                    setInterval(() => {
-                        console.log('--- Auto-refresh attempt ---');
-                        
-                        // Find all buttons
-                        const allButtons = document.querySelectorAll('button');
-                        console.log('Total buttons found:', allButtons.length);
-                        
-                        // Log all button texts
-                        allButtons.forEach((btn, index) => {
-                            console.log(`Button ${index}: "${btn.textContent.trim()}"`);
-                        });
-                        
-                        // Try to find refresh button
-                        let refreshButton = null;
-                        
-                        // Method 1: By ID
-                        refreshButton = document.getElementById('automation-refresh-btn');
-                        if (refreshButton) {
-                            console.log('Found by ID: automation-refresh-btn');
-                            refreshButton.click();
-                            return;
+                    // Strategy 1: Find by ID
+                    let refreshButton = document.getElementById('automation-refresh-btn');
+                    if (refreshButton && refreshButton.style.display !== 'none') {
+                        console.log('✅ Found refresh button by ID');
+                        refreshButton.click();
+                        refreshAttempts = 0;
+                        return true;
+                    }
+                    
+                    // Strategy 2: Find by text content
+                    const allButtons = document.querySelectorAll('button');
+                    for (let btn of allButtons) {
+                        if (btn.textContent.includes('🔄 Refresh') && btn.style.display !== 'none') {
+                            console.log('✅ Found refresh button by text');
+                            btn.click();
+                            refreshAttempts = 0;
+                            return true;
                         }
-                        
-                        // Method 2: By text content
-                        for (let btn of allButtons) {
-                            if (btn.textContent.includes('🔄 Refresh') || btn.textContent.includes('Refresh')) {
-                                console.log('Found by text:', btn.textContent);
-                                refreshButton = btn;
-                                break;
-                            }
+                    }
+                    
+                    // Strategy 3: Try to trigger Gradio event directly 
+                    try {
+                        const gradioApp = document.querySelector('.gradio-container');
+                        if (gradioApp) {
+                            const event = new CustomEvent('gradio:refresh', {
+                                detail: { component: 'automation-refresh' }
+                            });
+                            gradioApp.dispatchEvent(event);
+                            console.log('✅ Triggered Gradio refresh event');
+                            return true;
                         }
-                        
-                        if (refreshButton) {
-                            console.log('CLICKING REFRESH BUTTON!');
-                            refreshButton.click();
-                        } else {
-                            console.log('❌ NO REFRESH BUTTON FOUND');
-                        }
-                        
-                        // Also try demo button as test
-                        const demoBtn = document.getElementById('demo-refresh-btn');
-                        if (demoBtn) {
-                            console.log('Demo button found - clicking as test');
-                            demoBtn.click();
-                        }
-                        
-                    }, 4000); // Every 4 seconds
-                }, 3000); // Start after 3 seconds
+                    } catch (e) {
+                        console.log('⚠️ Gradio event trigger failed:', e);
+                    }
+                    
+                    refreshAttempts++;
+                    console.log(`❌ Refresh attempt ${refreshAttempts}/${maxRefreshAttempts} failed`);
+                    
+                    // Stop trying after max attempts
+                    if (refreshAttempts >= maxRefreshAttempts) {
+                        console.log('❌ Stopping auto-refresh after max attempts');
+                        clearInterval(refreshInterval);
+                    }
+                    
+                    return false;
+                }
+                
+                // Start auto-refresh after page loads
+                setTimeout(() => {
+                    console.log('🚀 Starting auto-refresh system');
+                    refreshInterval = setInterval(findAndClickRefreshButton, 5000);
+                }, 5000);
+                
+                // Also listen for manual refresh clicks to reset counter
+                document.addEventListener('click', (e) => {
+                    if (e.target.textContent.includes('🔄 Refresh')) {
+                        console.log('👆 Manual refresh clicked - resetting counter');
+                        refreshAttempts = 0;
+                    }
+                });
                 </script>
                 """)
                 logger.info("Auto-refresh setup - using ultra-simple JavaScript with full debugging")
