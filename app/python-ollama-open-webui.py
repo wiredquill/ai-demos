@@ -57,6 +57,9 @@ class ChatInterface:
 
         self.ollama_models = []
         self.selected_model = ""
+        
+        # Open WebUI authentication
+        self.open_webui_token = None
 
         # --- NEW: Automation Runner State ---
         # Read automation settings from environment variables
@@ -83,6 +86,10 @@ class ChatInterface:
         logger.info(f"ChatInterface initialized. Ollama URL: {self.ollama_base_url}, Open WebUI URL: {self.open_webui_base_url}")
         if self.automation_enabled:
             logger.info(f"Automation enabled with interval {self.automation_interval}s and {len(self.automation_prompts)} rotating prompts")
+        
+        # Authenticate with Open WebUI if available
+        if self.open_webui_base_url:
+            self._authenticate_open_webui()
 
     def load_or_create_config(self) -> Dict:
         """Loads configuration from config.json, or creates it with defaults if it doesn't exist."""
@@ -179,9 +186,14 @@ class ChatInterface:
             api_url = f"{self.open_webui_base_url}/ollama/api/chat"
             payload = { "model": model, "messages": modified_messages, "stream": False }
             
+            # Add authentication header if token is available
+            headers = {"Content-Type": "application/json"}
+            if self.open_webui_token:
+                headers["Authorization"] = f"Bearer {self.open_webui_token}"
+            
             logger.info(f"Attempting Open WebUI with pipeline level: {current_level['name']}")
             try:
-                response = requests.post(api_url, json=payload, timeout=120)
+                response = requests.post(api_url, json=payload, headers=headers, timeout=120)
                 if response.status_code == 200:
                     response_data = response.json()
                     content = response_data.get('message', {}).get('content', 'Error: Unexpected response format from Open WebUI.')
@@ -190,6 +202,19 @@ class ChatInterface:
                     formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']} (via Open WebUI)\n\n{content}"
                     logger.info(f"Open WebUI response successful with level: {current_level['name']}")
                     return formatted_response
+                elif response.status_code == 403:
+                    # Try to re-authenticate and retry once
+                    logger.info("Open WebUI returned 403, attempting to re-authenticate...")
+                    if self._authenticate_open_webui():
+                        headers["Authorization"] = f"Bearer {self.open_webui_token}"
+                        retry_response = requests.post(api_url, json=payload, headers=headers, timeout=120)
+                        if retry_response.status_code == 200:
+                            response_data = retry_response.json()
+                            content = response_data.get('message', {}).get('content', 'Error: Unexpected response format from Open WebUI.')
+                            formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']} (via Open WebUI - re-authenticated)\n\n{content}"
+                            logger.info(f"Open WebUI response successful after re-authentication with level: {current_level['name']}")
+                            return formatted_response
+                    logger.warning(f"Open WebUI failed ({response.status_code}) even after re-authentication, falling back to direct Ollama")
                 else:
                     logger.warning(f"Open WebUI failed ({response.status_code}), falling back to direct Ollama")
             except Exception as e:
@@ -256,6 +281,26 @@ class ChatInterface:
             updated_status[name] = self.check_provider_status(name, provider_info)
         self.provider_status = updated_status
         return updated_status
+
+    def _authenticate_open_webui(self):
+        """Authenticate with Open WebUI to get an access token."""
+        try:
+            # Try to sign in with default admin credentials
+            auth_url = f"{self.open_webui_base_url}/api/v1/auths/signin"
+            auth_payload = {"email": "admin", "password": "admin"}
+            
+            response = requests.post(auth_url, json=auth_payload, timeout=10)
+            if response.status_code == 200:
+                auth_data = response.json()
+                self.open_webui_token = auth_data.get('token')
+                logger.info("Successfully authenticated with Open WebUI")
+                return True
+            else:
+                logger.warning(f"Failed to authenticate with Open WebUI: {response.status_code}")
+                return False
+        except Exception as e:
+            logger.warning(f"Open WebUI authentication failed: {str(e)}")
+            return False
 
     def get_provider_status_html(self) -> str:
         """Generates compact provider cards with flags and status."""
