@@ -658,12 +658,25 @@ def create_interface():
         border-radius: 12px !important;
         background: rgba(255, 255, 255, 0.05) !important;
     }
-    /* Fix white backgrounds in containers */
-    .gr-form, .gr-box, .gr-panel {
+    /* Fix white backgrounds in containers - comprehensive */
+    .gr-form, .gr-box, .gr-panel, .gr-group, .gr-row, .gr-column {
         background: transparent !important;
     }
-    .gr-row, .gr-column {
+    /* Target specific Gradio container classes */
+    div[class*="gr-"], div[class*="gradio-"] {
         background: transparent !important;
+    }
+    /* Target the main content containers */
+    .gradio-container > div, .gradio-container > div > div {
+        background: transparent !important;
+    }
+    /* Fix any remaining white backgrounds */
+    div[style*="background-color: white"], div[style*="background-color: #fff"], div[style*="background: white"] {
+        background: transparent !important;
+    }
+    /* Ensure all backgrounds are transparent */
+    body, html, #root, .gradio-container {
+        background: #0a2f26 !important;
     }
     .gr-button {
         border-radius: 12px !important;
