@@ -183,8 +183,14 @@ class ChatInterface:
         
         # Try Open WebUI first if available
         if self.open_webui_base_url:
-            api_url = f"{self.open_webui_base_url}/ollama/api/chat"
-            payload = { "model": model, "messages": modified_messages, "stream": False }
+            # Use Open WebUI's native chat API instead of Ollama passthrough
+            api_url = f"{self.open_webui_base_url}/api/v1/chat/completions"
+            payload = { 
+                "model": model, 
+                "messages": modified_messages, 
+                "stream": False,
+                "max_tokens": 1000
+            }
             
             # Add authentication header if token is available
             headers = {"Content-Type": "application/json"}
@@ -200,7 +206,12 @@ class ChatInterface:
                 logger.info(f"Initial response status: {response.status_code}")
                 if response.status_code == 200:
                     response_data = response.json()
-                    content = response_data.get('message', {}).get('content', 'Error: Unexpected response format from Open WebUI.')
+                    # Handle OpenAI-compatible response format
+                    if 'choices' in response_data and response_data['choices']:
+                        content = response_data['choices'][0].get('message', {}).get('content', 'Error: Unexpected response format from Open WebUI.')
+                    else:
+                        # Fallback to Ollama format
+                        content = response_data.get('message', {}).get('content', 'Error: Unexpected response format from Open WebUI.')
                     
                     # Add pipeline level header to the response - this IS the pipeline working
                     formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']} (via Open WebUI)\n\n{content}"
@@ -218,7 +229,12 @@ class ChatInterface:
                         logger.info(f"Retry response status: {retry_response.status_code}")
                         if retry_response.status_code == 200:
                             response_data = retry_response.json()
-                            content = response_data.get('message', {}).get('content', 'Error: Unexpected response format from Open WebUI.')
+                            # Handle OpenAI-compatible response format
+                            if 'choices' in response_data and response_data['choices']:
+                                content = response_data['choices'][0].get('message', {}).get('content', 'Error: Unexpected response format from Open WebUI.')
+                            else:
+                                # Fallback to Ollama format
+                                content = response_data.get('message', {}).get('content', 'Error: Unexpected response format from Open WebUI.')
                             formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']} (via Open WebUI - re-authenticated)\n\n{content}"
                             logger.info(f"Open WebUI response successful after re-authentication with level: {current_level['name']}")
                             return formatted_response
@@ -1171,6 +1187,59 @@ def create_interface():
                         refreshAttempts = 0;
                     }
                 });
+                
+                // JavaScript-based CSS fix for white background around input box
+                function fixWhiteBackground() {
+                    console.log('🎨 Applying JavaScript CSS fix for white background');
+                    
+                    // Create a more aggressive CSS style
+                    const style = document.createElement('style');
+                    style.textContent = `
+                        /* Ultra-aggressive JavaScript CSS injection to fix white background */
+                        .input-box * {
+                            background: inherit !important;
+                            background-color: inherit !important;
+                        }
+                        
+                        /* Target specific Gradio containers that might have white backgrounds */
+                        .input-box .gr-form,
+                        .input-box .gr-box,
+                        .input-box .gr-padded,
+                        .input-box .gr-compact,
+                        .input-box .wrap,
+                        .input-box > div,
+                        .input-box > div > div,
+                        .input-box div div {
+                            background: inherit !important;
+                            background-color: inherit !important;
+                        }
+                        
+                        /* Force override any inline styles */
+                        .input-box *[style*="background"] {
+                            background: inherit !important;
+                            background-color: inherit !important;
+                        }
+                    `;
+                    document.head.appendChild(style);
+                    
+                    // Also directly modify any elements with white backgrounds
+                    const whiteElements = document.querySelectorAll('.input-box *');
+                    whiteElements.forEach(el => {
+                        const computedStyle = window.getComputedStyle(el);
+                        if (computedStyle.backgroundColor === 'rgb(255, 255, 255)' || 
+                            computedStyle.backgroundColor === 'white' ||
+                            computedStyle.backgroundColor === '#ffffff') {
+                            el.style.setProperty('background', 'inherit', 'important');
+                            el.style.setProperty('background-color', 'inherit', 'important');
+                            console.log('🎨 Fixed white background on element:', el);
+                        }
+                    });
+                }
+                
+                // Apply CSS fix after page loads and periodically reapply
+                setTimeout(fixWhiteBackground, 2000);
+                setTimeout(fixWhiteBackground, 5000);
+                setInterval(fixWhiteBackground, 10000); // Reapply every 10 seconds
                 </script>
                 """)
         logger.info("Auto-refresh setup - using ultra-simple JavaScript with full debugging")
