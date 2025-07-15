@@ -591,11 +591,12 @@ def create_interface():
         background: linear-gradient(90deg, transparent, rgba(48, 186, 120, 0.5), transparent);
     }
     /* Modern AI Response boxes with consistent rounded styling */
-    .ollama-response .gr-textbox {
-        background: linear-gradient(145deg, #f8fffe 0%, #f1f8e9 100%);
-        border: 2px solid #4CAF50;
-        border-radius: 16px;
-        box-shadow: 0 8px 24px rgba(76, 175, 80, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    .ollama-response .gr-textbox,
+    .ollama-response .gr-textbox textarea {
+        background: linear-gradient(145deg, #e8f5e8 0%, #f1f8e9 100%) !important;
+        border: 2px solid #4CAF50 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 8px 24px rgba(76, 175, 80, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
         position: relative;
         overflow: hidden;
     }
@@ -621,11 +622,12 @@ def create_interface():
         border: none !important;
         resize: none !important;
     }
-    .webui-response .gr-textbox {
-        background: linear-gradient(145deg, #fafbff 0%, #e3f2fd 100%);
-        border: 2px solid #2196F3;
-        border-radius: 16px;
-        box-shadow: 0 8px 24px rgba(33, 150, 243, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    .webui-response .gr-textbox,
+    .webui-response .gr-textbox textarea {
+        background: linear-gradient(145deg, #e3f2fd 0%, #f3f9ff 100%) !important;
+        border: 2px solid #2196F3 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 8px 24px rgba(33, 150, 243, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
         position: relative;
         overflow: hidden;
     }
@@ -790,7 +792,7 @@ def create_interface():
                     if chat_instance.automation_enabled:
                         with gr.Row():
                             automation_status = gr.HTML(value="<div style='text-align: center; color: #73ba25; padding: 10px; background: rgba(115, 186, 37, 0.1); border-radius: 8px; margin: 10px 0;'>🔄 Automation will populate the fields above with live test questions and responses</div>")
-                            manual_refresh_btn = gr.Button("🔄 Refresh", size="sm", visible=True)
+                            manual_refresh_btn = gr.Button("🔄 Refresh", size="sm", visible=True, elem_id="automation-refresh-btn")
 
         # Configuration Modal (initially hidden)
         with gr.Column(visible=False) as config_panel:
@@ -935,18 +937,34 @@ def create_interface():
             # Add auto-refresh using JavaScript to update main UI
             gr.HTML("""
             <script>
-            // Auto-refresh main UI with automation results every 5 seconds
+            // Auto-refresh main UI with automation results every 3 seconds
+            let refreshInterval = null;
+            
+            function findAndClickRefreshButton() {
+                // Try to find by ID first
+                let refreshBtn = document.getElementById('automation-refresh-btn');
+                if (refreshBtn) {
+                    console.log('Found refresh button by ID, clicking...');
+                    refreshBtn.click();
+                    return true;
+                }
+                
+                // Fallback to searching by text
+                const buttons = document.querySelectorAll('button');
+                for (let btn of buttons) {
+                    if (btn.textContent.trim() === '🔄 Refresh') {
+                        console.log('Found refresh button by text, clicking...');
+                        btn.click();
+                        return true;
+                    }
+                }
+                console.log('Refresh button not found');
+                return false;
+            }
+            
             setTimeout(() => {
-                setInterval(function() {
-                    const buttons = document.querySelectorAll('button');
-                    buttons.forEach(btn => {
-                        if (btn.textContent.includes('🔄 Refresh')) {
-                            console.log('Auto-refreshing main UI with automation data');
-                            btn.click();
-                        }
-                    });
-                }, 5000); // Every 5 seconds
-            }, 3000); // Start after 3 seconds
+                refreshInterval = setInterval(findAndClickRefreshButton, 3000); // Every 3 seconds
+            }, 2000); // Start after 2 seconds
             </script>
             """)
             
