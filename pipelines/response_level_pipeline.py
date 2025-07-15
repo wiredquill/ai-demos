@@ -16,6 +16,7 @@ from typing import List, Optional
 import os
 import json
 import logging
+import requests
 
 class Pipeline:
     """Open WebUI Pipeline for Response Level Management"""
@@ -61,12 +62,18 @@ class Pipeline:
         self.mode = os.getenv("PIPELINE_MODE", "auto-cycle")  # "auto-cycle" or "manual"
         self.selected_level = 0  # For manual mode
         
+        # Ollama connection configuration
+        self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://ollama-service:11434")
+        if self.ollama_base_url.endswith('/'):
+            self.ollama_base_url = self.ollama_base_url[:-1]
+        
         # Setup logging
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
         
         self.logger.info(f"Response Level Pipeline initialized in {self.mode} mode")
         self.logger.info(f"Available levels: {[level['name'] for level in self.levels]}")
+        self.logger.info(f"Ollama backend URL: {self.ollama_base_url}")
 
     def get_current_level(self):
         """Get the current response level configuration"""
@@ -92,12 +99,12 @@ class Pipeline:
         
         Args:
             user_message: The user's input message
-            model_id: The selected model identifier
+            model_id: The selected model identifier  
             messages: List of conversation messages
             body: Request body from Open WebUI
             
         Returns:
-            Modified user message with response level instruction
+            AI response from Ollama with modified prompt
         """
         try:
             # Get current level configuration
@@ -107,11 +114,18 @@ class Pipeline:
             self.logger.info(f"Processing message with level: {current_level['name']}")
             self.logger.info(f"Original message: {user_message[:100]}...")
             
-            # Modify message based on current level
-            if current_level["modifier"]:
-                modified_message = f"{user_message} {current_level['modifier']}"
-            else:
-                modified_message = user_message
+            # Modify the last user message based on current level
+            modified_messages = messages.copy()
+            if current_level["modifier"] and modified_messages:
+                # Find the last user message and modify it
+                for i in range(len(modified_messages) - 1, -1, -1):
+                    if modified_messages[i].get("role") == "user":
+                        original_content = modified_messages[i]["content"]
+                        modified_messages[i]["content"] = f"{original_content} {current_level['modifier']}"
+                        break
+            elif current_level["modifier"]:
+                # If no messages, create a new modified message
+                modified_messages = [{"role": "user", "content": f"{user_message} {current_level['modifier']}"}]
             
             # Advance to next level for next request (auto-cycle mode)
             if self.mode == "auto-cycle":
@@ -119,14 +133,52 @@ class Pipeline:
                 next_level = self.levels[self.current_level_index]
                 self.logger.info(f"Next level will be: {next_level['name']}")
             
-            self.logger.info(f"Modified message: {modified_message[:150]}...")
+            self.logger.info(f"Modified message: {modified_messages[-1]['content'][:150] if modified_messages else 'No messages'}...")
             
-            return modified_message
+            # Forward the modified request to Ollama
+            try:
+                ollama_response = self._forward_to_ollama(model_id, modified_messages)
+                self.logger.info(f"Ollama response received: {ollama_response[:100] if ollama_response else 'Empty'}...")
+                return ollama_response
+            except Exception as ollama_error:
+                self.logger.error(f"Ollama forwarding failed: {str(ollama_error)}")
+                return f"Pipeline processed the request with level '{current_level['name']}', but failed to get AI response: {str(ollama_error)}"
             
         except Exception as e:
             self.logger.error(f"Pipeline error: {str(e)}")
-            # Return original message if pipeline fails
-            return user_message
+            return f"Pipeline error: {str(e)}"
+
+    def _forward_to_ollama(self, model_id: str, messages: List[dict]) -> str:
+        """Forward the modified request to Ollama and return the response"""
+        try:
+            # Prepare the request payload for Ollama
+            payload = {
+                "model": model_id,
+                "messages": messages,
+                "stream": False
+            }
+            
+            # Make the request to Ollama
+            response = requests.post(
+                f"{self.ollama_base_url}/api/chat",
+                json=payload,
+                timeout=120
+            )
+            response.raise_for_status()
+            
+            # Parse the response
+            response_data = response.json()
+            content = response_data.get('message', {}).get('content', '')
+            
+            if content:
+                return content
+            else:
+                return "No response content received from Ollama"
+                
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"Failed to connect to Ollama: {str(e)}")
+        except Exception as e:
+            raise Exception(f"Error processing Ollama response: {str(e)}")
 
     def get_info(self) -> dict:
         """Return pipeline information for Open WebUI"""

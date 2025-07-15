@@ -1,0 +1,54 @@
+{
+    "providers": {
+        "OpenAI": {
+            "url": "https://help.openai.com",
+            "country": "\ud83c\uddfa\ud83c\uddf8 USA",
+            "flag": "\ud83c\uddfa\ud83c\uddf8"
+        },
+        "Claude (Anthropic)": {
+            "url": "https://anthropic.com",
+            "country": "\ud83c\uddfa\ud83c\uddf8 USA",
+            "flag": "\ud83c\uddfa\ud83c\uddf8"
+        },
+        "DeepSeek": {
+            "url": "https://api.deepseek.com",
+            "country": "\ud83c\udde8\ud83c\uddf3 China",
+            "flag": "\ud83c\udde8\ud83c\uddf3"
+        },
+        "Google Gemini": {
+            "url": "https://ai.google.dev",
+            "country": "\ud83c\uddfa\ud83c\uddf8 USA",
+            "flag": "\ud83c\uddfa\ud83c\uddf8"
+        },
+        "Cohere": {
+            "url": "https://cohere.com",
+            "country": "\ud83c\udde8\ud83c\udde6 Canada",
+            "flag": "\ud83c\udde8\ud83c\udde6"
+        },
+        "Mistral AI": {
+            "url": "https://mistral.ai",
+            "country": "\ud83c\uddeb\ud83c\uddf7 France",
+            "flag": "\ud83c\uddeb\ud83c\uddf7"
+        },
+        "Perplexity": {
+            "url": "https://www.perplexity.ai",
+            "country": "\ud83c\uddfa\ud83c\uddf8 USA",
+            "flag": "\ud83c\uddfa\ud83c\uddf8"
+        },
+        "Together AI": {
+            "url": "https://together.ai",
+            "country": "\ud83c\uddfa\ud83c\uddf8 USA",
+            "flag": "\ud83c\uddfa\ud83c\uddf8"
+        },
+        "Groq": {
+            "url": "https://groq.com",
+            "country": "\ud83c\uddfa\ud83c\uddf8 USA",
+            "flag": "\ud83c\uddfa\ud83c\uddf8"
+        },
+        "Hugging Face": {
+            "url": "https://huggingface.co",
+            "country": "\ud83c\uddfa\ud83c\uddf8 USA",
+            "flag": "\ud83c\uddfa\ud83c\uddf8"
+        }
+    }
+}
