@@ -656,6 +656,14 @@ def create_interface():
     /* Consistent rounded styling for all other textboxes */
     .gr-textbox {
         border-radius: 12px !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+    }
+    /* Fix white backgrounds in containers */
+    .gr-form, .gr-box, .gr-panel {
+        background: transparent !important;
+    }
+    .gr-row, .gr-column {
+        background: transparent !important;
     }
     .gr-button {
         border-radius: 12px !important;
@@ -964,22 +972,67 @@ def create_interface():
                         logger.error(f"Auto-timer error: {e}")
                         return gr.Textbox(), gr.Textbox(), gr.Textbox(), gr.HTML()
                 
-                # Set up auto-refresh using JavaScript (fallback approach)
+                # Set up aggressive auto-refresh with multiple fallback methods
                 gr.HTML("""
                 <script>
-                // Simple auto-refresh for automation results
-                setTimeout(function() {
-                    setInterval(function() {
-                        // Look for the refresh button and click it
-                        const refreshBtn = document.getElementById('automation-refresh-btn');
-                        if (refreshBtn) {
-                            refreshBtn.click();
+                // Multi-method auto-refresh for maximum reliability
+                let refreshInterval = null;
+                let attemptCount = 0;
+                
+                function findRefreshButton() {
+                    // Method 1: Try by ID
+                    let btn = document.getElementById('automation-refresh-btn');
+                    if (btn) return btn;
+                    
+                    // Method 2: Try by text content
+                    const buttons = document.querySelectorAll('button');
+                    for (let b of buttons) {
+                        if (b.textContent.includes('🔄 Refresh')) {
+                            return b;
                         }
-                    }, 4000); // Every 4 seconds
-                }, 3000); // Start after 3 seconds
+                    }
+                    
+                    // Method 3: Try by class or other attributes
+                    const refreshButtons = document.querySelectorAll('button[class*="refresh"], button[title*="refresh"]');
+                    if (refreshButtons.length > 0) {
+                        return refreshButtons[0];
+                    }
+                    
+                    return null;
+                }
+                
+                function doRefresh() {
+                    attemptCount++;
+                    const btn = findRefreshButton();
+                    if (btn) {
+                        console.log(`Auto-refresh attempt ${attemptCount}: Found button, clicking...`);
+                        btn.click();
+                        return true;
+                    } else {
+                        console.log(`Auto-refresh attempt ${attemptCount}: Button not found`);
+                        if (attemptCount % 5 === 0) {
+                            console.log('Available buttons:', Array.from(document.querySelectorAll('button')).map(b => b.textContent).join(', '));
+                        }
+                        return false;
+                    }
+                }
+                
+                // Start auto-refresh after page loads
+                setTimeout(() => {
+                    console.log('Starting auto-refresh...');
+                    refreshInterval = setInterval(doRefresh, 3000); // Every 3 seconds
+                }, 2000); // Start after 2 seconds
+                
+                // Also try on page interaction
+                document.addEventListener('click', function() {
+                    if (!refreshInterval) {
+                        console.log('Restarting auto-refresh after interaction...');
+                        refreshInterval = setInterval(doRefresh, 3000);
+                    }
+                });
                 </script>
                 """)
-                logger.info("Auto-refresh timer setup - using JavaScript fallback")
+                logger.info("Auto-refresh setup - using aggressive JavaScript with multiple fallback methods")
             
             # Auto-refresh every 5 seconds when automation is running
             # Removed periodic refresh - provider status updates are handled by automation loop
