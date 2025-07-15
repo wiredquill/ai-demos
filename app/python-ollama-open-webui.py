@@ -49,6 +49,7 @@ class ChatInterface:
         self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
         self.open_webui_base_url = os.getenv("OPEN_WEBUI_BASE_URL")
         self.pipelines_base_url = os.getenv("PIPELINES_BASE_URL")
+        self.pipeline_api_key = os.getenv("PIPELINE_API_KEY")
         
         if self.open_webui_base_url:
             self.config.setdefault('providers', {})['Open WebUI'] = self.open_webui_base_url
@@ -84,7 +85,7 @@ class ChatInterface:
         self.results_queue = queue.Queue()
         self.latest_automation_result = None
 
-        logger.info(f"ChatInterface initialized. Ollama URL: {self.ollama_base_url}, Open WebUI URL: {self.open_webui_base_url}, Pipelines URL: {self.pipelines_base_url}")
+        logger.info(f"ChatInterface initialized. Ollama URL: {self.ollama_base_url}, Open WebUI URL: {self.open_webui_base_url}, Pipelines URL: {self.pipelines_base_url}, Pipeline API Key: {'***' if self.pipeline_api_key else 'None'}")
         if self.automation_enabled:
             logger.info(f"Automation enabled with interval {self.automation_interval}s and {len(self.automation_prompts)} rotating prompts")
         
@@ -193,13 +194,13 @@ class ChatInterface:
                 "max_tokens": 1000
             }
             
-            # Add authentication header if token is available
+            # Add authentication header for pipeline service
             headers = {"Content-Type": "application/json"}
-            if self.open_webui_token:
-                headers["Authorization"] = f"Bearer {self.open_webui_token}"
+            if self.pipeline_api_key:
+                headers["Authorization"] = f"Bearer {self.pipeline_api_key}"
             
             logger.info(f"Attempting Pipelines service with pipeline level: {current_level['name']}")
-            logger.info(f"Using token: {self.open_webui_token[:20] if self.open_webui_token else 'None'}...")
+            logger.info(f"Using pipeline API key: {'***' if self.pipeline_api_key else 'None'}")
             logger.info(f"Request URL: {api_url}")
             logger.info(f"Headers: {dict(headers)}")
             try:
@@ -218,34 +219,8 @@ class ChatInterface:
                     formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']} (via Pipelines Service)\n\n{content}"
                     logger.info(f"Pipelines service response successful with level: {current_level['name']}")
                     return formatted_response
-                elif response.status_code == 403:
-                    # Try to re-authenticate and retry once
-                    logger.info("Pipelines service returned 403, attempting to re-authenticate...")
-                    logger.info(f"Current token exists: {self.open_webui_token is not None}")
-                    if self._authenticate_open_webui():
-                        logger.info(f"Re-authentication successful, new token: {self.open_webui_token[:20] if self.open_webui_token else 'None'}...")
-                        headers["Authorization"] = f"Bearer {self.open_webui_token}"
-                        logger.info(f"Retrying request with new token...")
-                        retry_response = requests.post(api_url, json=payload, headers=headers, timeout=120)
-                        logger.info(f"Retry response status: {retry_response.status_code}")
-                        if retry_response.status_code == 200:
-                            response_data = retry_response.json()
-                            # Handle OpenAI-compatible response format
-                            if 'choices' in response_data and response_data['choices']:
-                                content = response_data['choices'][0].get('message', {}).get('content', 'Error: Unexpected response format from Pipelines service.')
-                            else:
-                                # Fallback to Ollama format
-                                content = response_data.get('message', {}).get('content', 'Error: Unexpected response format from Pipelines service.')
-                            formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']} (via Pipelines Service - re-authenticated)\n\n{content}"
-                            logger.info(f"Pipelines service response successful after re-authentication with level: {current_level['name']}")
-                            return formatted_response
-                        else:
-                            logger.warning(f"Retry failed with status: {retry_response.status_code}, response: {retry_response.text[:200]}")
-                    else:
-                        logger.warning("Re-authentication failed")
-                    logger.warning(f"Pipelines service failed even after re-authentication, falling back to direct Ollama")
                 else:
-                    logger.warning(f"Pipelines service failed ({response.status_code}), falling back to direct Ollama")
+                    logger.warning(f"Pipelines service failed ({response.status_code}), response: {response.text[:200]}, falling back to Open WebUI or direct Ollama")
             except Exception as e:
                 logger.warning(f"Pipelines service failed: {str(e)}, falling back to direct Ollama")
         elif self.open_webui_base_url:
