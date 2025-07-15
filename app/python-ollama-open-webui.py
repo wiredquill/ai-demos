@@ -8,7 +8,7 @@ import logging
 import queue
 from typing import Dict, List, Any
 
-# Build trigger comment - automation runner visibility improvements
+# Build trigger comment - pipeline model fix deployment
 
 # --- Logging Configuration ---
 logging.basicConfig(
