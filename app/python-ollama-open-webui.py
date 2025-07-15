@@ -1148,45 +1148,45 @@ def create_interface():
                 });
                 </script>
                 """)
-                logger.info("Auto-refresh setup - using ultra-simple JavaScript with full debugging")
-            
-            # Auto-refresh every 5 seconds when automation is running
-            # Removed periodic refresh - provider status updates are handled by automation loop
-            
-            # Auto-start automation in background thread (delayed start with retry logic)
-            if chat_instance.automation_enabled:
-                def delayed_auto_start():
-                    import time
-                    # Wait for interface and services to fully load
-                    time.sleep(10)
-                    
-                    # Retry logic for Ollama readiness
-                    max_retries = 6
-                    retry_delay = 10
-                    
-                    for attempt in range(max_retries):
-                        try:
-                            logger.info(f"Auto-start attempt {attempt + 1}/{max_retries} - checking for Ollama models...")
-                            models = chat_instance.get_ollama_models()
-                            if models and len(models) > 0 and "Error" not in models[0]:
-                                model = models[0]
-                                logger.info(f"Auto-starting automation with model: {model}")
-                                chat_instance.start_automation(model, chat_instance.automation_interval)
-                                return
-                            else:
-                                logger.info(f"No valid models found on attempt {attempt + 1}, retrying in {retry_delay}s...")
-                        except Exception as e:
-                            logger.warning(f"Auto-start attempt {attempt + 1} failed: {e}")
-                        
-                        if attempt < max_retries - 1:
-                            time.sleep(retry_delay)
-                    
-                    logger.warning("Auto-start failed after all retries - Ollama may not be ready or no models available")
+        logger.info("Auto-refresh setup - using ultra-simple JavaScript with full debugging")
+        
+        # Auto-refresh every 5 seconds when automation is running
+        # Removed periodic refresh - provider status updates are handled by automation loop
+        
+        # Auto-start automation in background thread (delayed start with retry logic)
+        if chat_instance.automation_enabled:
+            def delayed_auto_start():
+                import time
+                # Wait for interface and services to fully load
+                time.sleep(10)
                 
-                # Start auto-start in background thread
-                import threading
-                auto_start_thread = threading.Thread(target=delayed_auto_start, daemon=True)
-                auto_start_thread.start()
+                # Retry logic for Ollama readiness
+                max_retries = 6
+                retry_delay = 10
+                
+                for attempt in range(max_retries):
+                    try:
+                        logger.info(f"Auto-start attempt {attempt + 1}/{max_retries} - checking for Ollama models...")
+                        models = chat_instance.get_ollama_models()
+                        if models and len(models) > 0 and "Error" not in models[0]:
+                            model = models[0]
+                            logger.info(f"Auto-starting automation with model: {model}")
+                            chat_instance.start_automation(model, chat_instance.automation_interval)
+                            return
+                        else:
+                            logger.info(f"No valid models found on attempt {attempt + 1}, retrying in {retry_delay}s...")
+                    except Exception as e:
+                        logger.warning(f"Auto-start attempt {attempt + 1} failed: {e}")
+                    
+                    if attempt < max_retries - 1:
+                        time.sleep(retry_delay)
+                
+                logger.warning("Auto-start failed after all retries - Ollama may not be ready or no models available")
+            
+            # Start auto-start in background thread
+            import threading
+            auto_start_thread = threading.Thread(target=delayed_auto_start, daemon=True)
+            auto_start_thread.start()
 
     return interface
 
