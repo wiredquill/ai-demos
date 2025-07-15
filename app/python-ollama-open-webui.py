@@ -786,21 +786,11 @@ def create_interface():
                     
                     clear_btn = gr.Button("🗑️ Clear All", variant="secondary", size="sm")
                     
-                    # Automation results display on main page (moved from config)
+                    # Automation status display
                     if chat_instance.automation_enabled:
                         with gr.Row():
-                            with gr.Column():
-                                gr.HTML("""
-                                <div style='background: linear-gradient(135deg, rgba(115, 186, 37, 0.1) 0%, rgba(115, 186, 37, 0.05) 100%); border: 1px solid rgba(115, 186, 37, 0.2); border-radius: 12px; padding: 12px; margin: 15px 0;'>
-                                    <h4 style='color: #73ba25; margin: 0 0 8px 0; font-size: 1.1em; font-weight: 600;'>🔄 Live Automation Test Results</h4>
-                                    <p style='color: #ffffff; margin: 0; font-size: 0.9em; opacity: 0.8;'>Real-time results from automated AI testing and provider monitoring</p>
-                                </div>
-                                """)
-                                automation_results_display = gr.HTML(value="<div style='text-align: center; color: #888; padding: 20px;'>Start automation to see live test results...</div>")
-                                
-                                # Manual refresh button for automation results
-                                with gr.Row():
-                                    manual_refresh_btn = gr.Button("🔄 Refresh Results", size="sm", visible=True)
+                            automation_status = gr.HTML(value="<div style='text-align: center; color: #73ba25; padding: 10px; background: rgba(115, 186, 37, 0.1); border-radius: 8px; margin: 10px 0;'>🔄 Automation will populate the fields above with live test questions and responses</div>")
+                            manual_refresh_btn = gr.Button("🔄 Refresh", size="sm", visible=True)
 
         # Configuration Modal (initially hidden)
         with gr.Column(visible=False) as config_panel:
@@ -902,54 +892,56 @@ def create_interface():
                 outputs=[start_auto_btn, stop_auto_btn]
             )
 
-            # Auto-update UI every 3 seconds to check for automation results
+            # Update main UI with automation results
             def update_ui_from_queue():
-                """Checks the queue and updates the results and provider status display."""
+                """Updates main UI elements with automation test questions and responses."""
                 logger.info("🔄 UI update_ui_from_queue called - checking results queue")
                 logger.info(f"Queue size: {chat_instance.results_queue.qsize()}")
                 logger.info(f"Latest result available: {chat_instance.latest_automation_result is not None}")
+                
                 try:
                     latest_result = chat_instance.results_queue.get_nowait()
                     logger.info(f"✅ Found new automation result: {latest_result.get('timestamp', 'unknown time')}")
-                    results_html = chat_instance.format_automation_results_html(latest_result)
+                    
+                    # Extract data from automation result
+                    question = latest_result.get('prompt', '')
+                    ollama_response = latest_result.get('ollama_response', '')
+                    webui_response = latest_result.get('open_webui_response', '')
+                    timestamp = latest_result.get('timestamp', '')
+                    
+                    # Update the main UI elements
+                    question_with_timestamp = f"🤖 Automation Test [{timestamp}]: {question}"
                     status_html = chat_instance.get_provider_status_html()
-                    logger.info("🎨 Generated HTML for display")
-                    return gr.HTML(value=results_html), gr.HTML(value=status_html)
+                    
+                    logger.info("🎨 Updating main UI with automation data")
+                    return question_with_timestamp, ollama_response, webui_response, status_html
+                    
                 except queue.Empty:
-                    # No new results, but maintain current display with latest result
-                    logger.info("📭 No new results in queue, using latest stored result")
-                    results_html = chat_instance.format_automation_results_html(chat_instance.latest_automation_result)
+                    # No new results, keep current display
+                    logger.info("📭 No new results in queue")
                     status_html = chat_instance.get_provider_status_html()
-                    logger.info("🎨 Generated HTML from stored result")
-                    return gr.HTML(value=results_html), gr.HTML(value=status_html)
+                    return gr.Textbox(), gr.Textbox(), gr.Textbox(), gr.HTML(value=status_html)
 
-            # Add hidden button for auto-refresh trigger
-            auto_refresh_btn = gr.Button("Auto Refresh", visible=False)
-            auto_refresh_btn.click(
-                update_ui_from_queue,
-                outputs=[automation_results_display, provider_status_html]
-            )
-            
-            # Connect manual refresh button with debugging
+            # Connect manual refresh button to update main UI
             def manual_refresh_clicked():
                 logger.info("🖱️ MANUAL REFRESH BUTTON CLICKED!")
                 return update_ui_from_queue()
             
             manual_refresh_btn.click(
                 manual_refresh_clicked,
-                outputs=[automation_results_display, provider_status_html]
+                outputs=[msg_input, ollama_output, webui_output, provider_status_html]
             )
             
-            # Add auto-refresh using JavaScript since manual refresh works
+            # Add auto-refresh using JavaScript to update main UI
             gr.HTML("""
             <script>
-            // Auto-refresh automation results every 5 seconds
+            // Auto-refresh main UI with automation results every 5 seconds
             setTimeout(() => {
                 setInterval(function() {
                     const buttons = document.querySelectorAll('button');
                     buttons.forEach(btn => {
-                        if (btn.textContent.includes('🔄 Refresh Results')) {
-                            console.log('Auto-refreshing automation results');
+                        if (btn.textContent.includes('🔄 Refresh')) {
+                            console.log('Auto-refreshing main UI with automation data');
                             btn.click();
                         }
                     });
