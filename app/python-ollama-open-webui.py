@@ -679,8 +679,13 @@ def create_interface():
     .ollama-response .gr-box, .webui-response .gr-box {
         background: inherit !important;
     }
-    /* Fix white background around input box only */
-    .input-box .gr-form, .input-box .gr-box, .input-box > div {
+    /* Fix white background around input box only - more aggressive targeting */
+    .input-box .gr-form, .input-box .gr-box, .input-box > div, 
+    .input-box .gr-textbox, .input-box div[data-testid="textbox"] {
+        background: inherit !important;
+    }
+    /* Target the specific container that wraps the input textbox */
+    .input-box > div > div, .input-box .gr-form > div {
         background: inherit !important;
     }
     .gr-button {
@@ -748,11 +753,10 @@ def create_interface():
                     # Automation and Config Controls Row
                     with gr.Row():
                         with gr.Column(scale=2):
-                            if chat_instance.automation_enabled:
-                                with gr.Row():
-                                    # Initial state assumes automation will auto-start
-                                    start_auto_btn = gr.Button("▶️ Start Automation", variant="primary", size="sm", interactive=True)
-                                    stop_auto_btn = gr.Button("⏹️ Stop Automation", variant="secondary", size="sm", interactive=False)
+                            # Always show automation buttons, even if automation is disabled in environment
+                            with gr.Row():
+                                start_auto_btn = gr.Button("▶️ Start Automation", variant="primary", size="sm", interactive=True)
+                                stop_auto_btn = gr.Button("⏹️ Stop Automation", variant="secondary", size="sm", interactive=False)
                         with gr.Column(scale=1):
                             config_btn = gr.Button("⚙️ Config", size="sm")
                     
@@ -816,11 +820,10 @@ def create_interface():
                     
                     clear_btn = gr.Button("🗑️ Clear All", variant="secondary", size="sm")
                     
-                    # Automation status display
-                    if chat_instance.automation_enabled:
-                        with gr.Row():
-                            automation_status = gr.HTML(value="<div style='text-align: center; color: #ffa726; padding: 10px; background: rgba(255, 167, 38, 0.1); border-radius: 8px; margin: 10px 0;'>⏹️ Automation stopped - Click Start to begin automated testing</div>")
-                            manual_refresh_btn = gr.Button("🔄 Refresh", size="sm", visible=True, elem_id="automation-refresh-btn")
+                    # Automation status display - always show
+                    with gr.Row():
+                        automation_status = gr.HTML(value="<div style='text-align: center; color: #ffa726; padding: 10px; background: rgba(255, 167, 38, 0.1); border-radius: 8px; margin: 10px 0;'>⏹️ Automation stopped - Click Start to begin automated testing</div>")
+                        manual_refresh_btn = gr.Button("🔄 Refresh", size="sm", visible=True, elem_id="automation-refresh-btn")
 
         # Configuration Modal (initially hidden)
         with gr.Column(visible=False) as config_panel:
@@ -932,104 +935,103 @@ def create_interface():
         # Only set up UI refresh mechanism - no background pinging unless automation is running
         logger.info("UI refresh mechanism ready - background processes controlled by automation state")
 
-        # --- NEW: Automation Event Handlers ---
-        if chat_instance.automation_enabled:
-            start_auto_btn.click(
-                chat_instance.start_automation,
-                inputs=[model_dropdown, automation_interval_input, automation_send_messages_input],
-                outputs=[start_auto_btn, stop_auto_btn, automation_status]
-            )
-            stop_auto_btn.click(
-                chat_instance.stop_automation,
-                outputs=[start_auto_btn, stop_auto_btn, automation_status]
-            )
+        # --- Automation Event Handlers - Always available ---
+        start_auto_btn.click(
+            chat_instance.start_automation,
+            inputs=[model_dropdown, automation_interval_input, automation_send_messages_input],
+            outputs=[start_auto_btn, stop_auto_btn, automation_status]
+        )
+        stop_auto_btn.click(
+            chat_instance.stop_automation,
+            outputs=[start_auto_btn, stop_auto_btn, automation_status]
+        )
 
-            # Update main UI with automation results
-            def update_ui_from_queue():
-                """Updates main UI elements with automation test questions and responses."""
-                logger.info("🔄 UI update_ui_from_queue called - checking results queue")
-                logger.info(f"Queue size: {chat_instance.results_queue.qsize()}")
-                logger.info(f"Latest result available: {chat_instance.latest_automation_result is not None}")
+        # Update main UI with automation results
+        def update_ui_from_queue():
+            """Updates main UI elements with automation test questions and responses."""
+            logger.info("🔄 UI update_ui_from_queue called - checking results queue")
+            logger.info(f"Queue size: {chat_instance.results_queue.qsize()}")
+            logger.info(f"Latest result available: {chat_instance.latest_automation_result is not None}")
+            
+            try:
+                latest_result = chat_instance.results_queue.get_nowait()
+                logger.info(f"✅ Found new automation result: {latest_result.get('timestamp', 'unknown time')}")
                 
-                try:
-                    latest_result = chat_instance.results_queue.get_nowait()
-                    logger.info(f"✅ Found new automation result: {latest_result.get('timestamp', 'unknown time')}")
-                    
-                    # Extract data from automation result
-                    question = latest_result.get('prompt', '')
-                    ollama_response = latest_result.get('ollama_response', '')
-                    webui_response = latest_result.get('open_webui_response', '')
-                    timestamp = latest_result.get('timestamp', '')
-                    
-                    # Update the main UI elements
-                    question_with_timestamp = f"🤖 Automation Test [{timestamp}]: {question}"
-                    status_html = chat_instance.get_provider_status_html()
-                    
-                    logger.info("🎨 Updating main UI with automation data")
-                    return question_with_timestamp, ollama_response, webui_response, status_html
-                    
-                except queue.Empty:
-                    # No new results, keep current display
-                    logger.info("📭 No new results in queue")
-                    status_html = chat_instance.get_provider_status_html()
-                    return gr.Textbox(), gr.Textbox(), gr.Textbox(), gr.HTML(value=status_html)
+                # Extract data from automation result
+                question = latest_result.get('prompt', '')
+                ollama_response = latest_result.get('ollama_response', '')
+                webui_response = latest_result.get('open_webui_response', '')
+                timestamp = latest_result.get('timestamp', '')
+                
+                # Update the main UI elements
+                question_with_timestamp = f"🤖 Automation Test [{timestamp}]: {question}"
+                status_html = chat_instance.get_provider_status_html()
+                
+                logger.info("🎨 Updating main UI with automation data")
+                return question_with_timestamp, ollama_response, webui_response, status_html
+                
+            except queue.Empty:
+                # No new results, keep current display
+                logger.info("📭 No new results in queue")
+                status_html = chat_instance.get_provider_status_html()
+                return gr.Textbox(), gr.Textbox(), gr.Textbox(), gr.HTML(value=status_html)
 
-            # Connect manual refresh button to update main UI
-            def manual_refresh_clicked():
-                logger.info("🖱️ MANUAL REFRESH BUTTON CLICKED!")
-                logger.info(f"🔍 Queue size: {chat_instance.results_queue.qsize()}")
-                logger.info(f"🔍 Automation running: {chat_instance.automation_thread and chat_instance.automation_thread.is_alive()}")
-                result = update_ui_from_queue()
-                logger.info("🔄 Manual refresh completed")
-                return result
-            
-            manual_refresh_btn.click(
-                manual_refresh_clicked,
-                outputs=[msg_input, ollama_output, webui_output, provider_status_html]
-            )
-            
-            # Add a Python-based auto-refresh as fallback
-            def auto_refresh_fallback():
-                """Fallback Python-based auto-refresh when automation is running."""
-                if chat_instance.automation_thread and chat_instance.automation_thread.is_alive():
-                    logger.info("🔄 Python auto-refresh fallback triggered")
-                    return update_ui_from_queue()
-                else:
-                    # Return current state if automation is not running
-                    status_html = chat_instance.get_provider_status_html()
-                    return gr.Textbox(), gr.Textbox(), gr.Textbox(), gr.HTML(value=status_html)
-            
-            # Set up Python-based auto-refresh every 6 seconds
-            gr.HTML("""
-            <div id="python-auto-refresh-trigger" style="display: none;"></div>
-            <script>
-            // Trigger Python auto-refresh
-            setInterval(() => {
-                const trigger = document.getElementById('python-auto-refresh-trigger');
-                if (trigger) {
-                    trigger.click();
-                }
-            }, 6000);
-            </script>
-            """)
-            
-            # Create hidden button for Python auto-refresh
-            python_auto_refresh_btn = gr.Button("", elem_id="python-auto-refresh-trigger", visible=False)
-            python_auto_refresh_btn.click(
-                auto_refresh_fallback,
-                outputs=[msg_input, ollama_output, webui_output, provider_status_html]
-            )
-            
-            # Create a simple demo of manual refresh to test JavaScript
-            demo_refresh_btn = gr.Button("🔄 DEMO Refresh (For Testing)", size="sm", visible=True, elem_id="demo-refresh-btn")
-            demo_refresh_btn.click(
-                lambda: "Demo button clicked successfully!",
-                outputs=gr.Textbox(visible=False)
-            )
-            
-            # Use a more robust JavaScript approach with multiple strategies
-            if chat_instance.automation_enabled:
-                gr.HTML("""
+        # Connect manual refresh button to update main UI
+        def manual_refresh_clicked():
+            logger.info("🖱️ MANUAL REFRESH BUTTON CLICKED!")
+            logger.info(f"🔍 Queue size: {chat_instance.results_queue.qsize()}")
+            logger.info(f"🔍 Automation running: {chat_instance.automation_thread and chat_instance.automation_thread.is_alive()}")
+            result = update_ui_from_queue()
+            logger.info("🔄 Manual refresh completed")
+            return result
+        
+        manual_refresh_btn.click(
+            manual_refresh_clicked,
+            outputs=[msg_input, ollama_output, webui_output, provider_status_html]
+        )
+        
+        # Add a Python-based auto-refresh as fallback
+        def auto_refresh_fallback():
+            """Fallback Python-based auto-refresh when automation is running."""
+            if chat_instance.automation_thread and chat_instance.automation_thread.is_alive():
+                logger.info("🔄 Python auto-refresh fallback triggered")
+                return update_ui_from_queue()
+            else:
+                # Return current state if automation is not running
+                status_html = chat_instance.get_provider_status_html()
+                return gr.Textbox(), gr.Textbox(), gr.Textbox(), gr.HTML(value=status_html)
+        
+        # Set up Python-based auto-refresh every 6 seconds
+        gr.HTML("""
+        <div id="python-auto-refresh-trigger" style="display: none;"></div>
+        <script>
+        // Trigger Python auto-refresh
+        setInterval(() => {
+            const trigger = document.getElementById('python-auto-refresh-trigger');
+            if (trigger) {
+                trigger.click();
+            }
+        }, 6000);
+        </script>
+        """)
+        
+        # Create hidden button for Python auto-refresh
+        python_auto_refresh_btn = gr.Button("", elem_id="python-auto-refresh-trigger", visible=False)
+        python_auto_refresh_btn.click(
+            auto_refresh_fallback,
+            outputs=[msg_input, ollama_output, webui_output, provider_status_html]
+        )
+        
+        # Create a simple demo of manual refresh to test JavaScript
+        demo_refresh_btn = gr.Button("🔄 DEMO Refresh (For Testing)", size="sm", visible=True, elem_id="demo-refresh-btn")
+        demo_refresh_btn.click(
+            lambda: "Demo button clicked successfully!",
+            outputs=gr.Textbox(visible=False)
+        )
+        
+        # Use a more robust JavaScript approach with multiple strategies  
+        # Always available for debugging auto-refresh issues
+        gr.HTML("""
                 <script>
                 // Auto-refresh solution with multiple strategies
                 let refreshInterval;
