@@ -151,9 +151,15 @@ class Pipeline:
     def _forward_to_ollama(self, model_id: str, messages: List[dict]) -> str:
         """Forward the modified request to Ollama and return the response"""
         try:
+            # The model_id passed to pipeline is the pipeline name, not the Ollama model
+            # Use the actual Ollama model available in the cluster
+            ollama_model = "tinyllama:latest"  # Default model available in cluster
+            
+            self.logger.info(f"Pipeline called with model_id: {model_id}, using Ollama model: {ollama_model}")
+            
             # Prepare the request payload for Ollama
             payload = {
-                "model": model_id,
+                "model": ollama_model,
                 "messages": messages,
                 "stream": False
             }
