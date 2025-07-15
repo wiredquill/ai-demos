@@ -236,9 +236,9 @@ questions:
 - variable: pipelines.image.tag
   group: "Images"
   label: "Open WebUI Pipelines Image Tag"
-  description: "The container image tag for Open WebUI Pipelines."
+  description: "The container image tag for Open WebUI Pipelines from SUSE Application Collection."
   type: "string"
-  default: "0.20250329.151219-5.13"
+  default: "0.5.0"
 
 - variable: llmChat.image.tag
   group: "Images"
