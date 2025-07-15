@@ -186,7 +186,7 @@ class ChatInterface:
         # Try Pipelines service first if available, otherwise fall back to Open WebUI
         if self.pipelines_base_url:
             # Use dedicated Pipelines service for enhanced processing
-            api_url = f"{self.pipelines_base_url}/api/v1/chat/completions"
+            api_url = f"{self.pipelines_base_url}/v1/chat/completions"
             # Use the response_level pipeline which handles the educational level modifications
             payload = { 
                 "model": "response_level", 
@@ -793,6 +793,15 @@ def create_interface():
         background: rgba(255, 255, 255, 0.05) !important;
         background-color: rgba(255, 255, 255, 0.05) !important;
     }
+    /* Additional targeting for any containers around the input area */
+    div:has(.input-box), .input-box ~ div, .input-box + div {
+        background: rgba(255, 255, 255, 0.05) !important;
+        background-color: rgba(255, 255, 255, 0.05) !important;
+    }
+    /* Target any white backgrounds in the general area where the input might be */
+    .gr-row:has(.input-box) * {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+    }
     .gr-button {
         border-radius: 12px !important;
         transition: all 0.3s ease !important;
@@ -1235,6 +1244,15 @@ def create_interface():
                         /* Force override any inline styles */
                         .input-box *[style*="background"] {
                             background: rgba(255, 255, 255, 0.05) !important;
+                            background-color: rgba(255, 255, 255, 0.05) !important;
+                        }
+                        
+                        /* Additional comprehensive targeting */
+                        div:has(.input-box), .input-box ~ div, .input-box + div {
+                            background: rgba(255, 255, 255, 0.05) !important;
+                            background-color: rgba(255, 255, 255, 0.05) !important;
+                        }
+                        .gr-row:has(.input-box) * {
                             background-color: rgba(255, 255, 255, 0.05) !important;
                         }
                     `;
