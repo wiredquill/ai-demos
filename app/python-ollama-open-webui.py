@@ -964,12 +964,22 @@ def create_interface():
                         logger.error(f"Auto-timer error: {e}")
                         return gr.Textbox(), gr.Textbox(), gr.Textbox(), gr.HTML()
                 
-                # Set up auto-refresh every 3 seconds
-                interface.load(
-                    auto_update_timer,
-                    outputs=[msg_input, ollama_output, webui_output, provider_status_html],
-                    every=3  # Every 3 seconds
-                )
+                # Set up auto-refresh using JavaScript (fallback approach)
+                gr.HTML("""
+                <script>
+                // Simple auto-refresh for automation results
+                setTimeout(function() {
+                    setInterval(function() {
+                        // Look for the refresh button and click it
+                        const refreshBtn = document.getElementById('automation-refresh-btn');
+                        if (refreshBtn) {
+                            refreshBtn.click();
+                        }
+                    }, 4000); // Every 4 seconds
+                }, 3000); // Start after 3 seconds
+                </script>
+                """)
+                logger.info("Auto-refresh timer setup - using JavaScript fallback")
             
             # Auto-refresh every 5 seconds when automation is running
             # Removed periodic refresh - provider status updates are handled by automation loop
