@@ -91,7 +91,7 @@ llmChat:
     gitBranch: "main"
   # Automation settings for the recurring test runner
   automation:
-    enabled: true
+    enabled: false
     defaultPrompt: "Why is the sky blue? Be concise."
     intervalSeconds: 30
     sendMessages: true # Enable/disable sending test messages to models

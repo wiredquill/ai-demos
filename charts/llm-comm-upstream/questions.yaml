@@ -5,14 +5,22 @@ questions:
   label: "Enable Automated Runner"
   description: "If true, the application will automatically run a test on a timer to monitor provider status and test AI responses."
   type: "boolean"
-  default: true
+  default: false
 
 - variable: llmChat.automation.sendMessages
   group: "Automation Settings"
   label: "Send Test Messages to AI Models"
-  description: "When enabled, automation will send test questions to both Ollama and Open WebUI. When disabled, automation only monitors provider status."
+  description: "When enabled, automation will send test questions to both Ollama and Open WebUI."
   type: "boolean"
   default: true
+  show_if: "llmChat.automation.enabled=true"
+
+- variable: llmChat.automation.providerTest
+  group: "Automation Settings"
+  label: "Enable Model Provider Status Test"
+  description: "When enabled, regularly tests connectivity to model providers and updates status."
+  type: "boolean"
+  default: false
   show_if: "llmChat.automation.enabled=true"
 
 - variable: llmChat.automation.intervalSeconds
@@ -69,6 +77,13 @@ questions:
     - "LoadBalancer"
 
 # Ollama Settings Group
+- variable: ollama.gpu.enabled
+  group: "Ollama Settings"
+  label: "Enable NVIDIA GPU Acceleration"
+  description: "Requires a node with NVIDIA drivers and the k8s device plugin installed."
+  type: "boolean"
+  default: false
+
 - variable: ollama.hardware.type
   group: "Ollama Settings"
   label: "Target Hardware for Ollama"
@@ -81,14 +96,6 @@ questions:
       value: "nvidia"
     - label: "Apple Silicon / CPU (arm64)"
       value: "apple"
-
-- variable: ollama.gpu.enabled
-  group: "Ollama Settings"
-  label: "Enable NVIDIA GPU Acceleration"
-  description: "Requires a node with NVIDIA drivers and the k8s device plugin installed."
-  type: "boolean"
-  default: false
-  show_if: "ollama.hardware.type=nvidia"
 
 - variable: ollama.resources.requests.cpu
   group: "Ollama Settings"
