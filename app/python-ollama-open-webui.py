@@ -192,8 +192,12 @@ class ChatInterface:
                 headers["Authorization"] = f"Bearer {self.open_webui_token}"
             
             logger.info(f"Attempting Open WebUI with pipeline level: {current_level['name']}")
+            logger.info(f"Using token: {self.open_webui_token[:20] if self.open_webui_token else 'None'}...")
+            logger.info(f"Request URL: {api_url}")
+            logger.info(f"Headers: {dict(headers)}")
             try:
                 response = requests.post(api_url, json=payload, headers=headers, timeout=120)
+                logger.info(f"Initial response status: {response.status_code}")
                 if response.status_code == 200:
                     response_data = response.json()
                     content = response_data.get('message', {}).get('content', 'Error: Unexpected response format from Open WebUI.')
@@ -205,16 +209,24 @@ class ChatInterface:
                 elif response.status_code == 403:
                     # Try to re-authenticate and retry once
                     logger.info("Open WebUI returned 403, attempting to re-authenticate...")
+                    logger.info(f"Current token exists: {self.open_webui_token is not None}")
                     if self._authenticate_open_webui():
+                        logger.info(f"Re-authentication successful, new token: {self.open_webui_token[:20] if self.open_webui_token else 'None'}...")
                         headers["Authorization"] = f"Bearer {self.open_webui_token}"
+                        logger.info(f"Retrying request with new token...")
                         retry_response = requests.post(api_url, json=payload, headers=headers, timeout=120)
+                        logger.info(f"Retry response status: {retry_response.status_code}")
                         if retry_response.status_code == 200:
                             response_data = retry_response.json()
                             content = response_data.get('message', {}).get('content', 'Error: Unexpected response format from Open WebUI.')
                             formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']} (via Open WebUI - re-authenticated)\n\n{content}"
                             logger.info(f"Open WebUI response successful after re-authentication with level: {current_level['name']}")
                             return formatted_response
-                    logger.warning(f"Open WebUI failed ({response.status_code}) even after re-authentication, falling back to direct Ollama")
+                        else:
+                            logger.warning(f"Retry failed with status: {retry_response.status_code}, response: {retry_response.text[:200]}")
+                    else:
+                        logger.warning("Re-authentication failed")
+                    logger.warning(f"Open WebUI failed even after re-authentication, falling back to direct Ollama")
                 else:
                     logger.warning(f"Open WebUI failed ({response.status_code}), falling back to direct Ollama")
             except Exception as e:
@@ -289,14 +301,19 @@ class ChatInterface:
             auth_url = f"{self.open_webui_base_url}/api/v1/auths/signin"
             auth_payload = {"email": "admin", "password": "admin"}
             
+            logger.info(f"Attempting authentication at: {auth_url}")
+            logger.info(f"Auth payload: {auth_payload}")
             response = requests.post(auth_url, json=auth_payload, timeout=10)
+            logger.info(f"Auth response status: {response.status_code}")
+            logger.info(f"Auth response content: {response.text[:500]}")
+            
             if response.status_code == 200:
                 auth_data = response.json()
                 self.open_webui_token = auth_data.get('token')
-                logger.info("Successfully authenticated with Open WebUI")
+                logger.info(f"Successfully authenticated with Open WebUI, token length: {len(self.open_webui_token) if self.open_webui_token else 0}")
                 return True
             else:
-                logger.warning(f"Failed to authenticate with Open WebUI: {response.status_code}")
+                logger.warning(f"Failed to authenticate with Open WebUI: {response.status_code}, response: {response.text}")
                 return False
         except Exception as e:
             logger.warning(f"Open WebUI authentication failed: {str(e)}")
@@ -724,13 +741,22 @@ def create_interface():
     .ollama-response .gr-box, .webui-response .gr-box {
         background: inherit !important;
     }
-    /* Fix white background around input box only - more aggressive targeting */
+    /* Fix white background around input box only - aggressive targeting all potential containers */
     .input-box .gr-form, .input-box .gr-box, .input-box > div, 
     .input-box .gr-textbox, .input-box div[data-testid="textbox"] {
         background: inherit !important;
     }
-    /* Target the specific container that wraps the input textbox */
-    .input-box > div > div, .input-box .gr-form > div {
+    /* Target all nested divs inside input-box */
+    .input-box > div > div, .input-box .gr-form > div, .input-box div div {
+        background: inherit !important;
+    }
+    /* Ultra-aggressive targeting for any white background elements in input-box */
+    .input-box *, .input-box *[style*="background"], .input-box *[style*="background-color"] {
+        background: inherit !important;
+        background-color: inherit !important;
+    }
+    /* Specific targeting for Gradio wrapper elements */
+    .input-box .gr-padded, .input-box .gr-compact, .input-box .wrap {
         background: inherit !important;
     }
     .gr-button {
