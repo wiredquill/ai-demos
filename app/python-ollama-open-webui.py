@@ -279,7 +279,7 @@ class ChatInterface:
         
         html_content = f"""
         <div style='background: linear-gradient(135deg, #0c322c 0%, #1a4a3a 100%); padding: 15px; border-radius: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);'>
-            <h3 style='color: #30ba78; margin: 0 0 15px 0; font-size: 16px; text-align: center; font-weight: 600;'>🌐 Provider Status</h3>
+            <h3 style='color: #30ba78; margin: 0 0 15px 0; font-size: 16px; text-align: center; font-weight: 600;'>🌐 Model Provider Status</h3>
             
             <!-- Compact Provider List -->
             <div style='margin-bottom: 15px;'>
@@ -408,11 +408,13 @@ class ChatInterface:
         """Starts the automation thread."""
         if self.automation_thread and self.automation_thread.is_alive():
             logger.warning("Automation is already running.")
-            return gr.Button(interactive=False), gr.Button(interactive=True)
+            running_status = "<div style='text-align: center; color: #4CAF50; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 8px; margin: 10px 0;'>▶️ Automation is running - Automated testing in progress</div>"
+            return gr.Button(interactive=False), gr.Button(interactive=True), gr.HTML(value=running_status)
 
         if not model or "Error" in model or "No models" in model:
             logger.error("Cannot start automation without a valid model selected.")
-            return gr.Button(interactive=True), gr.Button(interactive=False)
+            stopped_status = "<div style='text-align: center; color: #f44336; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 8px; margin: 10px 0;'>❌ Cannot start automation - No valid model selected</div>"
+            return gr.Button(interactive=True), gr.Button(interactive=False), gr.HTML(value=stopped_status)
 
         # Update send messages setting if provided
         if send_messages is not None:
@@ -428,7 +430,8 @@ class ChatInterface:
         self.automation_thread.start()
         logger.info(f"Automation started with interval {interval}s, send_messages: {self.automation_send_messages}")
         # UI update to show it's running
-        return gr.Button(interactive=False), gr.Button(interactive=True)
+        running_status = "<div style='text-align: center; color: #4CAF50; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 8px; margin: 10px 0;'>▶️ Automation is running - Automated testing in progress</div>"
+        return gr.Button(interactive=False), gr.Button(interactive=True), gr.HTML(value=running_status)
 
     def stop_automation(self):
         """Stops the automation thread."""
@@ -441,7 +444,8 @@ class ChatInterface:
             else:
                 logger.info("Automation thread stopped successfully")
         logger.info("Automation stopping.")
-        return gr.Button(interactive=True), gr.Button(interactive=False)
+        stopped_status = "<div style='text-align: center; color: #ffa726; padding: 10px; background: rgba(255, 167, 38, 0.1); border-radius: 8px; margin: 10px 0;'>⏹️ Automation stopped - Click Start to begin automated testing</div>"
+        return gr.Button(interactive=True), gr.Button(interactive=False), gr.HTML(value=stopped_status)
 
     def format_automation_results_html(self, result):
         """Formats automation results as readable HTML."""
@@ -658,12 +662,21 @@ def create_interface():
         border-radius: 12px !important;
         background: rgba(255, 255, 255, 0.05) !important;
     }
-    /* Fix only white backgrounds around response boxes - keep everything else as original grey */
+    /* Fix white backgrounds around response boxes - keep everything else as original grey */
     div[style*="background-color: white"], div[style*="background-color: #fff"], div[style*="background: white"] {
         background: inherit !important;
     }
     /* Target specific containers that might have white backgrounds around response boxes */
     .ollama-response > div, .webui-response > div {
+        background: inherit !important;
+    }
+    /* Target the container wrapping the response textboxes */
+    .ollama-response, .webui-response {
+        background: inherit !important;
+    }
+    /* Target Gradio form and container elements around response boxes */
+    .ollama-response .gr-form, .webui-response .gr-form,
+    .ollama-response .gr-box, .webui-response .gr-box {
         background: inherit !important;
     }
     .gr-button {
@@ -732,7 +745,8 @@ def create_interface():
                         with gr.Column(scale=2):
                             if chat_instance.automation_enabled:
                                 with gr.Row():
-                                    start_auto_btn = gr.Button("▶️ Start Automation", variant="primary", size="sm")
+                                    # Initial state assumes automation will auto-start
+                                    start_auto_btn = gr.Button("▶️ Start Automation", variant="primary", size="sm", interactive=True)
                                     stop_auto_btn = gr.Button("⏹️ Stop Automation", variant="secondary", size="sm", interactive=False)
                         with gr.Column(scale=1):
                             config_btn = gr.Button("⚙️ Config", size="sm")
@@ -800,7 +814,7 @@ def create_interface():
                     # Automation status display
                     if chat_instance.automation_enabled:
                         with gr.Row():
-                            automation_status = gr.HTML(value="<div style='text-align: center; color: #73ba25; padding: 10px; background: rgba(115, 186, 37, 0.1); border-radius: 8px; margin: 10px 0;'>🔄 Automation will populate the fields above with live test questions and responses</div>")
+                            automation_status = gr.HTML(value="<div style='text-align: center; color: #ffa726; padding: 10px; background: rgba(255, 167, 38, 0.1); border-radius: 8px; margin: 10px 0;'>⏹️ Automation stopped - Click Start to begin automated testing</div>")
                             manual_refresh_btn = gr.Button("🔄 Refresh", size="sm", visible=True, elem_id="automation-refresh-btn")
 
         # Configuration Modal (initially hidden)
@@ -833,6 +847,13 @@ def create_interface():
                         label="Send test messages to models", 
                         value=chat_instance.automation_send_messages,
                         info="When enabled, sends test questions to Ollama and Open WebUI"
+                    )
+                
+                with gr.Row():
+                    automation_provider_test_input = gr.Checkbox(
+                        label="Model Provider communication test", 
+                        value=True,
+                        info="When enabled, regularly tests connectivity to model providers"
                     )
                 
                 # Automation controls and results moved to main screen for better UX
@@ -896,11 +917,11 @@ def create_interface():
             start_auto_btn.click(
                 chat_instance.start_automation,
                 inputs=[model_dropdown, automation_interval_input, automation_send_messages_input],
-                outputs=[start_auto_btn, stop_auto_btn]
+                outputs=[start_auto_btn, stop_auto_btn, automation_status]
             )
             stop_auto_btn.click(
                 chat_instance.stop_automation,
-                outputs=[start_auto_btn, stop_auto_btn]
+                outputs=[start_auto_btn, stop_auto_btn, automation_status]
             )
 
             # Update main UI with automation results
