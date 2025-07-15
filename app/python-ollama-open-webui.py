@@ -934,39 +934,37 @@ def create_interface():
                 outputs=[msg_input, ollama_output, webui_output, provider_status_html]
             )
             
-            # Add auto-refresh using JavaScript to update main UI
-            gr.HTML("""
-            <script>
-            // Auto-refresh main UI with automation results every 3 seconds
-            let refreshInterval = null;
-            
-            function findAndClickRefreshButton() {
-                // Try to find by ID first
-                let refreshBtn = document.getElementById('automation-refresh-btn');
-                if (refreshBtn) {
-                    console.log('Found refresh button by ID, clicking...');
-                    refreshBtn.click();
-                    return true;
-                }
+            # Use Gradio's built-in auto-update functionality
+            if chat_instance.automation_enabled:
+                # Create an invisible timer that triggers UI updates
+                def auto_update_timer():
+                    """Timer function that returns automation results for UI update"""
+                    try:
+                        if chat_instance.results_queue.qsize() > 0:
+                            latest_result = chat_instance.results_queue.get_nowait()
+                            question = latest_result.get('prompt', '')
+                            ollama_response = latest_result.get('ollama_response', '')
+                            webui_response = latest_result.get('open_webui_response', '')
+                            timestamp = latest_result.get('timestamp', '')
+                            question_with_timestamp = f"🤖 Automation Test [{timestamp}]: {question}"
+                            status_html = chat_instance.get_provider_status_html()
+                            logger.info(f"Auto-timer: Updated UI with result from {timestamp}")
+                            return question_with_timestamp, ollama_response, webui_response, status_html
+                        else:
+                            # No new results, return current values without change
+                            status_html = chat_instance.get_provider_status_html()
+                            return gr.Textbox(), gr.Textbox(), gr.Textbox(), gr.HTML(value=status_html)
+                    except Exception as e:
+                        logger.error(f"Auto-timer error: {e}")
+                        status_html = chat_instance.get_provider_status_html()
+                        return gr.Textbox(), gr.Textbox(), gr.Textbox(), gr.HTML(value=status_html)
                 
-                // Fallback to searching by text
-                const buttons = document.querySelectorAll('button');
-                for (let btn of buttons) {
-                    if (btn.textContent.trim() === '🔄 Refresh') {
-                        console.log('Found refresh button by text, clicking...');
-                        btn.click();
-                        return true;
-                    }
-                }
-                console.log('Refresh button not found');
-                return false;
-            }
-            
-            setTimeout(() => {
-                refreshInterval = setInterval(findAndClickRefreshButton, 3000); // Every 3 seconds
-            }, 2000); // Start after 2 seconds
-            </script>
-            """)
+                # Set up auto-refresh every 3 seconds
+                interface.load(
+                    auto_update_timer,
+                    outputs=[msg_input, ollama_output, webui_output, provider_status_html],
+                    every=3  # Every 3 seconds
+                )
             
             # Auto-refresh every 5 seconds when automation is running
             # Removed periodic refresh - provider status updates are handled by automation loop
