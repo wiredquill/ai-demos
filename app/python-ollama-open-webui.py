@@ -679,18 +679,8 @@ def create_interface():
     .ollama-response .gr-box, .webui-response .gr-box {
         background: inherit !important;
     }
-    /* Fix white background around input box */
+    /* Fix white background around input box only */
     .input-box .gr-form, .input-box .gr-box, .input-box > div {
-        background: inherit !important;
-    }
-    /* Fix white background around automation status and all containers */
-    div[style*="background: rgba(115, 186, 37, 0.1)"] > div,
-    div[style*="background: rgba(76, 175, 80, 0.1)"] > div,
-    div[style*="background: rgba(255, 167, 38, 0.1)"] > div {
-        background: inherit !important;
-    }
-    /* Target any remaining white containers */
-    .gradio-container div, .gradio-container > div > div > div {
         background: inherit !important;
     }
     .gr-button {

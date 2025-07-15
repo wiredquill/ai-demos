@@ -231,7 +231,14 @@ questions:
   label: "Open WebUI Image Tag"
   description: "The container image tag for Open WebUI."
   type: "string"
-  default: "main"
+  default: "0.6.9-10.31"
+
+- variable: pipelines.image.tag
+  group: "Images"
+  label: "Open WebUI Pipelines Image Tag"
+  description: "The container image tag for Open WebUI Pipelines."
+  type: "string"
+  default: "0.20250329.151219-5.13"
 
 - variable: llmChat.image.tag
   group: "Images"
