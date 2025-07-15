@@ -884,32 +884,31 @@ def create_interface():
                 allow_custom_value=True
             )
             
-            # Automation settings
-            if chat_instance.automation_enabled:
-                gr.HTML("<h4 style='color: #73ba25; margin: 15px 0 10px 0;'>🤖 Automation Settings</h4>")
-                
-                with gr.Row():
-                    automation_interval_input = gr.Number(
-                        label="Interval (seconds)", 
-                        value=chat_instance.automation_interval, 
-                        precision=0,
-                        minimum=5,
-                        maximum=300
-                    )
-                    automation_send_messages_input = gr.Checkbox(
-                        label="Send test messages to models", 
-                        value=chat_instance.automation_send_messages,
-                        info="When enabled, sends test questions to Ollama and Open WebUI"
-                    )
-                
-                with gr.Row():
-                    automation_provider_test_input = gr.Checkbox(
-                        label="Enable Model Provider Status test", 
-                        value=True,
-                        info="When enabled, regularly tests connectivity to model providers and updates status"
-                    )
-                
-                # Automation controls and results moved to main screen for better UX
+            # Automation settings - always available for button handlers
+            gr.HTML("<h4 style='color: #73ba25; margin: 15px 0 10px 0;'>🤖 Automation Settings</h4>")
+            
+            with gr.Row():
+                automation_interval_input = gr.Number(
+                    label="Interval (seconds)", 
+                    value=chat_instance.automation_interval, 
+                    precision=0,
+                    minimum=5,
+                    maximum=300
+                )
+                automation_send_messages_input = gr.Checkbox(
+                    label="Send test messages to models", 
+                    value=chat_instance.automation_send_messages,
+                    info="When enabled, sends test questions to Ollama and Open WebUI"
+                )
+            
+            with gr.Row():
+                automation_provider_test_input = gr.Checkbox(
+                    label="Enable Model Provider Status test", 
+                    value=True,
+                    info="When enabled, regularly tests connectivity to model providers and updates status"
+                )
+            
+            # Automation controls and results moved to main screen for better UX
             
 
         # --- Event Handlers ---
