@@ -183,8 +183,8 @@ class ChatInterface:
         
         # Try Open WebUI first if available
         if self.open_webui_base_url:
-            # Use Open WebUI's native chat API instead of Ollama passthrough
-            api_url = f"{self.open_webui_base_url}/api/v1/chat/completions"
+            # Use Open WebUI's pipeline API for enhanced processing
+            api_url = f"{self.open_webui_base_url}/api/v1/pipelines/completions"
             payload = { 
                 "model": model, 
                 "messages": modified_messages, 
@@ -760,20 +760,30 @@ def create_interface():
     /* Fix white background around input box only - aggressive targeting all potential containers */
     .input-box .gr-form, .input-box .gr-box, .input-box > div, 
     .input-box .gr-textbox, .input-box div[data-testid="textbox"] {
-        background: inherit !important;
+        background: rgba(255, 255, 255, 0.05) !important;
     }
     /* Target all nested divs inside input-box */
     .input-box > div > div, .input-box .gr-form > div, .input-box div div {
-        background: inherit !important;
+        background: rgba(255, 255, 255, 0.05) !important;
     }
     /* Ultra-aggressive targeting for any white background elements in input-box */
     .input-box *, .input-box *[style*="background"], .input-box *[style*="background-color"] {
-        background: inherit !important;
-        background-color: inherit !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        background-color: rgba(255, 255, 255, 0.05) !important;
     }
     /* Specific targeting for Gradio wrapper elements */
     .input-box .gr-padded, .input-box .gr-compact, .input-box .wrap {
-        background: inherit !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+    }
+    /* Force override for any element that might still show white in input box area */
+    .input-box [style*="background-color: white"], 
+    .input-box [style*="background-color: #fff"], 
+    .input-box [style*="background-color: #ffffff"],
+    .input-box [style*="background: white"],
+    .input-box [style*="background: #fff"],
+    .input-box [style*="background: #ffffff"] {
+        background: rgba(255, 255, 255, 0.05) !important;
+        background-color: rgba(255, 255, 255, 0.05) !important;
     }
     .gr-button {
         border-radius: 12px !important;
@@ -1197,8 +1207,8 @@ def create_interface():
                     style.textContent = `
                         /* Ultra-aggressive JavaScript CSS injection to fix white background */
                         .input-box * {
-                            background: inherit !important;
-                            background-color: inherit !important;
+                            background: rgba(255, 255, 255, 0.05) !important;
+                            background-color: rgba(255, 255, 255, 0.05) !important;
                         }
                         
                         /* Target specific Gradio containers that might have white backgrounds */
@@ -1210,14 +1220,14 @@ def create_interface():
                         .input-box > div,
                         .input-box > div > div,
                         .input-box div div {
-                            background: inherit !important;
-                            background-color: inherit !important;
+                            background: rgba(255, 255, 255, 0.05) !important;
+                            background-color: rgba(255, 255, 255, 0.05) !important;
                         }
                         
                         /* Force override any inline styles */
                         .input-box *[style*="background"] {
-                            background: inherit !important;
-                            background-color: inherit !important;
+                            background: rgba(255, 255, 255, 0.05) !important;
+                            background-color: rgba(255, 255, 255, 0.05) !important;
                         }
                     `;
                     document.head.appendChild(style);
@@ -1229,8 +1239,8 @@ def create_interface():
                         if (computedStyle.backgroundColor === 'rgb(255, 255, 255)' || 
                             computedStyle.backgroundColor === 'white' ||
                             computedStyle.backgroundColor === '#ffffff') {
-                            el.style.setProperty('background', 'inherit', 'important');
-                            el.style.setProperty('background-color', 'inherit', 'important');
+                            el.style.setProperty('background', 'rgba(255, 255, 255, 0.05)', 'important');
+                            el.style.setProperty('background-color', 'rgba(255, 255, 255, 0.05)', 'important');
                             console.log('🎨 Fixed white background on element:', el);
                         }
                     });
