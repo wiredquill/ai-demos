@@ -986,7 +986,6 @@ def create_interface():
                     return gr.Textbox(), gr.Textbox(), gr.Textbox(), gr.HTML(value=status_html)
             
             # Set up Python-based auto-refresh every 6 seconds
-            import gradio as gr
             gr.HTML("""
             <div id="python-auto-refresh-trigger" style="display: none;"></div>
             <script>
