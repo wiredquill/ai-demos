@@ -679,6 +679,10 @@ def create_interface():
     .ollama-response .gr-box, .webui-response .gr-box {
         background: inherit !important;
     }
+    /* Fix white background around input box */
+    .input-box .gr-form, .input-box .gr-box, .input-box > div {
+        background: inherit !important;
+    }
     .gr-button {
         border-radius: 12px !important;
         transition: all 0.3s ease !important;
@@ -899,9 +903,24 @@ def create_interface():
             chat_instance.update_all_provider_status()
             status_html = chat_instance.get_provider_status_html()
             models_dd = chat_instance.refresh_ollama_models()
-            return status_html, models_dd
+            
+            # Check if automation is already running and update button states
+            if chat_instance.automation_enabled:
+                if chat_instance.automation_thread and chat_instance.automation_thread.is_alive():
+                    # Automation is running - update UI to reflect this
+                    running_status = "<div style='text-align: center; color: #4CAF50; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 8px; margin: 10px 0;'>▶️ Automation is running - Automated testing in progress</div>"
+                    return status_html, models_dd, gr.Button(interactive=False), gr.Button(interactive=True), gr.HTML(value=running_status)
+                else:
+                    # Automation is not running
+                    stopped_status = "<div style='text-align: center; color: #ffa726; padding: 10px; background: rgba(255, 167, 38, 0.1); border-radius: 8px; margin: 10px 0;'>⏹️ Automation stopped - Click Start to begin automated testing</div>"
+                    return status_html, models_dd, gr.Button(interactive=True), gr.Button(interactive=False), gr.HTML(value=stopped_status)
+            else:
+                return status_html, models_dd
         
-        interface.load(initial_load, outputs=[provider_status_html, model_dropdown])
+        if chat_instance.automation_enabled:
+            interface.load(initial_load, outputs=[provider_status_html, model_dropdown, start_auto_btn, stop_auto_btn, automation_status])
+        else:
+            interface.load(initial_load, outputs=[provider_status_html, model_dropdown])
 
         # Add a simple auto-refresh for provider status every 10 seconds
         def refresh_provider_status():
