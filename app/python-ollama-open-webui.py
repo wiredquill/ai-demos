@@ -765,23 +765,26 @@ def create_interface():
     .ollama-response .gr-box, .webui-response .gr-box {
         background: inherit !important;
     }
-    /* Fix white background around input box only - aggressive targeting all potential containers */
+    /* Fix white background around input box only - use transparent to inherit dark theme */
     .input-box .gr-form, .input-box .gr-box, .input-box > div, 
     .input-box .gr-textbox, .input-box div[data-testid="textbox"] {
-        background: rgba(255, 255, 255, 0.05) !important;
+        background: transparent !important;
+        background-color: transparent !important;
     }
     /* Target all nested divs inside input-box */
     .input-box > div > div, .input-box .gr-form > div, .input-box div div {
-        background: rgba(255, 255, 255, 0.05) !important;
+        background: transparent !important;
+        background-color: transparent !important;
     }
     /* Ultra-aggressive targeting for any white background elements in input-box */
     .input-box *, .input-box *[style*="background"], .input-box *[style*="background-color"] {
-        background: rgba(255, 255, 255, 0.05) !important;
-        background-color: rgba(255, 255, 255, 0.05) !important;
+        background: transparent !important;
+        background-color: transparent !important;
     }
     /* Specific targeting for Gradio wrapper elements */
     .input-box .gr-padded, .input-box .gr-compact, .input-box .wrap {
-        background: rgba(255, 255, 255, 0.05) !important;
+        background: transparent !important;
+        background-color: transparent !important;
     }
     /* Force override for any element that might still show white in input box area */
     .input-box [style*="background-color: white"], 
@@ -790,17 +793,17 @@ def create_interface():
     .input-box [style*="background: white"],
     .input-box [style*="background: #fff"],
     .input-box [style*="background: #ffffff"] {
-        background: rgba(255, 255, 255, 0.05) !important;
-        background-color: rgba(255, 255, 255, 0.05) !important;
+        background: transparent !important;
+        background-color: transparent !important;
     }
     /* Additional targeting for any containers around the input area */
     div:has(.input-box), .input-box ~ div, .input-box + div {
-        background: rgba(255, 255, 255, 0.05) !important;
-        background-color: rgba(255, 255, 255, 0.05) !important;
+        background: transparent !important;
+        background-color: transparent !important;
     }
     /* Target any white backgrounds in the general area where the input might be */
     .gr-row:has(.input-box) * {
-        background-color: rgba(255, 255, 255, 0.05) !important;
+        background-color: transparent !important;
     }
     .gr-button {
         border-radius: 12px !important;
@@ -1224,8 +1227,8 @@ def create_interface():
                     style.textContent = `
                         /* Ultra-aggressive JavaScript CSS injection to fix white background */
                         .input-box * {
-                            background: rgba(255, 255, 255, 0.05) !important;
-                            background-color: rgba(255, 255, 255, 0.05) !important;
+                            background: transparent !important;
+                            background-color: transparent !important;
                         }
                         
                         /* Target specific Gradio containers that might have white backgrounds */
@@ -1237,23 +1240,23 @@ def create_interface():
                         .input-box > div,
                         .input-box > div > div,
                         .input-box div div {
-                            background: rgba(255, 255, 255, 0.05) !important;
-                            background-color: rgba(255, 255, 255, 0.05) !important;
+                            background: transparent !important;
+                            background-color: transparent !important;
                         }
                         
                         /* Force override any inline styles */
                         .input-box *[style*="background"] {
-                            background: rgba(255, 255, 255, 0.05) !important;
-                            background-color: rgba(255, 255, 255, 0.05) !important;
+                            background: transparent !important;
+                            background-color: transparent !important;
                         }
                         
                         /* Additional comprehensive targeting */
                         div:has(.input-box), .input-box ~ div, .input-box + div {
-                            background: rgba(255, 255, 255, 0.05) !important;
-                            background-color: rgba(255, 255, 255, 0.05) !important;
+                            background: transparent !important;
+                            background-color: transparent !important;
                         }
                         .gr-row:has(.input-box) * {
-                            background-color: rgba(255, 255, 255, 0.05) !important;
+                            background-color: transparent !important;
                         }
                     `;
                     document.head.appendChild(style);
@@ -1265,8 +1268,8 @@ def create_interface():
                         if (computedStyle.backgroundColor === 'rgb(255, 255, 255)' || 
                             computedStyle.backgroundColor === 'white' ||
                             computedStyle.backgroundColor === '#ffffff') {
-                            el.style.setProperty('background', 'rgba(255, 255, 255, 0.05)', 'important');
-                            el.style.setProperty('background-color', 'rgba(255, 255, 255, 0.05)', 'important');
+                            el.style.setProperty('background', 'transparent', 'important');
+                            el.style.setProperty('background-color', 'transparent', 'important');
                             console.log('🎨 Fixed white background on element:', el);
                         }
                     });
