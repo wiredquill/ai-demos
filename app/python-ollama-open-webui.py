@@ -701,6 +701,7 @@ def create_interface():
         font-weight: 700 !important;
         padding: 12px 20px !important;
         min-height: 48px !important;
+        border-radius: 12px !important;
     }
     .input-box .gr-textbox {
         border: 2px solid rgba(115, 186, 37, 0.3) !important;
