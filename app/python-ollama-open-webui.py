@@ -48,6 +48,7 @@ class ChatInterface:
         # --- MODIFIED: Load URLs from environment variables for K8s ---
         self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
         self.open_webui_base_url = os.getenv("OPEN_WEBUI_BASE_URL")
+        self.pipelines_base_url = os.getenv("PIPELINES_BASE_URL")
         
         if self.open_webui_base_url:
             self.config.setdefault('providers', {})['Open WebUI'] = self.open_webui_base_url
@@ -83,7 +84,7 @@ class ChatInterface:
         self.results_queue = queue.Queue()
         self.latest_automation_result = None
 
-        logger.info(f"ChatInterface initialized. Ollama URL: {self.ollama_base_url}, Open WebUI URL: {self.open_webui_base_url}")
+        logger.info(f"ChatInterface initialized. Ollama URL: {self.ollama_base_url}, Open WebUI URL: {self.open_webui_base_url}, Pipelines URL: {self.pipelines_base_url}")
         if self.automation_enabled:
             logger.info(f"Automation enabled with interval {self.automation_interval}s and {len(self.automation_prompts)} rotating prompts")
         
@@ -181,10 +182,10 @@ class ChatInterface:
                     "content": f"{last_message['content']} {current_level['modifier']}"
                 }
         
-        # Try Open WebUI first if available
-        if self.open_webui_base_url:
-            # Use Open WebUI's pipeline API for enhanced processing
-            api_url = f"{self.open_webui_base_url}/api/v1/pipelines/completions"
+        # Try Pipelines service first if available, otherwise fall back to Open WebUI
+        if self.pipelines_base_url:
+            # Use dedicated Pipelines service for enhanced processing
+            api_url = f"{self.pipelines_base_url}/api/v1/chat/completions"
             payload = { 
                 "model": model, 
                 "messages": modified_messages, 
@@ -197,7 +198,7 @@ class ChatInterface:
             if self.open_webui_token:
                 headers["Authorization"] = f"Bearer {self.open_webui_token}"
             
-            logger.info(f"Attempting Open WebUI with pipeline level: {current_level['name']}")
+            logger.info(f"Attempting Pipelines service with pipeline level: {current_level['name']}")
             logger.info(f"Using token: {self.open_webui_token[:20] if self.open_webui_token else 'None'}...")
             logger.info(f"Request URL: {api_url}")
             logger.info(f"Headers: {dict(headers)}")
@@ -214,12 +215,12 @@ class ChatInterface:
                         content = response_data.get('message', {}).get('content', 'Error: Unexpected response format from Open WebUI.')
                     
                     # Add pipeline level header to the response - this IS the pipeline working
-                    formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']} (via Open WebUI)\n\n{content}"
-                    logger.info(f"Open WebUI response successful with level: {current_level['name']}")
+                    formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']} (via Pipelines Service)\n\n{content}"
+                    logger.info(f"Pipelines service response successful with level: {current_level['name']}")
                     return formatted_response
                 elif response.status_code == 403:
                     # Try to re-authenticate and retry once
-                    logger.info("Open WebUI returned 403, attempting to re-authenticate...")
+                    logger.info("Pipelines service returned 403, attempting to re-authenticate...")
                     logger.info(f"Current token exists: {self.open_webui_token is not None}")
                     if self._authenticate_open_webui():
                         logger.info(f"Re-authentication successful, new token: {self.open_webui_token[:20] if self.open_webui_token else 'None'}...")
@@ -231,24 +232,55 @@ class ChatInterface:
                             response_data = retry_response.json()
                             # Handle OpenAI-compatible response format
                             if 'choices' in response_data and response_data['choices']:
-                                content = response_data['choices'][0].get('message', {}).get('content', 'Error: Unexpected response format from Open WebUI.')
+                                content = response_data['choices'][0].get('message', {}).get('content', 'Error: Unexpected response format from Pipelines service.')
                             else:
                                 # Fallback to Ollama format
-                                content = response_data.get('message', {}).get('content', 'Error: Unexpected response format from Open WebUI.')
-                            formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']} (via Open WebUI - re-authenticated)\n\n{content}"
-                            logger.info(f"Open WebUI response successful after re-authentication with level: {current_level['name']}")
+                                content = response_data.get('message', {}).get('content', 'Error: Unexpected response format from Pipelines service.')
+                            formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']} (via Pipelines Service - re-authenticated)\n\n{content}"
+                            logger.info(f"Pipelines service response successful after re-authentication with level: {current_level['name']}")
                             return formatted_response
                         else:
                             logger.warning(f"Retry failed with status: {retry_response.status_code}, response: {retry_response.text[:200]}")
                     else:
                         logger.warning("Re-authentication failed")
-                    logger.warning(f"Open WebUI failed even after re-authentication, falling back to direct Ollama")
+                    logger.warning(f"Pipelines service failed even after re-authentication, falling back to direct Ollama")
                 else:
-                    logger.warning(f"Open WebUI failed ({response.status_code}), falling back to direct Ollama")
+                    logger.warning(f"Pipelines service failed ({response.status_code}), falling back to direct Ollama")
             except Exception as e:
-                logger.warning(f"Open WebUI failed: {str(e)}, falling back to direct Ollama")
+                logger.warning(f"Pipelines service failed: {str(e)}, falling back to direct Ollama")
+        elif self.open_webui_base_url:
+            # Try Open WebUI as secondary option
+            api_url = f"{self.open_webui_base_url}/api/v1/chat/completions"
+            payload = { 
+                "model": model, 
+                "messages": modified_messages, 
+                "stream": False,
+                "max_tokens": 1000
+            }
+            
+            headers = {"Content-Type": "application/json"}
+            if self.open_webui_token:
+                headers["Authorization"] = f"Bearer {self.open_webui_token}"
+            
+            logger.info(f"Attempting Open WebUI fallback with pipeline level: {current_level['name']}")
+            try:
+                response = requests.post(api_url, json=payload, headers=headers, timeout=120)
+                if response.status_code == 200:
+                    response_data = response.json()
+                    if 'choices' in response_data and response_data['choices']:
+                        content = response_data['choices'][0].get('message', {}).get('content', 'Error: Unexpected response format from Open WebUI.')
+                    else:
+                        content = response_data.get('message', {}).get('content', 'Error: Unexpected response format from Open WebUI.')
+                    
+                    formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']} (via Open WebUI Fallback)\n\n{content}"
+                    logger.info(f"Open WebUI fallback response successful with level: {current_level['name']}")
+                    return formatted_response
+                else:
+                    logger.warning(f"Open WebUI fallback failed ({response.status_code}), falling back to direct Ollama")
+            except Exception as e:
+                logger.warning(f"Open WebUI fallback failed: {str(e)}, falling back to direct Ollama")
         else:
-            logger.info("No Open WebUI URL configured, using direct Ollama")
+            logger.info("No Pipelines or Open WebUI URL configured, using direct Ollama")
         
         # Fallback to direct Ollama with pipeline-modified prompt - this is STILL pipeline working!
         logger.info(f"Using direct Ollama with pipeline level: {current_level['name']}")
