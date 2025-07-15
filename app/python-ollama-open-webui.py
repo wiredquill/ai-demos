@@ -935,104 +935,83 @@ def create_interface():
             # Connect manual refresh button to update main UI
             def manual_refresh_clicked():
                 logger.info("🖱️ MANUAL REFRESH BUTTON CLICKED!")
-                return update_ui_from_queue()
+                logger.info(f"🔍 Queue size: {chat_instance.results_queue.qsize()}")
+                logger.info(f"🔍 Automation running: {chat_instance.automation_thread and chat_instance.automation_thread.is_alive()}")
+                result = update_ui_from_queue()
+                logger.info("🔄 Manual refresh completed")
+                return result
             
             manual_refresh_btn.click(
                 manual_refresh_clicked,
                 outputs=[msg_input, ollama_output, webui_output, provider_status_html]
             )
             
-            # Use Gradio's built-in auto-update functionality
+            # Create a simple demo of manual refresh to test JavaScript
+            demo_refresh_btn = gr.Button("🔄 DEMO Refresh (For Testing)", size="sm", visible=True, elem_id="demo-refresh-btn")
+            demo_refresh_btn.click(
+                lambda: "Demo button clicked successfully!",
+                outputs=gr.Textbox(visible=False)
+            )
+            
+            # Use a simpler, more direct JavaScript approach
             if chat_instance.automation_enabled:
-                # Create an invisible timer that triggers UI updates ONLY when automation is running
-                def auto_update_timer():
-                    """Timer function that returns automation results for UI update"""
-                    try:
-                        # Only update if automation is actually running
-                        if chat_instance.automation_thread and chat_instance.automation_thread.is_alive():
-                            if chat_instance.results_queue.qsize() > 0:
-                                latest_result = chat_instance.results_queue.get_nowait()
-                                question = latest_result.get('prompt', '')
-                                ollama_response = latest_result.get('ollama_response', '')
-                                webui_response = latest_result.get('open_webui_response', '')
-                                timestamp = latest_result.get('timestamp', '')
-                                question_with_timestamp = f"🤖 Automation Test [{timestamp}]: {question}"
-                                status_html = chat_instance.get_provider_status_html()
-                                logger.info(f"Auto-timer: Updated UI with result from {timestamp}")
-                                return question_with_timestamp, ollama_response, webui_response, status_html
-                            else:
-                                # Automation running but no new results, just update provider status
-                                status_html = chat_instance.get_provider_status_html()
-                                return gr.Textbox(), gr.Textbox(), gr.Textbox(), gr.HTML(value=status_html)
-                        else:
-                            # Automation not running, don't update anything
-                            logger.debug("Auto-timer: Automation not running, skipping update")
-                            return gr.Textbox(), gr.Textbox(), gr.Textbox(), gr.HTML()
-                    except Exception as e:
-                        logger.error(f"Auto-timer error: {e}")
-                        return gr.Textbox(), gr.Textbox(), gr.Textbox(), gr.HTML()
-                
-                # Set up aggressive auto-refresh with multiple fallback methods
                 gr.HTML("""
                 <script>
-                // Multi-method auto-refresh for maximum reliability
-                let refreshInterval = null;
-                let attemptCount = 0;
-                
-                function findRefreshButton() {
-                    // Method 1: Try by ID
-                    let btn = document.getElementById('automation-refresh-btn');
-                    if (btn) return btn;
-                    
-                    // Method 2: Try by text content
-                    const buttons = document.querySelectorAll('button');
-                    for (let b of buttons) {
-                        if (b.textContent.includes('🔄 Refresh')) {
-                            return b;
-                        }
-                    }
-                    
-                    // Method 3: Try by class or other attributes
-                    const refreshButtons = document.querySelectorAll('button[class*="refresh"], button[title*="refresh"]');
-                    if (refreshButtons.length > 0) {
-                        return refreshButtons[0];
-                    }
-                    
-                    return null;
-                }
-                
-                function doRefresh() {
-                    attemptCount++;
-                    const btn = findRefreshButton();
-                    if (btn) {
-                        console.log(`Auto-refresh attempt ${attemptCount}: Found button, clicking...`);
-                        btn.click();
-                        return true;
-                    } else {
-                        console.log(`Auto-refresh attempt ${attemptCount}: Button not found`);
-                        if (attemptCount % 5 === 0) {
-                            console.log('Available buttons:', Array.from(document.querySelectorAll('button')).map(b => b.textContent).join(', '));
-                        }
-                        return false;
-                    }
-                }
-                
-                // Start auto-refresh after page loads
+                // Ultra-simple auto-refresh - just find any refresh button and click it
                 setTimeout(() => {
-                    console.log('Starting auto-refresh...');
-                    refreshInterval = setInterval(doRefresh, 3000); // Every 3 seconds
-                }, 2000); // Start after 2 seconds
-                
-                // Also try on page interaction
-                document.addEventListener('click', function() {
-                    if (!refreshInterval) {
-                        console.log('Restarting auto-refresh after interaction...');
-                        refreshInterval = setInterval(doRefresh, 3000);
-                    }
-                });
+                    console.log('=== STARTING AUTO-REFRESH DEBUG ===');
+                    
+                    setInterval(() => {
+                        console.log('--- Auto-refresh attempt ---');
+                        
+                        // Find all buttons
+                        const allButtons = document.querySelectorAll('button');
+                        console.log('Total buttons found:', allButtons.length);
+                        
+                        // Log all button texts
+                        allButtons.forEach((btn, index) => {
+                            console.log(`Button ${index}: "${btn.textContent.trim()}"`);
+                        });
+                        
+                        // Try to find refresh button
+                        let refreshButton = null;
+                        
+                        // Method 1: By ID
+                        refreshButton = document.getElementById('automation-refresh-btn');
+                        if (refreshButton) {
+                            console.log('Found by ID: automation-refresh-btn');
+                            refreshButton.click();
+                            return;
+                        }
+                        
+                        // Method 2: By text content
+                        for (let btn of allButtons) {
+                            if (btn.textContent.includes('🔄 Refresh') || btn.textContent.includes('Refresh')) {
+                                console.log('Found by text:', btn.textContent);
+                                refreshButton = btn;
+                                break;
+                            }
+                        }
+                        
+                        if (refreshButton) {
+                            console.log('CLICKING REFRESH BUTTON!');
+                            refreshButton.click();
+                        } else {
+                            console.log('❌ NO REFRESH BUTTON FOUND');
+                        }
+                        
+                        // Also try demo button as test
+                        const demoBtn = document.getElementById('demo-refresh-btn');
+                        if (demoBtn) {
+                            console.log('Demo button found - clicking as test');
+                            demoBtn.click();
+                        }
+                        
+                    }, 4000); // Every 4 seconds
+                }, 3000); // Start after 3 seconds
                 </script>
                 """)
-                logger.info("Auto-refresh setup - using aggressive JavaScript with multiple fallback methods")
+                logger.info("Auto-refresh setup - using ultra-simple JavaScript with full debugging")
             
             # Auto-refresh every 5 seconds when automation is running
             # Removed periodic refresh - provider status updates are handled by automation loop
