@@ -683,6 +683,16 @@ def create_interface():
     .input-box .gr-form, .input-box .gr-box, .input-box > div {
         background: inherit !important;
     }
+    /* Fix white background around automation status and all containers */
+    div[style*="background: rgba(115, 186, 37, 0.1)"] > div,
+    div[style*="background: rgba(76, 175, 80, 0.1)"] > div,
+    div[style*="background: rgba(255, 167, 38, 0.1)"] > div {
+        background: inherit !important;
+    }
+    /* Target any remaining white containers */
+    .gradio-container div, .gradio-container > div > div > div {
+        background: inherit !important;
+    }
     .gr-button {
         border-radius: 12px !important;
         transition: all 0.3s ease !important;
@@ -856,9 +866,9 @@ def create_interface():
                 
                 with gr.Row():
                     automation_provider_test_input = gr.Checkbox(
-                        label="Model Provider communication test", 
+                        label="Enable Model Provider Status test", 
                         value=True,
-                        info="When enabled, regularly tests connectivity to model providers"
+                        info="When enabled, regularly tests connectivity to model providers and updates status"
                     )
                 
                 # Automation controls and results moved to main screen for better UX

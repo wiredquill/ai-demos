@@ -13,11 +13,11 @@ ollama:
   service:
     port: 11434
     type: ClusterIP
+  gpu:
+    enabled: false
   # -- Hardware Configuration for Ollama
   hardware:
     type: "nvidia" # Options: "nvidia", "apple"
-  gpu:
-    enabled: false
   # -- Resource allocation for the main Ollama container
   resources:
     requests:
