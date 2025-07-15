@@ -658,40 +658,13 @@ def create_interface():
         border-radius: 12px !important;
         background: rgba(255, 255, 255, 0.05) !important;
     }
-    /* Fix white backgrounds in containers - comprehensive */
-    .gr-form, .gr-box, .gr-panel, .gr-group, .gr-row, .gr-column {
-        background: transparent !important;
-    }
-    /* Target specific Gradio container classes */
-    div[class*="gr-"], div[class*="gradio-"] {
-        background: transparent !important;
-    }
-    /* Target the main content containers */
-    .gradio-container > div, .gradio-container > div > div {
-        background: transparent !important;
-    }
-    /* Fix any remaining white backgrounds */
+    /* Fix only white backgrounds around response boxes - keep everything else as original grey */
     div[style*="background-color: white"], div[style*="background-color: #fff"], div[style*="background: white"] {
-        background: transparent !important;
+        background: inherit !important;
     }
-    /* Ensure all backgrounds are transparent */
-    body, html, #root, .gradio-container {
-        background: #0a2f26 !important;
-    }
-    /* Super aggressive white background fixes */
-    * {
-        background-color: transparent !important;
-    }
-    /* Only keep specific colored backgrounds */
-    .ollama-response .gr-textbox, .webui-response .gr-textbox {
-        background: linear-gradient(145deg, #e8f5e8 0%, #f3f9f3 100%) !important;
-    }
-    .webui-response .gr-textbox {
-        background: linear-gradient(145deg, #e3f2fd 0%, #f3f9ff 100%) !important;
-    }
-    /* Ensure Gradio blocks don't have white backgrounds */
-    .gr-blocks, .gr-app, .gr-interface {
-        background: transparent !important;
+    /* Target specific containers that might have white backgrounds around response boxes */
+    .ollama-response > div, .webui-response > div {
+        background: inherit !important;
     }
     .gr-button {
         border-radius: 12px !important;
