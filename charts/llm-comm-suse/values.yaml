@@ -95,3 +95,9 @@ llmChat:
     defaultPrompt: "Why is the sky blue? Be concise."
     intervalSeconds: 30
     sendMessages: true # Enable/disable sending test messages to models
+  # Observability settings for OpenTelemetry and OpenLit
+  observability:
+    enabled: false
+    otlpEndpoint: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
+    collectGpuStats: false
+    schedule: "*/5 * * * *"

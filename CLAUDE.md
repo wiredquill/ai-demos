@@ -59,6 +59,12 @@ helm install my-release charts/llm-comm-suse \
 helm install my-release charts/llm-comm-upstream \
   --set llmChat.devMode.enabled=true \
   --set llmChat.devMode.persistence.enabled=true
+
+# Enable OpenTelemetry observability with SUSE Observability
+helm install my-release charts/llm-comm-suse \
+  --set llmChat.observability.enabled=true \
+  --set llmChat.observability.otlpEndpoint="http://opentelemetry-collector.suse-observability.svc.cluster.local:4318" \
+  --set llmChat.observability.collectGpuStats=true
 ```
 
 ### Fleet GitOps Deployment
@@ -79,11 +85,15 @@ kubectl label cluster my-cluster needs-llm=true        # For upstream variant
 - `AUTOMATION_ENABLED`: Enable automated testing loop
 - `AUTOMATION_PROMPT`: Default prompt for automation
 - `AUTOMATION_INTERVAL`: Automation interval in seconds
+- `OBSERVABILITY_ENABLED`: Enable OpenTelemetry observability via OpenLit
+- `OTLP_ENDPOINT`: OpenTelemetry collector endpoint for SUSE Observability
+- `COLLECT_GPU_STATS`: Enable GPU statistics collection
 
 **Helm Values Structure:**
 - `ollama.*`: Ollama deployment configuration
 - `openWebui.*`: Open WebUI configuration
 - `llmChat.*`: Chat application configuration
+- `llmChat.observability.*`: OpenTelemetry observability configuration
 - `*.persistence.enabled`: Enable persistent storage
 - `ollama.gpu.enabled`: Enable GPU acceleration
 

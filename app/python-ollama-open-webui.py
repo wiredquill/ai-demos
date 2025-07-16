@@ -10,6 +10,14 @@ from typing import Dict, List, Any
 
 # Build trigger comment - pipeline model fix deployment
 
+# --- OpenLit Observability Integration ---
+try:
+    import openlit
+    OPENLIT_AVAILABLE = True
+except ImportError:
+    OPENLIT_AVAILABLE = False
+    logger.warning("OpenLit not available - observability disabled")
+
 # --- Logging Configuration ---
 logging.basicConfig(
     level=logging.INFO,
@@ -85,6 +93,9 @@ class ChatInterface:
         self.results_queue = queue.Queue()
         self.latest_automation_result = None
 
+        # --- OpenLit Observability Initialization ---
+        self._initialize_observability()
+        
         logger.info(f"ChatInterface initialized. Ollama URL: {self.ollama_base_url}, Open WebUI URL: {self.open_webui_base_url}, Pipelines URL: {self.pipelines_base_url}, Pipeline API Key: {'***' if self.pipeline_api_key else 'None'}")
         if self.automation_enabled:
             logger.info(f"Automation enabled with interval {self.automation_interval}s and {len(self.automation_prompts)} rotating prompts")
@@ -126,6 +137,35 @@ class ChatInterface:
             with open(self.config_path, 'w') as f:
                 json.dump(default_config, f, indent=4)
             return default_config
+
+    def _initialize_observability(self):
+        """Initialize OpenLit observability if enabled and available."""
+        if not OPENLIT_AVAILABLE:
+            logger.info("OpenLit not available - skipping observability initialization")
+            return
+            
+        # Read observability configuration from environment variables
+        otlp_endpoint = os.getenv("OTLP_ENDPOINT")
+        collect_gpu_stats = os.getenv("COLLECT_GPU_STATS", "false").lower() == "true"
+        observability_enabled = os.getenv("OBSERVABILITY_ENABLED", "false").lower() == "true"
+        
+        if not observability_enabled:
+            logger.info("Observability disabled via OBSERVABILITY_ENABLED environment variable")
+            return
+            
+        if not otlp_endpoint:
+            logger.warning("OTLP_ENDPOINT not configured - observability disabled")
+            return
+            
+        try:
+            # Initialize OpenLit with configuration
+            openlit.init(
+                otlp_endpoint=otlp_endpoint,
+                collect_gpu_stats=collect_gpu_stats
+            )
+            logger.info(f"OpenLit observability initialized successfully. Endpoint: {otlp_endpoint}, GPU Stats: {collect_gpu_stats}")
+        except Exception as e:
+            logger.error(f"Failed to initialize OpenLit observability: {e}")
 
     def get_ollama_models(self) -> List[str]:
         """Fetches the list of available models from the Ollama /api/tags endpoint."""

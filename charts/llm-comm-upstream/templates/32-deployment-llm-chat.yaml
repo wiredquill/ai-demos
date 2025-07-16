@@ -37,6 +37,13 @@ spec:
               value: "{{ .Values.llmChat.automation.intervalSeconds }}"
             - name: AUTOMATION_SEND_MESSAGES
               value: "{{ .Values.llmChat.automation.sendMessages }}"
+            # Observability configuration
+            - name: OBSERVABILITY_ENABLED
+              value: "{{ .Values.llmChat.observability.enabled }}"
+            - name: OTLP_ENDPOINT
+              value: "{{ .Values.llmChat.observability.otlpEndpoint }}"
+            - name: COLLECT_GPU_STATS
+              value: "{{ .Values.llmChat.observability.collectGpuStats }}"
           # Health checks to ensure proper startup sequencing
           livenessProbe:
             httpGet:
