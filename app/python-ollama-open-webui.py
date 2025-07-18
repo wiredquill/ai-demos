@@ -309,6 +309,7 @@ class ChatInterface:
     def check_provider_status(self, provider_name: str, provider_info) -> dict:
         """Checks the status of a single provider and returns detailed info."""
         import time
+        import signal
         start_time = time.time()
         
         # Handle both old string format and new dict format
@@ -321,14 +322,22 @@ class ChatInterface:
             country = provider_info.get('country', '🌍 Unknown')
             flag = provider_info.get('flag', '🌍')
             
+        def timeout_handler(signum, frame):
+            raise TimeoutError("Request timed out")
+            
         try:
+            # Set up signal alarm for 10-second timeout
+            signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(10)  # 10-second timeout
+            
             headers = {'User-Agent': 'Mozilla/5.0'}
-            response = requests.get(url, timeout=5, headers=headers)
+            response = requests.get(url, timeout=8, headers=headers)  # requests timeout at 8s, signal at 10s
             response_time = int((time.time() - start_time) * 1000)
             # Show as online if we get ANY response (even 403, 404, etc.)
             status = "🟢"
             logger.info(f"Provider {provider_name}: {response.status_code} -> {status} ({response_time}ms)")
             
+            signal.alarm(0)  # Cancel the alarm
             return {
                 "status": status,
                 "response_time": f"{response_time}ms",
@@ -337,7 +346,11 @@ class ChatInterface:
                 "status_code": response.status_code
             }
         except Exception as e:
+            signal.alarm(0)  # Cancel the alarm
             response_time = int((time.time() - start_time) * 1000)
+            # Cap response time at 10000ms for timeout cases
+            if response_time > 10000:
+                response_time = 10000
             logger.warning(f"Provider {provider_name} failed: {str(e)} ({response_time}ms)")
             return {
                 "status": "🔴",
@@ -350,12 +363,39 @@ class ChatInterface:
 
     def update_all_provider_status(self) -> Dict:
         """Updates all provider statuses and returns the status dictionary."""
+        import time
+        import signal
+        
         logger.info("Updating all provider statuses.")
         updated_status = {}
-        # Simple loop without threading for this use case
-        for name, provider_info in self.config.get('providers', {}).items():
-            updated_status[name] = self.check_provider_status(name, provider_info)
-        self.provider_status = updated_status
+        start_time = time.time()
+        
+        def total_timeout_handler(signum, frame):
+            raise TimeoutError("Total provider check timeout")
+            
+        try:
+            # Set up signal alarm for 60-second total timeout (for all providers)
+            signal.signal(signal.SIGALRM, total_timeout_handler)
+            signal.alarm(60)  # 60-second total timeout
+            
+            # Simple loop without threading for this use case
+            for name, provider_info in self.config.get('providers', {}).items():
+                elapsed = time.time() - start_time
+                if elapsed > 50:  # Stop if we're close to the 60s limit
+                    logger.warning(f"Stopping provider checks after {elapsed:.1f}s to avoid timeout")
+                    break
+                updated_status[name] = self.check_provider_status(name, provider_info)
+            
+            signal.alarm(0)  # Cancel the alarm
+            self.provider_status = updated_status
+            
+        except TimeoutError:
+            signal.alarm(0)  # Cancel the alarm
+            logger.warning("Provider status check timed out - using partial results")
+            self.provider_status = updated_status
+            
+        total_time = time.time() - start_time
+        logger.info(f"Provider status check completed in {total_time:.1f}s")
         return updated_status
 
     def _authenticate_open_webui(self):
