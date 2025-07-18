@@ -2,5 +2,5 @@ apiVersion: v2
 name: llm-comm-upstream
 description: "SUSE AI Demo Showcase - Complete AI stack with Ollama, Open WebUI, and custom chat aggregation. Upstream edition uses standard upstream container images: official Ollama, upstream Open WebUI, upstream Pipelines, and Debian-based Python images. Includes GPU acceleration, persistent storage, NFS model caching, and comprehensive observability integration."
 type: application
-version: 0.1.131
+version: 0.1.132
 appVersion: "1.0.0"
