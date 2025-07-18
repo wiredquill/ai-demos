@@ -1,21 +1,27 @@
 apiVersion: v2
 name: llm-comm-suse
 description: |
-  SUSE AI Demo Showcase - A comprehensive demonstration of building, deploying, and managing AI applications on SUSE's cloud-native platform.
-
-  This chart deploys a complete AI stack including:
-  - Ollama: Local LLM inference server for running models like TinyLlama
-  - Open WebUI: Modern web interface for LLM interactions
-  - LLM Chat: Custom aggregation app combining responses from multiple sources
-  - Pipelines: Advanced AI processing capabilities
-
-  SUSE Edition Features:
-  - Built on SUSE Base Container Images (BCI) with zypper package manager
-  - Open WebUI v0.6.9-10.31 (SUSE-optimized build)
-  - Pipelines v0.5.0 from SUSE Application Collection
-  - Optimized for SUSE environments with enhanced security and support
-
-  Includes GPU acceleration, persistent storage, NFS model caching, and comprehensive observability integration.
+  SUSE AI Demo Showcase - A comprehensive demonstration of building, deploying, 
+  and managing AI applications on SUSE's cloud-native platform.
+  
+  🚀 COMPLETE AI STACK DEPLOYMENT:
+  • Ollama: Local LLM inference server for running models like TinyLlama
+  • Open WebUI: Modern web interface for LLM interactions  
+  • LLM Chat: Custom aggregation app combining responses from multiple sources
+  • Pipelines: Advanced AI processing capabilities
+  
+  🏗️ SUSE EDITION FEATURES:
+  • Built on SUSE Base Container Images (BCI) with zypper package manager
+  • Open WebUI v0.6.9-10.31 (SUSE-optimized build)
+  • Pipelines v0.5.0 from SUSE Application Collection
+  • Optimized for SUSE environments with enhanced security and support
+  
+  ⚡ KEY CAPABILITIES:
+  • GPU acceleration support with NVIDIA runtime
+  • Persistent storage for models and data
+  • NFS model caching for faster deployments
+  • Comprehensive observability integration
+  • Automated testing and monitoring
 type: application
 version: 0.1.130
 appVersion: "1.0.0"

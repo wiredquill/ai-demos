@@ -26,7 +26,7 @@ ollama:
       cpu: "4"
       memory: "16Gi"
   persistence:
-    enabled: true
+    enabled: false
     size: 10Gi
     storageClassName: "" # Use default if empty, or specify a storage class
   # Model caching options
