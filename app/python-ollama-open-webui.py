@@ -323,7 +323,7 @@ class ChatInterface:
             
         try:
             headers = {'User-Agent': 'Mozilla/5.0'}
-            response = requests.get(url, timeout=8, headers=headers)  # 8-second timeout
+            response = requests.get(url, timeout=3, headers=headers)  # 3-second timeout
             response_time = int((time.time() - start_time) * 1000)
             # Show as online if we get ANY response (even 403, 404, etc.)
             status = "🟢"
@@ -338,9 +338,9 @@ class ChatInterface:
             }
         except Exception as e:
             response_time = int((time.time() - start_time) * 1000)
-            # Cap response time at 8000ms for timeout cases
-            if response_time > 8000:
-                response_time = 8000
+            # Cap response time at 3000ms for timeout cases
+            if response_time > 3000:
+                response_time = 3000
             logger.warning(f"Provider {provider_name} failed: {str(e)} ({response_time}ms)")
             return {
                 "status": "🔴",
@@ -354,21 +354,45 @@ class ChatInterface:
     def update_all_provider_status(self) -> Dict:
         """Updates all provider statuses and returns the status dictionary."""
         import time
+        import threading
+        from concurrent.futures import ThreadPoolExecutor, as_completed
         
         logger.info("Updating all provider statuses.")
         updated_status = {}
         start_time = time.time()
-        max_total_time = 60  # Maximum total time for all providers
+        max_total_time = 15  # Maximum total time for all providers
         
         try:
-            # Simple loop without threading for this use case
-            for name, provider_info in self.config.get('providers', {}).items():
-                elapsed = time.time() - start_time
-                if elapsed > max_total_time - 10:  # Stop if we're close to the limit
-                    logger.warning(f"Stopping provider checks after {elapsed:.1f}s to avoid timeout")
-                    break
-                updated_status[name] = self.check_provider_status(name, provider_info)
-            
+            providers = self.config.get('providers', {})
+            if not providers:
+                logger.info("No providers configured")
+                return updated_status
+                
+            # Use ThreadPoolExecutor for concurrent checks
+            with ThreadPoolExecutor(max_workers=10) as executor:
+                # Submit all provider checks
+                future_to_name = {
+                    executor.submit(self.check_provider_status, name, provider_info): name
+                    for name, provider_info in providers.items()
+                }
+                
+                # Collect results with timeout
+                for future in as_completed(future_to_name, timeout=max_total_time):
+                    name = future_to_name[future]
+                    try:
+                        result = future.result()
+                        updated_status[name] = result
+                    except Exception as e:
+                        logger.warning(f"Provider {name} check failed: {e}")
+                        updated_status[name] = {
+                            "status": "🔴",
+                            "response_time": "timeout",
+                            "country": "🌍 Unknown",
+                            "flag": "🌍",
+                            "status_code": "Error",
+                            "error": str(e)
+                        }
+                        
             self.provider_status = updated_status
             
         except Exception as e:
