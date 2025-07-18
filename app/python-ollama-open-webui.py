@@ -364,34 +364,25 @@ class ChatInterface:
     def update_all_provider_status(self) -> Dict:
         """Updates all provider statuses and returns the status dictionary."""
         import time
-        import signal
         
         logger.info("Updating all provider statuses.")
         updated_status = {}
         start_time = time.time()
+        max_total_time = 60  # Maximum total time for all providers
         
-        def total_timeout_handler(signum, frame):
-            raise TimeoutError("Total provider check timeout")
-            
         try:
-            # Set up signal alarm for 60-second total timeout (for all providers)
-            signal.signal(signal.SIGALRM, total_timeout_handler)
-            signal.alarm(60)  # 60-second total timeout
-            
             # Simple loop without threading for this use case
             for name, provider_info in self.config.get('providers', {}).items():
                 elapsed = time.time() - start_time
-                if elapsed > 50:  # Stop if we're close to the 60s limit
+                if elapsed > max_total_time - 10:  # Stop if we're close to the limit
                     logger.warning(f"Stopping provider checks after {elapsed:.1f}s to avoid timeout")
                     break
                 updated_status[name] = self.check_provider_status(name, provider_info)
             
-            signal.alarm(0)  # Cancel the alarm
             self.provider_status = updated_status
             
-        except TimeoutError:
-            signal.alarm(0)  # Cancel the alarm
-            logger.warning("Provider status check timed out - using partial results")
+        except Exception as e:
+            logger.warning(f"Provider status check failed: {e} - using partial results")
             self.provider_status = updated_status
             
         total_time = time.time() - start_time
