@@ -1,82 +1,5 @@
 questions:
-# Automation Settings Group - Priority settings for the automated test runner
-- variable: llmChat.automation.enabled
-  group: "Automation Settings"
-  label: "Enable Automated Runner"
-  description: "If true, the application will automatically run a test on a timer to monitor provider status and test AI responses."
-  type: "boolean"
-  default: false
-
-- variable: llmChat.automation.sendMessages
-  group: "Automation Settings"
-  label: "Send Test Messages to AI Models"
-  description: "When enabled, automation will send test questions to both Ollama and Open WebUI."
-  type: "boolean"
-  default: true
-  show_if: "llmChat.automation.enabled=true"
-
-- variable: llmChat.automation.providerTest
-  group: "Automation Settings"
-  label: "Enable Model Provider Status Test"
-  description: "When enabled, regularly tests connectivity to model providers and updates status."
-  type: "boolean"
-  default: false
-  show_if: "llmChat.automation.enabled=true"
-
-- variable: llmChat.automation.intervalSeconds
-  group: "Automation Settings"
-  label: "Automation Interval (Seconds)"
-  description: "The time in seconds between each automated test run."
-  type: "int"
-  default: 30
-  show_if: "llmChat.automation.enabled=true"
-
-- variable: llmChat.automation.defaultPrompt
-  group: "Automation Settings"
-  label: "Automation Test Prompt"
-  description: "The recurring prompt to send to AI models during automated testing."
-  type: "string"
-  default: "Why is the sky blue? Be concise."
-  show_if: "llmChat.automation.sendMessages=true"
-
-# Networking Group - For configuring how services are exposed
-- variable: llmChat.service.type
-  group: "Networking"
-  label: "LLM Chat Service Type"
-  description: "Method to expose the LLM Chat service."
-  type: "enum"
-  required: true
-  default: "NodePort"
-  options:
-    - "ClusterIP"
-    - "NodePort"
-    - "LoadBalancer"
-
-- variable: openWebui.service.type
-  group: "Networking"
-  label: "Open WebUI Service Type"
-  description: "Method to expose the Open WebUI service."
-  type: "enum"
-  required: true
-  default: "NodePort"
-  options:
-    - "ClusterIP"
-    - "NodePort"
-    - "LoadBalancer"
-
-- variable: ollama.service.type
-  group: "Networking"
-  label: "Ollama Service Type"
-  description: "Method to expose the Ollama service. 'ClusterIP' is recommended."
-  type: "enum"
-  required: true
-  default: "ClusterIP"
-  options:
-    - "ClusterIP"
-    - "NodePort"
-    - "LoadBalancer"
-
-# Ollama Settings Group
+# Ollama Settings Group - Priority settings for the AI model server
 - variable: ollama.gpu.enabled
   group: "Ollama Settings"
   label: "Enable NVIDIA GPU Acceleration"
@@ -125,7 +48,6 @@ questions:
   type: "string"
   default: "16Gi"
 
-# Ollama Settings Group
 - variable: ollama.persistence.enabled
   group: "Ollama Settings"
   label: "Enable Ollama Model Persistence"
@@ -149,16 +71,15 @@ questions:
   default: ""
   show_if: "ollama.persistence.enabled=true"
 
-# Model Caching Group  
 - variable: ollama.modelCache.nfs.enabled
-  group: "Model Caching"
+  group: "Ollama Settings"
   label: "Enable NFS Model Caching"
   description: "Use NFS share to cache AI models across deployments for faster startup times. Models are downloaded once and shared across all pods."
   type: "boolean"
   default: false
 
 - variable: ollama.modelCache.nfs.server
-  group: "Model Caching"
+  group: "Ollama Settings"
   label: "NFS Server IP/Hostname"
   description: "NFS server hostname or IP address (e.g., 10.0.9.10)"
   type: "string"
@@ -166,12 +87,49 @@ questions:
   show_if: "ollama.modelCache.nfs.enabled=true"
 
 - variable: ollama.modelCache.nfs.path
-  group: "Model Caching"
+  group: "Ollama Settings"
   label: "NFS Share Path"
   description: "Path to the NFS share directory for caching models (e.g., /data/ai-models)"
   type: "string"
   default: "/data/ai-models"
   show_if: "ollama.modelCache.nfs.enabled=true"
+
+# Networking Group - For configuring how services are exposed
+- variable: llmChat.service.type
+  group: "Networking"
+  label: "LLM Chat Service Type"
+  description: "Method to expose the LLM Chat service."
+  type: "enum"
+  required: true
+  default: "NodePort"
+  options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"
+
+- variable: openWebui.service.type
+  group: "Networking"
+  label: "Open WebUI Service Type"
+  description: "Method to expose the Open WebUI service."
+  type: "enum"
+  required: true
+  default: "NodePort"
+  options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"
+
+- variable: ollama.service.type
+  group: "Networking"
+  label: "Ollama Service Type"
+  description: "Method to expose the Ollama service. 'ClusterIP' is recommended."
+  type: "enum"
+  required: true
+  default: "ClusterIP"
+  options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"
 
 # Pipeline Integration Group
 - variable: pipelines.enabled
@@ -247,4 +205,42 @@ questions:
   type: "string"
   default: "latest"
 
-# LLM Chat App Group - Additional settings (automation moved to top)
+# Automation Settings Group - Settings for the automated test runner
+- variable: llmChat.automation.enabled
+  group: "Automation Settings"
+  label: "Enable Automated Runner"
+  description: "If true, the application will automatically run a test on a timer to monitor provider status and test AI responses."
+  type: "boolean"
+  default: false
+
+- variable: llmChat.automation.sendMessages
+  group: "Automation Settings"
+  label: "Send Test Messages to AI Models"
+  description: "When enabled, automation will send test questions to both Ollama and Open WebUI."
+  type: "boolean"
+  default: true
+  show_if: "llmChat.automation.enabled=true"
+
+- variable: llmChat.automation.providerTest
+  group: "Automation Settings"
+  label: "Enable Model Provider Status Test"
+  description: "When enabled, regularly tests connectivity to model providers and updates status."
+  type: "boolean"
+  default: false
+  show_if: "llmChat.automation.enabled=true"
+
+- variable: llmChat.automation.intervalSeconds
+  group: "Automation Settings"
+  label: "Automation Interval (Seconds)"
+  description: "The time in seconds between each automated test run."
+  type: "int"
+  default: 30
+  show_if: "llmChat.automation.enabled=true"
+
+- variable: llmChat.automation.defaultPrompt
+  group: "Automation Settings"
+  label: "Automation Test Prompt"
+  description: "The recurring prompt to send to AI models during automated testing."
+  type: "string"
+  default: "Why is the sky blue? Be concise."
+  show_if: "llmChat.automation.sendMessages=true"
