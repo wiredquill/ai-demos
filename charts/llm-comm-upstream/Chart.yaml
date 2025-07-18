@@ -1,6 +1,6 @@
 apiVersion: v2
 name: llm-comm-upstream
-description: "SUSE AI Demo Showcase - A comprehensive demonstration of building, deploying, \nand managing AI applications on SUSE's cloud-native platform.\n\n\U0001F680 COMPLETE AI STACK DEPLOYMENT:\n• Ollama: Local LLM inference server for running models like TinyLlama\n• Open WebUI: Modern web interface for LLM interactions  \n• LLM Chat: Custom aggregation app combining responses from multiple sources\n• Pipelines: Advanced AI processing capabilities\n\n\U0001F310 UPSTREAM EDITION FEATURES:\n• Built on standard Debian-based Python images with apt package manager\n• Open WebUI v0.6.9 (standard upstream release)\n• Pipelines from upstream development (main branch)\n• Uses standard open-source container images for maximum compatibility\n\n⚡ KEY CAPABILITIES:\n• GPU acceleration support with NVIDIA runtime\n• Persistent storage for models and data\n• NFS model caching for faster deployments\n• Comprehensive observability integration\n• Automated testing and monitoring\n"
+description: "SUSE AI Demo Showcase - Complete AI stack with Ollama, Open WebUI, and custom chat aggregation. Upstream edition uses standard upstream container images: official Ollama, upstream Open WebUI, upstream Pipelines, and Debian-based Python images. Includes GPU acceleration, persistent storage, NFS model caching, and comprehensive observability integration."
 type: application
 version: 0.1.131
 appVersion: "1.0.0"
