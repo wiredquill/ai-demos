@@ -309,7 +309,6 @@ class ChatInterface:
     def check_provider_status(self, provider_name: str, provider_info) -> dict:
         """Checks the status of a single provider and returns detailed info."""
         import time
-        import signal
         start_time = time.time()
         
         # Handle both old string format and new dict format
@@ -322,22 +321,14 @@ class ChatInterface:
             country = provider_info.get('country', '🌍 Unknown')
             flag = provider_info.get('flag', '🌍')
             
-        def timeout_handler(signum, frame):
-            raise TimeoutError("Request timed out")
-            
         try:
-            # Set up signal alarm for 10-second timeout
-            signal.signal(signal.SIGALRM, timeout_handler)
-            signal.alarm(10)  # 10-second timeout
-            
             headers = {'User-Agent': 'Mozilla/5.0'}
-            response = requests.get(url, timeout=8, headers=headers)  # requests timeout at 8s, signal at 10s
+            response = requests.get(url, timeout=8, headers=headers)  # 8-second timeout
             response_time = int((time.time() - start_time) * 1000)
             # Show as online if we get ANY response (even 403, 404, etc.)
             status = "🟢"
             logger.info(f"Provider {provider_name}: {response.status_code} -> {status} ({response_time}ms)")
             
-            signal.alarm(0)  # Cancel the alarm
             return {
                 "status": status,
                 "response_time": f"{response_time}ms",
@@ -346,11 +337,10 @@ class ChatInterface:
                 "status_code": response.status_code
             }
         except Exception as e:
-            signal.alarm(0)  # Cancel the alarm
             response_time = int((time.time() - start_time) * 1000)
-            # Cap response time at 10000ms for timeout cases
-            if response_time > 10000:
-                response_time = 10000
+            # Cap response time at 8000ms for timeout cases
+            if response_time > 8000:
+                response_time = 8000
             logger.warning(f"Provider {provider_name} failed: {str(e)} ({response_time}ms)")
             return {
                 "status": "🔴",
