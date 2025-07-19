@@ -6,6 +6,7 @@ import time
 import os
 import logging
 import queue
+import subprocess
 from typing import Dict, List, Any
 
 # Build trigger comment - pipeline model fix deployment
@@ -74,6 +75,11 @@ class ChatInterface:
         self.model_config_value = os.getenv("MODEL_CONFIG", "models-latest")
         self.config_map_name = os.getenv("CONFIG_MAP_NAME", "llm-chat-config")
         self.config_map_namespace = os.getenv("CONFIG_MAP_NAMESPACE", "default")
+        
+        # --- NEW: Service Health Failure Simulation State ---
+        self.service_health_failure = os.getenv("SERVICE_HEALTH_FAILURE", "false").lower() == "true"
+        self.deployment_name = os.getenv("DEPLOYMENT_NAME", "ollama-chat-app")
+        self.failure_env_var = "SERVICE_HEALTH_FAILURE"
         
         # --- NEW: Automation Runner State ---
         # Read automation settings from environment variables
@@ -227,15 +233,15 @@ class ChatInterface:
                     "content": f"{last_message['content']} {current_level['modifier']}"
                 }
         
-        # Check if pipeline should be broken based on model config
-        if self.model_config_value != "models-latest":
-            logger.warning(f"Pipeline broken: MODEL_CONFIG is '{self.model_config_value}' instead of 'models-latest'")
-            broken_response = f"🔴 **Pipeline BROKEN**: Model configuration error detected!\n\n"
-            broken_response += f"❌ Expected: 'models-latest'\n"
-            broken_response += f"🔧 Current: '{self.model_config_value}'\n\n"
-            broken_response += f"💡 Pipeline cannot process requests with invalid model configuration.\n"
-            broken_response += f"⚠️ This error demonstrates SUSE Observability's ability to detect configuration changes that break system functionality.\n\n"
-            broken_response += f"🔄 To fix: Update model config back to 'models-latest' using the Update Model Config button."
+        # Check if service is in failure state (like co-worker's approach)
+        if self.service_health_failure:
+            logger.warning(f"Service health failure detected: SERVICE_HEALTH_FAILURE=true")
+            broken_response = f"🔴 **SERVICE DEGRADED**: Health failure detected!\n\n"
+            broken_response += f"❌ Service Status: DEVIATING\n"
+            broken_response += f"🔧 Cause: SERVICE_HEALTH_FAILURE=true\n\n"
+            broken_response += f"💡 Service cannot process requests while in degraded state.\n"
+            broken_response += f"⚠️ This demonstrates SUSE Observability's ability to detect configuration changes and service health degradation.\n\n"
+            broken_response += f"🔄 To fix: Use 'Restore Service Health' in the Service Health Simulation modal."
             return broken_response
 
         # Try Pipelines service first if available, otherwise fall back to Open WebUI
@@ -443,8 +449,65 @@ class ChatInterface:
             logger.warning(f"Open WebUI authentication failed: {str(e)}")
             return False
 
+    def get_service_health_status(self) -> dict:
+        """Check overall service health and return status information."""
+        try:
+            # Check if service health failure is simulated
+            if self.service_health_failure:
+                return {
+                    "status": "DEVIATING",
+                    "color": "#dc3545",
+                    "message": "Service health degraded due to configuration failure",
+                    "details": "SERVICE_HEALTH_FAILURE environment variable is set to 'true'"
+                }
+            
+            # Check if model config is broken (legacy failure simulation)
+            if self.model_config_value != "models-latest":
+                return {
+                    "status": "DEVIATING",
+                    "color": "#ffa726",
+                    "message": "Pipeline configuration error detected",
+                    "details": f"MODEL_CONFIG is '{self.model_config_value}' instead of 'models-latest'"
+                }
+            
+            # Check basic service connectivity
+            try:
+                import requests
+                response = requests.get(f"{self.ollama_base_url}/api/tags", timeout=5)
+                if response.status_code == 200:
+                    return {
+                        "status": "HEALTHY",
+                        "color": "#28a745",
+                        "message": "All services operating normally",
+                        "details": "Ollama service responsive and configuration valid"
+                    }
+                else:
+                    return {
+                        "status": "DEGRADED",
+                        "color": "#ffa726",
+                        "message": "Ollama service not responding properly",
+                        "details": f"HTTP {response.status_code} from Ollama API"
+                    }
+            except Exception as e:
+                return {
+                    "status": "DEGRADED",
+                    "color": "#ffa726",
+                    "message": "Cannot connect to Ollama service",
+                    "details": str(e)
+                }
+        except Exception as e:
+            return {
+                "status": "UNKNOWN",
+                "color": "#6c757d",
+                "message": "Unable to determine service health",
+                "details": str(e)
+            }
+
     def get_provider_status_html(self) -> str:
-        """Generates compact provider cards with flags and status."""
+        """Generates compact provider cards with flags and status, plus service health."""
+        # Get service health status
+        health_status = self.get_service_health_status()
+        
         # Calculate statistics
         total_providers = len(self.provider_status)
         online_count = sum(1 for info in self.provider_status.values() if isinstance(info, dict) and info.get('status') == '🟢')
@@ -465,9 +528,22 @@ class ChatInterface:
         
         html_content = f"""
         <div style='background: linear-gradient(135deg, #0c322c 0%, #1a4a3a 100%); padding: 15px; border-radius: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);'>
-            <h3 style='color: #30ba78; margin: 0 0 15px 0; font-size: 16px; text-align: center; font-weight: 600;'>🌐 Model Provider Status</h3>
+            <h3 style='color: #30ba78; margin: 0 0 15px 0; font-size: 16px; text-align: center; font-weight: 600;'>🌐 System Status</h3>
             
-            <!-- Compact Provider List -->
+            <!-- Service Health Status -->
+            <div style='background: rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; margin-bottom: 15px; border-left: 4px solid {health_status["color"]};'>
+                <div style='display: flex; justify-content: space-between; align-items: center;'>
+                    <div>
+                        <div style='color: {health_status["color"]}; font-weight: 700; font-size: 14px;'>🏥 Service Health: {health_status["status"]}</div>
+                        <div style='color: #ffffff; font-size: 11px; opacity: 0.9; margin-top: 2px;'>{health_status["message"]}</div>
+                    </div>
+                    <div style='color: {health_status["color"]}; font-size: 20px;'>
+                        {"🟢" if health_status["status"] == "HEALTHY" else "🔴" if health_status["status"] == "DEVIATING" else "🟡"}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Model Provider List -->
             <div style='margin-bottom: 15px;'>
         """
         
@@ -523,69 +599,72 @@ class ChatInterface:
         
         return html_content
 
-    def update_model_config(self, new_config_value: str) -> tuple:
-        """Updates the model configuration in ConfigMap and triggers pipeline behavior change."""
+    def simulate_service_failure(self) -> tuple:
+        """Simulates service failure using kubectl patch (like co-worker's approach)."""
         try:
-            # Update local state
-            self.model_config_value = new_config_value
-            logger.info(f"Model config updated to: {new_config_value}")
+            logger.info("Simulating service failure using kubectl patch")
             
-            # Try to update Kubernetes ConfigMap if running in cluster
-            try:
-                self._update_kubernetes_configmap(new_config_value)
-                message = f"✅ Model config updated to '{new_config_value}' and ConfigMap updated successfully!"
-                status = "success"
-            except Exception as k8s_error:
-                logger.warning(f"ConfigMap update failed: {k8s_error}")
-                message = f"⚠️ Model config updated to '{new_config_value}' locally, but ConfigMap update failed: {str(k8s_error)}"
-                status = "warning"
-                
-            # Return updated modal visibility and message
-            return gr.Column(visible=False), message, status
+            # Use kubectl patch to change environment variable - exactly like your co-worker's pattern
+            cmd = [
+                "kubectl", "patch", "deployment", self.deployment_name, 
+                "-n", self.config_map_namespace,
+                "--type=json",
+                f'-p=[{{"op": "replace", "path": "/spec/template/spec/containers/0/env/0/value", "value": "true"}}]'
+            ]
             
-        except Exception as e:
-            logger.error(f"Model config update failed: {e}")
-            return gr.Column(visible=True), f"❌ Failed to update model config: {str(e)}", "error"
-
-    def _update_kubernetes_configmap(self, config_value: str):
-        """Updates the Kubernetes ConfigMap with new model configuration."""
-        import subprocess
-        import json
-        import time
-        
-        # Create ConfigMap data
-        config_data = {
-            "MODEL_CONFIG": config_value,
-            "UPDATED_AT": time.strftime('%Y-%m-%d %H:%M:%S')
-        }
-        
-        # Try to update ConfigMap using kubectl
-        try:
-            # First try to get existing ConfigMap
-            cmd = ["kubectl", "get", "configmap", self.config_map_name, "-n", self.config_map_namespace, "-o", "json"]
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-            existing_cm = json.loads(result.stdout)
+            logger.info(f"Deployment patch successful: {result.stdout}")
             
-            # Update the data section
-            if "data" not in existing_cm:
-                existing_cm["data"] = {}
-            existing_cm["data"].update(config_data)
+            # Update local state
+            self.service_health_failure = True
             
-            # Apply the updated ConfigMap
-            cmd = ["kubectl", "apply", "-f", "-"]
-            subprocess.run(cmd, input=json.dumps(existing_cm), text=True, check=True)
-            logger.info(f"ConfigMap {self.config_map_name} updated successfully")
+            message = f"🚨 Service failure simulated! Deployment '{self.deployment_name}' patched with SERVICE_HEALTH_FAILURE=true. SUSE Observability should detect configuration change and service degradation."
             
-        except subprocess.CalledProcessError:
-            # If get fails, create new ConfigMap
-            logger.info(f"ConfigMap {self.config_map_name} not found, creating new one")
-            cmd = ["kubectl", "create", "configmap", self.config_map_name, "--from-literal=MODEL_CONFIG=" + config_value, "--from-literal=UPDATED_AT=" + config_data["UPDATED_AT"], "-n", self.config_map_namespace]
-            subprocess.run(cmd, check=True)
-            logger.info(f"ConfigMap {self.config_map_name} created successfully")
+            return gr.Column(visible=False), message, "warning"
+            
+        except subprocess.CalledProcessError as e:
+            logger.error(f"kubectl patch failed: {e.stderr}")
+            return gr.Column(visible=True), f"❌ kubectl patch failed: {e.stderr}", "error"
+        except Exception as e:
+            logger.error(f"Service failure simulation failed: {e}")
+            return gr.Column(visible=True), f"❌ Simulation failed: {str(e)}", "error"
 
-    def restore_default_config(self) -> tuple:
-        """Restores the default model configuration."""
-        return self.update_model_config("models-latest")
+    def restore_service_health(self) -> tuple:
+        """Restores service health using kubectl patch."""
+        try:
+            logger.info("Restoring service health using kubectl patch")
+            
+            # Patch deployment back to healthy state
+            cmd = [
+                "kubectl", "patch", "deployment", self.deployment_name,
+                "-n", self.config_map_namespace, 
+                "--type=json",
+                f'-p=[{{"op": "replace", "path": "/spec/template/spec/containers/0/env/0/value", "value": "false"}}]'
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            logger.info(f"Deployment restore successful: {result.stdout}")
+            
+            # Update local state
+            self.service_health_failure = False
+            
+            message = f"✅ Service health restored! Deployment '{self.deployment_name}' patched back to SERVICE_HEALTH_FAILURE=false. SUSE Observability should detect recovery."
+            
+            return gr.Column(visible=False), message, "success"
+            
+        except subprocess.CalledProcessError as e:
+            logger.error(f"kubectl patch failed: {e.stderr}")
+            return gr.Column(visible=True), f"❌ kubectl patch failed: {e.stderr}", "error"
+        except Exception as e:
+            logger.error(f"Service health restoration failed: {e}")
+            return gr.Column(visible=True), f"❌ Restoration failed: {str(e)}", "error"
+
+    def get_service_health_status(self) -> str:
+        """Gets current service health status for display."""
+        if self.service_health_failure:
+            return "🔴 DEVIATING - Service experiencing failures"
+        else:
+            return "🟢 HEALTHY - Service operating normally"
 
     def refresh_providers(self) -> gr.HTML:
         """Manually refreshes provider statuses and returns the HTML."""
@@ -1018,8 +1097,8 @@ def create_interface():
                 initial_status_html = chat_instance.get_provider_status_html()
                 provider_status_html = gr.HTML(value=initial_status_html)
                 refresh_providers_btn = gr.Button("🔄 Refresh", elem_classes="refresh-btn", size="sm")
-                # NEW: Update Model Config button
-                update_config_btn = gr.Button("⚙️ Update Model Config", variant="secondary", size="sm")
+                # NEW: Service Health Simulation button
+                health_simulation_btn = gr.Button("🚨 Service Health Simulation", variant="secondary", size="sm")
 
             # CENTER PANEL - Chat Interface in Grouped Container (70%) 
             with gr.Column(scale=7):
@@ -1146,47 +1225,39 @@ def create_interface():
             
             # Automation controls and results moved to main screen for better UX
 
-        # Model Configuration Modal (initially hidden)
-        with gr.Column(visible=False) as model_config_modal:
+        # Service Health Simulation Modal (initially hidden)
+        with gr.Column(visible=False) as service_health_modal:
             with gr.Row():
-                gr.HTML("<h3 style='color: #73ba25; text-align: center;'>⚙️ Update Model Configuration</h3>")
-                close_model_config_btn = gr.Button("✕", variant="secondary", size="sm", elem_classes="close-btn")
+                gr.HTML("<h3 style='color: #73ba25; text-align: center;'>🚨 Service Health Simulation</h3>")
+                close_service_health_btn = gr.Button("✕", variant="secondary", size="sm", elem_classes="close-btn")
             
             gr.HTML("""
-            <div style='background: rgba(255, 167, 38, 0.1); border: 1px solid rgba(255, 167, 38, 0.3); border-radius: 8px; padding: 12px; margin: 10px 0;'>
-                <p style='color: #ffa726; margin: 0; font-size: 0.9em;'>
-                    ⚠️ <strong>Demo Feature:</strong> This simulates a configuration change that breaks the pipeline to demonstrate 
-                    SUSE Observability's ability to detect system changes and correlate them with failures.
+            <div style='background: rgba(220, 53, 69, 0.1); border: 1px solid rgba(220, 53, 69, 0.3); border-radius: 8px; padding: 12px; margin: 10px 0;'>
+                <p style='color: #dc3545; margin: 0; font-size: 0.9em;'>
+                    🚨 <strong>Advanced Demo Feature:</strong> This simulates a real service failure by patching the deployment's 
+                    environment variables using kubectl. This triggers actual service health state changes that SUSE Observability can detect.
                 </p>
             </div>
             """)
             
-            # Model config input with default value
-            model_config_input = gr.Textbox(
-                label="Model Configuration", 
-                value="models_latest",
-                placeholder="Enter model configuration value...",
-                lines=1
-            )
-            
             gr.HTML("""
             <div style='background: rgba(115, 186, 37, 0.1); border: 1px solid rgba(115, 186, 37, 0.3); border-radius: 8px; padding: 12px; margin: 10px 0;'>
-                <p style='color: #73ba25; margin: 0 0 8px 0; font-weight: 600;'>ℹ️ How it works:</p>
+                <p style='color: #73ba25; margin: 0 0 8px 0; font-weight: 600;'>ℹ️ How it works (Better Approach):</p>
                 <ul style='color: #a5d6a7; margin: 0; font-size: 0.85em; padding-left: 20px;'>
-                    <li><strong>Working state:</strong> When set to 'models-latest', the pipeline functions normally</li>
-                    <li><strong>Broken state:</strong> Any other value breaks the pipeline with a clear error message</li>
-                    <li><strong>Observability:</strong> ConfigMap changes are tracked by SUSE Observability</li>
-                    <li><strong>Recovery:</strong> Use 'Restore Defaults' to fix the configuration</li>
+                    <li><strong>Realistic Failure:</strong> Uses kubectl patch to change SERVICE_HEALTH_FAILURE from "false" to "true"</li>
+                    <li><strong>Actual Impact:</strong> Service health status changes to "DEVIATING" state</li>
+                    <li><strong>Observable:</strong> SUSE Observability can detect the deployment change and correlate with health degradation</li>
+                    <li><strong>Recovery:</strong> Use 'Restore Service Health' to patch the environment variable back to "false"</li>
                 </ul>
             </div>
             """)
             
             with gr.Row():
-                apply_config_btn = gr.Button("Apply Configuration", variant="primary")
-                restore_defaults_btn = gr.Button("Restore Defaults", variant="secondary")
+                simulate_failure_action_btn = gr.Button("🚨 Activate Failure Simulation", variant="stop")
+                restore_health_action_btn = gr.Button("🩹 Restore Service Health", variant="primary")
             
             # Status message display
-            config_status_msg = gr.HTML(value="")
+            service_health_status_msg = gr.HTML(value="")
 
         # --- Event Handlers ---
         
@@ -1215,17 +1286,17 @@ def create_interface():
             """Hide the configuration panel."""
             return gr.Column(visible=False)
         
-        def show_model_config_modal():
-            """Show the model configuration modal."""
-            return gr.Column(visible=True), chat_instance.model_config_value
+        def show_service_health_modal():
+            """Show the service health simulation modal."""
+            return gr.Column(visible=True)
         
-        def hide_model_config_modal():
-            """Hide the model configuration modal."""
+        def hide_service_health_modal():
+            """Hide the service health simulation modal."""
             return gr.Column(visible=False), ""
         
-        def apply_model_config(config_value: str):
-            """Apply new model configuration."""
-            modal_visible, message, status = chat_instance.update_model_config(config_value)
+        def simulate_service_failure():
+            """Simulate service failure using kubectl patch."""
+            modal_visible, message, status = chat_instance.simulate_service_failure()
             
             # Create status message HTML based on status
             if status == "success":
@@ -1237,14 +1308,20 @@ def create_interface():
             
             return modal_visible, status_html
         
-        def restore_model_config():
-            """Restore default model configuration."""
-            modal_visible, message, status = chat_instance.restore_default_config()
+        def restore_service_health():
+            """Restore service health using kubectl patch."""
+            modal_visible, message, status = chat_instance.restore_service_health()
             
-            # Create status message HTML
-            status_html = f"<div style='color: #4CAF50; background: rgba(76, 175, 80, 0.1); padding: 10px; border-radius: 8px; margin: 10px 0;'>{message}</div>"
+            # Create status message HTML based on status
+            if status == "success":
+                status_html = f"<div style='color: #4CAF50; background: rgba(76, 175, 80, 0.1); padding: 10px; border-radius: 8px; margin: 10px 0;'>{message}</div>"
+            elif status == "warning":
+                status_html = f"<div style='color: #ffa726; background: rgba(255, 167, 38, 0.1); padding: 10px; border-radius: 8px; margin: 10px 0;'>{message}</div>"
+            else:
+                status_html = f"<div style='color: #f44336; background: rgba(244, 67, 54, 0.1); padding: 10px; border-radius: 8px; margin: 10px 0;'>{message}</div>"
             
-            return modal_visible, status_html, "models-latest"
+            return modal_visible, status_html
+        
 
         send_btn.click(handle_send_message, inputs=[msg_input, model_dropdown], outputs=[ollama_output, webui_output, msg_input])
         msg_input.submit(handle_send_message, inputs=[msg_input, model_dropdown], outputs=[ollama_output, webui_output, msg_input])
@@ -1254,11 +1331,12 @@ def create_interface():
         config_btn.click(show_config_panel, outputs=[config_panel])
         close_config_btn.click(hide_config_panel, outputs=[config_panel])
         
-        # Model configuration modal handlers
-        update_config_btn.click(show_model_config_modal, outputs=[model_config_modal, model_config_input])
-        close_model_config_btn.click(hide_model_config_modal, outputs=[model_config_modal, config_status_msg])
-        apply_config_btn.click(apply_model_config, inputs=[model_config_input], outputs=[model_config_modal, config_status_msg])
-        restore_defaults_btn.click(restore_model_config, outputs=[model_config_modal, config_status_msg, model_config_input])
+        # Service health simulation modal handlers
+        health_simulation_btn.click(lambda: gr.Column(visible=True), outputs=[service_health_modal])
+        close_service_health_btn.click(lambda: (gr.Column(visible=False), ""), outputs=[service_health_modal, service_health_status_msg])
+        simulate_failure_action_btn.click(simulate_service_failure, outputs=[service_health_modal, service_health_status_msg])
+        restore_health_action_btn.click(restore_service_health, outputs=[service_health_modal, service_health_status_msg])
+        
 
         def initial_load():
             """Loads initial data when the UI starts."""
