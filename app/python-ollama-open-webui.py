@@ -667,7 +667,7 @@ class ChatInterface:
             
             # Use requests library instead of curl (available in container)
             import requests
-            response = requests.head("https://suse.com", timeout=5)
+            response = requests.head("https://suse.com", timeout=3)
             
             if response.status_code == 200:
                 headers_text = "\n".join([f"{k}: {v}" for k, v in response.headers.items()][:10])
@@ -697,7 +697,7 @@ class ChatInterface:
             import requests
             
             data = {"creditcard": credit_card_pattern}
-            response = requests.post("http://example.com", data=data, timeout=5)
+            response = requests.post("http://example.com", data=data, timeout=3)
             
             # Always report this as a security concern regardless of HTTP response
             message = f"🔒 Data Leak Demo: Transmitted credit card {credit_card_pattern} to http://example.com\n\n"
@@ -1292,8 +1292,8 @@ def create_interface():
                 close_security_demo_btn = gr.Button("✕", variant="secondary", size="sm", elem_classes="close-btn")
             
             gr.HTML("""
-            <div style='background: rgba(220, 53, 69, 0.1); border: 1px solid rgba(220, 53, 69, 0.3); border-radius: 8px; padding: 12px; margin: 10px 0;'>
-                <p style='color: #dc3545; margin: 0; font-size: 0.9em;'>
+            <div style='background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(220, 53, 69, 0.3); border-radius: 8px; padding: 12px; margin: 10px 0;'>
+                <p style='color: #d32f2f; margin: 0; font-size: 0.9em; font-weight: 600;'>
                     🔒 <strong>SUSE Security Demonstration:</strong> These demos simulate real security scenarios that 
                     SUSE NeuVector and SUSE Observability can detect and alert on.
                 </p>
@@ -1301,9 +1301,9 @@ def create_interface():
             """)
             
             gr.HTML("""
-            <div style='background: rgba(115, 186, 37, 0.1); border: 1px solid rgba(115, 186, 37, 0.3); border-radius: 8px; padding: 12px; margin: 10px 0;'>
-                <p style='color: #73ba25; margin: 0 0 8px 0; font-weight: 600;'>🔍 Security Demo Scenarios:</p>
-                <ul style='color: #a5d6a7; margin: 0; font-size: 0.85em; padding-left: 20px;'>
+            <div style='background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(115, 186, 37, 0.3); border-radius: 8px; padding: 12px; margin: 10px 0;'>
+                <p style='color: #2e7d32; margin: 0 0 8px 0; font-weight: 700;'>🔍 Security Demo Scenarios:</p>
+                <ul style='color: #1b5e20; margin: 0; font-size: 0.85em; padding-left: 20px; font-weight: 500;'>
                     <li><strong>Availability Demo:</strong> Tests external connectivity to https://suse.com (network policy monitoring)</li>
                     <li><strong>Data Leak Demo:</strong> Transmits credit card data to simulate data loss prevention (DLP) detection</li>
                     <li><strong>Security Monitoring:</strong> SUSE NeuVector should detect and alert on sensitive data transmission</li>
@@ -1358,13 +1358,13 @@ def create_interface():
             """Run availability demo."""
             modal_visible, message, status = chat_instance.run_availability_demo()
             
-            # Create status message HTML based on status
+            # Create status message HTML based on status with better contrast
             if status == "success":
-                status_html = f"<div style='color: #4CAF50; background: rgba(76, 175, 80, 0.1); padding: 10px; border-radius: 8px; margin: 10px 0;'>{message}</div>"
+                status_html = f"<div style='color: #1b5e20; background: rgba(76, 175, 80, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #4CAF50; font-weight: 500;'>{message}</div>"
             elif status == "warning":
-                status_html = f"<div style='color: #ffa726; background: rgba(255, 167, 38, 0.1); padding: 10px; border-radius: 8px; margin: 10px 0;'>{message}</div>"
+                status_html = f"<div style='color: #e65100; background: rgba(255, 167, 38, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #ffa726; font-weight: 500;'>{message}</div>"
             else:
-                status_html = f"<div style='color: #f44336; background: rgba(244, 67, 54, 0.1); padding: 10px; border-radius: 8px; margin: 10px 0;'>{message}</div>"
+                status_html = f"<div style='color: #c62828; background: rgba(244, 67, 54, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #f44336; font-weight: 500;'>{message}</div>"
             
             return modal_visible, status_html
         
@@ -1372,13 +1372,13 @@ def create_interface():
             """Run data leak demo."""
             modal_visible, message, status = chat_instance.run_data_leak_demo()
             
-            # Create status message HTML based on status
+            # Create status message HTML based on status with better contrast
             if status == "success":
-                status_html = f"<div style='color: #4CAF50; background: rgba(76, 175, 80, 0.1); padding: 10px; border-radius: 8px; margin: 10px 0;'>{message}</div>"
+                status_html = f"<div style='color: #1b5e20; background: rgba(76, 175, 80, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #4CAF50; font-weight: 500;'>{message}</div>"
             elif status == "warning":
-                status_html = f"<div style='color: #ffa726; background: rgba(255, 167, 38, 0.1); padding: 10px; border-radius: 8px; margin: 10px 0;'>{message}</div>"
+                status_html = f"<div style='color: #e65100; background: rgba(255, 167, 38, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #ffa726; font-weight: 500;'>{message}</div>"
             else:
-                status_html = f"<div style='color: #f44336; background: rgba(244, 67, 54, 0.1); padding: 10px; border-radius: 8px; margin: 10px 0;'>{message}</div>"
+                status_html = f"<div style='color: #c62828; background: rgba(244, 67, 54, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #f44336; font-weight: 500;'>{message}</div>"
             
             return modal_visible, status_html
         
