@@ -2,10 +2,10 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "ai-compare.fullname" . }}-neuvector-setup
+  name: {{ include "ai-compare-suse.fullname" . }}-neuvector-setup
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ai-compare.labels" . | nindent 4 }}
+    {{- include "ai-compare-suse.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-weight": "5"
@@ -14,7 +14,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "ai-compare.selectorLabels" . | nindent 8 }}
+        {{- include "ai-compare-suse.selectorLabels" . | nindent 8 }}
         job-name: neuvector-setup
     spec:
       restartPolicy: OnFailure
@@ -58,7 +58,7 @@ spec:
           echo "Configuring group..."
           
           # Create/Update Group
-          curl -k -X PATCH {{ .Values.neuvector.controllerUrl }}/v1/group/nv.{{ .Release.Namespace }}.{{ include "ai-compare.fullname" . }} \
+          curl -k -X PATCH {{ .Values.neuvector.controllerUrl }}/v1/group/nv.{{ .Release.Namespace }}.{{ include "ai-compare-suse.fullname" . }} \
             -H "Content-Type: application/json" \
             -H "X-Auth-Token: $TOKEN" \
             -d @/config/group-config.json || true
@@ -79,5 +79,5 @@ spec:
       volumes:
       - name: config
         configMap:
-          name: {{ include "ai-compare.fullname" . }}-neuvector-config
+          name: {{ include "ai-compare-suse.fullname" . }}-neuvector-config
 {{- end }}

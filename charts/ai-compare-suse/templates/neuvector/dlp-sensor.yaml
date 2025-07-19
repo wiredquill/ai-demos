@@ -2,10 +2,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "ai-compare.fullname" . }}-neuvector-config
+  name: {{ include "ai-compare-suse.fullname" . }}-neuvector-config
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ai-compare.labels" . | nindent 4 }}
+    {{- include "ai-compare-suse.labels" . | nindent 4 }}
 data:
   dlp-sensor.json: |
     {
@@ -32,7 +32,7 @@ data:
   group-config.json: |
     {
       "config": {
-        "name": "nv.{{ .Release.Namespace }}.{{ include "ai-compare.fullname" . }}",
+        "name": "nv.{{ .Release.Namespace }}.{{ include "ai-compare-suse.fullname" . }}",
         "comment": "AI Compare application group for DLP monitoring",
         "cfg_type": "learned",
         "kind": "container",
@@ -54,7 +54,7 @@ data:
           },
           {
             "key": "service", 
-            "value": "{{ include "ai-compare.fullname" . }}",
+            "value": "{{ include "ai-compare-suse.fullname" . }}",
             "op": "="
           }
         ]
@@ -66,7 +66,7 @@ data:
       "config": {
         "id": 100001,
         "comment": "Monitor AI Compare outbound traffic for security demo",
-        "from": "nv.{{ .Release.Namespace }}.{{ include "ai-compare.fullname" . }}",
+        "from": "nv.{{ .Release.Namespace }}.{{ include "ai-compare-suse.fullname" . }}",
         "to": "external",
         "ports": "any",
         "action": "allow",

@@ -293,6 +293,7 @@ questions:
   description: "Automatically configure NeuVector DLP sensors for security demo functionality. Requires NeuVector to be deployed in the cluster."
   type: "boolean"
   default: true
+  show_if: "advancedConfig=true"
 
 - variable: neuvector.controllerUrl
   group: "Security Settings"
@@ -300,7 +301,7 @@ questions:
   description: "URL to the NeuVector controller service for API configuration"
   type: "string"
   default: "https://neuvector-svc-controller.neuvector.svc.cluster.local:10443"
-  show_if: "neuvector.enabled=true"
+  show_if: "advancedConfig=true&&neuvector.enabled=true"
 
 - variable: neuvector.username
   group: "Security Settings"
@@ -308,7 +309,7 @@ questions:
   description: "Administrative username for NeuVector API access"
   type: "string"
   default: "admin"
-  show_if: "neuvector.enabled=true"
+  show_if: "advancedConfig=true&&neuvector.enabled=true"
 
 - variable: neuvector.password
   group: "Security Settings"
@@ -316,4 +317,4 @@ questions:
   description: "Administrative password for NeuVector API access"
   type: "password"
   default: "admin"
-  show_if: "neuvector.enabled=true"
+  show_if: "advancedConfig=true&&neuvector.enabled=true"
