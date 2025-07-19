@@ -285,3 +285,35 @@ questions:
   type: "boolean"
   default: false
   show_if: "llmChat.observability.enabled=true"
+
+# Security Settings Group - NeuVector integration and DLP configuration
+- variable: neuvector.enabled
+  group: "Security Settings"
+  label: "Enable NeuVector Integration"
+  description: "Automatically configure NeuVector DLP sensors for security demo functionality. Requires NeuVector to be deployed in the cluster."
+  type: "boolean"
+  default: true
+
+- variable: neuvector.controllerUrl
+  group: "Security Settings"
+  label: "NeuVector Controller URL"
+  description: "URL to the NeuVector controller service for API configuration"
+  type: "string"
+  default: "https://neuvector-svc-controller.neuvector.svc.cluster.local:10443"
+  show_if: "neuvector.enabled=true"
+
+- variable: neuvector.username
+  group: "Security Settings"
+  label: "NeuVector Admin Username"
+  description: "Administrative username for NeuVector API access"
+  type: "string"
+  default: "admin"
+  show_if: "neuvector.enabled=true"
+
+- variable: neuvector.password
+  group: "Security Settings"
+  label: "NeuVector Admin Password"
+  description: "Administrative password for NeuVector API access"
+  type: "password"
+  default: "admin"
+  show_if: "neuvector.enabled=true"
