@@ -1,4 +1,12 @@
 questions:
+# Advanced Configuration Toggle - Controls visibility of advanced sections
+- variable: advancedConfig
+  group: "Configuration Mode"
+  label: "Show Advanced Configuration Options"
+  description: "Enable to show advanced settings like Images, Pipeline Integration, and Automation. Keep disabled for simplified deployment."
+  type: "boolean"
+  default: false
+
 # Ollama Settings Group - Priority settings for the AI model server
 - variable: ollama.gpu.enabled
   group: "Ollama Settings"
@@ -26,6 +34,7 @@ questions:
   description: "The amount of CPU to reserve for the main Ollama container (e.g., '500m', '1')."
   type: "string"
   default: "2"
+  show_if: "advancedConfig=true"
 
 - variable: ollama.resources.requests.memory
   group: "Ollama Settings"
@@ -33,6 +42,7 @@ questions:
   description: "The amount of memory to reserve for the main Ollama container (e.g., '1Gi', '2048Mi')."
   type: "string"
   default: "2Gi"
+  show_if: "advancedConfig=true"
 
 - variable: ollama.resources.limits.cpu
   group: "Ollama Settings"
@@ -40,6 +50,7 @@ questions:
   description: "The maximum amount of CPU the main Ollama container can use."
   type: "string"
   default: "4"
+  show_if: "advancedConfig=true"
 
 - variable: ollama.resources.limits.memory
   group: "Ollama Settings"
@@ -47,6 +58,7 @@ questions:
   description: "The maximum amount of memory the main Ollama container can use."
   type: "string"
   default: "16Gi"
+  show_if: "advancedConfig=true"
 
 - variable: ollama.persistence.enabled
   group: "Ollama Settings"
@@ -97,8 +109,8 @@ questions:
 # Networking Group - For configuring how services are exposed
 - variable: llmChat.service.type
   group: "Networking"
-  label: "LLM Chat Service Type"
-  description: "Method to expose the LLM Chat service."
+  label: "AI Compare Service Type"
+  description: "Method to expose the AI Compare service."
   type: "enum"
   required: true
   default: "NodePort"
@@ -138,6 +150,7 @@ questions:
   description: "Enable pipeline processing for response modification and enhanced AI capabilities."
   type: "boolean"
   default: true
+  show_if: "advancedConfig=true"
 
 - variable: pipelines.config.pipelineMode
   group: "Pipeline Integration"
@@ -150,7 +163,7 @@ questions:
       value: "auto-cycle"
     - label: "Manual (stays on selected level)"
       value: "manual"
-  show_if: "pipelines.enabled=true"
+  show_if: "advancedConfig=true&&pipelines.enabled=true"
 
 - variable: pipelines.git.enabled
   group: "Pipeline Integration"
@@ -158,7 +171,7 @@ questions:
   description: "Automatically download and deploy pipelines from the git repository"
   type: "boolean"
   default: true
-  show_if: "pipelines.enabled=true"
+  show_if: "advancedConfig=true&&pipelines.enabled=true"
 
 - variable: pipelines.autoConfig.enabled
   group: "Pipeline Integration"
@@ -166,7 +179,7 @@ questions:
   description: "Automatically set up pipeline connection in Open WebUI during deployment"
   type: "boolean"
   default: true
-  show_if: "pipelines.enabled=true"
+  show_if: "advancedConfig=true&&pipelines.enabled=true"
 
 - variable: pipelines.autoConfig.apiKey
   group: "Pipeline Integration"
@@ -174,7 +187,7 @@ questions:
   description: "API key for Open WebUI to connect to the pipeline service"
   type: "string"
   default: "0p3n-w3bu!"
-  show_if: "pipelines.autoConfig.enabled=true"
+  show_if: "advancedConfig=true&&pipelines.autoConfig.enabled=true"
 
 # Images Group
 - variable: ollama.image.tag
@@ -183,6 +196,7 @@ questions:
   description: "The container image tag for Ollama."
   type: "string"
   default: "0.6.8"
+  show_if: "advancedConfig=true"
 
 - variable: openWebui.image.tag
   group: "Images"
@@ -190,6 +204,7 @@ questions:
   description: "The container image tag for Open WebUI."
   type: "string"
   default: "0.6.9"
+  show_if: "advancedConfig=true"
 
 - variable: pipelines.image.tag
   group: "Images"
@@ -197,13 +212,15 @@ questions:
   description: "The container image tag for Open WebUI Pipelines."
   type: "string"
   default: "main"
+  show_if: "advancedConfig=true"
 
 - variable: llmChat.image.tag
   group: "Images"
-  label: "LLM Chat Image Tag"
-  description: "The container image tag for the LLM Chat App."
+  label: "AI Compare Image Tag"
+  description: "The container image tag for the AI Compare App."
   type: "string"
   default: "latest"
+  show_if: "advancedConfig=true"
 
 # Automation Settings Group - Settings for the automated test runner
 - variable: llmChat.automation.enabled
@@ -212,6 +229,7 @@ questions:
   description: "If true, the application will automatically run a test on a timer to monitor provider status and test AI responses."
   type: "boolean"
   default: false
+  show_if: "advancedConfig=true"
 
 - variable: llmChat.automation.sendMessages
   group: "Automation Settings"
@@ -219,7 +237,7 @@ questions:
   description: "When enabled, automation will send test questions to both Ollama and Open WebUI."
   type: "boolean"
   default: true
-  show_if: "llmChat.automation.enabled=true"
+  show_if: "advancedConfig=true&&llmChat.automation.enabled=true"
 
 - variable: llmChat.automation.providerTest
   group: "Automation Settings"
@@ -227,7 +245,7 @@ questions:
   description: "When enabled, regularly tests connectivity to model providers and updates status."
   type: "boolean"
   default: false
-  show_if: "llmChat.automation.enabled=true"
+  show_if: "advancedConfig=true&&llmChat.automation.enabled=true"
 
 - variable: llmChat.automation.intervalSeconds
   group: "Automation Settings"
@@ -235,7 +253,7 @@ questions:
   description: "The time in seconds between each automated test run."
   type: "int"
   default: 30
-  show_if: "llmChat.automation.enabled=true"
+  show_if: "advancedConfig=true&&llmChat.automation.enabled=true"
 
 - variable: llmChat.automation.defaultPrompt
   group: "Automation Settings"
@@ -243,7 +261,7 @@ questions:
   description: "The recurring prompt to send to AI models during automated testing."
   type: "string"
   default: "Why is the sky blue? Be concise."
-  show_if: "llmChat.automation.sendMessages=true"
+  show_if: "advancedConfig=true&&llmChat.automation.sendMessages=true"
 
 # Observability Settings Group - OpenTelemetry and monitoring configuration
 - variable: llmChat.observability.enabled
