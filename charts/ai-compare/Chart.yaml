@@ -1,6 +1,24 @@
 apiVersion: v2
 name: ai-compare
-description: "AI Compare - Comprehensive AI response comparison tool based on upstream open-source components. Demonstrates differences between direct model access and pipeline-enhanced responses. Features Ollama, Open WebUI, custom chat aggregation, and configuration change detection for SUSE Observability demos. Uses standard upstream container images with GPU acceleration, persistent storage, and comprehensive observability integration."
+description: "AI Compare - Side-by-side AI response comparison platform. Features Ollama, Open WebUI, pipelines, and custom chat interface. Built on upstream open-source components with GPU support, observability integration, and security demonstrations. Showcases security differences between upstream and enterprise-hardened container images."
 type: application
-version: 0.1.143
+version: 0.1.144
 appVersion: "1.0.0"
+keywords:
+  - ai
+  - llm
+  - ollama
+  - machine-learning
+  - opentelemetry
+  - observability
+  - demo
+  - comparison
+home: https://github.com/wiredquill/ai-demos
+sources:
+  - https://github.com/wiredquill/ai-demos
+maintainers:
+  - name: AI Compare Team
+    email: noreply@example.com
+annotations:
+  category: AI/ML
+  licenses: MIT

@@ -1,6 +1,29 @@
 apiVersion: v2
 name: ai-compare-suse
-description: "AI Compare SUSE Edition - Comprehensive AI response comparison tool that demonstrates differences between direct model access and pipeline-enhanced responses. Features Ollama, Open WebUI, custom chat aggregation, and configuration change detection for SUSE Observability demos. SUSE edition uses SUSE's Application Collection and SUSE Base Container Images (BCI) - enterprise-ready and optimized for SUSE environments."
+description: "AI Compare SUSE Edition - Enterprise AI response comparison platform optimized for SUSE environments. Features SUSE BCI images, native SUSE Observability integration, NeuVector security demos, and full SUSE cloud-native stack compatibility."
 type: application
-version: 0.1.143
+version: 0.1.144
 appVersion: "1.0.0"
+keywords:
+  - ai
+  - llm
+  - ollama
+  - machine-learning
+  - suse
+  - enterprise
+  - observability
+  - neuvector
+  - security
+  - demo
+  - bci
+home: https://github.com/wiredquill/ai-demos
+sources:
+  - https://github.com/wiredquill/ai-demos
+maintainers:
+  - name: AI Compare SUSE Team
+    email: noreply@suse.com
+annotations:
+  category: AI/ML
+  licenses: MIT
+  suse.com/certified: "true"
+  suse.com/bci-images: "true"

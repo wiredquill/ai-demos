@@ -23,7 +23,7 @@ data:
                 "context": "body"
               }
             ],
-            "action": "alert"
+            "action": "block"
           }
         ]
       }
