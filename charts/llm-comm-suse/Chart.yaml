@@ -2,5 +2,5 @@ apiVersion: v2
 name: llm-comm-suse
 description: "SUSE AI Demo Showcase - Complete AI stack with Ollama, Open WebUI, and custom chat aggregation. SUSE edition uses container images from SUSE's Application Collection and SUSE Python Base Container Images (BCI). All images are enterprise-ready and optimized for SUSE environments. Includes GPU acceleration, persistent storage, NFS model caching, and comprehensive observability integration."
 type: application
-version: 0.1.132
+version: 0.1.133
 appVersion: "1.0.0"
