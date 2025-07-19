@@ -101,3 +101,10 @@ llmChat:
     otlpEndpoint: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
     collectGpuStats: true
     schedule: "*/5 * * * *"
+
+# NeuVector Security Configuration
+neuvector:
+  enabled: false
+  controllerUrl: "https://neuvector-svc-controller.neuvector.svc.cluster.local:10443"
+  username: "admin"
+  password: "admin"

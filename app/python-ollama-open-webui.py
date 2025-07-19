@@ -669,9 +669,12 @@ class ChatInterface:
             import requests
             response = requests.head("https://suse.com", timeout=3)
             
-            if response.status_code == 200:
+            if response.status_code in [200, 301, 302]:  # Accept success and redirects
                 headers_text = "\n".join([f"{k}: {v}" for k, v in response.headers.items()][:10])
-                message = f"✅ Availability Demo: Successfully connected to https://suse.com\n\nResponse Headers:\n{headers_text}..."
+                if response.status_code == 301:
+                    message = f"✅ Availability Demo: Successfully connected to https://suse.com (redirected to {response.headers.get('Location', 'unknown')})\n\nResponse Headers:\n{headers_text}..."
+                else:
+                    message = f"✅ Availability Demo: Successfully connected to https://suse.com\n\nResponse Headers:\n{headers_text}..."
                 status = "success"
             else:
                 message = f"⚠️ Availability Demo: Connection returned status {response.status_code}"
