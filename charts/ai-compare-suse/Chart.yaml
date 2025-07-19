@@ -2,5 +2,5 @@ apiVersion: v2
 name: ai-compare-suse
 description: "AI Compare SUSE Edition - Comprehensive AI response comparison tool that demonstrates differences between direct model access and pipeline-enhanced responses. Features Ollama, Open WebUI, custom chat aggregation, and configuration change detection for SUSE Observability demos. SUSE edition uses SUSE's Application Collection and SUSE Base Container Images (BCI) - enterprise-ready and optimized for SUSE environments."
 type: application
-version: 0.1.138
+version: 0.1.139
 appVersion: "1.0.0"
