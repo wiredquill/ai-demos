@@ -659,12 +659,6 @@ class ChatInterface:
             logger.error(f"Service health restoration failed: {e}")
             return gr.Column(visible=True), f"❌ Restoration failed: {str(e)}", "error"
 
-    def get_service_health_status(self) -> str:
-        """Gets current service health status for display."""
-        if self.service_health_failure:
-            return "🔴 DEVIATING - Service experiencing failures"
-        else:
-            return "🟢 HEALTHY - Service operating normally"
 
     def run_availability_demo(self) -> tuple:
         """Runs availability demo by curling an external website (SUSE security demo pattern)."""

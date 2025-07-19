@@ -1,13 +1,12 @@
 questions:
-# Advanced Configuration Toggle - Controls visibility of advanced sections
+# Ollama Settings Group - Priority settings for the AI model server
 - variable: advancedConfig
-  group: "Configuration Mode"
+  group: "Ollama Settings"
   label: "Show Advanced Configuration Options"
   description: "Enable to show advanced settings like Images, Pipeline Integration, and Automation. Keep disabled for simplified deployment."
   type: "boolean"
   default: false
 
-# Ollama Settings Group - Priority settings for the AI model server
 - variable: ollama.gpu.enabled
   group: "Ollama Settings"
   label: "Enable NVIDIA GPU Acceleration"
