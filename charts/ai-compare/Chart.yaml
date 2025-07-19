@@ -2,5 +2,5 @@ apiVersion: v2
 name: ai-compare
 description: "AI Compare - Comprehensive AI response comparison tool that demonstrates differences between direct model access and pipeline-enhanced responses. Features Ollama, Open WebUI, custom chat aggregation, and configuration change detection for SUSE Observability demos. Upstream edition uses standard container images with GPU acceleration, persistent storage, and comprehensive observability integration."
 type: application
-version: 0.1.140
+version: 0.1.141
 appVersion: "1.0.0"
