@@ -59,6 +59,11 @@ spec:
               value: "llm-chat-config"
             - name: CONFIG_MAP_NAMESPACE
               value: "{{ .Release.Namespace }}"
+            # Service health failure simulation
+            - name: SERVICE_HEALTH_FAILURE
+              value: "false"
+            - name: DEPLOYMENT_NAME
+              value: "ollama-chat-app"
           # Health checks to ensure proper startup sequencing
           livenessProbe:
             httpGet:
