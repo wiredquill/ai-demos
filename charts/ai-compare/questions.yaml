@@ -292,7 +292,7 @@ questions:
   label: "Enable NeuVector Integration"
   description: "Automatically configure NeuVector DLP sensors for security demo functionality. Requires NeuVector to be deployed in the cluster."
   type: "boolean"
-  default: true
+  default: false
   show_if: "advancedConfig=true"
 
 - variable: neuvector.controllerUrl

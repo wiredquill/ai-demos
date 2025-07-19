@@ -103,7 +103,7 @@ llmChat:
     schedule: "*/5 * * * *"
 # NeuVector Security Configuration
 neuvector:
-  enabled: true
+  enabled: false
   controllerUrl: "https://neuvector-svc-controller.neuvector.svc.cluster.local:10443"
   username: "admin"
   password: "admin"
