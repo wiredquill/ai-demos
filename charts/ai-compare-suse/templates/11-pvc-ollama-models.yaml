@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ include "llm-comm-suse.fullname" . }}-ollama-models-pvc
+  name: {{ include "ai-compare-suse.fullname" . }}-ollama-models-pvc
 spec:
   accessModes:
     - ReadWriteOnce

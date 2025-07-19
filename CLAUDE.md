@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is the SUSE AI Demo Showcase - a comprehensive demonstration of building, deploying, and managing AI applications on SUSE's cloud-native platform. The project showcases an end-to-end solution for AI workloads including infrastructure provisioning, application deployment, and observability.
+This is AI Compare - a comprehensive demonstration of AI response comparison that shows differences between direct model access and pipeline-enhanced responses. The project demonstrates building, deploying, and managing AI applications on SUSE's cloud-native platform, with configuration change detection capabilities for SUSE Observability demonstrations.
 
 ## Architecture
 
 **Multi-Container AI Stack:**
 - **Ollama**: Local LLM inference server (runs models like tinyllama)
-- **Open WebUI**: Web interface for LLM interactions
-- **LLM Chat**: Custom Python/Gradio chat application that aggregates responses from both Ollama and Open WebUI
+- **Open WebUI**: Web interface for LLM interactions with pipeline support
+- **AI Compare Chat**: Custom Python/Gradio chat application that compares responses from direct Ollama vs pipeline-enhanced Open WebUI
 
 **Deployment Options:**
 - **SUSE variant**: Uses SUSE BCI (Base Container Images) with zypper package manager
@@ -27,10 +27,10 @@ This is the SUSE AI Demo Showcase - a comprehensive demonstration of building, d
 ### Container Builds
 ```bash
 # Build upstream variant (from repo root)
-docker build -f app/Dockerfile.upstream -t suse-ai-demo:upstream .
+docker build -f app/Dockerfile.upstream -t ai-compare:upstream .
 
 # Build SUSE variant (from repo root)
-docker build -f app/Dockerfile.suse -t suse-ai-demo:suse .
+docker build -f app/Dockerfile.suse -t ai-compare:suse .
 ```
 
 ### Application Development
@@ -45,23 +45,23 @@ cd app && python python-ollama-open-webui.py
 ### Helm Chart Operations
 ```bash
 # Install SUSE variant
-helm install my-release charts/llm-comm-suse
+helm install my-release charts/ai-compare-suse
 
 # Install upstream variant  
-helm install my-release charts/llm-comm-upstream
+helm install my-release charts/ai-compare
 
 # Install with GPU support
-helm install my-release charts/llm-comm-suse \
+helm install my-release charts/ai-compare-suse \
   --set ollama.gpu.enabled=true \
   --set ollama.hardware.type=nvidia
 
 # Enable development mode with SSH access
-helm install my-release charts/llm-comm-upstream \
+helm install my-release charts/ai-compare \
   --set llmChat.devMode.enabled=true \
   --set llmChat.devMode.persistence.enabled=true
 
 # Enable OpenTelemetry observability with SUSE Observability
-helm install my-release charts/llm-comm-suse \
+helm install my-release charts/ai-compare-suse \
   --set llmChat.observability.enabled=true \
   --set llmChat.observability.otlpEndpoint="http://opentelemetry-collector.suse-observability.svc.cluster.local:4318" \
   --set llmChat.observability.collectGpuStats=true

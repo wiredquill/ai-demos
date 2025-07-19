@@ -12,15 +12,13 @@ spec:
       labels:
         app: ollama
     spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       # --- ADDED RUNTIMECLASSNAME BLOCK ---
       # This will add runtimeClassName: nvidia only when GPU is enabled for NVIDIA
       {{- if and .Values.ollama.gpu.enabled (eq .Values.ollama.hardware.type "nvidia") }}
       runtimeClassName: nvidia
       {{- end }}
+      
+      
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -34,6 +32,7 @@ spec:
                 {{- else }}
                 - amd64
                 {{- end }}
+      
       initContainers:
       {{- if .Values.ollama.modelCache.nfs.enabled }}
       # NFS Model Cache Init Container
@@ -127,13 +126,13 @@ spec:
           value: "0.0.0.0:11434"
         resources:
           limits:
-            memory: "4Gi"
+            memory: "6Gi"
             cpu: "2"
           requests:
             memory: "1Gi"
             cpu: "500m"
       {{- else }}
-      # Standard Model Download (no caching)
+      # Standard Model Download (no Harbor caching)
       # Downloads model directly from Ollama registry every time
       - name: ollama-pull-model
         image: "{{ .Values.ollama.image.repository }}:{{ .Values.ollama.image.tag }}"
@@ -181,7 +180,7 @@ spec:
       - name: ollama-models
         {{- if .Values.ollama.persistence.enabled }}
         persistentVolumeClaim:
-          claimName: {{ include "llm-comm-suse.fullname" . }}-ollama-models-pvc
+          claimName: {{ include "ai-compare.fullname" . }}-ollama-models-pvc
         {{- else }}
         emptyDir: {}
         {{- end }}

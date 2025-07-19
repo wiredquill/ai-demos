@@ -1,13 +1,14 @@
-# Default values for the chart
+# Default values for ai-compare-suse chart
 
 # -- Global image pull policy
 imagePullPolicy: Always
-# -- Default pull secrets (can be overridden, e.g., for SUSE chart)
-imagePullSecrets: []
+# -- Correctly formatted list for imagePullSecrets
+imagePullSecrets:
+  - name: application-collection
 # -- Application settings
 ollama:
   image:
-    repository: ollama/ollama
+    repository: dp.apps.rancher.io/containers/ollama
     tag: "0.6.8"
   service:
     port: 11434
@@ -38,8 +39,8 @@ ollama:
       path: "/data/ai-models" # NFS share path for caching models
 openWebui:
   image:
-    repository: ghcr.io/open-webui/open-webui
-    tag: "0.6.9" # Pipeline-enabled version
+    repository: dp.apps.rancher.io/containers/open-webui
+    tag: "0.6.9-10.31" # Pipeline-enabled version  
   service:
     port: 8080
     type: NodePort
@@ -51,8 +52,8 @@ openWebui:
 pipelines:
   enabled: true
   image:
-    repository: ghcr.io/open-webui/pipelines
-    tag: "main"
+    repository: dp.apps.rancher.io/containers/open-webui-pipelines
+    tag: "0.20250329.151219-5.16"
   service:
     port: 9099
     type: ClusterIP
@@ -74,15 +75,20 @@ pipelines:
     connectionName: "Response Level Pipeline"
 llmChat:
   image:
-    repository: ghcr.io/wiredquill/ai-demos
+    repository: ghcr.io/wiredquill/ai-demos-suse
     tag: "05acde0"
   service:
     port: 7860
     type: NodePort
   persistence:
     enabled: false
-    size: 10Gi
-    storageClassName: "" # Use default if empty, or specify a storage class
+    size: 1Gi
+    storageClassName: ""
+  # Development mode settings (SUSE-specific)
+  devMode:
+    sshPort: 22
+    gitRepo: "https://github.com/wiredquill/ai-demos.git"
+    gitBranch: "main"
   # Automation settings for the recurring test runner
   automation:
     enabled: false

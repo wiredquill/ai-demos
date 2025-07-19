@@ -1,6 +1,6 @@
-# SUSE AI Demo Showcase
+# AI Compare
 
-Welcome to the SUSE AI Demo Showcase! This collection of demonstrations highlights the power, simplicity, and security of building, deploying, and managing AI applications on SUSE's cloud-native platform.
+Welcome to AI Compare! This comprehensive demonstration shows the differences between direct AI model access and pipeline-enhanced responses. The project highlights building, deploying, and managing AI applications on SUSE's cloud-native platform with configuration change detection for SUSE Observability demos.
 
 Follow along with these demos to see how SUSE provides an end-to-end solution for accelerating your AI initiatives, from infrastructure provisioning to application security and observability.
 
@@ -46,11 +46,11 @@ For rapid iteration and development, you can enable a special development mode f
     *   Manually trigger this workflow. This will build the `app/Dockerfile.dev` image and push it to your GitHub Container Registry (GHCR) with a `-dev` tag (e.g., `ghcr.io/wiredquill/ai-demos-dev:latest-dev`). This step is typically only needed once, or when `app/Dockerfile.dev` itself is modified.
 
 2.  **Deploy the Helm Chart in Development Mode:**
-    When deploying the `llm-comm-upstream` or `llm-comm-suse` Helm chart, enable the development mode by setting `llmChat.devMode.enabled` to `true`. You can also customize other development-specific settings.
+    When deploying the `ai-compare` or `ai-compare-suse` Helm chart, enable the development mode by setting `llmChat.devMode.enabled` to `true`. You can also customize other development-specific settings.
 
     **Example Helm Command:**
     ```bash
-    helm upgrade --install my-dev-release charts/llm-comm-upstream \
+    helm upgrade --install my-dev-release charts/ai-compare \
       --set llmChat.devMode.enabled=true \
       --set llmChat.devMode.image.repository=ghcr.io/wiredquill/ai-demos-dev \
       --set llmChat.devMode.image.tag=latest-dev \
@@ -80,11 +80,11 @@ By default, Ollama models are stored in an `emptyDir` volume, meaning they are l
 
 **How to Use:**
 
-When deploying the `llm-comm-upstream` or `llm-comm-suse` Helm chart, enable Ollama persistence by setting `ollama.persistence.enabled` to `true`.
+When deploying the `ai-compare` or `ai-compare-suse` Helm chart, enable Ollama persistence by setting `ollama.persistence.enabled` to `true`.
 
 **Example Helm Command:**
 ```bash
-helm upgrade --install my-release charts/llm-comm-upstream \
+helm upgrade --install my-release charts/ai-compare \
   --set ollama.persistence.enabled=true \
   --set ollama.persistence.size=50Gi \
   --set ollama.persistence.storageClassName=my-storage-class # Optional

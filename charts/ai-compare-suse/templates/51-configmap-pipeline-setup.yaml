@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-llm-comm-suse-pipeline-config
+  name: {{ .Release.Name }}-ai-compare-suse-pipeline-config
   labels:
-    app.kubernetes.io/name: llm-comm-suse
+    app.kubernetes.io/name: ai-compare-suse
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/component: pipeline-config
 data:

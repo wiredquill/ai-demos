@@ -1,5 +1,5 @@
 # .github/workflows/ci-cd.yaml
-name: Build, Push, and Update K8s Manifests (upstream & SUSE)
+name: Build, Push, and Update AI Compare Charts (upstream & SUSE)
 
 on:
   push:
@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Notify build start
         run: |
-          curl -d "GitHub Actions started - Building SUSE AI Demo images..." ntfy.sh/wq_task
+          curl -d "GitHub Actions started - Building AI Compare images..." ntfy.sh/wq_task
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -110,8 +110,8 @@ jobs:
 
       - name: Update Helm Chart values.yaml
         run: |
-          UPSTREAM_VALUES_PATH="charts/llm-comm-upstream/values.yaml"
-          SUSE_VALUES_PATH="charts/llm-comm-suse/values.yaml"
+          UPSTREAM_VALUES_PATH="charts/ai-compare/values.yaml"
+          SUSE_VALUES_PATH="charts/ai-compare-suse/values.yaml"
           NEW_IMAGE_TAG="${{ needs.build-and-push-images.outputs.IMAGE_TAG }}"
 
           echo "Updating $UPSTREAM_VALUES_PATH with image tag: $NEW_IMAGE_TAG"
@@ -124,8 +124,8 @@ jobs:
 
       - name: Increment Chart.yaml versions
         run: |
-          UPSTREAM_CHART_PATH="charts/llm-comm-upstream/Chart.yaml"
-          SUSE_CHART_PATH="charts/llm-comm-suse/Chart.yaml"
+          UPSTREAM_CHART_PATH="charts/ai-compare/Chart.yaml"
+          SUSE_CHART_PATH="charts/ai-compare-suse/Chart.yaml"
 
           increment_version() {
             local chart_path=$1
@@ -146,7 +146,7 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
-          git add "charts/llm-comm-upstream/values.yaml" "charts/llm-comm-suse/values.yaml" "charts/llm-comm-upstream/Chart.yaml" "charts/llm-comm-suse/Chart.yaml"
+          git add "charts/ai-compare/values.yaml" "charts/ai-compare-suse/values.yaml" "charts/ai-compare/Chart.yaml" "charts/ai-compare-suse/Chart.yaml"
           
           if git diff --staged --quiet; then
             echo "No changes to commit in Helm chart files."
@@ -158,5 +158,5 @@ jobs:
 
       - name: Notify build completion
         run: |
-          curl -d "GitHub Actions build complete - SUSE AI Demo updated with tag ${{ needs.build-and-push-images.outputs.IMAGE_TAG }}" ntfy.sh/wq_task
+          curl -d "GitHub Actions build complete - AI Compare updated with tag ${{ needs.build-and-push-images.outputs.IMAGE_TAG }}" ntfy.sh/wq_task
 

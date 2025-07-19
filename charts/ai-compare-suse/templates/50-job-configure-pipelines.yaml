@@ -2,9 +2,9 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Release.Name }}-llm-comm-suse-configure-pipelines
+  name: {{ .Release.Name }}-ai-compare-suse-configure-pipelines
   labels:
-    app.kubernetes.io/name: llm-comm-suse
+    app.kubernetes.io/name: ai-compare-suse
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/component: pipeline-configurator
   annotations:
@@ -15,7 +15,7 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: llm-comm-suse
+        app.kubernetes.io/name: ai-compare-suse
         app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/component: pipeline-configurator
     spec:

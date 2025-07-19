@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ include "llm-comm-upstream.fullname" . }}-app-code-pvc
+  name: {{ include "ai-compare.fullname" . }}-app-code-pvc
 spec:
   accessModes:
     - ReadWriteOnce

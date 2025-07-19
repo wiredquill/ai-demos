@@ -1002,11 +1002,11 @@ def create_interface():
     }
     """
     
-    with gr.Blocks(css=css, title="SUSE AI Chat") as interface:
+    with gr.Blocks(css=css, title="AI Compare") as interface:
         # Simple header without complex graphics
         gr.HTML("""
         <div style='text-align: center; margin-bottom: 20px; padding: 20px; background: linear-gradient(135deg, #0c322c 0%, #1a4a3a 100%); border-radius: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);'>
-            <h1 style='color: #30ba78; margin: 0; font-size: 1.8em; font-weight: 600;'>AI Chat Dashboard</h1>
+            <h1 style='color: #30ba78; margin: 0; font-size: 1.8em; font-weight: 600;'>AI Compare</h1>
             <p style='color: #ffffff; margin: 10px 0 0 0; opacity: 0.8; font-size: 1em;'>Compare AI responses: Direct Ollama vs Open WebUI</p>
         </div>
         """)
