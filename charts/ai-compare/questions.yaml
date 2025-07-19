@@ -244,3 +244,27 @@ questions:
   type: "string"
   default: "Why is the sky blue? Be concise."
   show_if: "llmChat.automation.sendMessages=true"
+
+# Observability Settings Group - OpenTelemetry and monitoring configuration
+- variable: llmChat.observability.enabled
+  group: "Observability Settings"
+  label: "Enable OpenTelemetry Observability"
+  description: "Enable OpenLIT observability for LLM request tracing, token usage monitoring, and performance metrics."
+  type: "boolean"
+  default: false
+
+- variable: llmChat.observability.otlpEndpoint
+  group: "Observability Settings"
+  label: "OpenTelemetry Collector Endpoint"
+  description: "OTLP endpoint URL for sending telemetry data (e.g., http://opentelemetry-collector.suse-observability.svc.cluster.local:4318)"
+  type: "string"
+  default: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
+  show_if: "llmChat.observability.enabled=true"
+
+- variable: llmChat.observability.collectGpuStats
+  group: "Observability Settings"
+  label: "Enable GPU Statistics Collection"
+  description: "Collect GPU utilization and memory usage statistics. Requires GPU nodes and proper scheduling."
+  type: "boolean"
+  default: false
+  show_if: "llmChat.observability.enabled=true"
