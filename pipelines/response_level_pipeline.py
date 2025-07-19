@@ -62,6 +62,9 @@ class Pipeline:
         self.mode = os.getenv("PIPELINE_MODE", "auto-cycle")  # "auto-cycle" or "manual"
         self.selected_level = 0  # For manual mode
         
+        # Model config checking for demo purposes
+        self.model_config_check = os.getenv("MODEL_CONFIG_CHECK", "true").lower() == "true"
+        
         # Ollama connection configuration
         self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://ollama-service:11434")
         if self.ollama_base_url.endswith('/'):
@@ -93,6 +96,31 @@ class Pipeline:
             self.selected_level = level_index
             self.logger.info(f"Level set to: {self.levels[level_index]['name']}")
 
+    def _check_model_config(self) -> tuple:
+        """Check ConfigMap for model configuration status"""
+        if not self.model_config_check:
+            return True, "models-latest"  # Skip check if disabled
+            
+        try:
+            import subprocess
+            import json
+            
+            # Try to get ConfigMap value
+            cmd = ["kubectl", "get", "configmap", "llm-chat-config", "-o", "jsonpath={.data.MODEL_CONFIG}"]
+            result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            
+            if result.returncode == 0 and result.stdout:
+                config_value = result.stdout.strip()
+                self.logger.info(f"ConfigMap MODEL_CONFIG value: {config_value}")
+                return config_value == "models-latest", config_value
+            else:
+                self.logger.info("ConfigMap not found or no MODEL_CONFIG, assuming working state")
+                return True, "models-latest"  # Default to working if ConfigMap not found
+                
+        except Exception as e:
+            self.logger.warning(f"Failed to check ConfigMap: {e}")
+            return True, "models-latest"  # Default to working if check fails
+
     def pipe(self, user_message: str, model_id: str, messages: List[dict], body: dict) -> str:
         """
         Main pipeline function called by Open WebUI
@@ -107,6 +135,11 @@ class Pipeline:
             AI response from Ollama with modified prompt
         """
         try:
+            # Check model configuration status first
+            config_ok, config_value = self._check_model_config()
+            if not config_ok:
+                self.logger.error(f"Pipeline broken: MODEL_CONFIG is '{config_value}' instead of 'models-latest'")
+                return f"🔴 **Pipeline Service BROKEN**: Configuration error detected!\n\n❌ Expected: 'models-latest'\n🔧 Current: '{config_value}'\n\n💡 This pipeline cannot process requests with invalid model configuration.\n⚠️ Update the model config to 'models-latest' to restore functionality."
             # Get current level configuration
             current_level = self.get_current_level()
             

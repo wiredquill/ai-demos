@@ -69,7 +69,12 @@ class ChatInterface:
         
         # Open WebUI authentication
         self.open_webui_token = None
-
+        
+        # --- NEW: Model Config Management State ---
+        self.model_config_value = os.getenv("MODEL_CONFIG", "models-latest")
+        self.config_map_name = os.getenv("CONFIG_MAP_NAME", "llm-chat-config")
+        self.config_map_namespace = os.getenv("CONFIG_MAP_NAMESPACE", "default")
+        
         # --- NEW: Automation Runner State ---
         # Read automation settings from environment variables
         self.automation_enabled = os.getenv("AUTOMATION_ENABLED", "false").lower() == "true"
@@ -222,6 +227,17 @@ class ChatInterface:
                     "content": f"{last_message['content']} {current_level['modifier']}"
                 }
         
+        # Check if pipeline should be broken based on model config
+        if self.model_config_value != "models-latest":
+            logger.warning(f"Pipeline broken: MODEL_CONFIG is '{self.model_config_value}' instead of 'models-latest'")
+            broken_response = f"🔴 **Pipeline BROKEN**: Model configuration error detected!\n\n"
+            broken_response += f"❌ Expected: 'models-latest'\n"
+            broken_response += f"🔧 Current: '{self.model_config_value}'\n\n"
+            broken_response += f"💡 Pipeline cannot process requests with invalid model configuration.\n"
+            broken_response += f"⚠️ This error demonstrates SUSE Observability's ability to detect configuration changes that break system functionality.\n\n"
+            broken_response += f"🔄 To fix: Update model config back to 'models-latest' using the Update Model Config button."
+            return broken_response
+
         # Try Pipelines service first if available, otherwise fall back to Open WebUI
         if self.pipelines_base_url:
             # Use dedicated Pipelines service for enhanced processing
@@ -506,6 +522,70 @@ class ChatInterface:
         """
         
         return html_content
+
+    def update_model_config(self, new_config_value: str) -> tuple:
+        """Updates the model configuration in ConfigMap and triggers pipeline behavior change."""
+        try:
+            # Update local state
+            self.model_config_value = new_config_value
+            logger.info(f"Model config updated to: {new_config_value}")
+            
+            # Try to update Kubernetes ConfigMap if running in cluster
+            try:
+                self._update_kubernetes_configmap(new_config_value)
+                message = f"✅ Model config updated to '{new_config_value}' and ConfigMap updated successfully!"
+                status = "success"
+            except Exception as k8s_error:
+                logger.warning(f"ConfigMap update failed: {k8s_error}")
+                message = f"⚠️ Model config updated to '{new_config_value}' locally, but ConfigMap update failed: {str(k8s_error)}"
+                status = "warning"
+                
+            # Return updated modal visibility and message
+            return gr.Column(visible=False), message, status
+            
+        except Exception as e:
+            logger.error(f"Model config update failed: {e}")
+            return gr.Column(visible=True), f"❌ Failed to update model config: {str(e)}", "error"
+
+    def _update_kubernetes_configmap(self, config_value: str):
+        """Updates the Kubernetes ConfigMap with new model configuration."""
+        import subprocess
+        import json
+        import time
+        
+        # Create ConfigMap data
+        config_data = {
+            "MODEL_CONFIG": config_value,
+            "UPDATED_AT": time.strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        # Try to update ConfigMap using kubectl
+        try:
+            # First try to get existing ConfigMap
+            cmd = ["kubectl", "get", "configmap", self.config_map_name, "-n", self.config_map_namespace, "-o", "json"]
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            existing_cm = json.loads(result.stdout)
+            
+            # Update the data section
+            if "data" not in existing_cm:
+                existing_cm["data"] = {}
+            existing_cm["data"].update(config_data)
+            
+            # Apply the updated ConfigMap
+            cmd = ["kubectl", "apply", "-f", "-"]
+            subprocess.run(cmd, input=json.dumps(existing_cm), text=True, check=True)
+            logger.info(f"ConfigMap {self.config_map_name} updated successfully")
+            
+        except subprocess.CalledProcessError:
+            # If get fails, create new ConfigMap
+            logger.info(f"ConfigMap {self.config_map_name} not found, creating new one")
+            cmd = ["kubectl", "create", "configmap", self.config_map_name, "--from-literal=MODEL_CONFIG=" + config_value, "--from-literal=UPDATED_AT=" + config_data["UPDATED_AT"], "-n", self.config_map_namespace]
+            subprocess.run(cmd, check=True)
+            logger.info(f"ConfigMap {self.config_map_name} created successfully")
+
+    def restore_default_config(self) -> tuple:
+        """Restores the default model configuration."""
+        return self.update_model_config("models-latest")
 
     def refresh_providers(self) -> gr.HTML:
         """Manually refreshes provider statuses and returns the HTML."""
@@ -938,6 +1018,8 @@ def create_interface():
                 initial_status_html = chat_instance.get_provider_status_html()
                 provider_status_html = gr.HTML(value=initial_status_html)
                 refresh_providers_btn = gr.Button("🔄 Refresh", elem_classes="refresh-btn", size="sm")
+                # NEW: Update Model Config button
+                update_config_btn = gr.Button("⚙️ Update Model Config", variant="secondary", size="sm")
 
             # CENTER PANEL - Chat Interface in Grouped Container (70%) 
             with gr.Column(scale=7):
@@ -1063,7 +1145,48 @@ def create_interface():
                 )
             
             # Automation controls and results moved to main screen for better UX
+
+        # Model Configuration Modal (initially hidden)
+        with gr.Column(visible=False) as model_config_modal:
+            with gr.Row():
+                gr.HTML("<h3 style='color: #73ba25; text-align: center;'>⚙️ Update Model Configuration</h3>")
+                close_model_config_btn = gr.Button("✕", variant="secondary", size="sm", elem_classes="close-btn")
             
+            gr.HTML("""
+            <div style='background: rgba(255, 167, 38, 0.1); border: 1px solid rgba(255, 167, 38, 0.3); border-radius: 8px; padding: 12px; margin: 10px 0;'>
+                <p style='color: #ffa726; margin: 0; font-size: 0.9em;'>
+                    ⚠️ <strong>Demo Feature:</strong> This simulates a configuration change that breaks the pipeline to demonstrate 
+                    SUSE Observability's ability to detect system changes and correlate them with failures.
+                </p>
+            </div>
+            """)
+            
+            # Model config input with default value
+            model_config_input = gr.Textbox(
+                label="Model Configuration", 
+                value="models_latest",
+                placeholder="Enter model configuration value...",
+                lines=1
+            )
+            
+            gr.HTML("""
+            <div style='background: rgba(115, 186, 37, 0.1); border: 1px solid rgba(115, 186, 37, 0.3); border-radius: 8px; padding: 12px; margin: 10px 0;'>
+                <p style='color: #73ba25; margin: 0 0 8px 0; font-weight: 600;'>ℹ️ How it works:</p>
+                <ul style='color: #a5d6a7; margin: 0; font-size: 0.85em; padding-left: 20px;'>
+                    <li><strong>Working state:</strong> When set to 'models-latest', the pipeline functions normally</li>
+                    <li><strong>Broken state:</strong> Any other value breaks the pipeline with a clear error message</li>
+                    <li><strong>Observability:</strong> ConfigMap changes are tracked by SUSE Observability</li>
+                    <li><strong>Recovery:</strong> Use 'Restore Defaults' to fix the configuration</li>
+                </ul>
+            </div>
+            """)
+            
+            with gr.Row():
+                apply_config_btn = gr.Button("Apply Configuration", variant="primary")
+                restore_defaults_btn = gr.Button("Restore Defaults", variant="secondary")
+            
+            # Status message display
+            config_status_msg = gr.HTML(value="")
 
         # --- Event Handlers ---
         
@@ -1091,6 +1214,37 @@ def create_interface():
         def hide_config_panel():
             """Hide the configuration panel."""
             return gr.Column(visible=False)
+        
+        def show_model_config_modal():
+            """Show the model configuration modal."""
+            return gr.Column(visible=True), chat_instance.model_config_value
+        
+        def hide_model_config_modal():
+            """Hide the model configuration modal."""
+            return gr.Column(visible=False), ""
+        
+        def apply_model_config(config_value: str):
+            """Apply new model configuration."""
+            modal_visible, message, status = chat_instance.update_model_config(config_value)
+            
+            # Create status message HTML based on status
+            if status == "success":
+                status_html = f"<div style='color: #4CAF50; background: rgba(76, 175, 80, 0.1); padding: 10px; border-radius: 8px; margin: 10px 0;'>{message}</div>"
+            elif status == "warning":
+                status_html = f"<div style='color: #ffa726; background: rgba(255, 167, 38, 0.1); padding: 10px; border-radius: 8px; margin: 10px 0;'>{message}</div>"
+            else:
+                status_html = f"<div style='color: #f44336; background: rgba(244, 67, 54, 0.1); padding: 10px; border-radius: 8px; margin: 10px 0;'>{message}</div>"
+            
+            return modal_visible, status_html
+        
+        def restore_model_config():
+            """Restore default model configuration."""
+            modal_visible, message, status = chat_instance.restore_default_config()
+            
+            # Create status message HTML
+            status_html = f"<div style='color: #4CAF50; background: rgba(76, 175, 80, 0.1); padding: 10px; border-radius: 8px; margin: 10px 0;'>{message}</div>"
+            
+            return modal_visible, status_html, "models-latest"
 
         send_btn.click(handle_send_message, inputs=[msg_input, model_dropdown], outputs=[ollama_output, webui_output, msg_input])
         msg_input.submit(handle_send_message, inputs=[msg_input, model_dropdown], outputs=[ollama_output, webui_output, msg_input])
@@ -1099,6 +1253,12 @@ def create_interface():
         refresh_providers_btn.click(chat_instance.refresh_providers, outputs=[provider_status_html])
         config_btn.click(show_config_panel, outputs=[config_panel])
         close_config_btn.click(hide_config_panel, outputs=[config_panel])
+        
+        # Model configuration modal handlers
+        update_config_btn.click(show_model_config_modal, outputs=[model_config_modal, model_config_input])
+        close_model_config_btn.click(hide_model_config_modal, outputs=[model_config_modal, config_status_msg])
+        apply_config_btn.click(apply_model_config, inputs=[model_config_input], outputs=[model_config_modal, config_status_msg])
+        restore_defaults_btn.click(restore_model_config, outputs=[model_config_modal, config_status_msg, model_config_input])
 
         def initial_load():
             """Loads initial data when the UI starts."""
