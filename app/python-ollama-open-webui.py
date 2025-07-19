@@ -59,8 +59,7 @@ class ChatInterface:
         self.pipelines_base_url = os.getenv("PIPELINES_BASE_URL")
         self.pipeline_api_key = os.getenv("PIPELINE_API_KEY")
         
-        if self.open_webui_base_url:
-            self.config.setdefault('providers', {})['Open WebUI'] = self.open_webui_base_url
+        # Don't add Open WebUI to the provider status list - keep it separate for functionality
         
         if self.ollama_base_url.endswith('/'):
             self.ollama_base_url = self.ollama_base_url[:-1]
@@ -671,6 +670,8 @@ def create_interface():
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
         color: #efefef; 
         min-height: 100vh;
+        height: 100vh;
+        overflow-y: auto;
     }
     .main-header { 
         background: linear-gradient(135deg, #30ba78 0%, #28a745 100%); 
@@ -774,6 +775,8 @@ def create_interface():
         box-shadow: 0 8px 24px rgba(76, 175, 80, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
         position: relative;
         overflow: hidden;
+        height: clamp(200px, 40vh, 600px) !important;
+        max-height: 60vh !important;
     }
     .ollama-response .gr-textbox::before {
         content: '';
@@ -796,6 +799,8 @@ def create_interface():
         padding: 16px !important;
         border: none !important;
         resize: none !important;
+        height: 100% !important;
+        min-height: 200px !important;
     }
     .webui-response .gr-textbox,
     .webui-response .gr-textbox textarea {
@@ -805,6 +810,8 @@ def create_interface():
         box-shadow: 0 8px 24px rgba(33, 150, 243, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
         position: relative;
         overflow: hidden;
+        height: clamp(200px, 40vh, 600px) !important;
+        max-height: 60vh !important;
     }
     .webui-response .gr-textbox::before {
         content: '';
@@ -827,6 +834,8 @@ def create_interface():
         padding: 16px !important;
         border: none !important;
         resize: none !important;
+        height: 100% !important;
+        min-height: 200px !important;
     }
     /* Consistent rounded styling for all other textboxes */
     .gr-textbox {
@@ -983,7 +992,7 @@ def create_interface():
                             """)
                             ollama_output = gr.Textbox(
                                 label="", 
-                                lines=18, 
+                                lines=12, 
                                 show_label=False, 
                                 interactive=False, 
                                 placeholder="Direct Ollama response will appear here...",
@@ -1000,7 +1009,7 @@ def create_interface():
                             """)
                             webui_output = gr.Textbox(
                                 label="", 
-                                lines=18, 
+                                lines=12, 
                                 show_label=False, 
                                 interactive=False, 
                                 placeholder="Open WebUI response will appear here...",
