@@ -97,7 +97,7 @@ llmChat:
     sendMessages: true # Enable/disable sending test messages to models
   # Observability settings for OpenTelemetry and OpenLit
   observability:
-    enabled: false
+    enabled: true
     otlpEndpoint: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
-    collectGpuStats: false
+    collectGpuStats: true
     schedule: "*/5 * * * *"
