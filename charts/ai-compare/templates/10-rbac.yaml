@@ -1,21 +1,21 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: llm-chat-service-account
+  name: ai-compare-service-account
   labels:
-    app: llm-chat
+    app: ai-compare
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: llm-chat-configmap-manager
+  name: ai-compare-configmap-manager
   labels:
-    app: llm-chat
+    app: ai-compare
 rules:
 - apiGroups: [""]
   resources: ["configmaps"]
   verbs: ["get", "list", "create", "update", "patch"]
-  resourceNames: ["llm-chat-config"]
+  resourceNames: ["ai-compare-config"]
 - apiGroups: [""]
   resources: ["configmaps"]
   verbs: ["create"]
@@ -23,14 +23,14 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: llm-chat-configmap-binding
+  name: ai-compare-configmap-binding
   labels:
-    app: llm-chat
+    app: ai-compare
 subjects:
 - kind: ServiceAccount
-  name: llm-chat-service-account
+  name: ai-compare-service-account
   namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
-  name: llm-chat-configmap-manager
+  name: ai-compare-configmap-manager
   apiGroup: rbac.authorization.k8s.io

@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ollama-chat-app
+  name: ai-compare-chat
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ollama-chat-app
+      app: ai-compare-chat
   template:
     metadata:
       labels:
-        app: ollama-chat-app
+        app: ai-compare-chat
     spec:
-      serviceAccountName: llm-chat-service-account
+      serviceAccountName: ai-compare-service-account
       containers:
         - name: chat-app
           image: "{{ .Values.llmChat.image.repository }}:{{ .Values.llmChat.image.tag }}"
@@ -49,17 +49,17 @@ spec:
             - name: MODEL_CONFIG
               valueFrom:
                 configMapKeyRef:
-                  name: llm-chat-config
+                  name: ai-compare-config
                   key: MODEL_CONFIG
             - name: CONFIG_MAP_NAME
-              value: "llm-chat-config"
+              value: "ai-compare-config"
             - name: CONFIG_MAP_NAMESPACE
               value: "{{ .Release.Namespace }}"
             # Service health failure simulation
             - name: SERVICE_HEALTH_FAILURE
               value: "false"
             - name: DEPLOYMENT_NAME
-              value: "ollama-chat-app"
+              value: "ai-compare-chat"
           # Health checks to ensure proper startup sequencing
           livenessProbe:
             httpGet:

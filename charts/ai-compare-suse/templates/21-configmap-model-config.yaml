@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: llm-chat-config
+  name: ai-compare-config
   labels:
-    app: llm-chat
+    app: ai-compare
 data:
   MODEL_CONFIG: "models-latest"
   UPDATED_AT: "{{ now | date "2006-01-02 15:04:05" }}"
