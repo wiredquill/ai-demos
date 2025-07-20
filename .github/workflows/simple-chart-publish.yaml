@@ -1,0 +1,67 @@
+name: Simple Helm Chart Publishing
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['charts/**']
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  publish-charts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: '3.12.0'
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create charts directory
+        run: |
+          mkdir -p .cr-release-packages
+          mkdir -p .cr-index
+
+      - name: Package charts
+        run: |
+          for chart in charts/*/; do
+            if [ -f "$chart/Chart.yaml" ]; then
+              echo "Packaging chart: $chart"
+              helm package "$chart" --destination .cr-release-packages
+            fi
+          done
+
+      - name: Generate index
+        run: |
+          helm repo index .cr-release-packages --url https://wiredquill.github.io/ai-demos/
+          cp .cr-release-packages/index.yaml .cr-index/
+
+      - name: List generated files
+        run: |
+          echo "Generated packages:"
+          ls -la .cr-release-packages/
+          echo "Generated index:"
+          ls -la .cr-index/
+          echo "Index content:"
+          cat .cr-index/index.yaml
+
+      - name: Publish to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .cr-release-packages
+          publish_branch: gh-pages
+          force_orphan: true

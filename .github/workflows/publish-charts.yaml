@@ -1,13 +1,13 @@
 name: Publish Helm Charts to GitHub Releases
 
-# Re-enabled for Rancher chart discovery
+# Temporarily disabled - using simple-chart-publish.yaml instead
 on:
-  workflow_run:
-    workflows: ["Build, Push, and Update K8s Manifests (upstream & SUSE)"]
-    types:
-      - completed
-    branches:
-      - main
+  # workflow_run:
+  #   workflows: ["Build, Push, and Update K8s Manifests (upstream & SUSE)"]
+  #   types:
+  #     - completed
+  #   branches:
+  #     - main
   workflow_dispatch:
 
 permissions:
