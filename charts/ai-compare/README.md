@@ -52,9 +52,9 @@ This chart deploys a complete AI comparison stack with four main components:
 - GPU statistics collection and monitoring
 
 ### 🔒 **Security Demonstrations**
-- Availability monitoring demos
-- Data leak prevention (DLP) demonstrations  
-- NeuVector integration for security policy automation
+- **Data Leak Prevention (DLP)**: Dual data type transmission (credit card + SSN)
+- **Availability Monitoring**: External connectivity and network policy testing
+- **NeuVector Integration**: Automated security policy deployment and DLP detection
 
 ### ⚙️ **Automation**
 - Automated testing and response generation
@@ -138,9 +138,12 @@ neuvector:
 
 ## 🛡️ Security Features
 
-- **DLP Demonstrations**: Credit card pattern detection demos
+- **Enhanced DLP Demonstrations**: 
+  - Dual sensitive data transmission (Credit Card: `3412-1234-1234-2222`, SSN: `123-45-6789`)
+  - Single-button multi-pattern detection testing
+  - Clean popup interface for security demos
 - **Network Monitoring**: Availability and connectivity testing
-- **NeuVector Integration**: Automated security policy deployment
+- **NeuVector Integration**: Automated security policy deployment and real-time DLP detection
 - **Container Security**: SUSE BCI-based images (SUSE variant)
 
 ## 🆘 Support & Documentation

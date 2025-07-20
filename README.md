@@ -156,9 +156,12 @@ ssh root@localhost -p 2222  # password: suse
 The AI Compare app includes built-in security demonstrations for SUSE NeuVector:
 
 **Data Leak Demo:**
-- Simulates transmission of sensitive credit card data
-- Triggers NeuVector DLP monitoring and alerting
-- Demonstrates data loss prevention capabilities
+- **Dual Data Type Transmission**: Single button sends both credit card and Social Security Number data
+- **Credit Card Pattern**: `3412-1234-1234-2222`
+- **SSN Pattern**: `123-45-6789`
+- **Clean UI**: Shows simple popup message "⚠️ Attempting to send sensitive data"
+- **NeuVector Integration**: Triggers DLP monitoring and alerting for multiple data types
+- **Comprehensive Detection**: Demonstrates advanced data loss prevention capabilities
 
 **Availability Demo:**
 - Tests external connectivity and network policies

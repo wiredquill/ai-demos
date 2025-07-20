@@ -37,8 +37,11 @@ This chart deploys a complete AI comparison stack optimized for SUSE environment
 ## ✨ SUSE-Specific Features
 
 ### 🔒 **SUSE Security Integration**
-- **NeuVector DLP**: Automated data loss prevention policies
-- **Security Demos**: Real-time credit card detection and alerting
+- **Enhanced NeuVector DLP**: Automated data loss prevention with dual-pattern detection
+- **Advanced Security Demos**: 
+  - Credit Card pattern: `3412-1234-1234-2222`
+  - Social Security Number: `123-45-6789`
+  - Single-button multi-data type transmission testing
 - **Container Security**: SUSE BCI hardened container images
 - **Vulnerability Management**: Integrated with SUSE security stack
 
@@ -126,7 +129,7 @@ ollama:
 
 - **Container Security**: SUSE BCI hardened base images
 - **Vulnerability Scanning**: Integrated with SUSE security scanning
-- **DLP Compliance**: NeuVector data loss prevention automation
+- **Enhanced DLP Compliance**: NeuVector multi-pattern data loss prevention automation
 - **Access Control**: SUSE-compatible RBAC and security policies
 - **Audit Logging**: Full integration with SUSE audit frameworks
 
