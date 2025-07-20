@@ -1,5 +1,5 @@
 # This fleet.yaml defines the Git Repositories, Cluster Groups,
-# and Bundles to deploy the llm-comm charts.
+# and Bundles to deploy the ai-compare charts.
 
 # This tells Fleet to create the following resources in the `fleet-default` namespace,
 # which is the standard location for managing Fleet configurations for downstream clusters.
@@ -10,34 +10,34 @@ items:
 - apiVersion: fleet.cattle.io/v1alpha1
   kind: GitRepo
   metadata:
-    name: llm-comm-suse-repo
+    name: ai-compare-suse-repo
     namespace: fleet-default
   spec:
     # IMPORTANT: Replace this with the URL to your Git repository
-    repo: "https://github.com/SUSE-Technical-Marketing/suse-ai-demo.git"
+    repo: "https://github.com/wiredquill/ai-demos.git"
     branch: main
     # This tells Fleet to only look for manifests inside this specific directory
     paths:
-    - "/charts/llm-comm-suse"
+    - "/charts/ai-compare-suse"
 
 - apiVersion: fleet.cattle.io/v1alpha1
   kind: GitRepo
   metadata:
-    name: llm-comm-upstream-repo
+    name: ai-compare-upstream-repo
     namespace: fleet-default
   spec:
     # IMPORTANT: Replace this with the URL to your Git repository
-    repo: "https://github.com/SUSE-Technical-Marketing/suse-ai-demo.git"
+    repo: "https://github.com/wiredquill/ai-demos.git"
     branch: main
     paths:
-    - "/charts/llm-comm-upstream"
+    - "/charts/ai-compare"
 
 ---
 # This ClusterGroup targets any downstream cluster with the specific label for the SUSE deployment.
 apiVersion: fleet.cattle.io/v1alpha1
 kind: ClusterGroup
 metadata:
-  name: llm-comm-suse-group
+  name: ai-compare-suse-group
   namespace: fleet-default
 spec:
   selector:
@@ -49,7 +49,7 @@ spec:
 apiVersion: fleet.cattle.io/v1alpha1
 kind: ClusterGroup
 metadata:
-  name: llm-comm-upstream-group
+  name: ai-compare-upstream-group
   namespace: fleet-default
 spec:
   selector:
@@ -61,29 +61,29 @@ spec:
 apiVersion: fleet.cattle.io/v1alpha1
 kind: Bundle
 metadata:
-  name: llm-comm-suse-bundle
+  name: ai-compare-suse-bundle
   namespace: fleet-default
 spec:
   # This references the GitRepo defined above
-  repoName: llm-comm-suse-repo
+  repoName: ai-compare-suse-repo
   # This targets the ClusterGroup defined above
   targets:
-  - clusterGroup: llm-comm-suse-group
+  - clusterGroup: ai-compare-suse-group
   # This tells Fleet that the content is a Helm chart
   helm:
     # The chart name as defined in Chart.yaml
-    chart: llm-comm-suse
+    chart: ai-compare-suse
 
 ---
 # This Bundle links the Upstream git repo to the Upstream cluster group.
 apiVersion: fleet.cattle.io/v1alpha1
 kind: Bundle
 metadata:
-  name: llm-comm-upstream-bundle
+  name: ai-compare-upstream-bundle
   namespace: fleet-default
 spec:
-  repoName: llm-comm-upstream-repo
+  repoName: ai-compare-upstream-repo
   targets:
-  - clusterGroup: llm-comm-upstream-group
+  - clusterGroup: ai-compare-upstream-group
   helm:
-    chart: llm-comm-upstream
+    chart: ai-compare

@@ -118,7 +118,7 @@ ollama:
 
 ### Current Implementation (Solution 1):
 ```yaml
-# charts/llm-comm-upstream/values.yaml
+# charts/ai-compare/values.yaml
 ollama:
   image:
     repository: ghcr.io/suse-technical-marketing/ollama-tinyllama

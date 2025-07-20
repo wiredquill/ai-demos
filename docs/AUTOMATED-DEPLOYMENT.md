@@ -55,22 +55,22 @@ When deploying via Rancher or other UI:
 
 ```bash
 # Upstream version with full automation
-helm install ai-demo charts/llm-comm-upstream -n upstream --create-namespace
+helm install ai-demo charts/ai-compare -n upstream --create-namespace
 
 # SUSE version with full automation  
-helm install ai-demo charts/llm-comm-suse -n suse --create-namespace
+helm install ai-demo charts/ai-compare-suse -n suse --create-namespace
 ```
 
 ### Custom Configuration
 
 ```bash
 # Deploy with custom API key
-helm install ai-demo charts/llm-comm-upstream \
+helm install ai-demo charts/ai-compare \
   --set pipelines.autoConfig.apiKey="my-secure-key" \
   -n upstream --create-namespace
 
 # Deploy without auto-configuration (manual setup)
-helm install ai-demo charts/llm-comm-upstream \
+helm install ai-demo charts/ai-compare \
   --set pipelines.autoConfig.enabled=false \
   -n upstream --create-namespace
 ```
@@ -122,7 +122,7 @@ kubectl logs -n upstream $(kubectl get pods -l job-name -o jsonpath='{.items[0].
 
 # Restart configuration job
 kubectl delete job -n upstream -l app.kubernetes.io/component=pipeline-configurator
-helm upgrade ai-demo charts/llm-comm-upstream -n upstream
+helm upgrade ai-demo charts/ai-compare -n upstream
 ```
 
 ### Pipeline Service Not Ready
@@ -179,17 +179,17 @@ kubectl exec -n upstream $(kubectl get pods -l app=pipelines -o jsonpath='{.item
 
 ```bash
 # Update API key
-helm upgrade ai-demo charts/llm-comm-upstream \
+helm upgrade ai-demo charts/ai-compare \
   --set pipelines.autoConfig.apiKey="new-api-key" \
   -n upstream
 
 # Disable auto-configuration
-helm upgrade ai-demo charts/llm-comm-upstream \
+helm upgrade ai-demo charts/ai-compare \
   --set pipelines.autoConfig.enabled=false \
   -n upstream  
 
 # Change pipeline mode to manual
-helm upgrade ai-demo charts/llm-comm-upstream \
+helm upgrade ai-demo charts/ai-compare \
   --set pipelines.config.pipelineMode="manual" \
   -n upstream
 ```
@@ -199,7 +199,7 @@ helm upgrade ai-demo charts/llm-comm-upstream \
 ```bash
 # Delete existing job and trigger new one
 kubectl delete job -n upstream -l app.kubernetes.io/component=pipeline-configurator
-helm upgrade ai-demo charts/llm-comm-upstream -n upstream --reuse-values
+helm upgrade ai-demo charts/ai-compare -n upstream --reuse-values
 ```
 
 ## 🎯 Success Indicators
