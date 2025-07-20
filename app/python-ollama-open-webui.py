@@ -800,38 +800,18 @@ class ChatInterface:
             return gr.Column(visible=True), f"❌ Restoration failed: {str(e)}", "error"
 
     def run_availability_demo(self) -> tuple:
-        """Runs availability demo by testing external connectivity (SUSE security demo pattern)."""
+        """Runs availability demo by simulating service failure for SUSE Observability monitoring."""
         try:
-            logger.info("Running availability demo - testing external connectivity")
+            logger.info("Running availability demo - simulating service failure for SUSE Observability")
 
-            # Use requests library instead of curl (available in container)
-            import requests
-
-            response = requests.head("https://suse.com", timeout=3)
-
-            if response.status_code in [200, 301, 302]:  # Accept success and redirects
-                headers_text = "\n".join(
-                    [f"{k}: {v}" for k, v in response.headers.items()][:10]
-                )
-                if response.status_code == 301:
-                    message = f"✅ Availability Demo: Successfully connected to https://suse.com (redirected to {response.headers.get('Location', 'unknown')})\n\nResponse Headers:\n{headers_text}..."
-                else:
-                    message = f"✅ Availability Demo: Successfully connected to https://suse.com\n\nResponse Headers:\n{headers_text}..."
-                status = "success"
+            # Check current service health status
+            if self.service_health_failure:
+                # Service is already failed, restore it
+                return self.restore_service_health()
             else:
-                message = f"⚠️ Availability Demo: Connection returned status {response.status_code}"
-                status = "warning"
+                # Service is healthy, simulate failure
+                return self.simulate_service_failure()
 
-            logger.info(f"Availability demo completed with status: {status}")
-            return gr.Column(visible=False), message, status
-
-        except requests.exceptions.Timeout:
-            logger.error("Availability demo timed out")
-            return (
-                gr.Column(visible=True),
-                "❌ Availability Demo: Connection timed out after 5 seconds",
-                "error",
-            )
         except Exception as e:
             logger.error(f"Availability demo failed: {e}")
             return (
@@ -1535,7 +1515,7 @@ def create_interface():
             <div style='background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(115, 186, 37, 0.3); border-radius: 8px; padding: 12px; margin: 10px 0;'>
                 <p style='color: #2e7d32; margin: 0 0 8px 0; font-weight: 700;'>🔍 Security Demo Scenarios:</p>
                 <ul style='color: #1b5e20; margin: 0; font-size: 0.85em; padding-left: 20px; font-weight: 500;'>
-                    <li><strong>Availability Demo:</strong> Tests external connectivity to https://suse.com (network policy monitoring)</li>
+                    <li><strong>Availability Demo:</strong> Simulates service failure/recovery for SUSE Observability monitoring (toggles SERVICE_HEALTH_FAILURE)</li>
                     <li><strong>Data Leak Demo:</strong> Transmits credit card data to simulate data loss prevention (DLP) detection</li>
                     <li><strong>Security Monitoring:</strong> SUSE NeuVector should detect and alert on sensitive data transmission</li>
                     <li><strong>Observability:</strong> Network traffic and security events are monitored by SUSE security stack</li>
