@@ -1232,22 +1232,22 @@ def create_interface():
         height: 100% !important;
         min-height: 200px !important;
     }
-    /* Consistent rounded styling for textboxes with proper visibility */
+    /* Consistent rounded styling for textboxes with proper grey background */
     .gr-textbox {
         border-radius: 12px !important;
-        background: rgba(255, 255, 255, 0.95) !important;
-        color: #333333 !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        color: #ffffff !important;
         border: 2px solid rgba(115, 186, 37, 0.3) !important;
     }
     
-    /* Keep input fields and response areas visible with light backgrounds and dark text */
+    /* Keep input fields and response areas with proper grey background like the rest of the UI */
     .input-box textarea,
     .input-box .gr-textbox textarea,
     .ollama-response textarea,
     .webui-response textarea {
-        background-color: rgba(255, 255, 255, 0.95) !important;
-        background: rgba(255, 255, 255, 0.95) !important;
-        color: #333333 !important;
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        color: #ffffff !important;
         border: 1px solid rgba(115, 186, 37, 0.3) !important;
     }
     .gr-button {
@@ -1500,8 +1500,8 @@ def create_interface():
 
             gr.HTML(
                 """
-            <div style='background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(220, 53, 69, 0.3); border-radius: 8px; padding: 12px; margin: 10px 0;'>
-                <p style='color: #d32f2f; margin: 0; font-size: 0.9em; font-weight: 600;'>
+            <div style='background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(220, 53, 69, 0.3); border-radius: 8px; padding: 12px; margin: 10px 0;'>
+                <p style='color: #ff6b6b; margin: 0; font-size: 0.9em; font-weight: 600;'>
                     🔒 <strong>SUSE Security Demonstration:</strong> These demos simulate real security scenarios that 
                     SUSE NeuVector and SUSE Observability can detect and alert on.
                 </p>
@@ -1511,9 +1511,9 @@ def create_interface():
 
             gr.HTML(
                 """
-            <div style='background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(115, 186, 37, 0.3); border-radius: 8px; padding: 12px; margin: 10px 0;'>
-                <p style='color: #2e7d32; margin: 0 0 8px 0; font-weight: 700;'>🔍 Security Demo Scenarios:</p>
-                <ul style='color: #1b5e20; margin: 0; font-size: 0.85em; padding-left: 20px; font-weight: 500;'>
+            <div style='background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(115, 186, 37, 0.3); border-radius: 8px; padding: 12px; margin: 10px 0;'>
+                <p style='color: #73ba25; margin: 0 0 8px 0; font-weight: 700;'>🔍 Security Demo Scenarios:</p>
+                <ul style='color: #ffffff; margin: 0; font-size: 0.85em; padding-left: 20px; font-weight: 500;'>
                     <li><strong>Availability Demo:</strong> Simulates service failure/recovery for SUSE Observability monitoring (toggles SERVICE_HEALTH_FAILURE)</li>
                     <li><strong>Data Leak Demo:</strong> Transmits credit card data to simulate data loss prevention (DLP) detection</li>
                     <li><strong>Security Monitoring:</strong> SUSE NeuVector should detect and alert on sensitive data transmission</li>
