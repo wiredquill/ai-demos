@@ -724,31 +724,117 @@ class ChatInterface:
         return html_content
 
     def simulate_service_failure(self) -> tuple:
-        """Simulates service failure using environment variable toggle and generates observability signals."""
+        """Simulates service failure with real observable metrics and HTTP errors."""
         try:
-            logger.info("Simulating service failure - setting SERVICE_HEALTH_FAILURE=true")
+            logger.info("Simulating service failure - creating real observable failures")
             
-            # Simple environment variable toggle approach - no kubectl required
-            # This simulates the gravitational-accelerator pattern where a config change causes service failure
+            # Set environment variable toggle
             import os
             os.environ["SERVICE_HEALTH_FAILURE"] = "true"
             
             # Update local state
             self.service_health_failure = True
 
-            # Generate observability signals - log errors and raise metrics
+            # Generate real observable failures that SUSE Observability can detect
             logger.error("SERVICE_HEALTH_FAILURE=true - Service entering degraded state for SUSE Observability demo")
+            
+            # Create actual HTTP errors by making failing requests
+            import requests
+            import time
+            import threading
+            
+            def generate_http_errors():
+                """Generate real HTTP errors in background to create observable failures."""
+                error_endpoints = [
+                    "http://httpbin.org/status/500",  # HTTP 500 errors
+                    "http://httpbin.org/status/502",  # Bad Gateway errors  
+                    "http://httpbin.org/status/503",  # Service Unavailable
+                    "http://httpbin.org/delay/10",    # Timeout errors
+                ]
+                
+                # Generate 20 real HTTP errors over 30 seconds for observability detection
+                for i in range(20):
+                    try:
+                        endpoint = error_endpoints[i % len(error_endpoints)]
+                        logger.info(f"Generating observable failure {i+1}/20: {endpoint}")
+                        
+                        # Make request with short timeout to create real observable failures
+                        response = requests.get(endpoint, timeout=2)
+                        if response.status_code >= 500:
+                            logger.error(f"Observable HTTP {response.status_code} error generated - SUSE Observability should detect this")
+                        elif response.status_code >= 400:
+                            logger.warning(f"Observable HTTP {response.status_code} error generated - client error pattern")
+                            
+                    except requests.exceptions.Timeout:
+                        logger.error(f"Observable timeout error {i+1}/20 - request exceeded 2s timeout (SUSE Observability pattern)")
+                    except requests.exceptions.ConnectionError:
+                        logger.error(f"Observable connection error {i+1}/20 - network failure (SUSE Observability pattern)")
+                    except Exception as e:
+                        logger.error(f"Observable request error {i+1}/20: {str(e)} (SUSE Observability pattern)")
+                    
+                    # Space out errors over time to create sustained failure pattern
+                    time.sleep(1.5)
+                
+                logger.info("Background error generation completed - 20 observable failures created")
+            
+            # Start background thread for sustained error generation
+            error_thread = threading.Thread(target=generate_http_errors, daemon=True)
+            error_thread.start()
+            
+            # Generate immediate pattern for quick detection
             logger.error("Critical: Application health check failed - simulated service failure active")
             logger.warning("Performance degradation detected - response times increasing")
             logger.error("Database connection issues detected - timeout errors occurring")
             
-            # Generate multiple error patterns for observability detection
-            for i in range(5):
-                logger.error(f"Simulated error {i+1}/5: Connection timeout to backend service")
-                logger.error(f"Simulated error {i+1}/5: HTTP 500 Internal Server Error")
-                logger.warning(f"Simulated warning {i+1}/5: High memory usage detected")
+            # Create memory pressure simulation
+            try:
+                import psutil
+                memory_percent = psutil.virtual_memory().percent
+                logger.warning(f"Memory usage spike detected: {memory_percent}% (simulated high load)")
+            except ImportError:
+                logger.warning("Memory usage spike detected: 85% (simulated high load - psutil not available)")
+            
+            # Generate CPU spike simulation  
+            import multiprocessing
+            cpu_count = multiprocessing.cpu_count()
+            logger.warning(f"CPU spike detected: High load across {cpu_count} cores (simulated)")
+            
+            # Create a health check failure thread that will respond with HTTP 500s
+            def health_check_failure():
+                """Background thread to create failing health checks."""
+                import time
+                from http.server import HTTPServer, BaseHTTPRequestHandler
+                import threading
+                
+                class FailingHealthHandler(BaseHTTPRequestHandler):
+                    def do_GET(self):
+                        if self.path == '/health':
+                            logger.error("Health check failed - returning HTTP 500 (SUSE Observability pattern)")
+                            self.send_response(500)
+                            self.send_header('Content-type', 'application/json')
+                            self.end_headers()
+                            self.wfile.write(b'{"status":"FAILING","error":"SERVICE_HEALTH_FAILURE=true"}')
+                        else:
+                            self.send_response(404)
+                            self.end_headers()
+                    
+                    def log_message(self, format, *args):
+                        # Suppress default HTTP server logs
+                        pass
+                
+                try:
+                    # Start health check server on port 8090
+                    server = HTTPServer(('0.0.0.0', 8090), FailingHealthHandler)
+                    logger.info("Started failing health check server on port 8090 for observability")
+                    server.serve_forever()
+                except Exception as e:
+                    logger.warning(f"Could not start health check server: {e}")
+            
+            # Start health check failure server in background
+            health_thread = threading.Thread(target=health_check_failure, daemon=True)
+            health_thread.start()
 
-            message = f"🚨 Service failure simulated! SERVICE_HEALTH_FAILURE=true set with error patterns logged. SUSE Observability should detect service degradation."
+            message = f"🚨 Service failure simulated! Generating 20 real HTTP errors, resource spikes, and failing health checks on port 8090. SUSE Observability should detect failure patterns."
 
             return gr.Column(visible=False), message, "warning"
 
@@ -774,8 +860,42 @@ class ChatInterface:
             logger.info("Database connections: STABLE - Response times normalized")
             logger.info("Performance metrics: NORMAL - Memory usage within acceptable limits")
             logger.info("Service recovery complete - All error conditions cleared")
+            
+            # Generate successful HTTP requests to show recovery pattern
+            import requests
+            import threading
+            
+            def generate_success_pattern():
+                """Generate successful requests to show recovery in observability."""
+                success_endpoints = [
+                    "http://httpbin.org/status/200",  # HTTP 200 success
+                    "http://httpbin.org/json",        # Successful JSON response
+                    "http://httpbin.org/get",         # Successful GET
+                ]
+                
+                # Generate 10 successful requests to show recovery pattern
+                for i in range(10):
+                    try:
+                        endpoint = success_endpoints[i % len(success_endpoints)]
+                        logger.info(f"Generating recovery success {i+1}/10: {endpoint}")
+                        
+                        response = requests.get(endpoint, timeout=5)
+                        if response.status_code == 200:
+                            logger.info(f"Recovery success {i+1}/10: HTTP {response.status_code} - normal operations restored")
+                        
+                    except Exception as e:
+                        logger.warning(f"Recovery request {i+1}/10 failed: {e}")
+                    
+                    import time
+                    time.sleep(0.5)
+                
+                logger.info("Recovery pattern generation completed - service health restored")
+            
+            # Start background thread for recovery pattern
+            recovery_thread = threading.Thread(target=generate_success_pattern, daemon=True)
+            recovery_thread.start()
 
-            message = f"✅ Service health restored! SERVICE_HEALTH_FAILURE=false set with recovery signals logged. SUSE Observability should detect recovery."
+            message = f"✅ Service health restored! Generating recovery patterns with 10 successful HTTP requests. SUSE Observability should detect recovery."
 
             return gr.Column(visible=False), message, "success"
 
