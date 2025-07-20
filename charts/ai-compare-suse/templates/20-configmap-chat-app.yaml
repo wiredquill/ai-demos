@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: chat-app-config
+  name: app-config
 data:
   config.json: |
     {

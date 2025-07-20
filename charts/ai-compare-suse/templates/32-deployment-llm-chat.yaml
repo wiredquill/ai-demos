@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "ai-compare-suse.fullname" . }}-chat
+  name: {{ include "ai-compare-suse.fullname" . }}-app
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ include "ai-compare-suse.fullname" . }}-chat
+      app: {{ include "ai-compare-suse.fullname" . }}-app
   template:
     metadata:
       labels:
-        app: {{ include "ai-compare-suse.fullname" . }}-chat
+        app: {{ include "ai-compare-suse.fullname" . }}-app
     spec:
       serviceAccountName: ai-compare-service-account
       {{- with .Values.imagePullSecrets }}
@@ -18,7 +18,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-        - name: chat-app
+        - name: app
           image: "{{ .Values.llmChat.image.repository }}:{{ .Values.llmChat.image.tag }}"
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           ports:
@@ -63,7 +63,7 @@ spec:
             - name: SERVICE_HEALTH_FAILURE
               value: "false"
             - name: DEPLOYMENT_NAME
-              value: "ai-compare-chat"
+              value: "{{ include "ai-compare-suse.fullname" . }}-app"
           # Health checks to ensure proper startup sequencing
           livenessProbe:
             httpGet:
@@ -89,4 +89,4 @@ spec:
       volumes:
         - name: config-volume
           configMap:
-            name: chat-app-config
+            name: app-config

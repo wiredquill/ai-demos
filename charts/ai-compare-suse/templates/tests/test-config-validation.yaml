@@ -24,11 +24,11 @@ spec:
       # Test ConfigMap existence
       echo "Testing ConfigMap availability..."
       if [ -f /config/config.json ]; then
-        echo "✅ Chat app config is mounted"
+        echo "✅ App config is mounted"
         echo "Config preview:"
         head -5 /config/config.json
       else
-        echo "❌ Chat app config not found"
+        echo "❌ App config not found"
         exit 1
       fi
       
@@ -92,4 +92,4 @@ spec:
   volumes:
   - name: config
     configMap:
-      name: chat-app-config
+      name: app-config

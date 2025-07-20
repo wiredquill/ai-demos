@@ -92,4 +92,4 @@ spec:
   volumes:
   - name: config
     configMap:
-      name: chat-app-config
+      name: app-config
