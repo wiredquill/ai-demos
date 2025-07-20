@@ -1814,10 +1814,7 @@ def create_interface():
             logger.info("🔄 Manual refresh completed")
             return result
 
-        manual_refresh_btn.click(
-            manual_refresh_clicked,
-            outputs=[msg_input, ollama_output, webui_output, provider_status_html],
-        )
+        # Removed manual refresh button per UI feedback - no click handler needed
 
         # Add a Python-based auto-refresh as fallback
         def auto_refresh_fallback():
