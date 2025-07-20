@@ -724,7 +724,7 @@ class ChatInterface:
         return html_content
 
     def simulate_service_failure(self) -> tuple:
-        """Simulates service failure using environment variable toggle (gravitational-accelerator pattern)."""
+        """Simulates service failure using environment variable toggle and generates observability signals."""
         try:
             logger.info("Simulating service failure - setting SERVICE_HEALTH_FAILURE=true")
             
@@ -736,7 +736,19 @@ class ChatInterface:
             # Update local state
             self.service_health_failure = True
 
-            message = f"🚨 Service failure simulated! SERVICE_HEALTH_FAILURE=true set. SUSE Observability will detect service degradation patterns."
+            # Generate observability signals - log errors and raise metrics
+            logger.error("SERVICE_HEALTH_FAILURE=true - Service entering degraded state for SUSE Observability demo")
+            logger.error("Critical: Application health check failed - simulated service failure active")
+            logger.warning("Performance degradation detected - response times increasing")
+            logger.error("Database connection issues detected - timeout errors occurring")
+            
+            # Generate multiple error patterns for observability detection
+            for i in range(5):
+                logger.error(f"Simulated error {i+1}/5: Connection timeout to backend service")
+                logger.error(f"Simulated error {i+1}/5: HTTP 500 Internal Server Error")
+                logger.warning(f"Simulated warning {i+1}/5: High memory usage detected")
+
+            message = f"🚨 Service failure simulated! SERVICE_HEALTH_FAILURE=true set with error patterns logged. SUSE Observability should detect service degradation."
 
             return gr.Column(visible=False), message, "warning"
 
@@ -745,7 +757,7 @@ class ChatInterface:
             return gr.Column(visible=True), f"❌ Simulation failed: {str(e)}", "error"
 
     def restore_service_health(self) -> tuple:
-        """Restores service health using environment variable reset."""
+        """Restores service health using environment variable reset and generates recovery signals."""
         try:
             logger.info("Restoring service health - setting SERVICE_HEALTH_FAILURE=false")
 
@@ -756,7 +768,14 @@ class ChatInterface:
             # Update local state
             self.service_health_failure = False
 
-            message = f"✅ Service health restored! SERVICE_HEALTH_FAILURE=false set. SUSE Observability should detect recovery."
+            # Generate recovery signals for observability
+            logger.info("SERVICE_HEALTH_FAILURE=false - Service health restored successfully")
+            logger.info("Health check status: HEALTHY - All systems operational")
+            logger.info("Database connections: STABLE - Response times normalized")
+            logger.info("Performance metrics: NORMAL - Memory usage within acceptable limits")
+            logger.info("Service recovery complete - All error conditions cleared")
+
+            message = f"✅ Service health restored! SERVICE_HEALTH_FAILURE=false set with recovery signals logged. SUSE Observability should detect recovery."
 
             return gr.Column(visible=False), message, "success"
 
@@ -1853,8 +1872,42 @@ def create_interface():
                     }
                 });
                 
-                // Minimal JavaScript for UI refresh functionality only
+                // Enhanced JavaScript for UI feedback and button interactions
                 console.log('🎨 AI Compare UI initialized - using native Gradio styling');
+                
+                // Add enhanced button press feedback
+                function addButtonFeedback() {
+                    const buttons = document.querySelectorAll('.gr-button');
+                    buttons.forEach(button => {
+                        if (!button.classList.contains('feedback-enhanced')) {
+                            button.classList.add('feedback-enhanced');
+                            
+                            button.addEventListener('click', function() {
+                                // Visual feedback on click
+                                this.style.transform = 'scale(0.95)';
+                                this.style.opacity = '0.8';
+                                
+                                // Reset after short delay
+                                setTimeout(() => {
+                                    this.style.transform = '';
+                                    this.style.opacity = '';
+                                }, 150);
+                                
+                                console.log('🔘 Button clicked:', this.textContent);
+                            });
+                        }
+                    });
+                }
+                
+                // Apply button feedback immediately and on DOM changes
+                setTimeout(addButtonFeedback, 500);
+                setInterval(addButtonFeedback, 2000);
+                
+                // Apply on DOM mutations
+                const observer = new MutationObserver(() => {
+                    setTimeout(addButtonFeedback, 100);
+                });
+                observer.observe(document.body, { childList: true, subtree: true });
                 </script>
                 """
         )
