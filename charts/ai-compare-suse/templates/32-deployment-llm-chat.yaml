@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ai-compare-chat
+  name: {{ include "ai-compare-suse.fullname" . }}-chat
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ai-compare-chat
+      app: {{ include "ai-compare-suse.fullname" . }}-chat
   template:
     metadata:
       labels:
-        app: ai-compare-chat
+        app: {{ include "ai-compare-suse.fullname" . }}-chat
     spec:
       serviceAccountName: ai-compare-service-account
       {{- with .Values.imagePullSecrets }}

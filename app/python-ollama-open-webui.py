@@ -666,7 +666,7 @@ class ChatInterface:
 
         html_content = f"""
         <div style='background: linear-gradient(135deg, #0c322c 0%, #1a4a3a 100%); padding: 15px; border-radius: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);'>
-            <h3 style='color: #30ba78; margin: 0 0 15px 0; font-size: 16px; text-align: center; font-weight: 600;'>🌐 System Status</h3>
+            <h3 style='color: #30ba78; margin: 0 0 15px 0; font-size: 16px; text-align: center; font-weight: 600;'>🤖 Model Providers</h3>
             
             <!-- Service Health Status -->
             <div style='background: rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; margin-bottom: 15px; border-left: 4px solid {health_status["color"]};'>
@@ -1119,7 +1119,7 @@ def create_interface():
         margin-bottom: 25px; 
     }
     .control-panel, .chat-container { 
-        background: rgba(255, 255, 255, 0.9); 
+        background: rgba(255, 255, 255, 0.05); 
         border: 1px solid rgba(48, 186, 120, 0.2); 
         border-radius: 15px; 
         padding: 20px; 
@@ -1376,7 +1376,9 @@ def create_interface():
                 # Initialize with pre-drawn provider status boxes
                 initial_status_html = chat_instance.get_provider_status_html()
                 provider_status_html = gr.HTML(value=initial_status_html)
-                # Removed refresh button per UI feedback
+                refresh_providers_btn = gr.Button(
+                    "🔄 Refresh", elem_classes="refresh-btn", size="sm"
+                )
                 # SUSE Security Demo buttons (direct action)
                 availability_demo_btn = gr.Button(
                     "🌐 Availability Demo", variant="secondary", size="sm"
@@ -1665,7 +1667,9 @@ def create_interface():
             lambda: ("", "", ""), outputs=[ollama_output, webui_output, msg_input]
         )
 
-        # Removed refresh button per UI feedback - no click handler needed
+        refresh_providers_btn.click(
+            chat_instance.refresh_providers, outputs=[provider_status_html]
+        )
         config_btn.click(show_config_panel, outputs=[config_panel])
         close_config_btn.click(hide_config_panel, outputs=[config_panel])
 
