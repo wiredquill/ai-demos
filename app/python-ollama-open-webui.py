@@ -1267,50 +1267,78 @@ def create_interface():
         border-radius: 12px !important;
         background: rgba(255, 255, 255, 0.05) !important;
     }
-    /* Fix white backgrounds around response boxes - keep everything else as original grey */
-    div[style*="background-color: white"], div[style*="background-color: #fff"], div[style*="background: white"] {
-        background: inherit !important;
+    /* COMPREHENSIVE WHITE BACKGROUND FIX - Based on Gradio CSS research */
+    
+    /* Global override for any white backgrounds in the entire app */
+    div[style*="background-color: white"], 
+    div[style*="background-color: #fff"], 
+    div[style*="background-color: #ffffff"],
+    div[style*="background-color: rgb(255, 255, 255)"],
+    div[style*="background: white"],
+    div[style*="background: #fff"],
+    div[style*="background: #ffffff"],
+    div[style*="background: rgb(255, 255, 255)"] {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        background: rgba(255, 255, 255, 0.05) !important;
     }
-    /* Target specific containers that might have white backgrounds around response boxes */
-    .ollama-response > div, .webui-response > div {
-        background: inherit !important;
+    
+    /* Target Gradio component containers specifically */
+    .gradio-container textarea,
+    .gradio-container input[type="text"],
+    .gradio-container .gr-textbox,
+    .gradio-container .gr-form,
+    .gradio-container .gr-box {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
     }
-    /* Target the container wrapping the response textboxes */
+    
+    /* Target response area containers */
     .ollama-response, .webui-response {
-        background: inherit !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+    }
+    
+    .ollama-response > *, .webui-response > *,
+    .ollama-response textarea, .webui-response textarea,
+    .ollama-response .gr-textbox, .webui-response .gr-textbox {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        background: rgba(255, 255, 255, 0.05) !important;
     }
     /* Target Gradio form and container elements around response boxes */
     .ollama-response .gr-form, .webui-response .gr-form,
     .ollama-response .gr-box, .webui-response .gr-box {
         background: inherit !important;
     }
-    /* Fix white background around input box only - aggressive targeting all potential containers */
-    .input-box .gr-form, .input-box .gr-box, .input-box > div, 
-    .input-box .gr-textbox, .input-box div[data-testid="textbox"] {
-        background: rgba(255, 255, 255, 0.05) !important;
-    }
-    /* Target all nested divs inside input-box */
-    .input-box > div > div, .input-box .gr-form > div, .input-box div div {
-        background: rgba(255, 255, 255, 0.05) !important;
-    }
-    /* Ultra-aggressive targeting for any white background elements in input-box */
-    .input-box *, .input-box *[style*="background"], .input-box *[style*="background-color"] {
-        background: rgba(255, 255, 255, 0.05) !important;
+    /* COMPREHENSIVE INPUT BOX WHITE BACKGROUND FIX */
+    
+    /* Target input box with aggressive CSS selectors */
+    .input-box,
+    .input-box *,
+    .input-box textarea,
+    .input-box input,
+    .input-box .gr-textbox,
+    .input-box .gr-form,
+    .input-box .gr-box,
+    .input-box div[data-testid="textbox"],
+    .input-box .gr-padded,
+    .input-box .gr-compact,
+    .input-box .wrap {
         background-color: rgba(255, 255, 255, 0.05) !important;
-    }
-    /* Specific targeting for Gradio wrapper elements */
-    .input-box .gr-padded, .input-box .gr-compact, .input-box .wrap {
         background: rgba(255, 255, 255, 0.05) !important;
     }
-    /* Force override for any element that might still show white in input box area */
+    
+    /* Override any inline styles that might set white background in input area */
     .input-box [style*="background-color: white"], 
     .input-box [style*="background-color: #fff"], 
     .input-box [style*="background-color: #ffffff"],
+    .input-box [style*="background-color: rgb(255, 255, 255)"],
     .input-box [style*="background: white"],
     .input-box [style*="background: #fff"],
-    .input-box [style*="background: #ffffff"] {
-        background: rgba(255, 255, 255, 0.05) !important;
+    .input-box [style*="background: #ffffff"],
+    .input-box [style*="background: rgb(255, 255, 255)"] {
         background-color: rgba(255, 255, 255, 0.05) !important;
+        background: rgba(255, 255, 255, 0.05) !important;
     }
     .gr-button {
         border-radius: 12px !important;
@@ -1940,56 +1968,104 @@ def create_interface():
                 
                 // JavaScript-based CSS fix for white background around input box
                 function fixWhiteBackground() {
-                    console.log('🎨 Applying JavaScript CSS fix for white background');
+                    console.log('🎨 Applying COMPREHENSIVE white background fix based on research');
                     
-                    // Create a more aggressive CSS style
+                    // Remove any existing fix styles to prevent duplicates
+                    const existingStyles = document.querySelectorAll('style[data-white-bg-fix]');
+                    existingStyles.forEach(style => style.remove());
+                    
+                    // Create research-based comprehensive CSS style injection
                     const style = document.createElement('style');
+                    style.setAttribute('data-white-bg-fix', 'true');
                     style.textContent = `
-                        /* Ultra-aggressive JavaScript CSS injection to fix white background */
-                        .input-box * {
-                            background: rgba(255, 255, 255, 0.05) !important;
+                        /* RESEARCH-BASED COMPREHENSIVE WHITE BACKGROUND FIX */
+                        
+                        /* Global Gradio component targeting */
+                        .gradio-container textarea,
+                        .gradio-container input[type="text"],
+                        .gradio-container .gr-textbox,
+                        .gradio-container .gr-form,
+                        .gradio-container .gr-box,
+                        .gradio-container div[data-testid="textbox"] {
                             background-color: rgba(255, 255, 255, 0.05) !important;
+                            background: rgba(255, 255, 255, 0.05) !important;
+                            color: #ffffff !important;
+                            border: 1px solid rgba(255, 255, 255, 0.1) !important;
                         }
                         
-                        /* Target specific Gradio containers that might have white backgrounds */
-                        .input-box .gr-form,
-                        .input-box .gr-box,
-                        .input-box .gr-padded,
-                        .input-box .gr-compact,
-                        .input-box .wrap,
-                        .input-box > div,
-                        .input-box > div > div,
-                        .input-box div div {
-                            background: rgba(255, 255, 255, 0.05) !important;
+                        /* Target ALL possible white background sources in the app */
+                        div[style*="background-color: white"],
+                        div[style*="background-color: #fff"], 
+                        div[style*="background-color: #ffffff"],
+                        div[style*="background-color: rgb(255, 255, 255)"],
+                        div[style*="background: white"],
+                        div[style*="background: #fff"],
+                        div[style*="background: #ffffff"],
+                        div[style*="background: rgb(255, 255, 255)"],
+                        .input-box *,
+                        .ollama-response *,
+                        .webui-response * {
                             background-color: rgba(255, 255, 255, 0.05) !important;
+                            background: rgba(255, 255, 255, 0.05) !important;
+                            color: #ffffff !important;
                         }
                         
-                        /* Force override any inline styles */
-                        .input-box *[style*="background"] {
-                            background: rgba(255, 255, 255, 0.05) !important;
+                        /* Specific elem_classes targeting */
+                        .input-box textarea,
+                        .ollama-response textarea,
+                        .webui-response textarea {
                             background-color: rgba(255, 255, 255, 0.05) !important;
+                            background: rgba(255, 255, 255, 0.05) !important;
+                            color: #ffffff !important;
                         }
                     `;
                     document.head.appendChild(style);
                     
-                    // Also directly modify any elements with white backgrounds
-                    const whiteElements = document.querySelectorAll('.input-box *');
-                    whiteElements.forEach(el => {
-                        const computedStyle = window.getComputedStyle(el);
-                        if (computedStyle.backgroundColor === 'rgb(255, 255, 255)' || 
-                            computedStyle.backgroundColor === 'white' ||
-                            computedStyle.backgroundColor === '#ffffff') {
-                            el.style.setProperty('background', 'rgba(255, 255, 255, 0.05)', 'important');
-                            el.style.setProperty('background-color', 'rgba(255, 255, 255, 0.05)', 'important');
-                            console.log('🎨 Fixed white background on element:', el);
-                        }
+                    // Direct DOM manipulation for stubborn elements - target all areas shown in screenshot
+                    const criticalSelectors = [
+                        '.input-box textarea', '.input-box input',
+                        '.ollama-response textarea', '.webui-response textarea',
+                        'div[data-testid="textbox"]', '.gr-textbox',
+                        '.gradio-container textarea', '.gradio-container input'
+                    ];
+                    
+                    criticalSelectors.forEach(selector => {
+                        const elements = document.querySelectorAll(selector);
+                        elements.forEach(el => {
+                            const computedStyle = window.getComputedStyle(el);
+                            const bgColor = computedStyle.backgroundColor;
+                            
+                            if (bgColor === 'rgb(255, 255, 255)' || 
+                                bgColor === 'white' ||
+                                bgColor === '#ffffff' ||
+                                bgColor === 'rgba(255, 255, 255, 1)') {
+                                el.style.setProperty('background-color', 'rgba(255, 255, 255, 0.05)', 'important');
+                                el.style.setProperty('background', 'rgba(255, 255, 255, 0.05)', 'important');
+                                el.style.setProperty('color', '#ffffff', 'important');
+                                console.log('🎨 Fixed white background on critical element:', selector, el);
+                            }
+                        });
                     });
+                    
+                    console.log('✅ Comprehensive white background fix completed');
                 }
                 
-                // Apply CSS fix after page loads and periodically reapply
-                setTimeout(fixWhiteBackground, 2000);
-                setTimeout(fixWhiteBackground, 5000);
-                setInterval(fixWhiteBackground, 10000); // Reapply every 10 seconds
+                // Apply CSS fix immediately and frequently to catch dynamic content
+                setTimeout(fixWhiteBackground, 1000);  // Quick first application
+                setTimeout(fixWhiteBackground, 3000);  // Second application
+                setTimeout(fixWhiteBackground, 6000);  // Third application
+                setInterval(fixWhiteBackground, 8000); // Regular reapplication every 8 seconds
+                
+                // Also apply fix when user interacts with the page
+                document.addEventListener('click', () => {
+                    setTimeout(fixWhiteBackground, 500);
+                });
+                
+                // Apply fix when new content is loaded (MutationObserver)
+                const observer = new MutationObserver(() => {
+                    setTimeout(fixWhiteBackground, 300);
+                });
+                observer.observe(document.body, { childList: true, subtree: true });
                 </script>
                 """
         )
