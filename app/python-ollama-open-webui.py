@@ -1665,9 +1665,7 @@ def create_interface():
             lambda: ("", "", ""), outputs=[ollama_output, webui_output, msg_input]
         )
 
-        refresh_providers_btn.click(
-            chat_instance.refresh_providers, outputs=[provider_status_html]
-        )
+        # Removed refresh button per UI feedback - no click handler needed
         config_btn.click(show_config_panel, outputs=[config_panel])
         close_config_btn.click(hide_config_panel, outputs=[config_panel])
 
