@@ -1,0 +1,259 @@
+name: Python Tests
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'app/**'
+      - '.github/workflows/python-tests.yaml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'app/**'
+      - '.github/workflows/python-tests.yaml'
+  workflow_dispatch:
+
+jobs:
+  python-lint:
+    name: Python Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('app/requirements.txt', 'app/test-requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        cd app
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r test-requirements.txt
+        pip install flake8 black isort mypy
+        
+    - name: Run Black (code formatting)
+      run: |
+        cd app
+        black --check --diff .
+        
+    - name: Run isort (import sorting)
+      run: |
+        cd app
+        isort --check-only --diff .
+        
+    - name: Run flake8 (linting)
+      run: |
+        cd app
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        
+    - name: Run mypy (type checking)
+      run: |
+        cd app
+        mypy python-ollama-open-webui.py --ignore-missing-imports || true
+
+  python-tests:
+    name: Python Unit Tests
+    runs-on: ubuntu-latest
+    needs: python-lint
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('app/requirements.txt', 'app/test-requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        cd app
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r test-requirements.txt
+        
+    - name: Run unit tests with coverage
+      run: |
+        cd app
+        pytest tests/ -v \
+          --cov=. \
+          --cov-report=term-missing \
+          --cov-report=xml \
+          --cov-fail-under=70 \
+          --tb=short \
+          --junit-xml=test-results.xml
+          
+    - name: Upload coverage to Codecov
+      if: matrix.python-version == '3.11'
+      uses: codecov/codecov-action@v3
+      with:
+        file: app/coverage.xml
+        directory: app/
+        fail_ci_if_error: false
+        verbose: true
+        
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-python-${{ matrix.python-version }}
+        path: |
+          app/test-results.xml
+          app/coverage.xml
+          
+  security-tests:
+    name: Security Demo Tests
+    runs-on: ubuntu-latest
+    needs: python-lint
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        cd app
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r test-requirements.txt
+        
+    - name: Run security demo tests
+      run: |
+        cd app
+        pytest tests/test_chat_interface.py::TestSecurityDemos -v \
+          --tb=short
+          
+    - name: Run automation tests
+      run: |
+        cd app
+        pytest tests/test_automation.py -v \
+          --tb=short
+          
+  integration-smoke-test:
+    name: Integration Smoke Test
+    runs-on: ubuntu-latest
+    needs: [python-tests, security-tests]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        cd app
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Run import test
+      run: |
+        cd app
+        python -c "
+        import sys
+        sys.modules['gradio'] = __import__('unittest.mock').mock.MagicMock()
+        sys.modules['openlit'] = __import__('unittest.mock').mock.MagicMock()
+        
+        try:
+            import python_ollama_open_webui as app
+            print('✅ Application imports successfully')
+            
+            # Test basic class instantiation
+            interface = app.ChatInterface()
+            print('✅ ChatInterface instantiates successfully')
+            
+            print('✅ Smoke test passed')
+        except Exception as e:
+            print(f'❌ Smoke test failed: {e}')
+            sys.exit(1)
+        "
+        
+    - name: Test configuration loading
+      run: |
+        cd app
+        python -c "
+        import sys, tempfile, json, os
+        sys.modules['gradio'] = __import__('unittest.mock').mock.MagicMock()
+        sys.modules['openlit'] = __import__('unittest.mock').mock.MagicMock()
+        
+        import python_ollama_open_webui as app
+        
+        # Test config creation
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump({'providers': {'Test': 'https://test.com'}}, f)
+            config_path = f.name
+            
+        try:
+            # Mock the config path
+            original_init = app.ChatInterface.__init__
+            def patched_init(self):
+                self.config_path = config_path
+                original_init(self)
+            app.ChatInterface.__init__ = patched_init
+            
+            interface = app.ChatInterface()
+            assert 'Test' in interface.config['providers']
+            print('✅ Configuration loading works')
+            
+        finally:
+            os.unlink(config_path)
+        "
+
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [python-lint, python-tests, security-tests]
+    if: always()
+    
+    steps:
+    - name: Check test results
+      run: |
+        echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY  
+        echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Python Lint | ${{ needs.python-lint.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Python Tests | ${{ needs.python-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Security Tests | ${{ needs.security-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+        
+        if [[ "${{ needs.python-lint.result }}" != "success" || "${{ needs.python-tests.result }}" != "success" || "${{ needs.security-tests.result }}" != "success" ]]; then
+          echo ""
+          echo "❌ Some tests failed. Please check the individual job logs."
+          exit 1
+        else
+          echo ""
+          echo "✅ All Python tests passed successfully!"
+        fi

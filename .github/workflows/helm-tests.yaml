@@ -1,0 +1,200 @@
+name: Helm Chart Tests
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'charts/**'
+      - '.github/workflows/helm-tests.yaml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'charts/**'
+      - '.github/workflows/helm-tests.yaml'
+  workflow_dispatch:
+
+jobs:
+  version-check:
+    name: Chart Version Synchronization Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check chart version synchronization
+      run: |
+        chmod +x scripts/sync-chart-versions.sh
+        ./scripts/sync-chart-versions.sh --check
+        
+    - name: Show version status
+      if: failure()
+      run: |
+        echo "❌ Chart versions are not synchronized!"
+        echo ""
+        echo "To fix this, run one of:"
+        echo "  ./scripts/sync-chart-versions.sh --sync-to-upstream"
+        echo "  ./scripts/sync-chart-versions.sh --sync-to-suse"
+        echo "  ./scripts/sync-chart-versions.sh --bump-patch"
+        exit 1
+
+  helm-lint:
+    name: Helm Lint and Template Validation
+    runs-on: ubuntu-latest
+    needs: version-check
+    strategy:
+      matrix:
+        chart: [ai-compare, ai-compare-suse]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Helm
+      uses: azure/setup-helm@v4
+      with:
+        version: '3.12.0'
+        
+    - name: Lint Helm chart
+      run: |
+        echo "🔍 Linting ${{ matrix.chart }} chart..."
+        helm lint charts/${{ matrix.chart }}
+        
+    - name: Validate template rendering
+      run: |
+        echo "🔧 Validating template rendering for ${{ matrix.chart }}..."
+        helm template test-release charts/${{ matrix.chart }} --namespace test > /dev/null
+        echo "✅ Template validation passed"
+        
+    - name: Check for test files
+      run: |
+        echo "🧪 Checking for test files in ${{ matrix.chart }}..."
+        if [ -d "charts/${{ matrix.chart }}/templates/tests" ]; then
+          echo "✅ Test directory found"
+          ls -la charts/${{ matrix.chart }}/templates/tests/
+        else
+          echo "❌ No test directory found"
+          exit 1
+        fi
+
+  helm-dry-run:
+    name: Helm Dry Run Tests
+    runs-on: ubuntu-latest
+    needs: helm-lint
+    strategy:
+      matrix:
+        chart: [ai-compare, ai-compare-suse]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Helm
+      uses: azure/setup-helm@v4
+      with:
+        version: '3.12.0'
+        
+    - name: Set up kubectl
+      uses: azure/setup-kubectl@v4
+      with:
+        version: '1.28.0'
+        
+    - name: Create kind cluster
+      uses: helm/kind-action@v1.8.0
+      with:
+        cluster_name: helm-test
+        kubectl_version: v1.28.0
+        
+    - name: Test Helm install (dry-run)
+      run: |
+        echo "🚀 Testing Helm install for ${{ matrix.chart }}..."
+        helm install test-${{ matrix.chart }} charts/${{ matrix.chart }} \
+          --namespace test-${{ matrix.chart }} \
+          --create-namespace \
+          --dry-run \
+          --debug
+          
+    - name: Generate test manifests
+      run: |
+        echo "📄 Generating manifests with test hooks..."
+        helm template test-${{ matrix.chart }} charts/${{ matrix.chart }} \
+          --namespace test-${{ matrix.chart }} \
+          --show-only templates/tests/ \
+          > ${{ matrix.chart }}-tests.yaml
+          
+    - name: Upload test manifests
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.chart }}-test-manifests
+        path: ${{ matrix.chart }}-tests.yaml
+
+  integration-test:
+    name: Integration Tests (Optional)
+    runs-on: ubuntu-latest
+    needs: helm-dry-run
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Helm
+      uses: azure/setup-helm@v4
+      with:
+        version: '3.12.0'
+        
+    - name: Set up kubectl
+      uses: azure/setup-kubectl@v4
+      with:
+        version: '1.28.0'
+        
+    - name: Create kind cluster with config
+      uses: helm/kind-action@v1.8.0
+      with:
+        cluster_name: ai-compare-test
+        kubectl_version: v1.28.0
+        config: |
+          kind: Cluster
+          apiVersion: kind.x-k8s.io/v1alpha4
+          nodes:
+          - role: control-plane
+            kubeadmConfigPatches:
+            - |
+              kind: InitConfiguration
+              nodeRegistration:
+                kubeletExtraArgs:
+                  node-labels: "ingress-ready=true"
+            extraPortMappings:
+            - containerPort: 80
+              hostPort: 80
+              protocol: TCP
+            - containerPort: 443
+              hostPort: 443
+              protocol: TCP
+              
+    - name: Run upstream chart tests
+      run: |
+        echo "🧪 Running integration tests for ai-compare..."
+        helm install ai-compare charts/ai-compare \
+          --namespace ai-compare-test \
+          --create-namespace \
+          --wait \
+          --timeout 10m \
+          --set ollama.models.tinyllama=true \
+          --set llmChat.automation.enabled=false \
+          --set neuvector.enabled=false
+          
+        # Wait for pods to be ready
+        kubectl wait --for=condition=ready pod --all -n ai-compare-test --timeout=300s
+        
+        # Run Helm tests
+        helm test ai-compare -n ai-compare-test --logs || true
+        
+        # Show pod status for debugging
+        kubectl get pods -n ai-compare-test
+        
+    - name: Cleanup
+      if: always()
+      run: |
+        helm uninstall ai-compare -n ai-compare-test || true
+        kubectl delete namespace ai-compare-test || true

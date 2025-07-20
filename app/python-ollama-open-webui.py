@@ -638,9 +638,7 @@ class ChatInterface:
             }
 
     def get_provider_status_html(self) -> str:
-        """Generates compact provider cards with flags and status, plus service health."""
-        # Get service health status
-        health_status = self.get_service_health_status()
+        """Generates compact provider cards with flags and status."""
 
         # Calculate statistics
         total_providers = len(self.provider_status)
@@ -668,18 +666,6 @@ class ChatInterface:
         <div style='background: linear-gradient(135deg, #0c322c 0%, #1a4a3a 100%); padding: 15px; border-radius: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);'>
             <h3 style='color: #30ba78; margin: 0 0 15px 0; font-size: 16px; text-align: center; font-weight: 600;'>🤖 Model Providers</h3>
             
-            <!-- Service Health Status -->
-            <div style='background: rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; margin-bottom: 15px; border-left: 4px solid {health_status["color"]};'>
-                <div style='display: flex; justify-content: space-between; align-items: center;'>
-                    <div>
-                        <div style='color: {health_status["color"]}; font-weight: 700; font-size: 14px;'>🏥 Service Health: {health_status["status"]}</div>
-                        <div style='color: #ffffff; font-size: 11px; opacity: 0.9; margin-top: 2px;'>{health_status["message"]}</div>
-                    </div>
-                    <div style='color: {health_status["color"]}; font-size: 20px;'>
-                        {"🟢" if health_status["status"] == "HEALTHY" else "🔴" if health_status["status"] == "DEVIATING" else "🟡"}
-                    </div>
-                </div>
-            </div>
             
             <!-- Model Provider List -->
             <div style='margin-bottom: 15px;'>
@@ -1267,93 +1253,48 @@ def create_interface():
         height: 100% !important;
         min-height: 200px !important;
     }
-    /* Consistent rounded styling for all other textboxes */
+    /* Consistent rounded styling for textboxes with proper visibility */
     .gr-textbox {
         border-radius: 12px !important;
-        background: rgba(255, 255, 255, 0.05) !important;
-    }
-    /* COMPREHENSIVE WHITE BACKGROUND FIX - Based on Gradio CSS research */
-    
-    /* Global override for any white backgrounds in the entire app */
-    div[style*="background-color: white"], 
-    div[style*="background-color: #fff"], 
-    div[style*="background-color: #ffffff"],
-    div[style*="background-color: rgb(255, 255, 255)"],
-    div[style*="background: white"],
-    div[style*="background: #fff"],
-    div[style*="background: #ffffff"],
-    div[style*="background: rgb(255, 255, 255)"] {
-        background-color: rgba(255, 255, 255, 0.05) !important;
-        background: rgba(255, 255, 255, 0.05) !important;
+        background: rgba(255, 255, 255, 0.95) !important;
+        color: #333333 !important;
+        border: 2px solid rgba(115, 186, 37, 0.3) !important;
     }
     
-    /* Target Gradio component containers specifically */
-    .gradio-container textarea,
-    .gradio-container input[type="text"],
-    .gradio-container .gr-textbox,
-    .gradio-container .gr-form,
-    .gradio-container .gr-box {
-        background-color: rgba(255, 255, 255, 0.05) !important;
-        background: rgba(255, 255, 255, 0.05) !important;
-        color: #ffffff !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    }
-    
-    /* Target response area containers */
-    .ollama-response, .webui-response {
-        background: rgba(255, 255, 255, 0.05) !important;
-    }
-    
-    .ollama-response > *, .webui-response > *,
-    .ollama-response textarea, .webui-response textarea,
-    .ollama-response .gr-textbox, .webui-response .gr-textbox {
-        background-color: rgba(255, 255, 255, 0.05) !important;
-        background: rgba(255, 255, 255, 0.05) !important;
-    }
-    /* Target Gradio form and container elements around response boxes */
-    .ollama-response .gr-form, .webui-response .gr-form,
-    .ollama-response .gr-box, .webui-response .gr-box {
-        background: inherit !important;
-    }
-    /* COMPREHENSIVE INPUT BOX WHITE BACKGROUND FIX */
-    
-    /* Target input box with aggressive CSS selectors */
-    .input-box,
-    .input-box *,
+    /* Keep input fields and response areas visible with light backgrounds and dark text */
     .input-box textarea,
-    .input-box input,
-    .input-box .gr-textbox,
-    .input-box .gr-form,
-    .input-box .gr-box,
-    .input-box div[data-testid="textbox"],
-    .input-box .gr-padded,
-    .input-box .gr-compact,
-    .input-box .wrap {
-        background-color: rgba(255, 255, 255, 0.05) !important;
-        background: rgba(255, 255, 255, 0.05) !important;
-    }
-    
-    /* Override any inline styles that might set white background in input area */
-    .input-box [style*="background-color: white"], 
-    .input-box [style*="background-color: #fff"], 
-    .input-box [style*="background-color: #ffffff"],
-    .input-box [style*="background-color: rgb(255, 255, 255)"],
-    .input-box [style*="background: white"],
-    .input-box [style*="background: #fff"],
-    .input-box [style*="background: #ffffff"],
-    .input-box [style*="background: rgb(255, 255, 255)"] {
-        background-color: rgba(255, 255, 255, 0.05) !important;
-        background: rgba(255, 255, 255, 0.05) !important;
+    .input-box .gr-textbox textarea,
+    .ollama-response textarea,
+    .webui-response textarea {
+        background-color: rgba(255, 255, 255, 0.95) !important;
+        background: rgba(255, 255, 255, 0.95) !important;
+        color: #333333 !important;
+        border: 1px solid rgba(115, 186, 37, 0.3) !important;
     }
     .gr-button {
         border-radius: 12px !important;
-        transition: all 0.3s ease !important;
+        transition: all 0.2s ease !important;
         font-weight: 600 !important;
         box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
     }
     .gr-button:hover {
         transform: translateY(-1px) !important;
         box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
+    }
+    /* Button press feedback - immediate visual response */
+    .gr-button:active {
+        transform: translateY(1px) !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.2) !important;
+        background-color: rgba(115, 186, 37, 0.2) !important;
+        transition: all 0.1s ease !important;
+    }
+    /* Enhanced feedback for primary buttons */
+    .gr-button[variant="primary"]:active {
+        background: linear-gradient(135deg, #25a065 0%, #1e7e34 100%) !important;
+    }
+    /* Enhanced feedback for secondary buttons */
+    .gr-button[variant="secondary"]:active {
+        background-color: rgba(108, 117, 125, 0.8) !important;
     }
     .send-button {
         background: linear-gradient(135deg, #30ba78 0%, #28a745 100%) !important;
