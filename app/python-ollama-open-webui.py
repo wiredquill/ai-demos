@@ -802,7 +802,9 @@ class ChatInterface:
     def run_availability_demo(self) -> tuple:
         """Runs availability demo by simulating service failure for SUSE Observability monitoring."""
         try:
-            logger.info("Running availability demo - simulating service failure for SUSE Observability")
+            logger.info(
+                "Running availability demo - simulating service failure for SUSE Observability"
+            )
 
             # Check current service health status
             if self.service_health_failure:
@@ -833,10 +835,7 @@ class ChatInterface:
             import requests
 
             # Send both types of sensitive data for DLP detection
-            data = {
-                "creditcard": credit_card_pattern,
-                "ssn": ssn_pattern
-            }
+            data = {"creditcard": credit_card_pattern, "ssn": ssn_pattern}
             requests.post("http://example.com", data=data, timeout=3)
 
             # Simple popup-style message
@@ -1331,7 +1330,7 @@ def create_interface():
                 demo_help_btn = gr.Button(
                     "❓ Demo Help", variant="secondary", size="sm"
                 )
-                
+
                 # Demo status message display moved here from modal
                 with gr.Row():
                     with gr.Column():
@@ -1618,12 +1617,8 @@ def create_interface():
         data_leak_demo_btn.click(
             run_data_leak_demo, outputs=[demo_status_msg, demo_status_msg]
         )
-        demo_help_btn.click(
-            show_demo_help_modal, outputs=[demo_help_modal]
-        )
-        close_demo_help_btn.click(
-            hide_demo_help_modal, outputs=[demo_help_modal]
-        )
+        demo_help_btn.click(show_demo_help_modal, outputs=[demo_help_modal])
+        close_demo_help_btn.click(hide_demo_help_modal, outputs=[demo_help_modal])
 
         def initial_load():
             """Loads initial data when the UI starts."""
@@ -2049,14 +2044,18 @@ def create_interface():
 
 if __name__ == "__main__":
     logger.info("Starting Chat Interface application.")
-    
+
     # Check for service health failure simulation (like gravitational-accelerator pattern)
     if os.getenv("SERVICE_HEALTH_FAILURE", "false").lower() == "true":
-        logger.error("SERVICE_HEALTH_FAILURE=true detected - simulating service failure for SUSE Observability")
+        logger.error(
+            "SERVICE_HEALTH_FAILURE=true detected - simulating service failure for SUSE Observability"
+        )
         logger.error("Service will crash to demonstrate configuration change detection")
         # Crash the service like gravitational-accelerator pattern
-        raise SystemExit("💥 Service failure simulated for SUSE Observability monitoring (SERVICE_HEALTH_FAILURE=true)")
-    
+        raise SystemExit(
+            "💥 Service failure simulated for SUSE Observability monitoring (SERVICE_HEALTH_FAILURE=true)"
+        )
+
     app_interface = create_interface()
     # In K8s, we bind to 0.0.0.0 to be accessible from outside the container
     app_interface.launch(server_name="0.0.0.0", server_port=7860, show_error=True)
