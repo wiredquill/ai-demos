@@ -728,7 +728,7 @@ class ChatInterface:
         try:
             logger.info("Simulating service failure using kubectl patch")
 
-            # Use kubectl patch to change environment variable - exactly like your co-worker's pattern
+            # Use kubectl patch to change environment variable - exactly like gravitational-accelerator pattern
             cmd = [
                 "kubectl",
                 "patch",
@@ -737,7 +737,7 @@ class ChatInterface:
                 "-n",
                 self.config_map_namespace,
                 "--type=json",
-                f'-p=[{{"op": "replace", "path": "/spec/template/spec/containers/0/env/0/value", "value": "true"}}]',
+                f'-p=[{{"op": "replace", "path": "/spec/template/spec/containers/0/env/14/value", "value": "true"}}]',
             ]
 
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -766,7 +766,7 @@ class ChatInterface:
         try:
             logger.info("Restoring service health using kubectl patch")
 
-            # Patch deployment back to healthy state
+            # Patch deployment back to healthy state - same env position as failure
             cmd = [
                 "kubectl",
                 "patch",
@@ -775,7 +775,7 @@ class ChatInterface:
                 "-n",
                 self.config_map_namespace,
                 "--type=json",
-                f'-p=[{{"op": "replace", "path": "/spec/template/spec/containers/0/env/0/value", "value": "false"}}]',
+                f'-p=[{{"op": "replace", "path": "/spec/template/spec/containers/0/env/14/value", "value": "false"}}]',
             ]
 
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -2049,6 +2049,14 @@ def create_interface():
 
 if __name__ == "__main__":
     logger.info("Starting Chat Interface application.")
+    
+    # Check for service health failure simulation (like gravitational-accelerator pattern)
+    if os.getenv("SERVICE_HEALTH_FAILURE", "false").lower() == "true":
+        logger.error("SERVICE_HEALTH_FAILURE=true detected - simulating service failure for SUSE Observability")
+        logger.error("Service will crash to demonstrate configuration change detection")
+        # Crash the service like gravitational-accelerator pattern
+        raise SystemExit("💥 Service failure simulated for SUSE Observability monitoring (SERVICE_HEALTH_FAILURE=true)")
+    
     app_interface = create_interface()
     # In K8s, we bind to 0.0.0.0 to be accessible from outside the container
     app_interface.launch(server_name="0.0.0.0", server_port=7860, show_error=True)
