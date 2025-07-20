@@ -152,8 +152,25 @@ jobs:
             echo "No changes to commit in Helm chart files."
           else
             git commit -m "CI: Update Helm chart image tags to ${{ needs.build-and-push-images.outputs.IMAGE_TAG }} and increment chart versions"
-            git push
-            echo "Pushed updated Helm chart files to repository."
+            
+            # Pull and rebase to handle any conflicts
+            echo "Pulling latest changes before push..."
+            git pull --rebase origin main
+            
+            # Push with retry logic
+            for i in {1..3}; do
+              if git push; then
+                echo "Successfully pushed updated Helm chart files to repository."
+                break
+              else
+                echo "Push failed, attempt $i/3. Pulling again..."
+                git pull --rebase origin main
+                if [ $i -eq 3 ]; then
+                  echo "Failed to push after 3 attempts"
+                  exit 1
+                fi
+              fi
+            done
           fi
 
       - name: Notify build completion
