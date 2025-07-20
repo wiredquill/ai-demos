@@ -1,125 +1,207 @@
 # AI Demos Collection
 
-A comprehensive collection of AI demonstration applications showcasing modern cloud-native AI workloads on SUSE's enterprise platform. This repository demonstrates end-to-end AI application deployment, security, observability, and management using SUSE's complete AI stack.
+**Comprehensive enterprise AI demonstrations showcasing SUSE's complete cloud-native AI platform**
 
-## 🚀 Overview
+This repository provides end-to-end demonstrations of AI application deployment, security, observability, and management using SUSE's enterprise-grade cloud-native stack. Perfect for sales demonstrations, technical evaluations, and hands-on learning.
 
-This collection provides practical demonstrations of:
+---
 
-- **AI Application Deployment**: Multiple deployment methods (Rancher UI, Helm, GitOps with Fleet)
-- **GPU Acceleration**: Leveraging NVIDIA GPUs for AI workloads with SUSE's cloud-native platform
-- **Pipeline Processing**: Advanced AI response processing with configurable pipeline levels
-- **Security & Compliance**: Zero-trust security with SUSE NeuVector, including DLP monitoring
-- **Observability**: Deep insights into GPU utilization, API consumption, and application performance
-- **DevOps Integration**: CI/CD pipelines, automated testing, and development workflows
+## 📋 Table of Contents
 
-## 📦 Applications
+- [🎯 Repository Overview](#-repository-overview)
+- [🚀 AI Compare Application](#-ai-compare-application)
+- [📖 Available Demonstrations](#-available-demonstrations)
+- [🛠️ Quick Start](#️-quick-start)
+- [📁 Repository Structure](#-repository-structure)
+- [🔧 Advanced Configuration](#-advanced-configuration)
+- [🤝 Contributing](#-contributing)
 
-### AI Compare App
+---
 
-The flagship application that demonstrates the power of AI pipeline processing by comparing responses from direct model access versus pipeline-enhanced responses.
+## 🎯 Repository Overview
 
-**Key Features:**
-- **Direct LLM Access**: Connect to local Ollama models (tinyllama, etc.)
-- **Pipeline Processing**: Enhanced responses through Open WebUI pipelines with multiple sophistication levels
-- **Real-time Comparison**: Side-by-side comparison of direct vs pipeline-enhanced responses
-- **Provider Status Monitoring**: Live status checking of major AI providers (OpenAI, Anthropic, Google, etc.)
-- **Security Demos**: Built-in demonstrations for SUSE NeuVector DLP monitoring
-- **Observability**: OpenTelemetry integration with SUSE Observability for comprehensive monitoring
+This repository contains a complete collection of AI demonstration materials organized into three main categories:
 
-**Architecture:**
-- **Ollama**: Local LLM inference server
-- **Open WebUI**: Web interface with pipeline support
-- **Pipelines Service**: Response enhancement processing
-- **AI Compare App**: Custom Gradio-based comparison interface
+### **1. 🤖 AI Compare Application**
+A production-ready AI response comparison tool that demonstrates:
+- **Direct vs Pipeline-Enhanced AI Responses**: Side-by-side comparison of local LLM responses vs processed responses
+- **Security Demonstrations**: Built-in NeuVector DLP testing with dual data type transmission
+- **Enterprise Integration**: OpenTelemetry observability, GPU acceleration, persistent storage
+- **Multi-Deployment Options**: Rancher UI, Helm CLI, GitOps with Fleet
+
+### **2. 📋 Platform Demonstrations** 
+Guided demonstrations covering:
+- **Infrastructure**: GPU provisioning and management with Rancher
+- **Deployment**: Multiple deployment methodologies for AI workloads
+- **Observability**: AI-specific monitoring with SUSE Observability
+- **Security**: Container security and runtime protection with NeuVector
+- **Zero-Trust**: Network security and policy enforcement
+
+### **3. 🏗️ Enterprise Infrastructure**
+Complete deployment automation including:
+- **Helm Charts**: Production-ready charts for both upstream and SUSE variants
+- **GitOps**: Fleet-based continuous deployment configurations
+- **Observability**: Pre-configured monitoring and alerting
+- **Security**: NeuVector policy automation and DLP configurations
+
+---
+
+## 🚀 AI Compare Application
+
+### **Core Functionality**
+The flagship AI Compare application provides real-time comparison between:
+
+- **🤖 Direct Ollama**: Local LLM inference (TinyLlama, Llama2, custom models)
+- **🌐 Pipeline-Enhanced**: Processed responses through Open WebUI pipelines with educational levels:
+  - 👶 Kid-friendly explanations
+  - 🎓 Student-level responses  
+  - ⚗️ Scientific detailed analysis
+
+### **Built-in Security Demonstrations**
+
+#### **🔒 Data Leak Prevention (DLP) Demo**
+- **Dual Data Transmission**: Single button sends both credit card and SSN data
+- **Credit Card**: `3412-1234-1234-2222`
+- **Social Security Number**: `123-45-6789`
+- **NeuVector Integration**: Triggers real-time DLP monitoring and alerting
+- **Clean Interface**: Simple popup showing "⚠️ Attempting to send sensitive data"
+
+#### **🌐 Availability Demo**
+- **External Connectivity**: Tests connection to https://suse.com
+- **Network Policy Validation**: Demonstrates network segmentation capabilities
+- **Security Monitoring**: Validates outbound connection policies
+
+### **Enterprise Features**
+- **📊 Real-time Observability**: OpenTelemetry integration with SUSE Observability
+- **🖥️ GPU Acceleration**: NVIDIA GPU support with runtime configuration
+- **💾 Persistent Storage**: Model caching and configuration persistence
+- **🔄 Automation**: Background testing and response comparison
+- **👥 Provider Monitoring**: Live status of major AI providers (OpenAI, Anthropic, Google, etc.)
+
+---
+
+## 📖 Available Demonstrations
+
+### **Platform Demonstrations (Guided Walkthroughs)**
+
+| Demo | Focus Area | Duration | Key Takeaways |
+|------|------------|----------|---------------|
+| **[Demo 1: Accelerating AI with Rancher and GPUs](./demo-1.md)** | Infrastructure | 15 min | GPU provisioning, cluster management, hardware optimization |
+| **[Demo 2: Deploying the SUSE AI Stack](./demo-2.md)** | Deployment | 20 min | Rancher UI, Helm CLI, GitOps deployment methods |
+| **[Demo 3: Monitoring AI with SUSE Observability](./demo-3.md)** | Observability | 15 min | GPU metrics, cost tracking, performance optimization |
+| **[Demo 4: Building Trustworthy AI](./demo-4.md)** | Security | 20 min | Container scanning, vulnerability management, policy automation |
+| **[Demo 5: Zero-Trust Security for AI](./demo-5.md)** | Network Security | 15 min | Runtime protection, network policies, threat detection |
+
+### **Interactive Application Demos (Built-in)**
+
+| Demo | Trigger | Data Transmitted | NeuVector Detection |
+|------|---------|------------------|-------------------|
+| **🔒 Data Leak Demo** | Single Button | Credit Card + SSN | Multi-pattern DLP alerts |
+| **🌐 Availability Demo** | Single Button | HTTPS Request | Network policy validation |
+
+---
 
 ## 🛠️ Quick Start
 
-### Prerequisites
-
-- Kubernetes cluster with GPU support (optional but recommended)
+### **Prerequisites**
+- Kubernetes cluster (RKE2 recommended)
 - Helm 3.x
-- kubectl configured for your cluster
+- kubectl configured
+- Optional: GPU nodes with NVIDIA drivers
 
-### Installation Methods
+### **Deployment Options**
 
-#### Method 1: Rancher UI (Recommended)
+#### **Option 1: Rancher Apps & Marketplace (Recommended)**
+1. Open Rancher cluster management interface
+2. Navigate to **Apps & Marketplace**
+3. Search for "AI Compare"
+4. Select variant:
+   - `ai-compare-suse`: Enterprise SUSE edition
+   - `ai-compare`: Upstream community edition
+5. Configure and deploy
 
-1. Access your Rancher cluster management interface
-2. Navigate to Apps & Marketplace
-3. Search for "AI Compare" 
-4. Select either:
-   - `ai-compare`: Upstream version (Debian-based)
-   - `ai-compare-suse`: SUSE version (SUSE BCI-based)
-5. Configure values and deploy
-
-#### Method 2: Helm CLI
-
-**SUSE Version (Recommended):**
+#### **Option 2: Helm CLI**
 ```bash
-# Add the repository (if using a Helm repo)
-helm repo add ai-demos https://your-repo-url.com
-helm repo update
-
-# Install with basic configuration
-helm install my-ai-demo charts/ai-compare-suse
-
-# Install with GPU acceleration
-helm install my-ai-demo charts/ai-compare-suse \
+# SUSE Enterprise Edition
+helm install ai-demo charts/ai-compare-suse \
   --set ollama.gpu.enabled=true \
-  --set ollama.hardware.type=nvidia
+  --set llmChat.observability.enabled=true
 
-# Install with observability
-helm install my-ai-demo charts/ai-compare-suse \
-  --set llmChat.observability.enabled=true \
-  --set llmChat.observability.otlpEndpoint="http://your-otlp-collector:4318"
+# Upstream Community Edition  
+helm install ai-demo charts/ai-compare
 ```
 
-**Upstream Version:**
-```bash
-helm install my-ai-demo charts/ai-compare
-```
-
-#### Method 3: GitOps with Fleet
-
+#### **Option 3: GitOps with Fleet**
 ```bash
 # Deploy Fleet configuration
 kubectl apply -f fleet/fleet.yaml
 
 # Label target clusters
-kubectl label cluster my-cluster needs-llm-suse=true    # For SUSE variant
-kubectl label cluster my-cluster needs-llm=true        # For upstream variant
+kubectl label cluster my-cluster needs-llm-suse=true
 ```
 
-### Accessing the Application
-
-After deployment, access the AI Compare interface:
-
+### **Access the Application**
 ```bash
 # Port forward to access locally
-kubectl port-forward svc/my-ai-demo-app-service 7860:7860
+kubectl port-forward svc/ai-demo-app-service 7860:7860
 
 # Open browser to http://localhost:7860
 ```
 
-## 🔧 Configuration
+---
 
-### GPU Support
+## 📁 Repository Structure
 
-Enable GPU acceleration for improved performance:
+```
+ai-demos/
+├── 📱 app/                           # AI Compare application source
+│   ├── python-ollama-open-webui.py     # Main Gradio application
+│   ├── Dockerfile.suse                 # SUSE BCI-based container
+│   ├── Dockerfile.upstream             # Debian-based container
+│   ├── requirements.txt                # Python dependencies
+│   └── tests/                          # Application test suite
+├── 📦 charts/                        # Production Helm charts
+│   ├── ai-compare/                     # Upstream community chart
+│   └── ai-compare-suse/               # SUSE enterprise chart
+├── 📋 Demo Guides/                   # Step-by-step demonstrations
+│   ├── demo-1.md                       # GPU infrastructure with Rancher
+│   ├── demo-2.md                       # Multi-method deployment
+│   ├── demo-3.md                       # SUSE Observability monitoring
+│   ├── demo-4.md                       # Container security with NeuVector
+│   └── demo-5.md                       # Zero-trust network security
+├── 🚀 fleet/                         # GitOps deployment automation
+│   ├── fleet.yaml                      # Fleet configuration
+│   └── gpu-operator/                   # GPU operator automation
+├── 🔧 install/                       # Infrastructure setup guides
+│   ├── README.md                       # Installation overview
+│   ├── Install-GPU-Operator.md        # GPU infrastructure setup
+│   ├── Enable-SUSE-AI-Observability.md # Monitoring configuration
+│   └── Install-NVIDIA-drivers.md      # Driver installation guide
+├── 🔄 pipelines/                     # AI pipeline configurations
+│   ├── response_level_pipeline.py     # Educational response processing
+│   └── pipeline_config.yaml           # Pipeline configuration
+├── 📊 docs/                          # Technical documentation
+│   ├── OPENTELEMETRY-INTEGRATION.md   # Observability setup
+│   ├── AUTOMATED-DEPLOYMENT.md        # CI/CD configuration
+│   └── AI-MODEL-CACHING.md           # Model caching strategies
+├── 🖼️ assets/                        # Screenshots and documentation images
+└── 🔨 scripts/                       # Automation and utility scripts
+```
 
+---
+
+## 🔧 Advanced Configuration
+
+### **GPU Acceleration**
 ```yaml
 ollama:
   gpu:
     enabled: true
   hardware:
-    type: nvidia  # or amd, intel
+    type: nvidia
 ```
 
-### Observability Integration
-
-Enable comprehensive monitoring with SUSE Observability:
-
+### **Enterprise Observability**
 ```yaml
 llmChat:
   observability:
@@ -128,166 +210,48 @@ llmChat:
     collectGpuStats: true
 ```
 
-### Development Mode
+### **Security Integration**
+```yaml
+neuvector:
+  enabled: true
+  dlpPolicies: true
+  securityDemos: true
+```
 
-For rapid development and iteration:
-
+### **Development Mode**
 ```yaml
 llmChat:
   devMode:
     enabled: true
     persistence:
       enabled: true
-      size: 5Gi
     gitRepo: "https://github.com/your-org/ai-demos.git"
-    gitBranch: "development"
 ```
 
-**SSH Access:**
-```bash
-kubectl port-forward service/my-ai-demo-app-service 2222:22
-ssh root@localhost -p 2222  # password: suse
-```
-
-## 🔒 Security Demonstrations
-
-### Data Leak Prevention (DLP)
-
-The AI Compare app includes built-in security demonstrations for SUSE NeuVector:
-
-**Data Leak Demo:**
-- **Dual Data Type Transmission**: Single button sends both credit card and Social Security Number data
-- **Credit Card Pattern**: `3412-1234-1234-2222`
-- **SSN Pattern**: `123-45-6789`
-- **Clean UI**: Shows simple popup message "⚠️ Attempting to send sensitive data"
-- **NeuVector Integration**: Triggers DLP monitoring and alerting for multiple data types
-- **Comprehensive Detection**: Demonstrates advanced data loss prevention capabilities
-
-**Availability Demo:**
-- Tests external connectivity and network policies
-- Validates security posture and network segmentation
-
-### Zero-Trust Security
-
-When deployed with NeuVector:
-- Automatic security policy generation
-- Runtime threat detection
-- Network segmentation enforcement
-- Vulnerability scanning and compliance reporting
-
-## 📊 Observability & Monitoring
-
-### GPU Metrics
-- Real-time GPU utilization tracking
-- Memory usage and temperature monitoring
-- Performance bottleneck identification
-
-### Application Metrics
-- API token consumption tracking
-- Response time analysis
-- Pipeline processing performance
-- Error rate and success metrics
-
-### Infrastructure Monitoring
-- Kubernetes resource utilization
-- Network traffic analysis
-- Storage and persistent volume metrics
-
-## 🎯 Demonstration Scenarios
-
-Follow these guided demonstrations to explore different aspects of the AI platform:
-
-1. **[Demo 1: Accelerating AI with Rancher and GPUs](./demo-1.md)**
-   - GPU infrastructure provisioning
-   - Performance optimization techniques
-
-2. **[Demo 2: Deploying the SUSE AI Stack](./demo-2.md)**
-   - Multiple deployment methodologies
-   - Rancher UI, Helm, and GitOps approaches
-
-3. **[Demo 3: Monitoring AI with SUSE Observability](./demo-3.md)**
-   - GPU utilization insights
-   - Cost management and optimization
-
-4. **[Demo 4: Building Trustworthy AI](./demo-4.md)**
-   - Vulnerability scanning with NeuVector
-   - Security policy automation
-
-5. **[Demo 5: Zero-Trust Security for AI](./demo-5.md)**
-   - Network security enforcement
-   - Runtime threat protection
-
-## 🔄 Development & CI/CD
-
-### Automated Building
-
-GitHub Actions workflows automatically:
-- Build both upstream and SUSE Docker images
-- Push to GitHub Container Registry (ghcr.io)
-- Update Helm chart image tags
-- Run comprehensive test suites
-
-### Testing Framework
-
-Comprehensive testing includes:
-- Python unit tests with pytest
-- Helm chart validation tests
-- Integration testing for all components
-- Security validation with test policies
-
-### Development Workflow
-
-```bash
-# Local development setup
-cd app
-pip install -r requirements.txt
-python python-ollama-open-webui.py
-
-# Container development
-docker build -f Dockerfile.suse -t ai-compare:suse .
-docker run -p 7860:7860 ai-compare:suse
-```
-
-## 📁 Repository Structure
-
-```
-ai-demos/
-├── app/                          # AI Compare application source
-│   ├── python-ollama-open-webui.py  # Main application
-│   ├── Dockerfile.suse              # SUSE BCI-based image
-│   ├── Dockerfile.upstream          # Debian-based image
-│   └── requirements.txt             # Python dependencies
-├── charts/                       # Helm charts
-│   ├── ai-compare/                  # Upstream chart
-│   └── ai-compare-suse/             # SUSE-optimized chart
-├── fleet/                        # GitOps deployment configs
-├── pipelines/                    # AI pipeline configurations
-├── install/                      # Infrastructure setup guides
-├── docs/                         # Technical documentation
-└── scripts/                      # Automation and utility scripts
-```
+---
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run the test suite
-5. Submit a pull request
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/new-demo`
+3. **Make your changes**: Add new demos or improve existing ones
+4. **Test thoroughly**: Ensure all demos work in both SUSE and upstream environments
+5. **Submit a pull request**: Include clear description of changes
 
-### Development Environment
-
+### **Development Environment**
 ```bash
-# Setup development environment
+# Setup local development
 git clone https://github.com/your-org/ai-demos.git
-cd ai-demos
-pip install -r app/requirements.txt
-pip install -r app/test-requirements.txt
+cd ai-demos/app
+pip install -r requirements.txt
+python python-ollama-open-webui.py
 
 # Run tests
-cd app && pytest
+pytest tests/
 helm test my-release
 ```
+
+---
 
 ## 📜 License
 
@@ -295,13 +259,13 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## 🆘 Support
 
-For support and questions:
-- Open an issue in this repository
-- Check the [documentation](./docs/) for technical details
-- Review the [installation guides](./install/) for setup assistance
+- **📖 Documentation**: Check the [docs/](./docs/) directory for detailed technical guides
+- **🛠️ Installation Help**: Review [install/README.md](./install/README.md) for setup assistance
+- **🐛 Issues**: Open an issue in this repository for bug reports or feature requests
+- **💬 Discussions**: Use GitHub Discussions for questions and community support
 
 ---
 
-**Powered by SUSE's Cloud-Native AI Platform**
+**Powered by SUSE's Enterprise Cloud-Native AI Platform**
 
-This demonstration showcases SUSE's complete solution for enterprise AI workloads, from infrastructure provisioning to application security and observability.
+*Complete demonstrations of enterprise AI workloads from infrastructure provisioning to application security and observability.*
