@@ -9,8 +9,8 @@ questions:
 
 - variable: ollama.gpu.enabled
   group: "Ollama Settings"
-  label: "Enable NVIDIA GPU Acceleration"
-  description: "Requires a node with NVIDIA drivers and the k8s device plugin installed."
+  label: "Enable GPU Acceleration"
+  description: "Requires a node with GPU drivers and the k8s device plugin installed."
   type: "boolean"
   default: false
 
@@ -21,6 +21,7 @@ questions:
   type: "enum"
   required: true
   default: "nvidia"
+  show_if: "ollama.gpu.enabled=true"
   options:
     - label: "NVIDIA GPU (amd64)"
       value: "nvidia"
