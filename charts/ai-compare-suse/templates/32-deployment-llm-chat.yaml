@@ -64,6 +64,13 @@ spec:
               value: "false"
             - name: DEPLOYMENT_NAME
               value: "{{ include "ai-compare-suse.fullname" . }}-app"
+            # HTTP API configuration
+            - name: HTTP_API_ENABLED
+              value: {{ .Values.llmChat.httpApi.enabled | quote }}
+            - name: HTTP_API_PORT
+              value: {{ .Values.llmChat.httpApi.port | quote }}
+            - name: DEMO_CONFIG_PATH
+              value: "/app/demo-config"
           # Health checks to ensure proper startup sequencing
           livenessProbe:
             httpGet:
