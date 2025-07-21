@@ -99,14 +99,18 @@ llmChat:
   httpApi:
     enabled: true
     port: 8080
-# Frontend End User UI (Optional)
+# Frontend End User UI (Optional - NGINX-based)
 frontend:
-  enabled: false # Disabled by default - enable for HTTP traffic generation
+  enabled: false  # Disabled by default - enable for HTTP traffic generation and End User UI
   replicaCount: 1
   image:
+    # Upstream NGINX (default)
     repository: nginx
     tag: "1.25-alpine"
     pullPolicy: IfNotPresent
+    # For SUSE variant, use SUSE App Collection NGINX:
+    # repository: registry.suse.com/suse/nginx
+    # tag: "1.25"
   service:
     type: ClusterIP
     port: 80

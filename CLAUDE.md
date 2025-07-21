@@ -65,6 +65,22 @@ helm install my-release charts/ai-compare-suse \
   --set llmChat.observability.enabled=true \
   --set llmChat.observability.otlpEndpoint="http://opentelemetry-collector.suse-observability.svc.cluster.local:4318" \
   --set llmChat.observability.collectGpuStats=true
+
+# Enable optional NGINX frontend for End User UI and HTTP traffic generation
+helm install my-release charts/ai-compare \
+  --set frontend.enabled=true
+
+# Enable frontend with SUSE NGINX (for SUSE variant)
+helm install my-release charts/ai-compare-suse \
+  --set frontend.enabled=true \
+  --set frontend.image.repository=registry.suse.com/suse/nginx \
+  --set frontend.image.tag=1.25
+
+# Complete observability setup with frontend enabled
+helm install my-release charts/ai-compare-suse \
+  --set frontend.enabled=true \
+  --set llmChat.observability.enabled=true \
+  --set llmChat.observability.otlpEndpoint="http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
 ```
 
 ### Fleet GitOps Deployment

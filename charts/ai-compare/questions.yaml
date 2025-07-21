@@ -1,4 +1,41 @@
 questions:
+# Frontend Settings Group - Optional End User UI
+- variable: frontend.enabled
+  group: "Frontend Settings"
+  label: "Enable End User Frontend"
+  description: "Deploy an optional NGINX-based End User Interface for HTTP traffic generation and SUSE Observability monitoring. Provides a clean web UI for comparing AI responses."
+  type: "boolean"
+  default: false
+
+- variable: frontend.image.repository
+  group: "Frontend Settings"
+  label: "NGINX Image Repository"
+  description: "NGINX container image repository. Use 'nginx' for upstream or 'registry.suse.com/suse/nginx' for SUSE App Collection."
+  type: "string"
+  default: "nginx"
+  show_if: "frontend.enabled=true"
+
+- variable: frontend.image.tag
+  group: "Frontend Settings"
+  label: "NGINX Image Tag"
+  description: "NGINX container image tag (e.g., '1.25-alpine' for upstream or '1.25' for SUSE)."
+  type: "string"
+  default: "1.25-alpine"
+  show_if: "frontend.enabled=true"
+
+- variable: frontend.service.type
+  group: "Frontend Settings"
+  label: "Frontend Service Type"
+  description: "Method to expose the frontend service."
+  type: "enum"
+  required: true
+  default: "ClusterIP"
+  options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"
+  show_if: "frontend.enabled=true"
+
 # Ollama Settings Group - Priority settings for the AI model server
 - variable: advancedConfig
   group: "Ollama Settings"
