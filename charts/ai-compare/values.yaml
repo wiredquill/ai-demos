@@ -95,6 +95,55 @@ llmChat:
     otlpEndpoint: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
     collectGpuStats: true
     schedule: "*/5 * * * *"
+  # HTTP API server for observable traffic generation
+  httpApi:
+    enabled: true
+    port: 8080
+# Frontend End User UI (Optional)
+frontend:
+  enabled: false  # Disabled by default - enable for HTTP traffic generation
+  replicaCount: 1
+  image:
+    repository: nginx
+    tag: "1.25-alpine"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+    annotations: {}
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 101
+    runAsGroup: 101
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+      - ALL
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  podAnnotations: {}
+
+# Demo Configuration for Observable Failures
+demo:
+  # ConfigMap-based availability demo
+  availability:
+    # Key that application reads for model configuration
+    configKey: "models-latest"  # Change to "models_latest" to break app
+    # Real config value that works
+    validValue: "tinyllama:latest,llama2:latest"
+    # Invalid config that causes observable failures
+    invalidValue: "broken-model:invalid"
+
 # NeuVector Security Configuration
 neuvector:
   enabled: false

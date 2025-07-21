@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Compare - End User Interface</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>AI Compare</h1>
+            <p>Compare AI responses: Direct Ollama vs Enhanced Open WebUI</p>
+        </header>
+
+        <main class="main-content">
+            <!-- Chat Input Section -->
+            <div class="input-section">
+                <div class="input-group">
+                    <textarea id="userInput" placeholder="Ask me anything..." rows="3"></textarea>
+                    <button id="sendButton" class="send-btn">Ask AI</button>
+                </div>
+            </div>
+
+            <!-- Response Comparison Section -->
+            <div class="response-section">
+                <div class="response-column">
+                    <div class="response-header ollama-header">
+                        <h3>🦙 Direct Ollama</h3>
+                        <span class="response-label">Raw AI Response</span>
+                    </div>
+                    <div class="response-content ollama-response" id="ollamaResponse">
+                        <div class="placeholder">Ask a question to see the direct Ollama response...</div>
+                    </div>
+                </div>
+
+                <div class="response-column">
+                    <div class="response-header webui-header">
+                        <h3>🔧 Enhanced Open WebUI</h3>
+                        <span class="response-label">Pipeline-Enhanced Response</span>
+                    </div>
+                    <div class="response-content webui-response" id="webuiResponse">
+                        <div class="placeholder">Ask a question to see the enhanced pipeline response...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Demo Controls Section -->
+            <div class="demo-section">
+                <div class="demo-header">
+                    <h3>🔧 SUSE Security & Observability Demos</h3>
+                </div>
+                
+                <div class="demo-controls">
+                    <!-- Data Leak Demo - Moved up per requirements -->
+                    <div class="demo-control">
+                        <button id="dataLeakBtn" class="demo-btn data-leak-btn">
+                            🔒 Data Leak Demo
+                        </button>
+                        <span class="demo-description">Simulate sensitive data transmission for NeuVector DLP detection</span>
+                    </div>
+
+                    <!-- Availability Demo - Now On/Off Toggle -->
+                    <div class="demo-control">
+                        <button id="availabilityBtn" class="demo-btn availability-btn" data-state="off">
+                            🌐 Availability Demo: OFF
+                        </button>
+                        <span class="demo-description">Toggle service failure simulation for SUSE Observability monitoring</span>
+                    </div>
+                </div>
+
+                <!-- Status Messages -->
+                <div id="demoStatus" class="demo-status"></div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>Powered by SUSE AI Stack • <a href="https://www.suse.com" target="_blank">Learn More</a></p>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Processing your request...</div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

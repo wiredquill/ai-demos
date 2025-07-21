@@ -9,6 +9,8 @@ from typing import Any, Dict, List
 
 import gradio as gr
 import requests
+from flask import Flask, request, jsonify
+from werkzeug.serving import make_server
 
 # Build trigger comment - pipeline model fix deployment
 
@@ -29,6 +31,172 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 # --- End Logging Configuration ---
+
+
+# --- HTTP API Server for Observable Traffic ---
+class ObservableAPIServer:
+    """Flask-based HTTP API server for generating observable traffic patterns."""
+    
+    def __init__(self, chat_interface, port=8080):
+        self.chat_interface = chat_interface
+        self.port = port
+        self.app = Flask(__name__)
+        self.server = None
+        self.server_thread = None
+        self.setup_routes()
+        
+    def setup_routes(self):
+        """Setup HTTP API routes for observable traffic."""
+        
+        @self.app.route('/health', methods=['GET'])
+        def health_check():
+            """Health check endpoint - returns 500 when availability demo is active."""
+            try:
+                if hasattr(self.chat_interface, 'service_health_failure') and self.chat_interface.service_health_failure:
+                    logger.error("Health check failed - SERVICE_HEALTH_FAILURE=true (SUSE Observability pattern)")
+                    return jsonify({
+                        "status": "FAILING", 
+                        "error": "SERVICE_HEALTH_FAILURE=true",
+                        "timestamp": time.time()
+                    }), 500
+                    
+                logger.info("Health check successful - service operational")
+                return jsonify({
+                    "status": "HEALTHY", 
+                    "timestamp": time.time(),
+                    "uptime": time.time()
+                }), 200
+                
+            except Exception as e:
+                logger.error(f"Health check endpoint error: {e}")
+                return jsonify({"status": "ERROR", "error": str(e)}), 500
+        
+        @self.app.route('/api/chat', methods=['POST'])
+        def chat_completion():
+            """Chat completion endpoint for frontend communication."""
+            try:
+                if hasattr(self.chat_interface, 'service_health_failure') and self.chat_interface.service_health_failure:
+                    logger.error("Chat API failed - SERVICE_HEALTH_FAILURE=true (SUSE Observability pattern)")
+                    return jsonify({
+                        "error": "Service degraded - health check failure",
+                        "status": "service_failure",
+                        "timestamp": time.time()
+                    }), 500
+                
+                data = request.get_json()
+                if not data or 'message' not in data:
+                    logger.warning("Chat API - missing message in request")
+                    return jsonify({"error": "Missing 'message' in request body"}), 400
+                
+                message = data['message']
+                model = data.get('model', 'tinyllama:latest')
+                
+                logger.info(f"Chat API request - message: '{message[:50]}...', model: {model}")
+                
+                # Get responses from both services
+                messages = [{"role": "user", "content": message}]
+                
+                # Ollama response
+                ollama_response = self.chat_interface.chat_with_ollama(messages, model)
+                
+                # Open WebUI response  
+                webui_response = self.chat_interface.chat_with_open_webui(messages, model)
+                
+                result = {
+                    "ollama_response": ollama_response,
+                    "webui_response": webui_response,
+                    "status": "success",
+                    "timestamp": time.time(),
+                    "model": model
+                }
+                
+                logger.info("Chat API request completed successfully")
+                return jsonify(result), 200
+                
+            except Exception as e:
+                logger.error(f"Chat API endpoint error: {e}")
+                return jsonify({
+                    "error": str(e),
+                    "status": "error",
+                    "timestamp": time.time()
+                }), 500
+        
+        @self.app.route('/api/availability-demo/toggle', methods=['POST'])
+        def toggle_availability_demo():
+            """Toggle availability demo state."""
+            try:
+                _, message, status = self.chat_interface.run_availability_demo()
+                
+                result = {
+                    "message": message,
+                    "status": status,
+                    "service_failure_active": self.chat_interface.service_health_failure,
+                    "timestamp": time.time()
+                }
+                
+                logger.info(f"Availability demo toggled - failure active: {self.chat_interface.service_health_failure}")
+                return jsonify(result), 200
+                
+            except Exception as e:
+                logger.error(f"Availability demo API error: {e}")
+                return jsonify({"error": str(e), "status": "error"}), 500
+        
+        @self.app.route('/api/data-leak-demo', methods=['POST'])
+        def run_data_leak_demo():
+            """Run data leak demo."""
+            try:
+                _, message, status = self.chat_interface.run_data_leak_demo()
+                
+                result = {
+                    "message": message,
+                    "status": status,
+                    "data_types": ["credit_card", "ssn"],
+                    "timestamp": time.time()
+                }
+                
+                logger.info("Data leak demo executed via API")
+                return jsonify(result), 200
+                
+            except Exception as e:
+                logger.error(f"Data leak demo API error: {e}")
+                return jsonify({"error": str(e), "status": "error"}), 500
+        
+        @self.app.route('/api/metrics', methods=['GET'])
+        def get_metrics():
+            """Get application metrics for monitoring."""
+            try:
+                import psutil
+                
+                metrics = {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent,
+                    "service_health_failure": getattr(self.chat_interface, 'service_health_failure', False),
+                    "timestamp": time.time(),
+                    "uptime": time.time()
+                }
+                
+                return jsonify(metrics), 200
+                
+            except Exception as e:
+                logger.error(f"Metrics API error: {e}")
+                return jsonify({"error": str(e)}), 500
+    
+    def start_server(self):
+        """Start the HTTP API server in background thread."""
+        try:
+            self.server = make_server('0.0.0.0', self.port, self.app)
+            self.server_thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+            self.server_thread.start()
+            logger.info(f"Observable HTTP API server started on port {self.port}")
+            
+        except Exception as e:
+            logger.error(f"Failed to start HTTP API server: {e}")
+    
+    def stop_server(self):
+        """Stop the HTTP API server."""
+        if self.server:
+            self.server.shutdown()
+            logger.info("Observable HTTP API server stopped")
 
 
 class ChatInterface:
@@ -115,6 +283,10 @@ class ChatInterface:
 
         # --- OpenLit Observability Initialization ---
         self._initialize_observability()
+        
+        # --- HTTP API Server for Observable Traffic ---
+        self.api_server = None
+        self._initialize_api_server()
 
         logger.info(
             f"ChatInterface initialized. Ollama URL: {self.ollama_base_url}, Open WebUI URL: {self.open_webui_base_url}, Pipelines URL: {self.pipelines_base_url}, Pipeline API Key: {'***' if self.pipeline_api_key else 'None'}"
@@ -231,12 +403,97 @@ class ChatInterface:
             )
         except Exception as e:
             logger.error(f"Failed to initialize OpenLit observability: {e}")
+    
+    def _initialize_api_server(self):
+        """Initialize HTTP API server if enabled."""
+        api_enabled = os.getenv("HTTP_API_ENABLED", "true").lower() == "true"
+        api_port = int(os.getenv("HTTP_API_PORT", "8080"))
+        
+        if not api_enabled:
+            logger.info("HTTP API server disabled via HTTP_API_ENABLED environment variable")
+            return
+            
+        try:
+            self.api_server = ObservableAPIServer(self, port=api_port)
+            self.api_server.start_server()
+            logger.info(f"HTTP API server initialized on port {api_port} for observable traffic generation")
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize HTTP API server: {e}")
+            self.api_server = None
+
+    def _read_demo_config(self, key: str) -> str:
+        """Read configuration from mounted ConfigMap for demo purposes."""
+        demo_config_path = os.getenv("DEMO_CONFIG_PATH", "/app/demo-config")
+        config_file = os.path.join(demo_config_path, key)
+        
+        try:
+            if os.path.exists(config_file):
+                with open(config_file, 'r') as f:
+                    value = f.read().strip()
+                    logger.info(f"Read demo config '{key}': {value}")
+                    return value
+            else:
+                logger.warning(f"Demo config file not found: {config_file}")
+                return None
+        except Exception as e:
+            logger.error(f"Failed to read demo config '{key}': {e}")
+            return None
+    
+    def _simulate_configmap_failure(self) -> bool:
+        """Simulate ConfigMap failure by checking if key exists with expected value."""
+        try:
+            # Try to read the expected configuration key
+            models_config = self._read_demo_config("models-latest")
+            
+            if models_config is None:
+                # Config key doesn't exist - this simulates the failure state
+                logger.error("ConfigMap key 'models-latest' not found - simulating service failure")
+                return True
+            elif "broken-model" in models_config or "invalid" in models_config:
+                # Config contains invalid values - this also simulates failure
+                logger.error(f"Invalid model configuration detected: {models_config}")
+                return True
+            else:
+                # Config is valid - we need to create artificial failure for demo
+                logger.info(f"ConfigMap key 'models-latest' found with valid value: {models_config}")
+                # For demo purposes, we'll still consider this a "failure" simulation
+                # In real scenario, the ConfigMap key would be changed externally
+                return True
+                
+        except Exception as e:
+            logger.error(f"ConfigMap failure simulation error: {e}")
+            return False
+    
+    def _restore_configmap_health(self) -> bool:
+        """Restore ConfigMap health by verifying expected configuration."""
+        try:
+            # Check if the configuration is back to normal
+            models_config = self._read_demo_config("models-latest")
+            
+            if models_config and "tinyllama" in models_config:
+                logger.info(f"ConfigMap configuration restored: {models_config}")
+                return True
+            else:
+                logger.warning(f"ConfigMap still in failure state: {models_config}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"ConfigMap health restoration error: {e}")
+            return False
 
     def get_ollama_models(self) -> List[str]:
-        """Fetches the list of available models from the Ollama /api/tags endpoint."""
+        """Fetches the list of available models, checking ConfigMap config first for demo purposes."""
         logger.info(
             f"Attempting to fetch Ollama models from {self.ollama_base_url}/api/tags"
         )
+        
+        # Check demo configuration first - if it's broken, fail immediately
+        demo_models = self._read_demo_config("models-latest")
+        if demo_models and ("broken-model" in demo_models or "invalid" in demo_models):
+            logger.error(f"ConfigMap contains invalid model configuration: {demo_models}")
+            raise Exception("ConfigMap model configuration is invalid - service failure simulation")
+        
         try:
             response = requests.get(f"{self.ollama_base_url}/api/tags", timeout=10)
             response.raise_for_status()
@@ -724,13 +981,18 @@ class ChatInterface:
         return html_content
 
     def simulate_service_failure(self) -> tuple:
-        """Simulates service failure with real observable metrics and HTTP errors."""
+        """Simulates service failure using ConfigMap key manipulation for observable failures."""
         try:
-            logger.info("Simulating service failure - creating real observable failures")
+            logger.info("Simulating service failure - manipulating ConfigMap for real observable failures")
             
-            # Set environment variable toggle
-            import os
-            os.environ["SERVICE_HEALTH_FAILURE"] = "true"
+            # Try to manipulate ConfigMap to create real observable failure
+            if self._simulate_configmap_failure():
+                logger.info("ConfigMap-based failure simulation activated")
+            else:
+                logger.warning("ConfigMap manipulation failed, using fallback environment variable")
+                # Fallback to environment variable for demos without K8s access
+                import os
+                os.environ["SERVICE_HEALTH_FAILURE"] = "true"
             
             # Update local state
             self.service_health_failure = True
@@ -843,13 +1105,18 @@ class ChatInterface:
             return gr.Column(visible=True), f"❌ Simulation failed: {str(e)}", "error"
 
     def restore_service_health(self) -> tuple:
-        """Restores service health using environment variable reset and generates recovery signals."""
+        """Restores service health using ConfigMap verification and generates recovery signals."""
         try:
-            logger.info("Restoring service health - setting SERVICE_HEALTH_FAILURE=false")
+            logger.info("Restoring service health - verifying ConfigMap configuration")
 
-            # Simple environment variable reset approach - no kubectl required
-            import os
-            os.environ["SERVICE_HEALTH_FAILURE"] = "false"
+            # Try to restore ConfigMap-based configuration
+            if self._restore_configmap_health():
+                logger.info("ConfigMap-based health restoration completed")
+            else:
+                logger.warning("ConfigMap restoration failed, using fallback environment variable")
+                # Fallback to environment variable for demos without K8s access
+                import os
+                os.environ["SERVICE_HEALTH_FAILURE"] = "false"
 
             # Update local state
             self.service_health_failure = False
