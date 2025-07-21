@@ -8,6 +8,7 @@ class AICompareClient {
         
         this.initializeElements();
         this.attachEventListeners();
+        this.initializeState();
         this.generateTraffic();
     }
     
@@ -37,6 +38,29 @@ class AICompareClient {
         // Demo buttons
         this.dataLeakBtn.addEventListener('click', () => this.runDataLeakDemo());
         this.availabilityBtn.addEventListener('click', () => this.toggleAvailabilityDemo());
+    }
+    
+    async initializeState() {
+        try {
+            // Check initial availability demo state
+            const response = await this.makeRequest('GET', '/health');
+            
+            // Check if service is currently in failure state
+            if (response.status === 'FAILING') {
+                this.availabilityDemoState = true;
+            } else {
+                this.availabilityDemoState = false;
+            }
+            
+            this.updateAvailabilityButton();
+            console.log('🔄 Initial demo state loaded:', this.availabilityDemoState ? 'ON' : 'OFF');
+            
+        } catch (error) {
+            console.log('⚠️ Could not load initial demo state:', error.message);
+            // Default to OFF state if we can't determine current state
+            this.availabilityDemoState = false;
+            this.updateAvailabilityButton();
+        }
     }
     
     async sendMessage() {
@@ -111,13 +135,15 @@ class AICompareClient {
     
     updateAvailabilityButton() {
         if (this.availabilityDemoState) {
-            this.availabilityBtn.textContent = '🌐 Availability Demo: ON';
+            this.availabilityBtn.textContent = '🔴 Availability Demo: ON (FAILING)';
             this.availabilityBtn.setAttribute('data-state', 'on');
             this.availabilityBtn.classList.add('active');
+            this.availabilityBtn.title = 'Service is currently failing - click to restore health';
         } else {
-            this.availabilityBtn.textContent = '🌐 Availability Demo: OFF';
+            this.availabilityBtn.textContent = '🟢 Availability Demo: OFF (HEALTHY)';
             this.availabilityBtn.setAttribute('data-state', 'off');
             this.availabilityBtn.classList.remove('active');
+            this.availabilityBtn.title = 'Service is healthy - click to simulate failure';
         }
     }
     
