@@ -75,7 +75,7 @@ pipelines:
 llmChat:
   image:
     repository: ghcr.io/wiredquill/ai-demos
-    tag: "99dc2cc"
+    tag: "5fb0736"
   service:
     port: 7860
     type: NodePort
@@ -101,7 +101,7 @@ llmChat:
     port: 8080
 # Frontend End User UI (Optional - NGINX-based)
 frontend:
-  enabled: false  # Disabled by default - enable for HTTP traffic generation and End User UI
+  enabled: false # Disabled by default - enable for HTTP traffic generation and End User UI
   replicaCount: 1
   image:
     # Upstream NGINX (default)
