@@ -1,9 +1,46 @@
 questions:
+# Frontend Settings Group - Optional End User UI with SUSE NGINX
+- variable: frontend.enabled
+  group: "Frontend Settings"
+  label: "Enable End User Frontend (SUSE NGINX)"
+  description: "Deploy an optional NGINX-based End User Interface using SUSE Application Collection NGINX for HTTP traffic generation and SUSE Observability monitoring. Provides a clean web UI for comparing AI responses with enterprise-grade security."
+  type: "boolean"
+  default: false
+
+- variable: frontend.image.repository
+  group: "Frontend Settings"
+  label: "SUSE NGINX Image Repository"
+  description: "SUSE Application Collection NGINX container image repository. Defaults to enterprise-hardened SUSE NGINX from registry.suse.com/suse/nginx."
+  type: "string"
+  default: "registry.suse.com/suse/nginx"
+  show_if: "frontend.enabled=true"
+
+- variable: frontend.image.tag
+  group: "Frontend Settings"
+  label: "SUSE NGINX Image Tag"
+  description: "SUSE Application Collection NGINX container image tag from SUSE BCI (Base Container Images)."
+  type: "string"
+  default: "1.25"
+  show_if: "frontend.enabled=true"
+
+- variable: frontend.service.type
+  group: "Frontend Settings"
+  label: "Frontend Service Type"
+  description: "Method to expose the SUSE NGINX frontend service."
+  type: "enum"
+  required: true
+  default: "NodePort"
+  options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"
+  show_if: "frontend.enabled=true"
+
 # Ollama Settings Group - Priority settings for the AI model server
 - variable: advancedConfig
   group: "Ollama Settings"
   label: "Show Advanced Configuration Options"
-  description: "Enable to show advanced settings like Images, Pipeline Integration, and Automation. Keep disabled for simplified deployment."
+  description: "Enable to show advanced settings like SUSE Application Collection Images, Pipeline Integration, and Automation. Keep disabled for simplified deployment."
   type: "boolean"
   default: false
 
@@ -189,35 +226,35 @@ questions:
   default: "0p3n-w3bu!"
   show_if: "advancedConfig=true&&pipelines.autoConfig.enabled=true"
 
-# Images Group
+# SUSE Application Collection Images Group
 - variable: ollama.image.tag
-  group: "Images"
-  label: "Ollama Image Tag"
-  description: "The container image tag for Ollama."
+  group: "SUSE Application Collection Images"
+  label: "Ollama Image Tag (SUSE BCI)"
+  description: "The container image tag for Ollama from SUSE Application Collection. Built on SUSE BCI (Base Container Images) for enterprise security and compliance."
   type: "string"
   default: "0.6.8"
   show_if: "advancedConfig=true"
 
 - variable: openWebui.image.tag
-  group: "Images"
-  label: "Open WebUI Image Tag"
-  description: "The container image tag for Open WebUI."
+  group: "SUSE Application Collection Images"
+  label: "Open WebUI Image Tag (SUSE BCI)"
+  description: "The container image tag for Open WebUI from SUSE Application Collection. Enterprise-hardened with SUSE security updates and BCI foundation."
   type: "string"
   default: "0.6.9-10.31"
   show_if: "advancedConfig=true"
 
 - variable: pipelines.image.tag
-  group: "Images"
-  label: "Open WebUI Pipelines Image Tag"
-  description: "The container image tag for Open WebUI Pipelines from SUSE Application Collection."
+  group: "SUSE Application Collection Images"
+  label: "Open WebUI Pipelines Image Tag (SUSE BCI)"
+  description: "The container image tag for Open WebUI Pipelines from SUSE Application Collection. Built on SUSE BCI with enterprise support and security hardening."
   type: "string"
   default: "0.5.0"
   show_if: "advancedConfig=true"
 
 - variable: llmChat.image.tag
-  group: "Images"
-  label: "AI Compare Image Tag"
-  description: "The container image tag for the AI Compare App."
+  group: "SUSE Application Collection Images"
+  label: "AI Compare Image Tag (SUSE BCI)"
+  description: "The container image tag for the AI Compare App built on SUSE BCI. Features SUSE-optimized Python runtime and security enhancements."
   type: "string"
   default: "latest"
   show_if: "advancedConfig=true"

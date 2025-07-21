@@ -70,11 +70,9 @@ helm install my-release charts/ai-compare-suse \
 helm install my-release charts/ai-compare \
   --set frontend.enabled=true
 
-# Enable frontend with SUSE NGINX (for SUSE variant)
+# Enable frontend with SUSE Application Collection NGINX (for SUSE variant)
 helm install my-release charts/ai-compare-suse \
-  --set frontend.enabled=true \
-  --set frontend.image.repository=registry.suse.com/suse/nginx \
-  --set frontend.image.tag=1.25
+  --set frontend.enabled=true
 
 # Complete observability setup with frontend enabled
 helm install my-release charts/ai-compare-suse \
