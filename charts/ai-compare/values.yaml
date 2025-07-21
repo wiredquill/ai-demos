@@ -75,7 +75,7 @@ pipelines:
 llmChat:
   image:
     repository: ghcr.io/wiredquill/ai-demos
-    tag: "332945d"
+    tag: "99dc2cc"
   service:
     port: 7860
     type: NodePort
@@ -101,7 +101,7 @@ llmChat:
     port: 8080
 # Frontend End User UI (Optional)
 frontend:
-  enabled: false  # Disabled by default - enable for HTTP traffic generation
+  enabled: false # Disabled by default - enable for HTTP traffic generation
   replicaCount: 1
   image:
     repository: nginx
@@ -127,23 +127,21 @@ frontend:
     readOnlyRootFilesystem: true
     capabilities:
       drop:
-      - ALL
+        - ALL
   nodeSelector: {}
   tolerations: []
   affinity: {}
   podAnnotations: {}
-
 # Demo Configuration for Observable Failures
 demo:
   # ConfigMap-based availability demo
   availability:
     # Key that application reads for model configuration
-    configKey: "models-latest"  # Change to "models_latest" to break app
+    configKey: "models-latest" # Change to "models_latest" to break app
     # Real config value that works
     validValue: "tinyllama:latest,llama2:latest"
     # Invalid config that causes observable failures
     invalidValue: "broken-model:invalid"
-
 # NeuVector Security Configuration
 neuvector:
   enabled: false
