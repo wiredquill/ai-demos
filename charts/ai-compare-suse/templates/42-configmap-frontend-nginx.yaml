@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "ai-compare.fullname" . }}-frontend-nginx
+  name: {{ include "ai-compare-suse.fullname" . }}-frontend-nginx
   labels:
-    {{- include "ai-compare.labels" . | nindent 4 }}
+    {{- include "ai-compare-suse.labels" . | nindent 4 }}
     app.kubernetes.io/component: frontend
 data:
   nginx.conf: |
@@ -58,7 +58,7 @@ data:
             
             # Proxy API requests to backend
             location /api/ {
-                proxy_pass http://{{ include "ai-compare.fullname" . }}-app-service:{{ .Values.llmChat.service.port }}/api/;
+                proxy_pass http://{{ include "ai-compare-suse.fullname" . }}-app-service:{{ .Values.llmChat.service.port }}/api/;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -78,7 +78,7 @@ data:
             
             # Health check endpoint (proxied to backend)
             location /health {
-                proxy_pass http://{{ include "ai-compare.fullname" . }}-app-service:{{ .Values.llmChat.service.port }}/health;
+                proxy_pass http://{{ include "ai-compare-suse.fullname" . }}-app-service:{{ .Values.llmChat.service.port }}/health;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -89,7 +89,7 @@ data:
             
             # Metrics endpoint (proxied to backend)
             location /metrics {
-                proxy_pass http://{{ include "ai-compare.fullname" . }}-app-service:{{ .Values.llmChat.service.port }}/api/metrics;
+                proxy_pass http://{{ include "ai-compare-suse.fullname" . }}-app-service:{{ .Values.llmChat.service.port }}/api/metrics;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
