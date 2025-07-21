@@ -76,7 +76,7 @@ pipelines:
 llmChat:
   image:
     repository: ghcr.io/wiredquill/ai-demos-suse
-    tag: "5fb0736"
+    tag: "925b84b"
   service:
     port: 7860
     type: NodePort
@@ -105,10 +105,9 @@ llmChat:
   httpApi:
     enabled: true
     port: 8080
-
 # Frontend End User UI (Optional - SUSE NGINX from Application Collection)
 frontend:
-  enabled: false  # Disabled by default - enable for HTTP traffic generation and End User UI
+  enabled: false # Disabled by default - enable for HTTP traffic generation and End User UI
   replicaCount: 1
   image:
     # SUSE Application Collection NGINX (enterprise-hardened)
@@ -116,7 +115,7 @@ frontend:
     tag: "1.25"
     pullPolicy: IfNotPresent
   service:
-    type: NodePort  # NodePort by default for easier demo access
+    type: NodePort # NodePort by default for easier demo access
     port: 80
     annotations: {}
   resources:
@@ -135,23 +134,21 @@ frontend:
     readOnlyRootFilesystem: true
     capabilities:
       drop:
-      - ALL
+        - ALL
   nodeSelector: {}
   tolerations: []
   affinity: {}
   podAnnotations: {}
-
 # Demo Configuration for Observable Failures
 demo:
   # ConfigMap-based availability demo
   availability:
     # Key that application reads for model configuration
-    configKey: "models-latest"  # Change to "models_latest" to break app
+    configKey: "models-latest" # Change to "models_latest" to break app
     # Real config value that works
     validValue: "tinyllama:latest,llama2:latest"
     # Invalid config that causes observable failures
     invalidValue: "broken-model:invalid"
-
 # NeuVector Security Configuration
 neuvector:
   enabled: false
