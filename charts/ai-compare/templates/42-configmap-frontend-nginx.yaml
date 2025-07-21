@@ -65,10 +65,10 @@ data:
                 proxy_set_header X-Forwarded-Proto $scheme;
                 proxy_set_header X-Request-ID $request_id;
                 
-                # Timeout settings
-                proxy_connect_timeout 30s;
-                proxy_send_timeout 30s;
-                proxy_read_timeout 30s;
+                # Optimized timeout settings for fast failure detection
+                proxy_connect_timeout 5s;
+                proxy_send_timeout 8s;
+                proxy_read_timeout 8s;
                 
                 # Buffer settings for better performance
                 proxy_buffering on;

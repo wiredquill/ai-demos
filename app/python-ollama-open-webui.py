@@ -231,6 +231,11 @@ class ChatInterface:
         self.open_webui_base_url = os.getenv("OPEN_WEBUI_BASE_URL")
         self.pipelines_base_url = os.getenv("PIPELINES_BASE_URL")
         self.pipeline_api_key = os.getenv("PIPELINE_API_KEY")
+        
+        # Configurable timeout settings optimized for SUSE security policies
+        self.connection_timeout = int(os.getenv("CONNECTION_TIMEOUT", "5"))  # Fast connection timeout
+        self.request_timeout = int(os.getenv("REQUEST_TIMEOUT", "8"))        # Quick request timeout  
+        self.inference_timeout = int(os.getenv("INFERENCE_TIMEOUT", "30"))   # Reduced from 120s for network policies
 
         # Don't add Open WebUI to the provider status list - keep it separate for functionality
 
@@ -495,7 +500,7 @@ class ChatInterface:
             raise Exception("ConfigMap model configuration is invalid - service failure simulation")
         
         try:
-            response = requests.get(f"{self.ollama_base_url}/api/tags", timeout=10)
+            response = requests.get(f"{self.ollama_base_url}/api/tags", timeout=self.connection_timeout)
             response.raise_for_status()
             data = response.json()
             models = [model["name"] for model in data.get("models", [])]
@@ -515,7 +520,7 @@ class ChatInterface:
         try:
             payload = {"model": model, "messages": messages, "stream": False}
             response = requests.post(
-                f"{self.ollama_base_url}/api/chat", json=payload, timeout=120
+                f"{self.ollama_base_url}/api/chat", json=payload, timeout=self.inference_timeout
             )
             response.raise_for_status()
             response_data = response.json()
@@ -606,7 +611,7 @@ class ChatInterface:
             logger.info(f"Headers: {dict(headers)}")
             try:
                 response = requests.post(
-                    api_url, json=payload, headers=headers, timeout=120
+                    api_url, json=payload, headers=headers, timeout=self.inference_timeout
                 )
                 logger.info(f"Initial response status: {response.status_code}")
                 if response.status_code == 200:
@@ -661,7 +666,7 @@ class ChatInterface:
             )
             try:
                 response = requests.post(
-                    api_url, json=payload, headers=headers, timeout=120
+                    api_url, json=payload, headers=headers, timeout=self.inference_timeout
                 )
                 if response.status_code == 200:
                     response_data = response.json()
@@ -724,7 +729,7 @@ class ChatInterface:
 
         try:
             headers = {"User-Agent": "Mozilla/5.0"}
-            response = requests.get(url, timeout=3, headers=headers)  # 3-second timeout
+            response = requests.get(url, timeout=self.connection_timeout, headers=headers)  # Configurable timeout
             response_time = int((time.time() - start_time) * 1000)
             # Show as online if we get ANY response (even 403, 404, etc.)
             status = "🟢"
@@ -741,9 +746,10 @@ class ChatInterface:
             }
         except Exception as e:
             response_time = int((time.time() - start_time) * 1000)
-            # Cap response time at 3000ms for timeout cases
-            if response_time > 3000:
-                response_time = 3000
+            # Cap response time at configured timeout for timeout cases
+            timeout_ms = self.connection_timeout * 1000
+            if response_time > timeout_ms:
+                response_time = timeout_ms
             logger.warning(
                 f"Provider {provider_name} failed: {str(e)} ({response_time}ms)"
             )
@@ -765,7 +771,7 @@ class ChatInterface:
         logger.info("Updating all provider statuses.")
         updated_status = {}
         start_time = time.time()
-        max_total_time = 15  # Maximum total time for all providers
+        max_total_time = 8   # Reduced total time for SUSE security policies
 
         try:
             providers = self.config.get("providers", {})
@@ -819,7 +825,7 @@ class ChatInterface:
 
             logger.info(f"Attempting authentication at: {auth_url}")
             logger.info(f"Auth payload: {auth_payload}")
-            response = requests.post(auth_url, json=auth_payload, timeout=10)
+            response = requests.post(auth_url, json=auth_payload, timeout=self.request_timeout)
             logger.info(f"Auth response status: {response.status_code}")
             logger.info(f"Auth response content: {response.text[:500]}")
 
@@ -864,7 +870,7 @@ class ChatInterface:
             try:
                 import requests
 
-                response = requests.get(f"{self.ollama_base_url}/api/tags", timeout=5)
+                response = requests.get(f"{self.ollama_base_url}/api/tags", timeout=self.connection_timeout)
                 if response.status_code == 200:
                     return {
                         "status": "HEALTHY",
@@ -1217,7 +1223,7 @@ class ChatInterface:
             success = False
             for endpoint in endpoints:
                 try:
-                    requests.post(endpoint, data=data, timeout=3)
+                    requests.post(endpoint, data=data, timeout=self.connection_timeout)
                     logger.warning(
                         f"Data leak demo executed - credit card and SSN data sent to {endpoint} for DLP testing"
                     )

@@ -71,6 +71,13 @@ spec:
               value: {{ .Values.llmChat.httpApi.port | quote }}
             - name: DEMO_CONFIG_PATH
               value: "/app/demo-config"
+            # Timeout configuration for SUSE security policy compatibility
+            - name: CONNECTION_TIMEOUT
+              value: "5"
+            - name: REQUEST_TIMEOUT
+              value: "8"
+            - name: INFERENCE_TIMEOUT
+              value: "30"
           # Health checks to ensure proper startup sequencing
           livenessProbe:
             httpGet:
