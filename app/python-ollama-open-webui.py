@@ -180,6 +180,31 @@ class ObservableAPIServer:
             except Exception as e:
                 logger.error(f"Metrics API error: {e}")
                 return jsonify({"error": str(e)}), 500
+
+        # Frontend serving routes
+        @self.app.route('/', methods=['GET'])
+        def serve_frontend():
+            """Serve the main frontend HTML file."""
+            try:
+                from flask import send_from_directory
+                return send_from_directory('frontend', 'index.html')
+            except Exception as e:
+                logger.error(f"Error serving frontend index: {e}")
+                return f"Frontend error: {e}", 500
+
+        @self.app.route('/<path:filename>', methods=['GET'])
+        def serve_frontend_files(filename):
+            """Serve frontend static files (CSS, JS, etc.)."""
+            try:
+                from flask import send_from_directory
+                # Only serve files from frontend directory
+                if filename in ['style.css', 'script.js', 'nginx.conf']:
+                    return send_from_directory('frontend', filename)
+                else:
+                    return "File not found", 404
+            except Exception as e:
+                logger.error(f"Error serving frontend file {filename}: {e}")
+                return f"Frontend file error: {e}", 500
     
     def start_server(self):
         """Start the HTTP API server in background thread."""
@@ -771,7 +796,7 @@ class ChatInterface:
         logger.info("Updating all provider statuses.")
         updated_status = {}
         start_time = time.time()
-        max_total_time = 8   # Reduced total time for SUSE security policies
+        max_total_time = 5   # Further reduced total time for SUSE security policies
 
         try:
             providers = self.config.get("providers", {})
@@ -781,11 +806,20 @@ class ChatInterface:
 
             # Initialize all providers with default failed status to ensure they always show
             for name, provider_info in providers.items():
+                # Handle both string and dict formats for provider_info
+                if isinstance(provider_info, dict):
+                    country = provider_info.get("country", "🌍 Unknown")
+                    flag = provider_info.get("flag", "🌍")
+                else:
+                    # Legacy string format - use defaults
+                    country = "🌍 Unknown"
+                    flag = "🌍"
+                
                 updated_status[name] = {
                     "status": "🔴",
                     "response_time": "---ms",
-                    "country": provider_info.get("country", "🌍 Unknown"),
-                    "flag": provider_info.get("flag", "🌍"),
+                    "country": country,
+                    "flag": flag,
                     "status_code": "Checking...",
                     "error": "Status check in progress",
                 }
