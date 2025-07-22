@@ -71,7 +71,7 @@ class AICompareClient {
         this.updateResponsePlaceholders('Thinking...', 'Processing...');
         
         try {
-            const response = await this.makeRequest('POST', '/chat', {
+            const response = await this.makeRequest('POST', '/api/chat', {
                 message: message,
                 model: 'tinyllama:latest'
             });
@@ -102,7 +102,7 @@ class AICompareClient {
         this.setButtonLoading(this.dataLeakBtn, true);
         
         try {
-            const response = await this.makeRequest('POST', '/data-leak-demo');
+            const response = await this.makeRequest('POST', '/api/data-leak-demo');
             
             // Flash success animation
             this.dataLeakBtn.classList.remove('executing');
@@ -130,7 +130,7 @@ class AICompareClient {
         this.setButtonLoading(this.availabilityBtn, true);
         
         try {
-            const response = await this.makeRequest('POST', '/availability-demo/toggle');
+            const response = await this.makeRequest('POST', '/api/availability-demo/toggle');
             
             // Update button state
             this.availabilityDemoState = response.service_failure_active;
