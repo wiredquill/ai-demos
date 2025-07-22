@@ -89,17 +89,17 @@ spec:
           # Health checks to ensure proper startup sequencing
           livenessProbe:
             httpGet:
-              path: /
-              port: {{ .Values.llmChat.service.port }}
-            initialDelaySeconds: 30
+              path: /health
+              port: {{ .Values.llmChat.httpApi.port }}
+            initialDelaySeconds: 15
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /
-              port: {{ .Values.llmChat.service.port }}
-            initialDelaySeconds: 15
+              path: /health
+              port: {{ .Values.llmChat.httpApi.port }}
+            initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 3
             successThreshold: 1
