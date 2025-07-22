@@ -56,16 +56,16 @@ data:
                 add_header X-Request-ID $request_id;
             }
             
-            # Proxy API requests to backend
+            # Proxy API requests to backend HTTP API server (port 8080)
             location /api/ {
-                proxy_pass http://{{ include "ai-compare-suse.fullname" . }}-app-service:{{ .Values.llmChat.service.port }}/api/;
+                proxy_pass http://{{ include "ai-compare-suse.fullname" . }}-app-service:8080/api/;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Proto $scheme;
                 proxy_set_header X-Request-ID $request_id;
                 
-                # Timeout settings
+                # Optimized timeout settings for fast failure detection
                 proxy_connect_timeout 5s;
                 proxy_send_timeout 8s;
                 proxy_read_timeout 8s;
@@ -76,9 +76,9 @@ data:
                 proxy_buffers 8 4k;
             }
             
-            # Health check endpoint (proxied to backend)
+            # Health check endpoint (proxied to backend HTTP API server)
             location /health {
-                proxy_pass http://{{ include "ai-compare-suse.fullname" . }}-app-service:{{ .Values.llmChat.service.port }}/health;
+                proxy_pass http://{{ include "ai-compare-suse.fullname" . }}-app-service:8080/health;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -87,9 +87,9 @@ data:
                 access_log off;  # Reduce noise from health checks
             }
             
-            # Metrics endpoint (proxied to backend)
+            # Metrics endpoint (proxied to backend HTTP API server)
             location /metrics {
-                proxy_pass http://{{ include "ai-compare-suse.fullname" . }}-app-service:{{ .Values.llmChat.service.port }}/api/metrics;
+                proxy_pass http://{{ include "ai-compare-suse.fullname" . }}-app-service:8080/api/metrics;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
