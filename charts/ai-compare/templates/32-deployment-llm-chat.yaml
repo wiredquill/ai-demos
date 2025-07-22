@@ -67,6 +67,11 @@ spec:
               value: {{ .Values.llmChat.httpApi.port | quote }}
             - name: DEMO_CONFIG_PATH
               value: "/app/demo-config"
+            # Demo ConfigMap manipulation settings
+            - name: KUBERNETES_NAMESPACE
+              value: "{{ .Release.Namespace }}"
+            - name: DEMO_CONFIGMAP_NAME
+              value: "{{ include "ai-compare.fullname" . }}-demo-config"
             # Timeout configuration for SUSE security policy compatibility
             - name: CONNECTION_TIMEOUT
               value: "5"

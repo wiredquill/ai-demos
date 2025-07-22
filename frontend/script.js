@@ -151,12 +151,12 @@ class AICompareClient {
             this.availabilityBtn.textContent = '🔴 Availability Demo: ON (FAILING)';
             this.availabilityBtn.setAttribute('data-state', 'on');
             this.availabilityBtn.classList.add('active');
-            this.availabilityBtn.title = 'Service is currently failing - click to restore health';
+            this.availabilityBtn.title = 'ConfigMap manipulated - app is failing. Click to restore and fix ConfigMap.';
         } else {
             this.availabilityBtn.textContent = '🟢 Availability Demo: OFF (HEALTHY)';
             this.availabilityBtn.setAttribute('data-state', 'off');
             this.availabilityBtn.classList.remove('active');
-            this.availabilityBtn.title = 'Service is healthy - click to simulate failure';
+            this.availabilityBtn.title = 'App is healthy. Click to break ConfigMap and simulate service failure.';
         }
     }
     

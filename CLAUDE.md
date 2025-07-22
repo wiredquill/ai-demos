@@ -102,6 +102,11 @@ kubectl label cluster my-cluster needs-llm=true        # For upstream variant
 - `OBSERVABILITY_ENABLED`: Enable OpenTelemetry observability via OpenLit
 - `OTLP_ENDPOINT`: OpenTelemetry collector endpoint for SUSE Observability
 - `COLLECT_GPU_STATS`: Enable GPU statistics collection
+- `KUBERNETES_NAMESPACE`: Kubernetes namespace for ConfigMap manipulation
+- `DEMO_CONFIGMAP_NAME`: ConfigMap name for availability demo
+- `CONNECTION_TIMEOUT`: Network connection timeout (optimized for SUSE security policies)
+- `REQUEST_TIMEOUT`: HTTP request timeout (optimized for SUSE security policies)
+- `INFERENCE_TIMEOUT`: LLM inference timeout
 
 **Helm Values Structure:**
 - `ollama.*`: Ollama deployment configuration
@@ -110,6 +115,67 @@ kubectl label cluster my-cluster needs-llm=true        # For upstream variant
 - `llmChat.observability.*`: OpenTelemetry observability configuration
 - `*.persistence.enabled`: Enable persistent storage
 - `ollama.gpu.enabled`: Enable GPU acceleration
+- `frontend.enabled`: Enable optional NGINX frontend with End User UI
+- `demo.availability.*`: ConfigMap-based availability demo configuration
+
+## Availability Demo & Observability
+
+### ConfigMap-Based Service Failure Simulation
+
+The application includes a sophisticated availability demo that creates **real** observable failures for SUSE Observability monitoring:
+
+**How It Works:**
+1. **ON Toggle**: Manipulates Kubernetes ConfigMap to break application configuration
+   - Removes working config key `models-latest`
+   - Adds broken config key `models_latest` (underscore breaks lookup)
+   - Application starts returning HTTP 500 errors
+   - Health checks fail with real error conditions
+
+2. **OFF Toggle**: Restores Kubernetes ConfigMap to fix application
+   - Removes broken config key `models_latest`
+   - Restores working config key `models-latest` with valid values
+   - Application resumes normal HTTP 200 operations
+   - Health checks return to healthy status
+
+**Observable Patterns for SUSE Observability:**
+- HTTP error rate spike (0% → 50%+)
+- Health check endpoint failures (`/health` returns HTTP 500)
+- Configuration error logs and alerts
+- Service degradation patterns
+- Recovery patterns when toggled OFF
+
+**External Kubernetes Fixing During Demos:**
+```bash
+# View current ConfigMap state
+kubectl get configmap <release-name>-demo-config -n <namespace> -o yaml
+
+# Fix the broken app externally (during demo)
+kubectl patch configmap <release-name>-demo-config -n <namespace> --type=json -p='[
+  {"op": "remove", "path": "/data/models_latest"},
+  {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest,llama2:latest"}
+]'
+
+# Break the app externally (alternative demo approach)
+kubectl patch configmap <release-name>-demo-config -n <namespace> --type=json -p='[
+  {"op": "remove", "path": "/data/models-latest"},
+  {"op": "add", "path": "/data/models_latest", "value": "broken-model:invalid"}
+]'
+```
+
+**Demo Integration:**
+- Frontend toggle button shows real-time ON/OFF state
+- Button reflects actual ConfigMap manipulation results
+- Works in both Gradio UI and optional NGINX frontend
+- Requires `kubectl` access from pod for ConfigMap manipulation
+- Falls back to environment variables if ConfigMap access unavailable
+
+### Data Leak Demo (NeuVector Integration)
+
+Second demo button simulates sensitive data transmission:
+- Sends actual credit card and SSN patterns to external endpoints
+- Triggers NeuVector DLP (Data Loss Prevention) detection
+- Generates observable security alerts
+- Enhanced visual feedback with dramatic color changes
 
 ## CI/CD Pipeline
 
@@ -123,6 +189,32 @@ GitHub Actions workflow (`.github/workflows/ci-cd.yaml`) automatically:
 - Push to `main` branch with changes to `app/`, `charts/`, or workflow files
 - Manual workflow dispatch
 
+## Key Implementation Details
+
+**ConfigMap Manipulation Methods:**
+- `_simulate_configmap_failure()`: Uses kubectl to break ConfigMap
+- `_restore_configmap_health()`: Uses kubectl to fix ConfigMap
+- Requires proper RBAC permissions for ConfigMap manipulation
+- Environment variables provide namespace and ConfigMap names
+
+**Frontend Integration:**
+- HTTP API endpoints: `/api/availability-demo/toggle`, `/api/data-leak-demo`
+- Real-time button state management
+- Visual feedback with color-coded states (ON=red, OFF=green)
+- Tooltip guidance for external Kubernetes fixing
+
+**Network Timeout Optimizations:**
+- CONNECTION_TIMEOUT: 5s (down from 30s)
+- REQUEST_TIMEOUT: 8s (down from 30s) 
+- INFERENCE_TIMEOUT: 30s (down from 120s)
+- Optimized for SUSE security network policies
+
+**Container Security Features:**
+- SUSE BCI (Base Container Images) for enterprise hardening
+- SUSE Application Collection NGINX for frontend
+- Read-only root filesystem, non-root execution
+- Capability dropping for minimal attack surface
+
 ## Development Mode
 
 Special development setup allows SSH access to running pods for rapid iteration:
@@ -135,6 +227,13 @@ Special development setup allows SSH access to running pods for rapid iteration:
 
 - `app/`: Contains the Python chat application and Dockerfiles
 - `charts/`: Helm charts for both SUSE and upstream variants
+  - `**/templates/60-configmap-demo.yaml`: Availability demo ConfigMap templates
+  - `**/templates/42-configmap-frontend-nginx.yaml`: NGINX frontend configuration
+  - `**/templates/43-configmap-frontend-content.yaml`: Frontend static content
+- `frontend/`: Optional NGINX-based End User Interface
+  - `index.html`: Main frontend application
+  - `script.js`: JavaScript client with availability demo toggle
+  - `style.css`: Enhanced UI styles with demo button states
 - `fleet/`: Fleet GitOps configuration
 - `install/`: Documentation for infrastructure setup
 - `demo-*.md`: Step-by-step demo guides

@@ -484,45 +484,122 @@ class ChatInterface:
             return None
     
     def _simulate_configmap_failure(self) -> bool:
-        """Simulate ConfigMap failure by checking if key exists with expected value."""
+        """Create actual ConfigMap failure by changing the key that breaks the app."""
         try:
-            # Try to read the expected configuration key
-            models_config = self._read_demo_config("models-latest")
+            import subprocess
+            import os
             
-            if models_config is None:
-                # Config key doesn't exist - this simulates the failure state
-                logger.error("ConfigMap key 'models-latest' not found - simulating service failure")
-                return True
-            elif "broken-model" in models_config or "invalid" in models_config:
-                # Config contains invalid values - this also simulates failure
-                logger.error(f"Invalid model configuration detected: {models_config}")
+            # Get namespace and ConfigMap name from environment or use defaults
+            namespace = os.getenv('KUBERNETES_NAMESPACE', 'ai-compare')
+            configmap_name = os.getenv('DEMO_CONFIGMAP_NAME', None)
+            
+            # Try to determine ConfigMap name if not provided
+            if not configmap_name:
+                # Look for ConfigMaps with 'demo-config' in the name
+                try:
+                    result = subprocess.run([
+                        'kubectl', 'get', 'configmap', '-n', namespace, 
+                        '-o', 'name', '--field-selector=metadata.name~=demo-config'
+                    ], capture_output=True, text=True, timeout=10)
+                    
+                    if result.returncode == 0 and result.stdout.strip():
+                        configmap_name = result.stdout.strip().split('/')[-1]
+                        logger.info(f"Found demo ConfigMap: {configmap_name}")
+                    else:
+                        logger.warning("No demo ConfigMap found, falling back to local simulation")
+                        return False
+                except Exception as e:
+                    logger.warning(f"Failed to find ConfigMap: {e}, falling back to local simulation")
+                    return False
+            
+            # Step 1: Remove the working key 'models-latest'
+            logger.info(f"Removing working ConfigMap key 'models-latest' from {configmap_name}")
+            result1 = subprocess.run([
+                'kubectl', 'patch', 'configmap', configmap_name, '-n', namespace,
+                '--type=json', 
+                '-p=[{"op": "remove", "path": "/data/models-latest"}]'
+            ], capture_output=True, text=True, timeout=15)
+            
+            # Step 2: Add the broken key 'models_latest' (underscore breaks the app)
+            logger.info(f"Adding broken ConfigMap key 'models_latest' to {configmap_name}")
+            result2 = subprocess.run([
+                'kubectl', 'patch', 'configmap', configmap_name, '-n', namespace,
+                '--type=json',
+                '-p=[{"op": "add", "path": "/data/models_latest", "value": "broken-model:invalid"}]'
+            ], capture_output=True, text=True, timeout=15)
+            
+            if result1.returncode == 0 and result2.returncode == 0:
+                logger.info("✅ ConfigMap manipulation successful - app should start failing!")
+                logger.info("🔧 To fix externally: kubectl patch configmap <name> -n <namespace> --type=json -p='[{\"op\": \"remove\", \"path\": \"/data/models_latest\"}, {\"op\": \"add\", \"path\": \"/data/models-latest\", \"value\": \"tinyllama:latest,llama2:latest\"}]'")
                 return True
             else:
-                # Config is valid - we need to create artificial failure for demo
-                logger.info(f"ConfigMap key 'models-latest' found with valid value: {models_config}")
-                # For demo purposes, we'll still consider this a "failure" simulation
-                # In real scenario, the ConfigMap key would be changed externally
-                return True
+                logger.error(f"ConfigMap patch failed: {result1.stderr} {result2.stderr}")
+                return False
                 
+        except subprocess.TimeoutExpired:
+            logger.error("kubectl command timed out - ConfigMap manipulation failed")
+            return False
         except Exception as e:
             logger.error(f"ConfigMap failure simulation error: {e}")
             return False
     
     def _restore_configmap_health(self) -> bool:
-        """Restore ConfigMap health by verifying expected configuration."""
+        """Restore ConfigMap health by fixing the broken configuration."""
         try:
-            # Check if the configuration is back to normal
-            models_config = self._read_demo_config("models-latest")
+            import subprocess
+            import os
             
-            if models_config and "tinyllama" in models_config:
-                logger.info(f"ConfigMap configuration restored: {models_config}")
+            # Get namespace and ConfigMap name from environment or use defaults
+            namespace = os.getenv('KUBERNETES_NAMESPACE', 'ai-compare')
+            configmap_name = os.getenv('DEMO_CONFIGMAP_NAME', None)
+            
+            # Try to determine ConfigMap name if not provided
+            if not configmap_name:
+                try:
+                    result = subprocess.run([
+                        'kubectl', 'get', 'configmap', '-n', namespace, 
+                        '-o', 'name', '--field-selector=metadata.name~=demo-config'
+                    ], capture_output=True, text=True, timeout=10)
+                    
+                    if result.returncode == 0 and result.stdout.strip():
+                        configmap_name = result.stdout.strip().split('/')[-1]
+                        logger.info(f"Found demo ConfigMap: {configmap_name}")
+                    else:
+                        logger.warning("No demo ConfigMap found, falling back to local simulation")
+                        return False
+                except Exception as e:
+                    logger.warning(f"Failed to find ConfigMap: {e}, falling back to local simulation")
+                    return False
+            
+            # Step 1: Remove the broken key 'models_latest'
+            logger.info(f"Removing broken ConfigMap key 'models_latest' from {configmap_name}")
+            result1 = subprocess.run([
+                'kubectl', 'patch', 'configmap', configmap_name, '-n', namespace,
+                '--type=json',
+                '-p=[{"op": "remove", "path": "/data/models_latest"}]'
+            ], capture_output=True, text=True, timeout=15)
+            
+            # Step 2: Restore the working key 'models-latest'
+            logger.info(f"Restoring working ConfigMap key 'models-latest' to {configmap_name}")
+            result2 = subprocess.run([
+                'kubectl', 'patch', 'configmap', configmap_name, '-n', namespace,
+                '--type=json',
+                '-p=[{"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest,llama2:latest"}]'
+            ], capture_output=True, text=True, timeout=15)
+            
+            if result1.returncode == 0 and result2.returncode == 0:
+                logger.info("✅ ConfigMap restoration successful - app should start working!")
                 return True
             else:
-                logger.warning(f"ConfigMap still in failure state: {models_config}")
+                logger.error(f"ConfigMap restoration failed: {result1.stderr} {result2.stderr}")
                 return False
                 
+        except subprocess.TimeoutExpired:
+            logger.error("kubectl command timed out - ConfigMap restoration failed")
+            return False
         except Exception as e:
             logger.error(f"ConfigMap health restoration error: {e}")
+            return False
             return False
 
     def get_ollama_models(self) -> List[str]:
@@ -1109,188 +1186,78 @@ class ChatInterface:
     def simulate_service_failure(self) -> tuple:
         """Simulates service failure using ConfigMap key manipulation for observable failures."""
         try:
-            logger.info("Simulating service failure - manipulating ConfigMap for real observable failures")
+            logger.info("🔴 ACTIVATING Availability Demo - Manipulating ConfigMap to break app")
             
             # Try to manipulate ConfigMap to create real observable failure
-            if self._simulate_configmap_failure():
-                logger.info("ConfigMap-based failure simulation activated")
+            configmap_success = self._simulate_configmap_failure()
+            
+            if configmap_success:
+                logger.info("✅ ConfigMap manipulation successful - App should start failing!")
+                # Update local state
+                self.service_health_failure = True
+                
+                # Generate immediate observable failures for SUSE Observability
+                logger.error("🚨 SERVICE_HEALTH_FAILURE=true - Service entering degraded state for SUSE Observability demo")
+                logger.error("💥 ConfigMap key 'models-latest' removed - Application configuration broken")
+                logger.error("📊 Expected observability patterns: HTTP 500 errors, health check failures, config errors")
+                
+                return (
+                    gr.Column(visible=False),
+                    "🔴 Availability Demo ACTIVATED!\n\n✅ ConfigMap manipulated - app should start failing\n📊 SUSE Observability should detect:\n• HTTP 500 error rate spike\n• Health check failures\n• Configuration errors\n\n🔧 To fix externally in Kubernetes:\nkubectl patch configmap <demo-config> -n <namespace> --type=json -p='[{\"op\": \"remove\", \"path\": \"/data/models_latest\"}, {\"op\": \"add\", \"path\": \"/data/models-latest\", \"value\": \"tinyllama:latest,llama2:latest\"}]'",
+                    "warning"
+                )
             else:
-                logger.warning("ConfigMap manipulation failed, using fallback environment variable")
+                logger.warning("⚠️ ConfigMap manipulation failed, using fallback environment variable")
                 # Fallback to environment variable for demos without K8s access
                 import os
                 os.environ["SERVICE_HEALTH_FAILURE"] = "true"
-            
-            # Update local state
-            self.service_health_failure = True
-
-            # Generate real observable failures that SUSE Observability can detect
-            logger.error("SERVICE_HEALTH_FAILURE=true - Service entering degraded state for SUSE Observability demo")
-            
-            # Create actual HTTP errors by making failing requests
-            import requests
-            import time
-            import threading
-            
-            def generate_http_errors():
-                """Generate real HTTP errors in background to create observable failures."""
-                error_endpoints = [
-                    "http://httpbin.org/status/500",  # HTTP 500 errors
-                    "http://httpbin.org/status/502",  # Bad Gateway errors  
-                    "http://httpbin.org/status/503",  # Service Unavailable
-                    "http://httpbin.org/delay/10",    # Timeout errors
-                ]
+                self.service_health_failure = True
                 
-                # Generate 20 real HTTP errors over 30 seconds for observability detection
-                for i in range(20):
-                    try:
-                        endpoint = error_endpoints[i % len(error_endpoints)]
-                        logger.info(f"Generating observable failure {i+1}/20: {endpoint}")
-                        
-                        # Make request with short timeout to create real observable failures
-                        response = requests.get(endpoint, timeout=2)
-                        if response.status_code >= 500:
-                            logger.error(f"Observable HTTP {response.status_code} error generated - SUSE Observability should detect this")
-                        elif response.status_code >= 400:
-                            logger.warning(f"Observable HTTP {response.status_code} error generated - client error pattern")
-                            
-                    except requests.exceptions.Timeout:
-                        logger.error(f"Observable timeout error {i+1}/20 - request exceeded 2s timeout (SUSE Observability pattern)")
-                    except requests.exceptions.ConnectionError:
-                        logger.error(f"Observable connection error {i+1}/20 - network failure (SUSE Observability pattern)")
-                    except Exception as e:
-                        logger.error(f"Observable request error {i+1}/20: {str(e)} (SUSE Observability pattern)")
-                    
-                    # Space out errors over time to create sustained failure pattern
-                    time.sleep(1.5)
-                
-                logger.info("Background error generation completed - 20 observable failures created")
-            
-            # Start background thread for sustained error generation
-            error_thread = threading.Thread(target=generate_http_errors, daemon=True)
-            error_thread.start()
-            
-            # Generate immediate pattern for quick detection
-            logger.error("Critical: Application health check failed - simulated service failure active")
-            logger.warning("Performance degradation detected - response times increasing")
-            logger.error("Database connection issues detected - timeout errors occurring")
-            
-            # Create memory pressure simulation
-            try:
-                import psutil
-                memory_percent = psutil.virtual_memory().percent
-                logger.warning(f"Memory usage spike detected: {memory_percent}% (simulated high load)")
-            except ImportError:
-                logger.warning("Memory usage spike detected: 85% (simulated high load - psutil not available)")
-            
-            # Generate CPU spike simulation  
-            import multiprocessing
-            cpu_count = multiprocessing.cpu_count()
-            logger.warning(f"CPU spike detected: High load across {cpu_count} cores (simulated)")
-            
-            # Create a health check failure thread that will respond with HTTP 500s
-            def health_check_failure():
-                """Background thread to create failing health checks."""
-                import time
-                from http.server import HTTPServer, BaseHTTPRequestHandler
-                import threading
-                
-                class FailingHealthHandler(BaseHTTPRequestHandler):
-                    def do_GET(self):
-                        if self.path == '/health':
-                            logger.error("Health check failed - returning HTTP 500 (SUSE Observability pattern)")
-                            self.send_response(500)
-                            self.send_header('Content-type', 'application/json')
-                            self.end_headers()
-                            self.wfile.write(b'{"status":"FAILING","error":"SERVICE_HEALTH_FAILURE=true"}')
-                        else:
-                            self.send_response(404)
-                            self.end_headers()
-                    
-                    def log_message(self, format, *args):
-                        # Suppress default HTTP server logs
-                        pass
-                
-                try:
-                    # Start health check server on port 8090
-                    server = HTTPServer(('0.0.0.0', 8090), FailingHealthHandler)
-                    logger.info("Started failing health check server on port 8090 for observability")
-                    server.serve_forever()
-                except Exception as e:
-                    logger.warning(f"Could not start health check server: {e}")
-            
-            # Start health check failure server in background
-            health_thread = threading.Thread(target=health_check_failure, daemon=True)
-            health_thread.start()
-
-            message = f"🚨 Service failure simulated! Generating 20 real HTTP errors, resource spikes, and failing health checks on port 8090. SUSE Observability should detect failure patterns."
-
-            return gr.Column(visible=False), message, "warning"
+                return (
+                    gr.Column(visible=False),
+                    "🔴 Availability Demo ACTIVATED!\n\n⚠️ ConfigMap manipulation failed - using fallback mode\n📊 Health checks will return HTTP 500\n\n🔧 ConfigMap manipulation requires kubectl access",
+                    "warning"
+                )
 
         except Exception as e:
             logger.error(f"Service failure simulation failed: {e}")
             return gr.Column(visible=True), f"❌ Simulation failed: {str(e)}", "error"
 
     def restore_service_health(self) -> tuple:
-        """Restores service health using ConfigMap verification and generates recovery signals."""
+        """Restores service health using ConfigMap configuration restoration."""
         try:
-            logger.info("Restoring service health - verifying ConfigMap configuration")
+            logger.info("🔵 DEACTIVATING Availability Demo - Restoring ConfigMap to fix app")
 
             # Try to restore ConfigMap-based configuration
-            if self._restore_configmap_health():
-                logger.info("ConfigMap-based health restoration completed")
+            configmap_success = self._restore_configmap_health()
+            
+            if configmap_success:
+                logger.info("✅ ConfigMap restoration successful - App should start working!")
+                # Update local state
+                self.service_health_failure = False
+                
+                # Generate recovery signals for observability
+                logger.info("✅ SERVICE_HEALTH_FAILURE=false - Service health restored successfully")
+                logger.info("📊 ConfigMap key 'models-latest' restored - Application configuration fixed")
+                logger.info("📊 Expected observability patterns: HTTP 200 success, health check recovery")
+                
+                return (
+                    gr.Column(visible=False),
+                    "🔵 Availability Demo DEACTIVATED!\n\n✅ ConfigMap restored - app should start working\n📊 SUSE Observability should detect:\n• HTTP 200 success rate recovery\n• Health check restoration\n• Error rate return to normal\n\n🎉 Service fully operational!",
+                    "success"
+                )
             else:
-                logger.warning("ConfigMap restoration failed, using fallback environment variable")
+                logger.warning("⚠️ ConfigMap restoration failed, using fallback environment variable")
                 # Fallback to environment variable for demos without K8s access
                 import os
                 os.environ["SERVICE_HEALTH_FAILURE"] = "false"
-
-            # Update local state
-            self.service_health_failure = False
-
-            # Generate recovery signals for observability
-            logger.info("SERVICE_HEALTH_FAILURE=false - Service health restored successfully")
-            logger.info("Health check status: HEALTHY - All systems operational")
-            logger.info("Database connections: STABLE - Response times normalized")
-            logger.info("Performance metrics: NORMAL - Memory usage within acceptable limits")
-            logger.info("Service recovery complete - All error conditions cleared")
-            
-            # Generate successful HTTP requests to show recovery pattern
-            import requests
-            import threading
-            
-            def generate_success_pattern():
-                """Generate successful requests to show recovery in observability."""
-                success_endpoints = [
-                    "http://httpbin.org/status/200",  # HTTP 200 success
-                    "http://httpbin.org/json",        # Successful JSON response
-                    "http://httpbin.org/get",         # Successful GET
-                ]
+                self.service_health_failure = False
                 
-                # Generate 10 successful requests to show recovery pattern
-                for i in range(10):
-                    try:
-                        endpoint = success_endpoints[i % len(success_endpoints)]
-                        logger.info(f"Generating recovery success {i+1}/10: {endpoint}")
-                        
-                        response = requests.get(endpoint, timeout=5)
-                        if response.status_code == 200:
-                            logger.info(f"Recovery success {i+1}/10: HTTP {response.status_code} - normal operations restored")
-                        
-                    except Exception as e:
-                        logger.warning(f"Recovery request {i+1}/10 failed: {e}")
-                    
-                    import time
-                    time.sleep(0.5)
-                
-                logger.info("Recovery pattern generation completed - service health restored")
-            
-            # Start background thread for recovery pattern
-            recovery_thread = threading.Thread(target=generate_success_pattern, daemon=True)
-            recovery_thread.start()
-
-            message = f"✅ Service health restored! Generating recovery patterns with 10 successful HTTP requests. SUSE Observability should detect recovery."
-
-            return gr.Column(visible=False), message, "success"
+                return (
+                    gr.Column(visible=False),
+                    "🔵 Availability Demo DEACTIVATED!\n\n⚠️ ConfigMap restoration failed - using fallback mode\n📊 Health checks will return HTTP 200\n\n🔧 ConfigMap restoration requires kubectl access",
+                    "success"
+                )
 
         except Exception as e:
             logger.error(f"Service health restoration failed: {e}")
