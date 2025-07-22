@@ -29,6 +29,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code into the container
 COPY ./app/python-ollama-open-webui.py /app/python-ollama-open-webui.py
+COPY ./frontend /app/frontend
 
 
 # Expose the port Gradio will run on

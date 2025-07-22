@@ -18,6 +18,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # CORRECTED: The path to the source file now includes the 'app/' prefix.
 # The destination is '.', which corresponds to the WORKDIR '/app'.
 COPY app/python-ollama-open-webui.py .
+COPY frontend /app/frontend
 # Expose the port Gradio will run on
 EXPOSE 7860
 
