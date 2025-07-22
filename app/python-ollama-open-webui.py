@@ -2092,18 +2092,7 @@ def create_interface():
             )
 
         def run_data_leak_demo():
-            """Run data leak demo directly with visual feedback."""
-            import time
-            
-            # First, change button to indicate processing
-            yield (
-                gr.update(value="", visible=False),  # Hide status temporarily
-                gr.update(value="🔥 Processing...", variant="stop")  # Show processing on button
-            )
-            
-            # Small delay for visual feedback
-            time.sleep(0.5)
-            
+            """Run data leak demo directly and update button state."""
             _, message, status = chat_instance.run_data_leak_demo()
 
             # Create status message HTML based on status with better contrast
@@ -2114,10 +2103,17 @@ def create_interface():
             else:
                 status_html = f"<div style='color: #c62828; background: rgba(244, 67, 54, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #f44336; font-weight: 500;'>{message}</div>"
 
-            # Final update with status and reset button
-            yield (
+            # Determine button text and variant based on status
+            if status == "warning":
+                button_text = "🔥 Data Leak Demo (Active)"
+                button_variant = "stop"
+            else:
+                button_text = "🔒 Data Leak Demo"
+                button_variant = "secondary"
+
+            return (
                 gr.update(value=status_html, visible=True),  # Show status
-                gr.update(value="🔒 Data Leak Demo", variant="secondary")  # Reset button
+                gr.update(value=button_text, variant=button_variant)  # Update button
             )
 
         send_btn.click(
