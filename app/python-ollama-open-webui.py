@@ -234,22 +234,37 @@ class ChatInterface:
         self.config = self.load_or_create_config()
 
         # Initialize provider status with pre-drawn boxes (default offline)
+        # CRITICAL: Always guarantee all 10 providers are present from startup
+        default_providers = {
+            "OpenAI": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+            "Claude (Anthropic)": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+            "DeepSeek": {"country": "🇨🇳 China", "flag": "🇨🇳"},
+            "Google Gemini": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+            "Cohere": {"country": "🇨🇦 Canada", "flag": "🇨🇦"},
+            "Mistral AI": {"country": "🇫🇷 France", "flag": "🇫🇷"},
+            "Perplexity": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+            "Together AI": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+            "Groq": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+            "Hugging Face": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+        }
+        
         self.provider_status = {}
-        for name, provider_info in self.config.get("providers", {}).items():
-            if isinstance(provider_info, str):
-                country = "🌍 Unknown"
-                flag = "🌍"
-            else:
-                country = provider_info.get("country", "🌍 Unknown")
-                flag = provider_info.get("flag", "🌍")
-
+        # Always initialize all 10 providers first
+        for name, info in default_providers.items():
             self.provider_status[name] = {
-                "status": "🔴",
+                "status": "🔴", 
                 "response_time": "---ms",
-                "country": country,
-                "flag": flag,
+                "country": info["country"],
+                "flag": info["flag"],
                 "status_code": "Loading",
             }
+            
+        # Override with any configured providers (but keep all 10)
+        for name, provider_info in self.config.get("providers", {}).items():
+            if name in self.provider_status:  # Only update if it's one of our 10
+                if isinstance(provider_info, dict):
+                    self.provider_status[name]["country"] = provider_info.get("country", self.provider_status[name]["country"])
+                    self.provider_status[name]["flag"] = provider_info.get("flag", self.provider_status[name]["flag"])
 
         # --- MODIFIED: Load URLs from environment variables for K8s ---
         self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
@@ -878,10 +893,49 @@ class ChatInterface:
 
         except Exception as e:
             logger.warning(f"Provider status check failed: {e} - using partial results")
-            self.provider_status = updated_status
+            
+        # CRITICAL: Always ensure all 10 providers are present regardless of any errors
+        default_providers = {
+            "OpenAI": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+            "Claude (Anthropic)": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+            "DeepSeek": {"country": "🇨🇳 China", "flag": "🇨🇳"},
+            "Google Gemini": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+            "Cohere": {"country": "🇨🇦 Canada", "flag": "🇨🇦"},
+            "Mistral AI": {"country": "🇫🇷 France", "flag": "🇫🇷"},
+            "Perplexity": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+            "Together AI": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+            "Groq": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+            "Hugging Face": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+        }
+        
+        # Force all 10 providers to be present - overwrite if needed
+        for name, info in default_providers.items():
+            if name not in updated_status:
+                updated_status[name] = {
+                    "status": "🔴",
+                    "response_time": "---ms", 
+                    "country": info["country"],
+                    "flag": info["flag"],
+                    "status_code": "Error",
+                    "error": "Status check failed",
+                }
+                
+        # Final guarantee - if we still don't have exactly 10, force them
+        if len(updated_status) != 10:
+            logger.warning(f"Provider count mismatch: expected 10, got {len(updated_status)}. Forcing all 10 providers.")
+            for name, info in default_providers.items():
+                updated_status[name] = {
+                    "status": "🔴",
+                    "response_time": "---ms",
+                    "country": info["country"], 
+                    "flag": info["flag"],
+                    "status_code": "Forced",
+                    "error": "Guaranteed display",
+                }
 
+        self.provider_status = updated_status
         total_time = time.time() - start_time
-        logger.info(f"Provider status check completed in {total_time:.1f}s - {len(updated_status)} providers")
+        logger.info(f"Provider status check completed in {total_time:.1f}s - {len(updated_status)} providers (guaranteed 10)")
         return updated_status
 
     def _authenticate_open_webui(self):
