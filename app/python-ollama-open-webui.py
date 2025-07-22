@@ -779,6 +779,17 @@ class ChatInterface:
                 logger.info("No providers configured")
                 return updated_status
 
+            # Initialize all providers with default failed status to ensure they always show
+            for name, provider_info in providers.items():
+                updated_status[name] = {
+                    "status": "🔴",
+                    "response_time": "---ms",
+                    "country": provider_info.get("country", "🌍 Unknown"),
+                    "flag": provider_info.get("flag", "🌍"),
+                    "status_code": "Checking...",
+                    "error": "Status check in progress",
+                }
+
             # Use ThreadPoolExecutor for concurrent checks
             with ThreadPoolExecutor(max_workers=10) as executor:
                 # Submit all provider checks
@@ -789,22 +800,45 @@ class ChatInterface:
                     for name, provider_info in providers.items()
                 }
 
-                # Collect results with timeout
+                # Collect results with timeout - update existing entries
                 for future in as_completed(future_to_name, timeout=max_total_time):
                     name = future_to_name[future]
                     try:
                         result = future.result()
-                        updated_status[name] = result
+                        updated_status[name] = result  # This will overwrite the default failed status
                     except Exception as e:
                         logger.warning(f"Provider {name} check failed: {e}")
-                        updated_status[name] = {
-                            "status": "🔴",
+                        # Keep the default failed status but update error details
+                        updated_status[name].update({
                             "response_time": "timeout",
-                            "country": "🌍 Unknown",
-                            "flag": "🌍",
                             "status_code": "Error",
                             "error": str(e),
-                        }
+                        })
+
+            # Ensure all 10 providers are always present - if any are missing, add them
+            default_providers = {
+                "OpenAI": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+                "Claude (Anthropic)": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+                "DeepSeek": {"country": "🇨🇳 China", "flag": "🇨🇳"},
+                "Google Gemini": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+                "Cohere": {"country": "🇨🇦 Canada", "flag": "🇨🇦"},
+                "Mistral AI": {"country": "🇫🇷 France", "flag": "🇫🇷"},
+                "Perplexity": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+                "Together AI": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+                "Groq": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+                "Hugging Face": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
+            }
+            
+            for name, info in default_providers.items():
+                if name not in updated_status:
+                    updated_status[name] = {
+                        "status": "🔴",
+                        "response_time": "---ms",
+                        "country": info["country"],
+                        "flag": info["flag"],
+                        "status_code": "Not configured",
+                        "error": "Provider not in config",
+                    }
 
             self.provider_status = updated_status
 
@@ -813,7 +847,7 @@ class ChatInterface:
             self.provider_status = updated_status
 
         total_time = time.time() - start_time
-        logger.info(f"Provider status check completed in {total_time:.1f}s")
+        logger.info(f"Provider status check completed in {total_time:.1f}s - {len(updated_status)} providers")
         return updated_status
 
     def _authenticate_open_webui(self):
