@@ -42,7 +42,7 @@ data:
         add_header X-XSS-Protection "1; mode=block";
         
         server {
-            listen 8080;
+            listen 80;
             server_name localhost;
             
             # Serve static frontend content
