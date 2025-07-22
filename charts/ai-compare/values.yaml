@@ -93,7 +93,7 @@ llmChat:
   observability:
     enabled: true
     otlpEndpoint: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
-    collectGpuStats: true
+    collectGpuStats: false
     schedule: "*/5 * * * *"
   # HTTP API server for observable traffic generation
   httpApi:
