@@ -24,4 +24,3 @@ EXPOSE 7860
 
 # Command to run the application using unbuffered python output for better logging
 CMD ["python", "-u", "python-ollama-open-webui.py"]
-# Trigger CI/CD build again and again

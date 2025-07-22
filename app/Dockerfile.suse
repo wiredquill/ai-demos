@@ -22,14 +22,14 @@ RUN zypper refresh && \
     zypper clean -a
 
 # Copy application requirements first to leverage Docker cache
-COPY ./app/requirements.txt /app/requirements.txt
+COPY app/requirements.txt /app/requirements.txt
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code into the container
-COPY ./app/python-ollama-open-webui.py /app/python-ollama-open-webui.py
-COPY ./frontend /app/frontend
+COPY app/python-ollama-open-webui.py /app/python-ollama-open-webui.py
+COPY frontend /app/frontend
 
 
 # Expose the port Gradio will run on
