@@ -23,6 +23,9 @@ spec:
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           ports:
             - containerPort: {{ .Values.llmChat.service.port }}
+              name: gradio
+            - containerPort: {{ .Values.llmChat.httpApi.port }}
+              name: http-api
           env:
             - name: OLLAMA_BASE_URL
               value: "http://ollama-service:11434"
