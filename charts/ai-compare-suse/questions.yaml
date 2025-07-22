@@ -1,41 +1,4 @@
 questions:
-# Frontend Settings Group - Optional End User UI with SUSE NGINX
-- variable: frontend.enabled
-  group: "Frontend Settings"
-  label: "Enable End User Frontend (SUSE NGINX)"
-  description: "Deploy an optional NGINX-based End User Interface using SUSE Application Collection NGINX for HTTP traffic generation and SUSE Observability monitoring. Provides a clean web UI for comparing AI responses with enterprise-grade security."
-  type: "boolean"
-  default: false
-
-- variable: frontend.image.repository
-  group: "Frontend Settings"
-  label: "SUSE NGINX Image Repository"
-  description: "SUSE Application Collection NGINX container image repository. Defaults to enterprise-hardened SUSE NGINX from registry.suse.com/suse/nginx."
-  type: "string"
-  default: "registry.suse.com/suse/nginx"
-  show_if: "frontend.enabled=true"
-
-- variable: frontend.image.tag
-  group: "Frontend Settings"
-  label: "SUSE NGINX Image Tag"
-  description: "SUSE Application Collection NGINX container image tag from SUSE BCI (Base Container Images)."
-  type: "string"
-  default: "1.25"
-  show_if: "frontend.enabled=true"
-
-- variable: frontend.service.type
-  group: "Frontend Settings"
-  label: "Frontend Service Type"
-  description: "Method to expose the SUSE NGINX frontend service."
-  type: "enum"
-  required: true
-  default: "NodePort"
-  options:
-    - "ClusterIP"
-    - "NodePort"
-    - "LoadBalancer"
-  show_if: "frontend.enabled=true"
-
 # Ollama Settings Group - Priority settings for the AI model server
 - variable: advancedConfig
   group: "Ollama Settings"
@@ -142,6 +105,43 @@ questions:
   type: "string"
   default: "/data/ai-models"
   show_if: "ollama.modelCache.nfs.enabled=true"
+
+# Frontend Settings Group - Optional End User UI with SUSE NGINX
+- variable: frontend.enabled
+  group: "Frontend Settings"
+  label: "Enable End User Frontend (SUSE NGINX)"
+  description: "Deploy an optional NGINX-based End User Interface using SUSE Application Collection NGINX for HTTP traffic generation and SUSE Observability monitoring. Provides a clean web UI for comparing AI responses with enterprise-grade security."
+  type: "boolean"
+  default: false
+
+- variable: frontend.image.repository
+  group: "Frontend Settings"
+  label: "SUSE NGINX Image Repository"
+  description: "SUSE Application Collection NGINX container image repository. Defaults to enterprise-hardened SUSE NGINX from registry.suse.com/suse/nginx."
+  type: "string"
+  default: "registry.suse.com/suse/nginx"
+  show_if: "frontend.enabled=true"
+
+- variable: frontend.image.tag
+  group: "Frontend Settings"
+  label: "SUSE NGINX Image Tag"
+  description: "SUSE Application Collection NGINX container image tag from SUSE BCI (Base Container Images)."
+  type: "string"
+  default: "1.25"
+  show_if: "frontend.enabled=true"
+
+- variable: frontend.service.type
+  group: "Frontend Settings"
+  label: "Frontend Service Type"
+  description: "Method to expose the SUSE NGINX frontend service."
+  type: "enum"
+  required: true
+  default: "NodePort"
+  options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"
+  show_if: "frontend.enabled=true"
 
 # Networking Group - For configuring how services are exposed
 - variable: llmChat.service.type

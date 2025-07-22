@@ -1239,14 +1239,16 @@ class ChatInterface:
                     "Data leak demo executed - network failed but sensitive data patterns were processed for DLP testing"
                 )
 
-            # Simple popup-style message (success regardless of network)
-            message = "⚠️ Attempting to send sensitive data"
+            # Detailed message showing what data was "leaked" for NeuVector DLP detection
+            message = f"🔒 Data Leak Demo Executed!\n\n💳 Credit Card: {credit_card_pattern}\n🆔 SSN: {ssn_pattern}\n\n⚠️ Sensitive data transmitted to external endpoints for NeuVector DLP detection. This triggers security alerts in SUSE NeuVector for demonstration purposes."
             return gr.Column(visible=False), message, "warning"
 
         except Exception as e:
             logger.error(f"Data leak demo failed: {e}")
-            # Even on failure, show success message for demo purposes (this is a security demo)
-            message = "⚠️ Attempting to send sensitive data"
+            # Even on failure, show detailed message for demo purposes (this is a security demo)
+            credit_card_pattern = "3412-1234-1234-2222"
+            ssn_pattern = "123-45-6789"
+            message = f"🔒 Data Leak Demo Executed!\n\n💳 Credit Card: {credit_card_pattern}\n🆔 SSN: {ssn_pattern}\n\n⚠️ Network failed but sensitive data patterns processed for NeuVector DLP testing. Demo completed successfully."
             return gr.Column(visible=False), message, "warning"
 
     def refresh_providers(self) -> gr.HTML:

@@ -97,15 +97,28 @@ class AICompareClient {
     async runDataLeakDemo() {
         if (this.isLoading) return;
         
+        // Apply executing state with dramatic color change
+        this.dataLeakBtn.classList.add('executing');
         this.setButtonLoading(this.dataLeakBtn, true);
         
         try {
             const response = await this.makeRequest('POST', '/data-leak-demo');
+            
+            // Flash success animation
+            this.dataLeakBtn.classList.remove('executing');
+            this.dataLeakBtn.classList.add('success');
+            
             this.showDemoStatus(response.message, response.status);
+            
+            // Remove success class after animation
+            setTimeout(() => {
+                this.dataLeakBtn.classList.remove('success');
+            }, 1000);
             
         } catch (error) {
             console.error('Data leak demo failed:', error);
             this.showDemoStatus(`Demo failed: ${error.message}`, 'error');
+            this.dataLeakBtn.classList.remove('executing');
         } finally {
             this.setButtonLoading(this.dataLeakBtn, false);
         }
