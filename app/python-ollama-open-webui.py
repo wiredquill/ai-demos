@@ -1806,6 +1806,11 @@ def create_interface():
         </div>
         """
         )
+        
+        # PROMINENT STATUS DISPLAY - Moved to top for visibility
+        with gr.Row():
+            with gr.Column():
+                demo_status_msg = gr.HTML(value="", visible=False)
 
         with gr.Row():
             # LEFT PANEL - Compact Provider Status (30%)
@@ -1817,8 +1822,13 @@ def create_interface():
                     "🔄 Refresh", elem_classes="refresh-btn", size="sm"
                 )
                 # SUSE Security Demo buttons (direct action)
+                # Determine initial availability demo state
+                initial_availability_state = getattr(chat_instance, 'service_health_failure', False)
+                initial_availability_text = "🔴 Availability Demo: ON" if initial_availability_state else "🟢 Availability Demo: OFF"
+                initial_availability_variant = "stop" if initial_availability_state else "secondary"
+                
                 availability_demo_btn = gr.Button(
-                    "🌐 Availability Demo", variant="secondary", size="sm"
+                    initial_availability_text, variant=initial_availability_variant, size="sm"
                 )
                 data_leak_demo_btn = gr.Button(
                     "🔒 Data Leak Demo", variant="secondary", size="sm"
@@ -1827,10 +1837,7 @@ def create_interface():
                     "❓ Demo Help", variant="secondary", size="sm"
                 )
 
-                # Demo status message display moved here from modal
-                with gr.Row():
-                    with gr.Column():
-                        demo_status_msg = gr.HTML(value="", visible=False)
+                # Demo status message display moved to top for better visibility
 
             # CENTER PANEL - Chat Interface in Grouped Container (70%)
             with gr.Column(scale=7):
@@ -2059,7 +2066,7 @@ def create_interface():
             return gr.Column(visible=False)
 
         def run_availability_demo():
-            """Run availability demo directly."""
+            """Run availability demo directly and update button state."""
             _, message, status = chat_instance.run_availability_demo()
 
             # Create status message HTML based on status with better contrast
@@ -2070,10 +2077,33 @@ def create_interface():
             else:
                 status_html = f"<div style='color: #c62828; background: rgba(244, 67, 54, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #f44336; font-weight: 500;'>{message}</div>"
 
-            return gr.update(value=status_html, visible=True)
+            # Update button text and style based on current state
+            current_state = getattr(chat_instance, 'service_health_failure', False)
+            if current_state:
+                button_text = "🔴 Availability Demo: ON"
+                button_variant = "stop"
+            else:
+                button_text = "🟢 Availability Demo: OFF"
+                button_variant = "secondary"
+            
+            return (
+                gr.update(value=status_html, visible=True),  # Status message
+                gr.update(value=button_text, variant=button_variant)  # Button update
+            )
 
         def run_data_leak_demo():
-            """Run data leak demo directly."""
+            """Run data leak demo directly with visual feedback."""
+            import time
+            
+            # First, change button to indicate processing
+            yield (
+                gr.update(value="", visible=False),  # Hide status temporarily
+                gr.update(value="🔥 Processing...", variant="stop")  # Show processing on button
+            )
+            
+            # Small delay for visual feedback
+            time.sleep(0.5)
+            
             _, message, status = chat_instance.run_data_leak_demo()
 
             # Create status message HTML based on status with better contrast
@@ -2084,7 +2114,11 @@ def create_interface():
             else:
                 status_html = f"<div style='color: #c62828; background: rgba(244, 67, 54, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #f44336; font-weight: 500;'>{message}</div>"
 
-            return gr.update(value=status_html, visible=True)
+            # Final update with status and reset button
+            yield (
+                gr.update(value=status_html, visible=True),  # Show status
+                gr.update(value="🔒 Data Leak Demo", variant="secondary")  # Reset button
+            )
 
         send_btn.click(
             handle_send_message,
@@ -2108,10 +2142,10 @@ def create_interface():
 
         # Security demo modal handlers
         availability_demo_btn.click(
-            run_availability_demo, outputs=[demo_status_msg]
+            run_availability_demo, outputs=[demo_status_msg, availability_demo_btn]
         )
         data_leak_demo_btn.click(
-            run_data_leak_demo, outputs=[demo_status_msg]
+            run_data_leak_demo, outputs=[demo_status_msg, data_leak_demo_btn]
         )
         demo_help_btn.click(show_demo_help_modal, outputs=[demo_help_modal])
         close_demo_help_btn.click(hide_demo_help_modal, outputs=[demo_help_modal])
