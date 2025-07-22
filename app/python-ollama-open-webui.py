@@ -296,7 +296,7 @@ class ChatInterface:
         self.pipeline_api_key = os.getenv("PIPELINE_API_KEY")
         
         # Configurable timeout settings optimized for SUSE security policies
-        self.connection_timeout = int(os.getenv("CONNECTION_TIMEOUT", "5"))  # Fast connection timeout
+        self.connection_timeout = int(os.getenv("CONNECTION_TIMEOUT", "3"))  # Very fast connection timeout for provider checks
         self.request_timeout = int(os.getenv("REQUEST_TIMEOUT", "8"))        # Quick request timeout  
         self.inference_timeout = int(os.getenv("INFERENCE_TIMEOUT", "30"))   # Reduced from 120s for network policies
 
@@ -911,7 +911,7 @@ class ChatInterface:
         logger.info("Updating all provider statuses.")
         updated_status = {}
         start_time = time.time()
-        max_total_time = 5   # Further reduced total time for SUSE security policies
+        max_total_time = 10  # Allow 10 seconds total for all parallel provider checks
 
         try:
             providers = self.config.get("providers", {})
