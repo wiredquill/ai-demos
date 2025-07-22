@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 
 import gradio as gr
 import requests
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from werkzeug.serving import make_server
 
 # Build trigger comment - pipeline model fix deployment
@@ -186,7 +186,6 @@ class ObservableAPIServer:
         def serve_frontend():
             """Serve the main frontend HTML file."""
             try:
-                from flask import send_from_directory
                 return send_from_directory('frontend', 'index.html')
             except Exception as e:
                 logger.error(f"Error serving frontend index: {e}")
@@ -196,7 +195,6 @@ class ObservableAPIServer:
         def serve_frontend_files(filename):
             """Serve frontend static files (CSS, JS, etc.)."""
             try:
-                from flask import send_from_directory
                 # Only serve files from frontend directory
                 if filename in ['style.css', 'script.js', 'nginx.conf']:
                     return send_from_directory('frontend', filename)
