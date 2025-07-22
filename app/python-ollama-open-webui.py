@@ -71,6 +71,16 @@ class ObservableAPIServer:
                 logger.error(f"Health check endpoint error: {e}")
                 return jsonify({"status": "ERROR", "error": str(e)}), 500
         
+        @self.app.route('/api/test', methods=['GET'])
+        def test_endpoint():
+            """Simple test endpoint for debugging API routing."""
+            logger.info("Test endpoint accessed successfully")
+            return jsonify({
+                "message": "API routing is working!",
+                "timestamp": time.time(),
+                "service_health_failure": getattr(self.chat_interface, 'service_health_failure', False)
+            }), 200
+        
         @self.app.route('/api/chat', methods=['POST'])
         def chat_completion():
             """Chat completion endpoint for frontend communication."""
@@ -97,10 +107,22 @@ class ObservableAPIServer:
                 messages = [{"role": "user", "content": message}]
                 
                 # Ollama response
-                ollama_response = self.chat_interface.chat_with_ollama(messages, model)
+                logger.info(f"Requesting Ollama response from {self.chat_interface.ollama_base_url}")
+                try:
+                    ollama_response = self.chat_interface.chat_with_ollama(messages, model)
+                    logger.info(f"Ollama response received: {ollama_response[:100]}...")
+                except Exception as e:
+                    logger.error(f"Ollama request failed: {e}")
+                    ollama_response = f"Ollama Error: {str(e)}"
                 
                 # Open WebUI response  
-                webui_response = self.chat_interface.chat_with_open_webui(messages, model)
+                logger.info(f"Requesting Open WebUI response from {self.chat_interface.open_webui_base_url}")
+                try:
+                    webui_response = self.chat_interface.chat_with_open_webui(messages, model)
+                    logger.info(f"Open WebUI response received: {webui_response[:100]}...")
+                except Exception as e:
+                    logger.error(f"Open WebUI request failed: {e}")
+                    webui_response = f"Open WebUI Error: {str(e)}"
                 
                 result = {
                     "ollama_response": ollama_response,
@@ -114,11 +136,14 @@ class ObservableAPIServer:
                 return jsonify(result), 200
                 
             except Exception as e:
+                import traceback
                 logger.error(f"Chat API endpoint error: {e}")
+                logger.error(f"Chat API traceback: {traceback.format_exc()}")
                 return jsonify({
                     "error": str(e),
                     "status": "error",
-                    "timestamp": time.time()
+                    "timestamp": time.time(),
+                    "details": "Check server logs for full traceback"
                 }), 500
         
         @self.app.route('/api/availability-demo/toggle', methods=['POST'])
@@ -2045,7 +2070,7 @@ def create_interface():
             else:
                 status_html = f"<div style='color: #c62828; background: rgba(244, 67, 54, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #f44336; font-weight: 500;'>{message}</div>"
 
-            return status_html, gr.HTML(visible=True)
+            return gr.update(value=status_html, visible=True)
 
         def run_data_leak_demo():
             """Run data leak demo directly."""
@@ -2059,7 +2084,7 @@ def create_interface():
             else:
                 status_html = f"<div style='color: #c62828; background: rgba(244, 67, 54, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #f44336; font-weight: 500;'>{message}</div>"
 
-            return status_html, gr.HTML(visible=True)
+            return gr.update(value=status_html, visible=True)
 
         send_btn.click(
             handle_send_message,
@@ -2083,10 +2108,10 @@ def create_interface():
 
         # Security demo modal handlers
         availability_demo_btn.click(
-            run_availability_demo, outputs=[demo_status_msg, demo_status_msg]
+            run_availability_demo, outputs=[demo_status_msg]
         )
         data_leak_demo_btn.click(
-            run_data_leak_demo, outputs=[demo_status_msg, demo_status_msg]
+            run_data_leak_demo, outputs=[demo_status_msg]
         )
         demo_help_btn.click(show_demo_help_modal, outputs=[demo_help_modal])
         close_demo_help_btn.click(hide_demo_help_modal, outputs=[demo_help_modal])
