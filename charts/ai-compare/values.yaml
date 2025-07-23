@@ -75,7 +75,7 @@ pipelines:
 llmChat:
   image:
     repository: ghcr.io/wiredquill/ai-demos
-    tag: "47e879c"
+    tag: "e9c4222"
   service:
     port: 7860
     type: NodePort
@@ -112,8 +112,8 @@ frontend:
       repository: ghcr.io/wiredquill/ai-demos-load-simulator
       tag: "latest"
     # Load simulation settings
-    intervalSeconds: 30  # Send requests every 30 seconds
-    requestTimeout: 30   # HTTP request timeout
+    intervalSeconds: 30 # Send requests every 30 seconds
+    requestTimeout: 30 # HTTP request timeout
     # Custom prompts (optional) - if not provided, uses built-in defaults
     customPrompts: []
     # Example custom prompts:
@@ -123,12 +123,12 @@ frontend:
     #   - "What are the advantages of using containers?"
   service:
     type: ClusterIP
-    port: 80  # Not used by load simulator, but kept for compatibility
+    port: 80 # Not used by load simulator, but kept for compatibility
     annotations: {}
   resources:
     limits:
-      cpu: 100m      # Lower CPU - just sending HTTP requests
-      memory: 128Mi   # Lower memory - minimal Python script
+      cpu: 100m # Lower CPU - just sending HTTP requests
+      memory: 128Mi # Lower memory - minimal Python script
     requests:
       cpu: 50m
       memory: 64Mi
