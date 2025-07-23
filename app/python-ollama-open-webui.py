@@ -873,8 +873,8 @@ class ChatInterface:
         # ⚠️ IMPORTANT: DO NOT CHANGE THIS LOGIC - DeepSeek consistently causes 20s delays when blocked
         
         # Fast timeout for commonly blocked providers
-        blocked_providers = ["DeepSeek", "Claude", "OpenAI", "Cohere", "Mistral", "Perplexity", "Together", "Groq"]
-        blocked_domains = ["deepseek.com", "anthropic.com", "openai.com", "cohere.com", "mistral.ai", "perplexity.ai", "together.ai", "groq.com"]
+        blocked_providers = ["DeepSeek", "Claude", "OpenAI", "Cohere", "Mistral", "Perplexity", "Together", "Together AI", "Groq", "Hugging Face"]
+        blocked_domains = ["deepseek.com", "anthropic.com", "openai.com", "cohere.com", "mistral.ai", "perplexity.ai", "together.ai", "together.xyz", "groq.com", "huggingface.co"]
         
         # Google Gemini gets normal timeout (it's usually allowed)
         if provider_name == "Google Gemini" or "google" in url.lower() or "gemini" in url.lower():
