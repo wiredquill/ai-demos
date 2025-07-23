@@ -14,15 +14,31 @@ from unittest.mock import MagicMock, Mock, patch
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Mock gradio and openlit before importing
-sys.modules["gradio"] = MagicMock()
+gradio_mock = MagicMock()
+gradio_mock.HTML = MagicMock()
+gradio_mock.Button = MagicMock()
+gradio_mock.Dropdown = MagicMock()
+gradio_mock.Column = MagicMock()
+gradio_mock.Row = MagicMock()
+gradio_mock.Textbox = MagicMock()
+gradio_mock.ChatInterface = MagicMock()
+gradio_mock.Blocks = MagicMock()
+gradio_mock.State = MagicMock()
+sys.modules["gradio"] = gradio_mock
 sys.modules["openlit"] = MagicMock()
 
 # Import main app as module
 import importlib.util
-spec = importlib.util.spec_from_file_location("main_app", Path(__file__).parent.parent / "python-ollama-open-webui.py")
-main_app = importlib.util.module_from_spec(spec)
-sys.modules["main_app"] = main_app
-spec.loader.exec_module(main_app)
+try:
+    spec = importlib.util.spec_from_file_location("main_app", Path(__file__).parent.parent / "python-ollama-open-webui.py")
+    main_app = importlib.util.module_from_spec(spec)
+    sys.modules["main_app"] = main_app
+    spec.loader.exec_module(main_app)
+except Exception as e:
+    print(f"Failed to import main app: {e}")
+    import traceback
+    traceback.print_exc()
+    raise
 
 
 class TestChatInterface(unittest.TestCase):
