@@ -12,13 +12,13 @@ LABEL description="SUSE version of the application with Ollama."
 # Set the working directory
 WORKDIR /app
 
-# Install system dependencies that might be needed by Python packages or Ollama
+# Install system dependencies including kubectl for ConfigMap manipulation
 # ca-certificates is good practice for HTTPS calls
-# gzip and tar for potentially decompressing Ollama if downloaded as tarball
-# curl for downloading Ollama
-# sudo is often needed by the ollama install script
+# curl for downloading kubectl and other tools
 RUN zypper refresh && \
     zypper install -y --no-confirm ca-certificates gzip tar curl sudo && \
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
+    chmod +x kubectl && mv kubectl /usr/local/bin/ && \
     zypper clean -a
 
 # Copy application requirements first to leverage Docker cache

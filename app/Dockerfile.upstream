@@ -1,8 +1,10 @@
 # Start with the official Debian-based slim Python image
 FROM python:3.11-slim
 
-# Install bash and git, which are useful for debugging and dependencies
-RUN apt-get update && apt-get install -y bash git --no-install-recommends \
+# Install bash, git, curl for dependencies and kubectl for ConfigMap manipulation
+RUN apt-get update && apt-get install -y bash git curl --no-install-recommends \
+    && curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" \
+    && chmod +x kubectl && mv kubectl /usr/local/bin/ \
     && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory in the container
