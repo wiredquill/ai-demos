@@ -868,9 +868,17 @@ class ChatInterface:
             country = provider_info.get("country", "🌍 Unknown")
             flag = provider_info.get("flag", "🌍")
 
+        # FIXED: Special timeout handling for problematic providers
+        # DeepSeek and other Chinese services are often blocked, use very short timeout
+        if provider_name == "DeepSeek" or "deepseek" in url.lower() or "api.deepseek.com" in url:
+            provider_timeout = 1  # 1 second timeout for DeepSeek to prevent 20s delays
+            logger.info(f"Using short timeout (1s) for potentially blocked provider: {provider_name}")
+        else:
+            provider_timeout = self.connection_timeout
+
         try:
             headers = {"User-Agent": "Mozilla/5.0"}
-            response = requests.get(url, timeout=self.connection_timeout, headers=headers)  # Configurable timeout
+            response = requests.get(url, timeout=provider_timeout, headers=headers)  # Provider-specific timeout
             response_time = int((time.time() - start_time) * 1000)
             # Show as online if we get ANY response (even 403, 404, etc.)
             status = "🟢"
@@ -887,8 +895,8 @@ class ChatInterface:
             }
         except Exception as e:
             response_time = int((time.time() - start_time) * 1000)
-            # Cap response time at configured timeout for timeout cases
-            timeout_ms = self.connection_timeout * 1000
+            # Cap response time at provider-specific timeout for timeout cases
+            timeout_ms = provider_timeout * 1000
             if response_time > timeout_ms:
                 response_time = timeout_ms
             logger.warning(
