@@ -12,7 +12,17 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 # Mock gradio and openlit before any imports
-sys.modules["gradio"] = MagicMock()
+gradio_mock = MagicMock()
+gradio_mock.HTML = MagicMock()
+gradio_mock.Button = MagicMock()
+gradio_mock.Dropdown = MagicMock()
+gradio_mock.Column = MagicMock()
+gradio_mock.Row = MagicMock()
+gradio_mock.Textbox = MagicMock()
+gradio_mock.ChatInterface = MagicMock()
+gradio_mock.Blocks = MagicMock()
+gradio_mock.State = MagicMock()
+sys.modules["gradio"] = gradio_mock
 sys.modules["openlit"] = MagicMock()
 
 
