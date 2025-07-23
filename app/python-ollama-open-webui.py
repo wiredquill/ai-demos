@@ -871,9 +871,20 @@ class ChatInterface:
         # FIXED: Special timeout handling for problematic providers
         # DeepSeek and other Chinese services are often blocked, use very short timeout
         # ⚠️ IMPORTANT: DO NOT CHANGE THIS LOGIC - DeepSeek consistently causes 20s delays when blocked
-        if provider_name == "DeepSeek" or "deepseek" in url.lower() or "api.deepseek.com" in url:
-            provider_timeout = 1  # 1 second timeout for DeepSeek to prevent 20s delays
-            logger.info(f"Using short timeout (1s) for potentially blocked provider: {provider_name}")
+        
+        # Fast timeout for commonly blocked providers
+        blocked_providers = ["DeepSeek", "Claude", "OpenAI", "Cohere", "Mistral", "Perplexity", "Together", "Groq"]
+        blocked_domains = ["deepseek.com", "anthropic.com", "openai.com", "cohere.com", "mistral.ai", "perplexity.ai", "together.ai", "groq.com"]
+        
+        # Google Gemini gets normal timeout (it's usually allowed)
+        if provider_name == "Google Gemini" or "google" in url.lower() or "gemini" in url.lower():
+            provider_timeout = self.connection_timeout  # Normal timeout for Google
+            logger.info(f"Using normal timeout ({self.connection_timeout}s) for allowed provider: {provider_name}")
+        # Fast timeout for commonly blocked providers to prevent delays
+        elif (provider_name in blocked_providers or 
+              any(domain in url.lower() for domain in blocked_domains)):
+            provider_timeout = 1  # 1 second timeout for potentially blocked providers
+            logger.info(f"Using fast timeout (1s) for potentially blocked provider: {provider_name}")
         else:
             provider_timeout = self.connection_timeout
 
@@ -921,7 +932,8 @@ class ChatInterface:
         logger.info("Updating all provider statuses.")
         updated_status = {}
         start_time = time.time()
-        max_total_time = 10  # Allow 10 seconds total for all parallel provider checks
+        # Optimized timeout: Most providers use 1s timeout, so 3s total is enough
+        max_total_time = 3  # Allow 3 seconds total for all parallel provider checks (was 10s)
 
         try:
             providers = self.config.get("providers", {})
