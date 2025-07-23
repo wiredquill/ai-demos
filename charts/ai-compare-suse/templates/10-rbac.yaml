@@ -15,7 +15,7 @@ rules:
 - apiGroups: [""]
   resources: ["configmaps"]
   verbs: ["get", "list", "create", "update", "patch"]
-  resourceNames: ["ai-compare-config"]
+  resourceNames: ["ai-compare-config", "{{ include "ai-compare-suse.fullname" . }}-demo-config"]
 - apiGroups: [""]
   resources: ["configmaps"]
   verbs: ["create"]
