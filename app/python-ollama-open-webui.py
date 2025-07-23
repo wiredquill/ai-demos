@@ -4,25 +4,17 @@ import os
 import queue
 import subprocess
 import threading
+
 # GitHub Actions test rebuild
 import time
 from typing import Any, Dict, List
 
 import gradio as gr
 import requests
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory
 from werkzeug.serving import make_server
 
 # Build trigger comment - pipeline model fix deployment
-
-# --- OpenLit Observability Integration ---
-try:
-    import openlit
-
-    OPENLIT_AVAILABLE = True
-except ImportError:
-    OPENLIT_AVAILABLE = False
-    logger.warning("OpenLit not available - observability disabled")
 
 # --- Logging Configuration ---
 logging.basicConfig(
@@ -33,11 +25,20 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 # --- End Logging Configuration ---
 
+# --- OpenLit Observability Integration ---
+try:
+    import openlit
+
+    OPENLIT_AVAILABLE = True
+except ImportError:
+    OPENLIT_AVAILABLE = False
+    logger.warning("OpenLit not available - observability disabled")
+
 
 # --- HTTP API Server for Observable Traffic ---
 class ObservableAPIServer:
     """Flask-based HTTP API server for generating observable traffic patterns."""
-    
+
     def __init__(self, chat_interface, port=8080):
         self.chat_interface = chat_interface
         self.port = port
@@ -45,185 +46,239 @@ class ObservableAPIServer:
         self.server = None
         self.server_thread = None
         self.setup_routes()
-        
+
     def setup_routes(self):
         """Setup HTTP API routes for observable traffic."""
-        
-        @self.app.route('/health', methods=['GET', 'OPTIONS'])
+
+        @self.app.route("/health", methods=["GET", "OPTIONS"])
         def health_check():
             """Health check endpoint - returns 500 when availability demo is active."""
             try:
-                if hasattr(self.chat_interface, 'service_health_failure') and self.chat_interface.service_health_failure:
-                    logger.error("Health check failed - SERVICE_HEALTH_FAILURE=true (SUSE Observability pattern)")
-                    return jsonify({
-                        "status": "FAILING", 
-                        "error": "SERVICE_HEALTH_FAILURE=true",
-                        "timestamp": time.time()
-                    }), 500
-                    
+                if (
+                    hasattr(self.chat_interface, "service_health_failure")
+                    and self.chat_interface.service_health_failure
+                ):
+                    logger.error(
+                        "Health check failed - SERVICE_HEALTH_FAILURE=true (SUSE Observability pattern)"
+                    )
+                    return (
+                        jsonify(
+                            {
+                                "status": "FAILING",
+                                "error": "SERVICE_HEALTH_FAILURE=true",
+                                "timestamp": time.time(),
+                            }
+                        ),
+                        500,
+                    )
+
                 logger.info("Health check successful - service operational")
-                return jsonify({
-                    "status": "HEALTHY", 
-                    "timestamp": time.time(),
-                    "uptime": time.time()
-                }), 200
-                
+                return (
+                    jsonify(
+                        {
+                            "status": "HEALTHY",
+                            "timestamp": time.time(),
+                            "uptime": time.time(),
+                        }
+                    ),
+                    200,
+                )
+
             except Exception as e:
                 logger.error(f"Health check endpoint error: {e}")
                 return jsonify({"status": "ERROR", "error": str(e)}), 500
-        
-        @self.app.route('/api/test', methods=['GET', 'OPTIONS'])
+
+        @self.app.route("/api/test", methods=["GET", "OPTIONS"])
         def test_endpoint():
             """Simple test endpoint for debugging API routing."""
             logger.info("Test endpoint accessed successfully")
-            return jsonify({
-                "message": "API routing is working!",
-                "timestamp": time.time(),
-                "service_health_failure": getattr(self.chat_interface, 'service_health_failure', False)
-            }), 200
-        
-        @self.app.route('/api/chat', methods=['POST', 'OPTIONS'])
+            return (
+                jsonify(
+                    {
+                        "message": "API routing is working!",
+                        "timestamp": time.time(),
+                        "service_health_failure": getattr(
+                            self.chat_interface, "service_health_failure", False
+                        ),
+                    }
+                ),
+                200,
+            )
+
+        @self.app.route("/api/chat", methods=["POST", "OPTIONS"])
         def chat_completion():
             """Chat completion endpoint for frontend communication."""
             try:
-                if hasattr(self.chat_interface, 'service_health_failure') and self.chat_interface.service_health_failure:
-                    logger.error("Chat API failed - SERVICE_HEALTH_FAILURE=true (SUSE Observability pattern)")
-                    return jsonify({
-                        "error": "Service degraded - health check failure",
-                        "status": "service_failure",
-                        "timestamp": time.time()
-                    }), 500
-                
+                if (
+                    hasattr(self.chat_interface, "service_health_failure")
+                    and self.chat_interface.service_health_failure
+                ):
+                    logger.error(
+                        "Chat API failed - SERVICE_HEALTH_FAILURE=true (SUSE Observability pattern)"
+                    )
+                    return (
+                        jsonify(
+                            {
+                                "error": "Service degraded - health check failure",
+                                "status": "service_failure",
+                                "timestamp": time.time(),
+                            }
+                        ),
+                        500,
+                    )
+
                 data = request.get_json()
-                if not data or 'message' not in data:
+                if not data or "message" not in data:
                     logger.warning("Chat API - missing message in request")
                     return jsonify({"error": "Missing 'message' in request body"}), 400
-                
-                message = data['message']
-                model = data.get('model', 'tinyllama:latest')
-                
-                logger.info(f"Chat API request - message: '{message[:50]}...', model: {model}")
-                
+
+                message = data["message"]
+                model = data.get("model", "tinyllama:latest")
+
+                logger.info(
+                    f"Chat API request - message: '{message[:50]}...', model: {model}"
+                )
+
                 # Get responses from both services
                 messages = [{"role": "user", "content": message}]
-                
+
                 # Ollama response
-                logger.info(f"Requesting Ollama response from {self.chat_interface.ollama_base_url}")
+                logger.info(
+                    f"Requesting Ollama response from {self.chat_interface.ollama_base_url}"
+                )
                 try:
-                    ollama_response = self.chat_interface.chat_with_ollama(messages, model)
+                    ollama_response = self.chat_interface.chat_with_ollama(
+                        messages, model
+                    )
                     logger.info(f"Ollama response received: {ollama_response[:100]}...")
                 except Exception as e:
                     logger.error(f"Ollama request failed: {e}")
                     ollama_response = f"Ollama Error: {str(e)}"
-                
-                # Open WebUI response  
-                logger.info(f"Requesting Open WebUI response from {self.chat_interface.open_webui_base_url}")
+
+                # Open WebUI response
+                logger.info(
+                    f"Requesting Open WebUI response from {self.chat_interface.open_webui_base_url}"
+                )
                 try:
-                    webui_response = self.chat_interface.chat_with_open_webui(messages, model)
-                    logger.info(f"Open WebUI response received: {webui_response[:100]}...")
+                    webui_response = self.chat_interface.chat_with_open_webui(
+                        messages, model
+                    )
+                    logger.info(
+                        f"Open WebUI response received: {webui_response[:100]}..."
+                    )
                 except Exception as e:
                     logger.error(f"Open WebUI request failed: {e}")
                     webui_response = f"Open WebUI Error: {str(e)}"
-                
+
                 result = {
                     "ollama_response": ollama_response,
                     "webui_response": webui_response,
                     "status": "success",
                     "timestamp": time.time(),
-                    "model": model
+                    "model": model,
                 }
-                
+
                 logger.info("Chat API request completed successfully")
                 return jsonify(result), 200
-                
+
             except Exception as e:
                 import traceback
+
                 logger.error(f"Chat API endpoint error: {e}")
                 logger.error(f"Chat API traceback: {traceback.format_exc()}")
-                return jsonify({
-                    "error": str(e),
-                    "status": "error",
-                    "timestamp": time.time(),
-                    "details": "Check server logs for full traceback"
-                }), 500
-        
-        @self.app.route('/api/availability-demo/toggle', methods=['POST', 'OPTIONS'])
+                return (
+                    jsonify(
+                        {
+                            "error": str(e),
+                            "status": "error",
+                            "timestamp": time.time(),
+                            "details": "Check server logs for full traceback",
+                        }
+                    ),
+                    500,
+                )
+
+        @self.app.route("/api/availability-demo/toggle", methods=["POST", "OPTIONS"])
         def toggle_availability_demo():
             """Toggle availability demo state."""
             try:
                 _, message, status = self.chat_interface.run_availability_demo()
-                
+
                 result = {
                     "message": message,
                     "status": status,
                     "service_failure_active": self.chat_interface.service_health_failure,
-                    "timestamp": time.time()
+                    "timestamp": time.time(),
                 }
-                
-                logger.info(f"Availability demo toggled - failure active: {self.chat_interface.service_health_failure}")
+
+                logger.info(
+                    f"Availability demo toggled - failure active: {self.chat_interface.service_health_failure}"
+                )
                 return jsonify(result), 200
-                
+
             except Exception as e:
                 logger.error(f"Availability demo API error: {e}")
                 return jsonify({"error": str(e), "status": "error"}), 500
-        
-        @self.app.route('/api/data-leak-demo', methods=['POST', 'OPTIONS'])
+
+        @self.app.route("/api/data-leak-demo", methods=["POST", "OPTIONS"])
         def run_data_leak_demo():
             """Run data leak demo."""
             try:
                 _, message, status = self.chat_interface.run_data_leak_demo()
-                
+
                 result = {
                     "message": message,
                     "status": status,
                     "data_types": ["credit_card", "ssn"],
-                    "timestamp": time.time()
+                    "timestamp": time.time(),
                 }
-                
+
                 logger.info("Data leak demo executed via API")
                 return jsonify(result), 200
-                
+
             except Exception as e:
                 logger.error(f"Data leak demo API error: {e}")
                 return jsonify({"error": str(e), "status": "error"}), 500
-        
-        @self.app.route('/api/metrics', methods=['GET', 'OPTIONS'])
+
+        @self.app.route("/api/metrics", methods=["GET", "OPTIONS"])
         def get_metrics():
             """Get application metrics for monitoring."""
             try:
                 import psutil
-                
+
                 metrics = {
                     "cpu_percent": psutil.cpu_percent(),
                     "memory_percent": psutil.virtual_memory().percent,
-                    "service_health_failure": getattr(self.chat_interface, 'service_health_failure', False),
+                    "service_health_failure": getattr(
+                        self.chat_interface, "service_health_failure", False
+                    ),
                     "timestamp": time.time(),
-                    "uptime": time.time()
+                    "uptime": time.time(),
                 }
-                
+
                 return jsonify(metrics), 200
-                
+
             except Exception as e:
                 logger.error(f"Metrics API error: {e}")
                 return jsonify({"error": str(e)}), 500
 
         # Frontend serving routes
-        @self.app.route('/', methods=['GET', 'OPTIONS'])
+        @self.app.route("/", methods=["GET", "OPTIONS"])
         def serve_frontend():
             """Serve the main frontend HTML file."""
             try:
-                return send_from_directory('frontend', 'index.html')
+                return send_from_directory("frontend", "index.html")
             except Exception as e:
                 logger.error(f"Error serving frontend index: {e}")
                 return f"Frontend error: {e}", 500
 
-        @self.app.route('/<path:filename>', methods=['GET', 'OPTIONS'])
+        @self.app.route("/<path:filename>", methods=["GET", "OPTIONS"])
         def serve_frontend_files(filename):
             """Serve frontend static files (CSS, JS, etc.)."""
             try:
                 # Only serve files from frontend directory
-                if filename in ['style.css', 'script.js', 'nginx.conf']:
-                    return send_from_directory('frontend', filename)
+                if filename in ["style.css", "script.js", "nginx.conf"]:
+                    return send_from_directory("frontend", filename)
                 else:
                     return "File not found", 404
             except Exception as e:
@@ -233,22 +288,28 @@ class ObservableAPIServer:
         # Add CORS headers to all responses
         @self.app.after_request
         def after_request(response):
-            response.headers.add('Access-Control-Allow-Origin', '*')
-            response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-            response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            response.headers.add(
+                "Access-Control-Allow-Headers", "Content-Type,Authorization"
+            )
+            response.headers.add(
+                "Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS"
+            )
             return response
-    
+
     def start_server(self):
         """Start the HTTP API server in background thread."""
         try:
-            self.server = make_server('0.0.0.0', self.port, self.app)
-            self.server_thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+            self.server = make_server("0.0.0.0", self.port, self.app)
+            self.server_thread = threading.Thread(
+                target=self.server.serve_forever, daemon=True
+            )
             self.server_thread.start()
             logger.info(f"Observable HTTP API server started on port {self.port}")
-            
+
         except Exception as e:
             logger.error(f"Failed to start HTTP API server: {e}")
-    
+
     def stop_server(self):
         """Stop the HTTP API server."""
         if self.server:
@@ -279,35 +340,45 @@ class ChatInterface:
             "Groq": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
             "Hugging Face": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
         }
-        
+
         self.provider_status = {}
         # Always initialize all 10 providers first
         for name, info in default_providers.items():
             self.provider_status[name] = {
-                "status": "🔴", 
+                "status": "🔴",
                 "response_time": "---ms",
                 "country": info["country"],
                 "flag": info["flag"],
                 "status_code": "Loading",
             }
-            
+
         # Override with any configured providers (but keep all 10)
         for name, provider_info in self.config.get("providers", {}).items():
             if name in self.provider_status:  # Only update if it's one of our 10
                 if isinstance(provider_info, dict):
-                    self.provider_status[name]["country"] = provider_info.get("country", self.provider_status[name]["country"])
-                    self.provider_status[name]["flag"] = provider_info.get("flag", self.provider_status[name]["flag"])
+                    self.provider_status[name]["country"] = provider_info.get(
+                        "country", self.provider_status[name]["country"]
+                    )
+                    self.provider_status[name]["flag"] = provider_info.get(
+                        "flag", self.provider_status[name]["flag"]
+                    )
 
         # --- MODIFIED: Load URLs from environment variables for K8s ---
         self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
         self.open_webui_base_url = os.getenv("OPEN_WEBUI_BASE_URL")
         self.pipelines_base_url = os.getenv("PIPELINES_BASE_URL")
         self.pipeline_api_key = os.getenv("PIPELINE_API_KEY")
-        
+
         # Configurable timeout settings optimized for SUSE security policies
-        self.connection_timeout = int(os.getenv("CONNECTION_TIMEOUT", "3"))  # Very fast connection timeout for provider checks
-        self.request_timeout = int(os.getenv("REQUEST_TIMEOUT", "8"))        # Quick request timeout  
-        self.inference_timeout = int(os.getenv("INFERENCE_TIMEOUT", "30"))   # Reduced from 120s for network policies
+        self.connection_timeout = int(
+            os.getenv("CONNECTION_TIMEOUT", "3")
+        )  # Very fast connection timeout for provider checks
+        self.request_timeout = int(
+            os.getenv("REQUEST_TIMEOUT", "8")
+        )  # Quick request timeout
+        self.inference_timeout = int(
+            os.getenv("INFERENCE_TIMEOUT", "30")
+        )  # Reduced from 120s for network policies
 
         # Don't add Open WebUI to the provider status list - keep it separate for functionality
 
@@ -360,7 +431,7 @@ class ChatInterface:
 
         # --- OpenLit Observability Initialization ---
         self._initialize_observability()
-        
+
         # --- HTTP API Server for Observable Traffic ---
         self.api_server = None
         self._initialize_api_server()
@@ -480,21 +551,25 @@ class ChatInterface:
             )
         except Exception as e:
             logger.error(f"Failed to initialize OpenLit observability: {e}")
-    
+
     def _initialize_api_server(self):
         """Initialize HTTP API server if enabled."""
         api_enabled = os.getenv("HTTP_API_ENABLED", "true").lower() == "true"
         api_port = int(os.getenv("HTTP_API_PORT", "8080"))
-        
+
         if not api_enabled:
-            logger.info("HTTP API server disabled via HTTP_API_ENABLED environment variable")
+            logger.info(
+                "HTTP API server disabled via HTTP_API_ENABLED environment variable"
+            )
             return
-            
+
         try:
             self.api_server = ObservableAPIServer(self, port=api_port)
             self.api_server.start_server()
-            logger.info(f"HTTP API server initialized on port {api_port} for observable traffic generation")
-            
+            logger.info(
+                f"HTTP API server initialized on port {api_port} for observable traffic generation"
+            )
+
         except Exception as e:
             logger.error(f"Failed to initialize HTTP API server: {e}")
             self.api_server = None
@@ -503,10 +578,10 @@ class ChatInterface:
         """Read configuration from mounted ConfigMap for demo purposes."""
         demo_config_path = os.getenv("DEMO_CONFIG_PATH", "/app/demo-config")
         config_file = os.path.join(demo_config_path, key)
-        
+
         try:
             if os.path.exists(config_file):
-                with open(config_file, 'r') as f:
+                with open(config_file, "r") as f:
                     value = f.read().strip()
                     logger.info(f"Read demo config '{key}': {value}")
                     return value
@@ -516,113 +591,197 @@ class ChatInterface:
         except Exception as e:
             logger.error(f"Failed to read demo config '{key}': {e}")
             return None
-    
+
     def _simulate_configmap_failure(self) -> bool:
         """Create actual ConfigMap failure by changing the key that breaks the app."""
         try:
-            import subprocess
             import os
-            
+            import subprocess
+
             # Get namespace and ConfigMap name from environment or use defaults
-            namespace = os.getenv('KUBERNETES_NAMESPACE', 'ai-compare')
-            configmap_name = os.getenv('DEMO_CONFIGMAP_NAME', 'ai-compare-demo-config')
-            
+            namespace = os.getenv("KUBERNETES_NAMESPACE", "ai-compare")
+            configmap_name = os.getenv("DEMO_CONFIGMAP_NAME", "ai-compare-demo-config")
+
             # Verify ConfigMap exists
             try:
-                result = subprocess.run([
-                    'kubectl', 'get', 'configmap', configmap_name, '-n', namespace, 
-                    '-o', 'name'
-                ], capture_output=True, text=True, timeout=10)
-                
+                result = subprocess.run(
+                    [
+                        "kubectl",
+                        "get",
+                        "configmap",
+                        configmap_name,
+                        "-n",
+                        namespace,
+                        "-o",
+                        "name",
+                    ],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+
                 if result.returncode != 0:
-                    logger.error(f"ConfigMap {configmap_name} not found in namespace {namespace}")
+                    logger.error(
+                        f"ConfigMap {configmap_name} not found in namespace {namespace}"
+                    )
                     return False
                 else:
                     logger.info(f"Found demo ConfigMap: {configmap_name}")
             except Exception as e:
                 logger.error(f"Failed to verify ConfigMap: {e}")
                 return False
-            
+
             # Step 1: Remove the working key 'models-latest'
-            logger.info(f"Removing working ConfigMap key 'models-latest' from {configmap_name}")
-            result1 = subprocess.run([
-                'kubectl', 'patch', 'configmap', configmap_name, '-n', namespace,
-                '--type=json', 
-                '-p=[{"op": "remove", "path": "/data/models-latest"}]'
-            ], capture_output=True, text=True, timeout=15)
-            
+            logger.info(
+                f"Removing working ConfigMap key 'models-latest' from {configmap_name}"
+            )
+            result1 = subprocess.run(
+                [
+                    "kubectl",
+                    "patch",
+                    "configmap",
+                    configmap_name,
+                    "-n",
+                    namespace,
+                    "--type=json",
+                    '-p=[{"op": "remove", "path": "/data/models-latest"}]',
+                ],
+                capture_output=True,
+                text=True,
+                timeout=15,
+            )
+
             # Step 2: Add the broken key 'models_latest' (underscore breaks the app)
-            logger.info(f"Adding broken ConfigMap key 'models_latest' to {configmap_name}")
-            result2 = subprocess.run([
-                'kubectl', 'patch', 'configmap', configmap_name, '-n', namespace,
-                '--type=json',
-                '-p=[{"op": "add", "path": "/data/models_latest", "value": "broken-model:invalid"}]'
-            ], capture_output=True, text=True, timeout=15)
-            
+            logger.info(
+                f"Adding broken ConfigMap key 'models_latest' to {configmap_name}"
+            )
+            result2 = subprocess.run(
+                [
+                    "kubectl",
+                    "patch",
+                    "configmap",
+                    configmap_name,
+                    "-n",
+                    namespace,
+                    "--type=json",
+                    '-p=[{"op": "add", "path": "/data/models_latest", "value": "broken-model:invalid"}]',
+                ],
+                capture_output=True,
+                text=True,
+                timeout=15,
+            )
+
             if result1.returncode == 0 and result2.returncode == 0:
-                logger.info("✅ ConfigMap manipulation successful - app should start failing!")
-                logger.info("🔧 To fix externally: kubectl patch configmap <name> -n <namespace> --type=json -p='[{\"op\": \"remove\", \"path\": \"/data/models_latest\"}, {\"op\": \"add\", \"path\": \"/data/models-latest\", \"value\": \"tinyllama:latest,llama2:latest\"}]'")
+                logger.info(
+                    "✅ ConfigMap manipulation successful - app should start failing!"
+                )
+                logger.info(
+                    '🔧 To fix externally: kubectl patch configmap <name> -n <namespace> --type=json -p=\'[{"op": "remove", "path": "/data/models_latest"}, {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest,llama2:latest"}]\''
+                )
                 return True
             else:
-                logger.error(f"ConfigMap patch failed: {result1.stderr} {result2.stderr}")
+                logger.error(
+                    f"ConfigMap patch failed: {result1.stderr} {result2.stderr}"
+                )
                 return False
-                
+
         except subprocess.TimeoutExpired:
             logger.error("kubectl command timed out - ConfigMap manipulation failed")
             return False
         except Exception as e:
             logger.error(f"ConfigMap failure simulation error: {e}")
             return False
-    
+
     def _restore_configmap_health(self) -> bool:
         """Restore ConfigMap health by fixing the broken configuration."""
         try:
-            import subprocess
             import os
-            
+            import subprocess
+
             # Get namespace and ConfigMap name from environment or use defaults
-            namespace = os.getenv('KUBERNETES_NAMESPACE', 'ai-compare')
-            configmap_name = os.getenv('DEMO_CONFIGMAP_NAME', 'ai-compare-demo-config')
-            
+            namespace = os.getenv("KUBERNETES_NAMESPACE", "ai-compare")
+            configmap_name = os.getenv("DEMO_CONFIGMAP_NAME", "ai-compare-demo-config")
+
             # Verify ConfigMap exists
             try:
-                result = subprocess.run([
-                    'kubectl', 'get', 'configmap', configmap_name, '-n', namespace, 
-                    '-o', 'name'
-                ], capture_output=True, text=True, timeout=10)
-                
+                result = subprocess.run(
+                    [
+                        "kubectl",
+                        "get",
+                        "configmap",
+                        configmap_name,
+                        "-n",
+                        namespace,
+                        "-o",
+                        "name",
+                    ],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+
                 if result.returncode != 0:
-                    logger.error(f"ConfigMap {configmap_name} not found in namespace {namespace}")
+                    logger.error(
+                        f"ConfigMap {configmap_name} not found in namespace {namespace}"
+                    )
                     return False
                 else:
                     logger.info(f"Found demo ConfigMap: {configmap_name}")
             except Exception as e:
                 logger.error(f"Failed to verify ConfigMap: {e}")
                 return False
-            
+
             # Step 1: Remove the broken key 'models_latest'
-            logger.info(f"Removing broken ConfigMap key 'models_latest' from {configmap_name}")
-            result1 = subprocess.run([
-                'kubectl', 'patch', 'configmap', configmap_name, '-n', namespace,
-                '--type=json',
-                '-p=[{"op": "remove", "path": "/data/models_latest"}]'
-            ], capture_output=True, text=True, timeout=15)
-            
+            logger.info(
+                f"Removing broken ConfigMap key 'models_latest' from {configmap_name}"
+            )
+            result1 = subprocess.run(
+                [
+                    "kubectl",
+                    "patch",
+                    "configmap",
+                    configmap_name,
+                    "-n",
+                    namespace,
+                    "--type=json",
+                    '-p=[{"op": "remove", "path": "/data/models_latest"}]',
+                ],
+                capture_output=True,
+                text=True,
+                timeout=15,
+            )
+
             # Step 2: Restore the working key 'models-latest'
-            logger.info(f"Restoring working ConfigMap key 'models-latest' to {configmap_name}")
-            result2 = subprocess.run([
-                'kubectl', 'patch', 'configmap', configmap_name, '-n', namespace,
-                '--type=json',
-                '-p=[{"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest,llama2:latest"}]'
-            ], capture_output=True, text=True, timeout=15)
-            
+            logger.info(
+                f"Restoring working ConfigMap key 'models-latest' to {configmap_name}"
+            )
+            result2 = subprocess.run(
+                [
+                    "kubectl",
+                    "patch",
+                    "configmap",
+                    configmap_name,
+                    "-n",
+                    namespace,
+                    "--type=json",
+                    '-p=[{"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest,llama2:latest"}]',
+                ],
+                capture_output=True,
+                text=True,
+                timeout=15,
+            )
+
             if result1.returncode == 0 and result2.returncode == 0:
-                logger.info("✅ ConfigMap restoration successful - app should start working!")
+                logger.info(
+                    "✅ ConfigMap restoration successful - app should start working!"
+                )
                 return True
             else:
-                logger.error(f"ConfigMap restoration failed: {result1.stderr} {result2.stderr}")
+                logger.error(
+                    f"ConfigMap restoration failed: {result1.stderr} {result2.stderr}"
+                )
                 return False
-                
+
         except subprocess.TimeoutExpired:
             logger.error("kubectl command timed out - ConfigMap restoration failed")
             return False
@@ -636,15 +795,21 @@ class ChatInterface:
         logger.info(
             f"Attempting to fetch Ollama models from {self.ollama_base_url}/api/tags"
         )
-        
+
         # Check demo configuration first - if it's broken, fail immediately
         demo_models = self._read_demo_config("models-latest")
         if demo_models and ("broken-model" in demo_models or "invalid" in demo_models):
-            logger.error(f"ConfigMap contains invalid model configuration: {demo_models}")
-            raise Exception("ConfigMap model configuration is invalid - service failure simulation")
-        
+            logger.error(
+                f"ConfigMap contains invalid model configuration: {demo_models}"
+            )
+            raise Exception(
+                "ConfigMap model configuration is invalid - service failure simulation"
+            )
+
         try:
-            response = requests.get(f"{self.ollama_base_url}/api/tags", timeout=self.connection_timeout)
+            response = requests.get(
+                f"{self.ollama_base_url}/api/tags", timeout=self.connection_timeout
+            )
             response.raise_for_status()
             data = response.json()
             models = [model["name"] for model in data.get("models", [])]
@@ -664,7 +829,9 @@ class ChatInterface:
         try:
             payload = {"model": model, "messages": messages, "stream": False}
             response = requests.post(
-                f"{self.ollama_base_url}/api/chat", json=payload, timeout=self.inference_timeout
+                f"{self.ollama_base_url}/api/chat",
+                json=payload,
+                timeout=self.inference_timeout,
             )
             response.raise_for_status()
             response_data = response.json()
@@ -755,7 +922,10 @@ class ChatInterface:
             logger.info(f"Headers: {dict(headers)}")
             try:
                 response = requests.post(
-                    api_url, json=payload, headers=headers, timeout=self.inference_timeout
+                    api_url,
+                    json=payload,
+                    headers=headers,
+                    timeout=self.inference_timeout,
                 )
                 logger.info(f"Initial response status: {response.status_code}")
                 if response.status_code == 200:
@@ -810,7 +980,10 @@ class ChatInterface:
             )
             try:
                 response = requests.post(
-                    api_url, json=payload, headers=headers, timeout=self.inference_timeout
+                    api_url,
+                    json=payload,
+                    headers=headers,
+                    timeout=self.inference_timeout,
                 )
                 if response.status_code == 200:
                     response_data = response.json()
@@ -874,26 +1047,59 @@ class ChatInterface:
         # FIXED: Special timeout handling for problematic providers
         # DeepSeek and other Chinese services are often blocked, use very short timeout
         # ⚠️ IMPORTANT: DO NOT CHANGE THIS LOGIC - DeepSeek consistently causes 20s delays when blocked
-        
+
         # Fast timeout for commonly blocked providers
-        blocked_providers = ["DeepSeek", "Claude", "OpenAI", "Cohere", "Mistral", "Perplexity", "Together", "Together AI", "Groq", "Hugging Face"]
-        blocked_domains = ["deepseek.com", "anthropic.com", "openai.com", "cohere.com", "mistral.ai", "perplexity.ai", "together.ai", "together.xyz", "groq.com", "huggingface.co"]
-        
+        blocked_providers = [
+            "DeepSeek",
+            "Claude",
+            "OpenAI",
+            "Cohere",
+            "Mistral",
+            "Perplexity",
+            "Together",
+            "Together AI",
+            "Groq",
+            "Hugging Face",
+        ]
+        blocked_domains = [
+            "deepseek.com",
+            "anthropic.com",
+            "openai.com",
+            "cohere.com",
+            "mistral.ai",
+            "perplexity.ai",
+            "together.ai",
+            "together.xyz",
+            "groq.com",
+            "huggingface.co",
+        ]
+
         # Google Gemini gets normal timeout (it's usually allowed)
-        if provider_name == "Google Gemini" or "google" in url.lower() or "gemini" in url.lower():
+        if (
+            provider_name == "Google Gemini"
+            or "google" in url.lower()
+            or "gemini" in url.lower()
+        ):
             provider_timeout = self.connection_timeout  # Normal timeout for Google
-            logger.info(f"Using normal timeout ({self.connection_timeout}s) for allowed provider: {provider_name}")
+            logger.info(
+                f"Using normal timeout ({self.connection_timeout}s) for allowed provider: {provider_name}"
+            )
         # Fast timeout for commonly blocked providers to prevent delays
-        elif (provider_name in blocked_providers or 
-              any(domain in url.lower() for domain in blocked_domains)):
+        elif provider_name in blocked_providers or any(
+            domain in url.lower() for domain in blocked_domains
+        ):
             provider_timeout = 1  # 1 second timeout for potentially blocked providers
-            logger.info(f"Using fast timeout (1s) for potentially blocked provider: {provider_name}")
+            logger.info(
+                f"Using fast timeout (1s) for potentially blocked provider: {provider_name}"
+            )
         else:
             provider_timeout = self.connection_timeout
 
         try:
             headers = {"User-Agent": "Mozilla/5.0"}
-            response = requests.get(url, timeout=provider_timeout, headers=headers)  # Provider-specific timeout
+            response = requests.get(
+                url, timeout=provider_timeout, headers=headers
+            )  # Provider-specific timeout
             response_time = int((time.time() - start_time) * 1000)
             # Show as online if we get ANY response (even 403, 404, etc.)
             status = "🟢"
@@ -954,7 +1160,7 @@ class ChatInterface:
                     # Legacy string format - use defaults
                     country = "🌍 Unknown"
                     flag = "🌍"
-                
+
                 updated_status[name] = {
                     "status": "🔴",
                     "response_time": "---ms",
@@ -979,15 +1185,19 @@ class ChatInterface:
                     name = future_to_name[future]
                     try:
                         result = future.result()
-                        updated_status[name] = result  # This will overwrite the default failed status
+                        updated_status[name] = (
+                            result  # This will overwrite the default failed status
+                        )
                     except Exception as e:
                         logger.warning(f"Provider {name} check failed: {e}")
                         # Keep the default failed status but update error details
-                        updated_status[name].update({
-                            "response_time": "timeout",
-                            "status_code": "Error",
-                            "error": str(e),
-                        })
+                        updated_status[name].update(
+                            {
+                                "response_time": "timeout",
+                                "status_code": "Error",
+                                "error": str(e),
+                            }
+                        )
 
             # Ensure all 10 providers are always present - if any are missing, add them
             default_providers = {
@@ -1002,7 +1212,7 @@ class ChatInterface:
                 "Groq": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
                 "Hugging Face": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
             }
-            
+
             for name, info in default_providers.items():
                 if name not in updated_status:
                     updated_status[name] = {
@@ -1018,7 +1228,7 @@ class ChatInterface:
 
         except Exception as e:
             logger.warning(f"Provider status check failed: {e} - using partial results")
-            
+
         # CRITICAL: Always ensure all 10 providers are present regardless of any errors
         default_providers = {
             "OpenAI": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
@@ -1032,27 +1242,29 @@ class ChatInterface:
             "Groq": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
             "Hugging Face": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
         }
-        
+
         # Force all 10 providers to be present - overwrite if needed
         for name, info in default_providers.items():
             if name not in updated_status:
                 updated_status[name] = {
                     "status": "🔴",
-                    "response_time": "---ms", 
+                    "response_time": "---ms",
                     "country": info["country"],
                     "flag": info["flag"],
                     "status_code": "Error",
                     "error": "Status check failed",
                 }
-                
+
         # Final guarantee - if we still don't have exactly 10, force them
         if len(updated_status) != 10:
-            logger.warning(f"Provider count mismatch: expected 10, got {len(updated_status)}. Forcing all 10 providers.")
+            logger.warning(
+                f"Provider count mismatch: expected 10, got {len(updated_status)}. Forcing all 10 providers."
+            )
             for name, info in default_providers.items():
                 updated_status[name] = {
                     "status": "🔴",
                     "response_time": "---ms",
-                    "country": info["country"], 
+                    "country": info["country"],
                     "flag": info["flag"],
                     "status_code": "Forced",
                     "error": "Guaranteed display",
@@ -1060,7 +1272,9 @@ class ChatInterface:
 
         self.provider_status = updated_status
         total_time = time.time() - start_time
-        logger.info(f"Provider status check completed in {total_time:.1f}s - {len(updated_status)} providers (guaranteed 10)")
+        logger.info(
+            f"Provider status check completed in {total_time:.1f}s - {len(updated_status)} providers (guaranteed 10)"
+        )
         return updated_status
 
     def _authenticate_open_webui(self):
@@ -1072,7 +1286,9 @@ class ChatInterface:
 
             logger.info(f"Attempting authentication at: {auth_url}")
             logger.info(f"Auth payload: {auth_payload}")
-            response = requests.post(auth_url, json=auth_payload, timeout=self.request_timeout)
+            response = requests.post(
+                auth_url, json=auth_payload, timeout=self.request_timeout
+            )
             logger.info(f"Auth response status: {response.status_code}")
             logger.info(f"Auth response content: {response.text[:500]}")
 
@@ -1117,7 +1333,9 @@ class ChatInterface:
             try:
                 import requests
 
-                response = requests.get(f"{self.ollama_base_url}/api/tags", timeout=self.connection_timeout)
+                response = requests.get(
+                    f"{self.ollama_base_url}/api/tags", timeout=self.connection_timeout
+                )
                 if response.status_code == 200:
                     return {
                         "status": "HEALTHY",
@@ -1236,37 +1454,50 @@ class ChatInterface:
     def simulate_service_failure(self) -> tuple:
         """Simulates service failure using ConfigMap key manipulation for observable failures."""
         try:
-            logger.info("🔴 ACTIVATING Availability Demo - Manipulating ConfigMap to break app")
-            
+            logger.info(
+                "🔴 ACTIVATING Availability Demo - Manipulating ConfigMap to break app"
+            )
+
             # Try to manipulate ConfigMap to create real observable failure
             configmap_success = self._simulate_configmap_failure()
-            
+
             if configmap_success:
-                logger.info("✅ ConfigMap manipulation successful - App should start failing!")
+                logger.info(
+                    "✅ ConfigMap manipulation successful - App should start failing!"
+                )
                 # Update local state
                 self.service_health_failure = True
-                
+
                 # Generate immediate observable failures for SUSE Observability
-                logger.error("🚨 SERVICE_HEALTH_FAILURE=true - Service entering degraded state for SUSE Observability demo")
-                logger.error("💥 ConfigMap key 'models-latest' removed - Application configuration broken")
-                logger.error("📊 Expected observability patterns: HTTP 500 errors, health check failures, config errors")
-                
+                logger.error(
+                    "🚨 SERVICE_HEALTH_FAILURE=true - Service entering degraded state for SUSE Observability demo"
+                )
+                logger.error(
+                    "💥 ConfigMap key 'models-latest' removed - Application configuration broken"
+                )
+                logger.error(
+                    "📊 Expected observability patterns: HTTP 500 errors, health check failures, config errors"
+                )
+
                 return (
                     gr.Column(visible=False),
-                    "🔴 Availability Demo ACTIVATED!\n\n✅ ConfigMap manipulated - app should start failing\n📊 SUSE Observability should detect:\n• HTTP 500 error rate spike\n• Health check failures\n• Configuration errors\n\n🔧 To fix externally in Kubernetes:\nkubectl patch configmap <demo-config> -n <namespace> --type=json -p='[{\"op\": \"remove\", \"path\": \"/data/models_latest\"}, {\"op\": \"add\", \"path\": \"/data/models-latest\", \"value\": \"tinyllama:latest,llama2:latest\"}]'",
-                    "warning"
+                    '🔴 Availability Demo ACTIVATED!\n\n✅ ConfigMap manipulated - app should start failing\n📊 SUSE Observability should detect:\n• HTTP 500 error rate spike\n• Health check failures\n• Configuration errors\n\n🔧 To fix externally in Kubernetes:\nkubectl patch configmap <demo-config> -n <namespace> --type=json -p=\'[{"op": "remove", "path": "/data/models_latest"}, {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest,llama2:latest"}]\'',
+                    "warning",
                 )
             else:
-                logger.warning("⚠️ ConfigMap manipulation failed, using fallback environment variable")
+                logger.warning(
+                    "⚠️ ConfigMap manipulation failed, using fallback environment variable"
+                )
                 # Fallback to environment variable for demos without K8s access
                 import os
+
                 os.environ["SERVICE_HEALTH_FAILURE"] = "true"
                 self.service_health_failure = True
-                
+
                 return (
                     gr.Column(visible=False),
                     "🔴 Availability Demo ACTIVATED!\n\n⚠️ ConfigMap manipulation failed - using fallback mode\n📊 Health checks will return HTTP 500\n\n🔧 ConfigMap manipulation requires kubectl access",
-                    "warning"
+                    "warning",
                 )
 
         except Exception as e:
@@ -1276,37 +1507,50 @@ class ChatInterface:
     def restore_service_health(self) -> tuple:
         """Restores service health using ConfigMap configuration restoration."""
         try:
-            logger.info("🔵 DEACTIVATING Availability Demo - Restoring ConfigMap to fix app")
+            logger.info(
+                "🔵 DEACTIVATING Availability Demo - Restoring ConfigMap to fix app"
+            )
 
             # Try to restore ConfigMap-based configuration
             configmap_success = self._restore_configmap_health()
-            
+
             if configmap_success:
-                logger.info("✅ ConfigMap restoration successful - App should start working!")
+                logger.info(
+                    "✅ ConfigMap restoration successful - App should start working!"
+                )
                 # Update local state
                 self.service_health_failure = False
-                
+
                 # Generate recovery signals for observability
-                logger.info("✅ SERVICE_HEALTH_FAILURE=false - Service health restored successfully")
-                logger.info("📊 ConfigMap key 'models-latest' restored - Application configuration fixed")
-                logger.info("📊 Expected observability patterns: HTTP 200 success, health check recovery")
-                
+                logger.info(
+                    "✅ SERVICE_HEALTH_FAILURE=false - Service health restored successfully"
+                )
+                logger.info(
+                    "📊 ConfigMap key 'models-latest' restored - Application configuration fixed"
+                )
+                logger.info(
+                    "📊 Expected observability patterns: HTTP 200 success, health check recovery"
+                )
+
                 return (
                     gr.Column(visible=False),
                     "🔵 Availability Demo DEACTIVATED!\n\n✅ ConfigMap restored - app should start working\n📊 SUSE Observability should detect:\n• HTTP 200 success rate recovery\n• Health check restoration\n• Error rate return to normal\n\n🎉 Service fully operational!",
-                    "success"
+                    "success",
                 )
             else:
-                logger.warning("⚠️ ConfigMap restoration failed, using fallback environment variable")
+                logger.warning(
+                    "⚠️ ConfigMap restoration failed, using fallback environment variable"
+                )
                 # Fallback to environment variable for demos without K8s access
                 import os
+
                 os.environ["SERVICE_HEALTH_FAILURE"] = "false"
                 self.service_health_failure = False
-                
+
                 return (
                     gr.Column(visible=False),
                     "🔵 Availability Demo DEACTIVATED!\n\n⚠️ ConfigMap restoration failed - using fallback mode\n📊 Health checks will return HTTP 200\n\n🔧 ConfigMap restoration requires kubectl access",
-                    "success"
+                    "success",
                 )
 
         except Exception as e:
@@ -1350,7 +1594,7 @@ class ChatInterface:
 
             # Send both types of sensitive data for DLP detection
             data = {"creditcard": credit_card_pattern, "ssn": ssn_pattern}
-            
+
             # For demo responsiveness, use very short timeout and single endpoint
             try:
                 requests.post("http://httpbin.org/post", data=data, timeout=1)
@@ -1358,10 +1602,12 @@ class ChatInterface:
                     f"Data leak demo executed - credit card and SSN data sent to httpbin.org for DLP testing"
                 )
             except Exception as endpoint_error:
-                logger.debug(f"Network request failed (expected for demo): {endpoint_error}")
+                logger.debug(
+                    f"Network request failed (expected for demo): {endpoint_error}"
+                )
                 # This is fine - the sensitive data patterns were still processed locally
-            
-            # Always show success for demo purposes - NeuVector monitors the patterns  
+
+            # Always show success for demo purposes - NeuVector monitors the patterns
             logger.warning(
                 "Data leak demo executed - sensitive data patterns processed for NeuVector DLP testing"
             )
@@ -1578,40 +1824,46 @@ class ChatInterface:
     def check_load_simulator_status(self) -> Dict:
         """Check if load simulator deployment exists and is running."""
         try:
-            result = subprocess.run([
-                "kubectl", "get", "deployment", 
-                f"{os.getenv('DEPLOYMENT_NAME', 'ai-compare')}-load-simulator",
-                "-n", os.getenv('KUBERNETES_NAMESPACE', 'default'),
-                "-o", "json"
-            ], capture_output=True, text=True, timeout=10)
-            
+            result = subprocess.run(
+                [
+                    "kubectl",
+                    "get",
+                    "deployment",
+                    f"{os.getenv('DEPLOYMENT_NAME', 'ai-compare')}-load-simulator",
+                    "-n",
+                    os.getenv("KUBERNETES_NAMESPACE", "default"),
+                    "-o",
+                    "json",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+
             if result.returncode == 0:
                 import json
+
                 deployment = json.loads(result.stdout)
                 status = deployment.get("status", {})
                 replicas = status.get("replicas", 0)
                 ready_replicas = status.get("readyReplicas", 0)
-                
+
                 return {
                     "exists": True,
                     "running": ready_replicas > 0,
                     "replicas": replicas,
                     "ready_replicas": ready_replicas,
-                    "status": "Running" if ready_replicas > 0 else "Not Ready"
+                    "status": "Running" if ready_replicas > 0 else "Not Ready",
                 }
             else:
-                return {
-                    "exists": False,
-                    "running": False,
-                    "status": "Not Deployed"
-                }
+                return {"exists": False, "running": False, "status": "Not Deployed"}
         except Exception as e:
             logger.warning(f"Failed to check load simulator status: {e}")
             return {
                 "exists": False,
                 "running": False,
                 "status": "Unknown",
-                "error": str(e)
+                "error": str(e),
             }
 
     def start_load_simulator(self) -> tuple:
@@ -1624,77 +1876,103 @@ class ChatInterface:
                 return (
                     gr.Button(interactive=False),
                     gr.Button(interactive=True),
-                    gr.HTML(value="<div style='color: #4CAF50;'>🚀 Load Simulator is already running</div>")
+                    gr.HTML(
+                        value="<div style='color: #4CAF50;'>🚀 Load Simulator is already running</div>"
+                    ),
                 )
 
             # Create deployment YAML
             deployment_yaml = self._generate_load_simulator_yaml()
-            
+
             # Apply deployment
-            result = subprocess.run([
-                "kubectl", "apply", "-f", "-"
-            ], input=deployment_yaml, text=True, capture_output=True, timeout=30)
-            
+            result = subprocess.run(
+                ["kubectl", "apply", "-f", "-"],
+                input=deployment_yaml,
+                text=True,
+                capture_output=True,
+                timeout=30,
+            )
+
             if result.returncode == 0:
                 logger.info("Load simulator deployment created successfully")
                 return (
                     gr.Button(interactive=False),
                     gr.Button(interactive=True),
-                    gr.HTML(value="<div style='color: #4CAF50;'>🚀 Load Simulator started - Generating HTTP traffic for observability</div>")
+                    gr.HTML(
+                        value="<div style='color: #4CAF50;'>🚀 Load Simulator started - Generating HTTP traffic for observability</div>"
+                    ),
                 )
             else:
                 logger.error(f"Failed to create load simulator: {result.stderr}")
                 return (
                     gr.Button(interactive=True),
                     gr.Button(interactive=False),
-                    gr.HTML(value=f"<div style='color: #f44336;'>❌ Failed to start load simulator: {result.stderr}</div>")
+                    gr.HTML(
+                        value=f"<div style='color: #f44336;'>❌ Failed to start load simulator: {result.stderr}</div>"
+                    ),
                 )
-                
+
         except Exception as e:
             logger.error(f"Error starting load simulator: {e}")
             return (
                 gr.Button(interactive=True),
                 gr.Button(interactive=False),
-                gr.HTML(value=f"<div style='color: #f44336;'>❌ Error starting load simulator: {str(e)}</div>")
+                gr.HTML(
+                    value=f"<div style='color: #f44336;'>❌ Error starting load simulator: {str(e)}</div>"
+                ),
             )
 
     def stop_load_simulator(self) -> tuple:
         """Stop the load simulator deployment."""
         try:
-            result = subprocess.run([
-                "kubectl", "delete", "deployment",
-                f"{os.getenv('DEPLOYMENT_NAME', 'ai-compare')}-load-simulator",
-                "-n", os.getenv('KUBERNETES_NAMESPACE', 'default')
-            ], capture_output=True, text=True, timeout=30)
-            
+            result = subprocess.run(
+                [
+                    "kubectl",
+                    "delete",
+                    "deployment",
+                    f"{os.getenv('DEPLOYMENT_NAME', 'ai-compare')}-load-simulator",
+                    "-n",
+                    os.getenv("KUBERNETES_NAMESPACE", "default"),
+                ],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+
             if result.returncode == 0:
                 logger.info("Load simulator deployment deleted successfully")
                 return (
                     gr.Button(interactive=True),
                     gr.Button(interactive=False),
-                    gr.HTML(value="<div style='color: #ffa726;'>⏹️ Load Simulator stopped</div>")
+                    gr.HTML(
+                        value="<div style='color: #ffa726;'>⏹️ Load Simulator stopped</div>"
+                    ),
                 )
             else:
                 logger.warning(f"Failed to delete load simulator: {result.stderr}")
                 return (
                     gr.Button(interactive=True),
                     gr.Button(interactive=False),
-                    gr.HTML(value=f"<div style='color: #ffa726;'>⚠️ Load simulator may not have been running: {result.stderr}</div>")
+                    gr.HTML(
+                        value=f"<div style='color: #ffa726;'>⚠️ Load simulator may not have been running: {result.stderr}</div>"
+                    ),
                 )
-                
+
         except Exception as e:
             logger.error(f"Error stopping load simulator: {e}")
             return (
                 gr.Button(interactive=True),
                 gr.Button(interactive=False),
-                gr.HTML(value=f"<div style='color: #f44336;'>❌ Error stopping load simulator: {str(e)}</div>")
+                gr.HTML(
+                    value=f"<div style='color: #f44336;'>❌ Error stopping load simulator: {str(e)}</div>"
+                ),
             )
 
     def _generate_load_simulator_yaml(self) -> str:
         """Generate Kubernetes YAML for load simulator deployment."""
-        namespace = os.getenv('KUBERNETES_NAMESPACE', 'default')
-        deployment_name = os.getenv('DEPLOYMENT_NAME', 'ai-compare')
-        
+        namespace = os.getenv("KUBERNETES_NAMESPACE", "default")
+        deployment_name = os.getenv("DEPLOYMENT_NAME", "ai-compare")
+
         yaml_content = f"""
 apiVersion: apps/v1
 kind: Deployment
@@ -1744,12 +2022,14 @@ spec:
 """
         return yaml_content
 
-    def start_load_simulator_ui(self, model: str, interval: int, send_messages: bool = None):
+    def start_load_simulator_ui(
+        self, model: str, interval: int, send_messages: bool = None
+    ):
         """Start load simulator from UI - replacement for start_automation."""
         try:
             # Check current status
             status = self.check_load_simulator_status()
-            
+
             if status["running"]:
                 logger.warning("Load simulator is already running.")
                 running_status = "<div style='text-align: center; color: #4CAF50; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 8px; margin: 10px 0;'>▶️ Load Simulator is running - HTTP traffic generation active</div>"
@@ -1758,10 +2038,10 @@ spec:
                     gr.Button(interactive=True),
                     gr.HTML(value=running_status),
                 )
-            
+
             # Start the load simulator
             result = self.start_load_simulator()
-            
+
             if result["success"]:
                 running_status = "<div style='text-align: center; color: #4CAF50; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 8px; margin: 10px 0;'>▶️ Load Simulator started - HTTP traffic generation active</div>"
                 logger.info("Load simulator started successfully from UI")
@@ -1777,7 +2057,7 @@ spec:
                     gr.Button(interactive=False),
                     gr.HTML(value=error_status),
                 )
-                
+
         except Exception as e:
             logger.error(f"Error starting load simulator from UI: {e}")
             error_status = f"<div style='text-align: center; color: #f44336; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 8px; margin: 10px 0;'>❌ Error starting load simulator: {str(e)}</div>"
@@ -1791,7 +2071,7 @@ spec:
         """Stop load simulator from UI - replacement for stop_automation."""
         try:
             result = self.stop_load_simulator()
-            
+
             if result["success"]:
                 stopped_status = "<div style='text-align: center; color: #ffa726; padding: 10px; background: rgba(255, 167, 38, 0.1); border-radius: 8px; margin: 10px 0;'>⏹️ Load Simulator stopped - Click Start to begin HTTP traffic generation</div>"
                 logger.info("Load simulator stopped successfully from UI")
@@ -1807,7 +2087,7 @@ spec:
                     gr.Button(interactive=True),
                     gr.HTML(value=error_status),
                 )
-                
+
         except Exception as e:
             logger.error(f"Error stopping load simulator from UI: {e}")
             error_status = f"<div style='text-align: center; color: #f44336; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 8px; margin: 10px 0;'>❌ Error stopping load simulator: {str(e)}</div>"
@@ -2064,7 +2344,7 @@ def create_interface():
         </div>
         """
         )
-        
+
         # PROMINENT STATUS DISPLAY - Moved to top for visibility
         with gr.Row():
             with gr.Column():
@@ -2081,12 +2361,22 @@ def create_interface():
                 )
                 # SUSE Security Demo buttons (direct action)
                 # Determine initial availability demo state
-                initial_availability_state = getattr(chat_instance, 'service_health_failure', False)
-                initial_availability_text = "🔴 Availability Demo: ON" if initial_availability_state else "🟢 Availability Demo: OFF"
-                initial_availability_variant = "stop" if initial_availability_state else "secondary"
-                
+                initial_availability_state = getattr(
+                    chat_instance, "service_health_failure", False
+                )
+                initial_availability_text = (
+                    "🔴 Availability Demo: ON"
+                    if initial_availability_state
+                    else "🟢 Availability Demo: OFF"
+                )
+                initial_availability_variant = (
+                    "stop" if initial_availability_state else "secondary"
+                )
+
                 availability_demo_btn = gr.Button(
-                    initial_availability_text, variant=initial_availability_variant, size="sm"
+                    initial_availability_text,
+                    variant=initial_availability_variant,
+                    size="sm",
                 )
                 data_leak_demo_btn = gr.Button(
                     "🔒 Data Leak Demo", variant="secondary", size="sm"
@@ -2202,8 +2492,8 @@ def create_interface():
 
                     # Load simulator status display
                     automation_status = gr.HTML(
-                        value="<div style='text-align: center; color: #ffa726; padding: 10px; background: rgba(255, 167, 38, 0.1); border-radius: 8px; margin: 10px 0;'>⏹️ Load Simulator stopped - Click Start to begin HTTP traffic generation</div>", 
-                        visible=True
+                        value="<div style='text-align: center; color: #ffa726; padding: 10px; background: rgba(255, 167, 38, 0.1); border-radius: 8px; margin: 10px 0;'>⏹️ Load Simulator stopped - Click Start to begin HTTP traffic generation</div>",
+                        visible=True,
                     )
 
         # Configuration Modal (initially hidden)
@@ -2340,21 +2630,25 @@ def create_interface():
 
             # Update button text and style based on ACTUAL current state
             # Force refresh the state from the demo result to ensure accuracy
-            actual_current_state = getattr(chat_instance, 'service_health_failure', False)
-            
+            actual_current_state = getattr(
+                chat_instance, "service_health_failure", False
+            )
+
             # Log the state for debugging
-            logger.info(f"Button update - Demo state: {actual_current_state}, Status: {status}")
-            
+            logger.info(
+                f"Button update - Demo state: {actual_current_state}, Status: {status}"
+            )
+
             if actual_current_state:
                 button_text = "🔴 Availability Demo: ON"
                 button_variant = "stop"
             else:
                 button_text = "🟢 Availability Demo: OFF"
                 button_variant = "secondary"
-            
+
             return (
                 gr.update(value=status_html, visible=True),  # Status message
-                gr.update(value=button_text, variant=button_variant)  # Button update
+                gr.update(value=button_text, variant=button_variant),  # Button update
             )
 
         def run_data_leak_demo():
@@ -2379,7 +2673,7 @@ def create_interface():
 
             return (
                 gr.update(value=status_html, visible=True),  # Show status
-                gr.update(value=button_text, variant=button_variant)  # Update button
+                gr.update(value=button_text, variant=button_variant),  # Update button
             )
 
         send_btn.click(

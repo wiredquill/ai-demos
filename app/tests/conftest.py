@@ -69,9 +69,9 @@ def config_file(temp_dir, sample_config):
 @pytest.fixture
 def mock_requests():
     """Mock requests module for HTTP testing."""
-    with patch("requests.get") as mock_get, patch(
-        "requests.post"
-    ) as mock_post, patch("requests.head") as mock_head:
+    with patch("requests.get") as mock_get, patch("requests.post") as mock_post, patch(
+        "requests.head"
+    ) as mock_head:
 
         # Default successful responses
         mock_response = Mock()
