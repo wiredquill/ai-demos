@@ -12,6 +12,7 @@ import gradio as gr
 import requests
 from flask import Flask, request, jsonify, send_from_directory
 from werkzeug.serving import make_server
+from functools import wraps
 
 # Build trigger comment - pipeline model fix deployment
 
@@ -33,6 +34,26 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 # --- End Logging Configuration ---
 
+def add_cors_headers(response):
+    """Add CORS headers to allow frontend requests."""
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
+def cors_enabled(f):
+    """Decorator to add CORS headers to route responses."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        response = f(*args, **kwargs)
+        if hasattr(response, 'headers'):
+            return add_cors_headers(response)
+        else:
+            # For string responses, convert to Response object
+            from flask import make_response
+            resp = make_response(response)
+            return add_cors_headers(resp)
+    return decorated_function
 
 # --- HTTP API Server for Observable Traffic ---
 class ObservableAPIServer:
@@ -49,7 +70,8 @@ class ObservableAPIServer:
     def setup_routes(self):
         """Setup HTTP API routes for observable traffic."""
         
-        @self.app.route('/health', methods=['GET'])
+        @self.app.route('/health', methods=['GET', 'OPTIONS'])
+        @cors_enabled
         def health_check():
             """Health check endpoint - returns 500 when availability demo is active."""
             try:
@@ -72,7 +94,8 @@ class ObservableAPIServer:
                 logger.error(f"Health check endpoint error: {e}")
                 return jsonify({"status": "ERROR", "error": str(e)}), 500
         
-        @self.app.route('/api/test', methods=['GET'])
+        @self.app.route('/api/test', methods=['GET', 'OPTIONS'])
+        @cors_enabled
         def test_endpoint():
             """Simple test endpoint for debugging API routing."""
             logger.info("Test endpoint accessed successfully")
@@ -82,7 +105,8 @@ class ObservableAPIServer:
                 "service_health_failure": getattr(self.chat_interface, 'service_health_failure', False)
             }), 200
         
-        @self.app.route('/api/chat', methods=['POST'])
+        @self.app.route('/api/chat', methods=['POST', 'OPTIONS'])
+        @cors_enabled
         def chat_completion():
             """Chat completion endpoint for frontend communication."""
             try:
@@ -147,7 +171,8 @@ class ObservableAPIServer:
                     "details": "Check server logs for full traceback"
                 }), 500
         
-        @self.app.route('/api/availability-demo/toggle', methods=['POST'])
+        @self.app.route('/api/availability-demo/toggle', methods=['POST', 'OPTIONS'])
+        @cors_enabled
         def toggle_availability_demo():
             """Toggle availability demo state."""
             try:
@@ -167,7 +192,8 @@ class ObservableAPIServer:
                 logger.error(f"Availability demo API error: {e}")
                 return jsonify({"error": str(e), "status": "error"}), 500
         
-        @self.app.route('/api/data-leak-demo', methods=['POST'])
+        @self.app.route('/api/data-leak-demo', methods=['POST', 'OPTIONS'])
+        @cors_enabled
         def run_data_leak_demo():
             """Run data leak demo."""
             try:
@@ -187,7 +213,8 @@ class ObservableAPIServer:
                 logger.error(f"Data leak demo API error: {e}")
                 return jsonify({"error": str(e), "status": "error"}), 500
         
-        @self.app.route('/api/metrics', methods=['GET'])
+        @self.app.route('/api/metrics', methods=['GET', 'OPTIONS'])
+        @cors_enabled
         def get_metrics():
             """Get application metrics for monitoring."""
             try:
@@ -208,7 +235,8 @@ class ObservableAPIServer:
                 return jsonify({"error": str(e)}), 500
 
         # Frontend serving routes
-        @self.app.route('/', methods=['GET'])
+        @self.app.route('/', methods=['GET', 'OPTIONS'])
+        @cors_enabled
         def serve_frontend():
             """Serve the main frontend HTML file."""
             try:
@@ -217,7 +245,8 @@ class ObservableAPIServer:
                 logger.error(f"Error serving frontend index: {e}")
                 return f"Frontend error: {e}", 500
 
-        @self.app.route('/<path:filename>', methods=['GET'])
+        @self.app.route('/<path:filename>', methods=['GET', 'OPTIONS'])
+        @cors_enabled
         def serve_frontend_files(filename):
             """Serve frontend static files (CSS, JS, etc.)."""
             try:
@@ -229,6 +258,16 @@ class ObservableAPIServer:
             except Exception as e:
                 logger.error(f"Error serving frontend file {filename}: {e}")
                 return f"Frontend file error: {e}", 500
+
+        # Global OPTIONS handler for CORS preflight requests
+        @self.app.before_request
+        def handle_preflight():
+            if request.method == "OPTIONS":
+                response = jsonify({})
+                response.headers.add('Access-Control-Allow-Origin', '*')
+                response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+                response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+                return response
     
     def start_server(self):
         """Start the HTTP API server in background thread."""
