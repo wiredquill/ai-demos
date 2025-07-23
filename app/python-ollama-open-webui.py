@@ -870,6 +870,7 @@ class ChatInterface:
 
         # FIXED: Special timeout handling for problematic providers
         # DeepSeek and other Chinese services are often blocked, use very short timeout
+        # ⚠️ IMPORTANT: DO NOT CHANGE THIS LOGIC - DeepSeek consistently causes 20s delays when blocked
         if provider_name == "DeepSeek" or "deepseek" in url.lower() or "api.deepseek.com" in url:
             provider_timeout = 1  # 1 second timeout for DeepSeek to prevent 20s delays
             logger.info(f"Using short timeout (1s) for potentially blocked provider: {provider_name}")
