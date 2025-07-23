@@ -1589,6 +1589,249 @@ class ChatInterface:
         """
         return html
 
+    # --- Load Simulator Management Methods ---
+    def check_load_simulator_status(self) -> Dict:
+        """Check if load simulator deployment exists and is running."""
+        try:
+            result = subprocess.run([
+                "kubectl", "get", "deployment", 
+                f"{os.getenv('DEPLOYMENT_NAME', 'ai-compare')}-load-simulator",
+                "-n", os.getenv('KUBERNETES_NAMESPACE', 'default'),
+                "-o", "json"
+            ], capture_output=True, text=True, timeout=10)
+            
+            if result.returncode == 0:
+                import json
+                deployment = json.loads(result.stdout)
+                status = deployment.get("status", {})
+                replicas = status.get("replicas", 0)
+                ready_replicas = status.get("readyReplicas", 0)
+                
+                return {
+                    "exists": True,
+                    "running": ready_replicas > 0,
+                    "replicas": replicas,
+                    "ready_replicas": ready_replicas,
+                    "status": "Running" if ready_replicas > 0 else "Not Ready"
+                }
+            else:
+                return {
+                    "exists": False,
+                    "running": False,
+                    "status": "Not Deployed"
+                }
+        except Exception as e:
+            logger.warning(f"Failed to check load simulator status: {e}")
+            return {
+                "exists": False,
+                "running": False,
+                "status": "Unknown",
+                "error": str(e)
+            }
+
+    def start_load_simulator(self) -> tuple:
+        """Start the load simulator deployment."""
+        try:
+            # Check if already running
+            status = self.check_load_simulator_status()
+            if status.get("running"):
+                logger.info("Load simulator is already running")
+                return (
+                    gr.Button(interactive=False),
+                    gr.Button(interactive=True),
+                    gr.HTML(value="<div style='color: #4CAF50;'>🚀 Load Simulator is already running</div>")
+                )
+
+            # Create deployment YAML
+            deployment_yaml = self._generate_load_simulator_yaml()
+            
+            # Apply deployment
+            result = subprocess.run([
+                "kubectl", "apply", "-f", "-"
+            ], input=deployment_yaml, text=True, capture_output=True, timeout=30)
+            
+            if result.returncode == 0:
+                logger.info("Load simulator deployment created successfully")
+                return (
+                    gr.Button(interactive=False),
+                    gr.Button(interactive=True),
+                    gr.HTML(value="<div style='color: #4CAF50;'>🚀 Load Simulator started - Generating HTTP traffic for observability</div>")
+                )
+            else:
+                logger.error(f"Failed to create load simulator: {result.stderr}")
+                return (
+                    gr.Button(interactive=True),
+                    gr.Button(interactive=False),
+                    gr.HTML(value=f"<div style='color: #f44336;'>❌ Failed to start load simulator: {result.stderr}</div>")
+                )
+                
+        except Exception as e:
+            logger.error(f"Error starting load simulator: {e}")
+            return (
+                gr.Button(interactive=True),
+                gr.Button(interactive=False),
+                gr.HTML(value=f"<div style='color: #f44336;'>❌ Error starting load simulator: {str(e)}</div>")
+            )
+
+    def stop_load_simulator(self) -> tuple:
+        """Stop the load simulator deployment."""
+        try:
+            result = subprocess.run([
+                "kubectl", "delete", "deployment",
+                f"{os.getenv('DEPLOYMENT_NAME', 'ai-compare')}-load-simulator",
+                "-n", os.getenv('KUBERNETES_NAMESPACE', 'default')
+            ], capture_output=True, text=True, timeout=30)
+            
+            if result.returncode == 0:
+                logger.info("Load simulator deployment deleted successfully")
+                return (
+                    gr.Button(interactive=True),
+                    gr.Button(interactive=False),
+                    gr.HTML(value="<div style='color: #ffa726;'>⏹️ Load Simulator stopped</div>")
+                )
+            else:
+                logger.warning(f"Failed to delete load simulator: {result.stderr}")
+                return (
+                    gr.Button(interactive=True),
+                    gr.Button(interactive=False),
+                    gr.HTML(value=f"<div style='color: #ffa726;'>⚠️ Load simulator may not have been running: {result.stderr}</div>")
+                )
+                
+        except Exception as e:
+            logger.error(f"Error stopping load simulator: {e}")
+            return (
+                gr.Button(interactive=True),
+                gr.Button(interactive=False),
+                gr.HTML(value=f"<div style='color: #f44336;'>❌ Error stopping load simulator: {str(e)}</div>")
+            )
+
+    def _generate_load_simulator_yaml(self) -> str:
+        """Generate Kubernetes YAML for load simulator deployment."""
+        namespace = os.getenv('KUBERNETES_NAMESPACE', 'default')
+        deployment_name = os.getenv('DEPLOYMENT_NAME', 'ai-compare')
+        
+        yaml_content = f"""
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {deployment_name}-load-simulator
+  namespace: {namespace}
+  labels:
+    app: {deployment_name}-load-simulator
+    component: load-simulator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {deployment_name}-load-simulator
+  template:
+    metadata:
+      labels:
+        app: {deployment_name}-load-simulator
+    spec:
+      containers:
+      - name: load-simulator
+        image: ghcr.io/wiredquill/ai-demos-load-simulator:latest
+        env:
+        - name: TARGET_URL
+          value: "http://{deployment_name}-app-service:8080"
+        - name: INTERVAL_SECONDS
+          value: "30"
+        - name: LOAD_SIMULATOR_ENABLED
+          value: "true"
+        - name: REQUEST_TIMEOUT
+          value: "30"
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "100m"
+            memory: "128Mi"
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+            - ALL
+"""
+        return yaml_content
+
+    def start_load_simulator_ui(self, model: str, interval: int, send_messages: bool = None):
+        """Start load simulator from UI - replacement for start_automation."""
+        try:
+            # Check current status
+            status = self.check_load_simulator_status()
+            
+            if status["running"]:
+                logger.warning("Load simulator is already running.")
+                running_status = "<div style='text-align: center; color: #4CAF50; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 8px; margin: 10px 0;'>▶️ Load Simulator is running - HTTP traffic generation active</div>"
+                return (
+                    gr.Button(interactive=False),
+                    gr.Button(interactive=True),
+                    gr.HTML(value=running_status),
+                )
+            
+            # Start the load simulator
+            result = self.start_load_simulator()
+            
+            if result["success"]:
+                running_status = "<div style='text-align: center; color: #4CAF50; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 8px; margin: 10px 0;'>▶️ Load Simulator started - HTTP traffic generation active</div>"
+                logger.info("Load simulator started successfully from UI")
+                return (
+                    gr.Button(interactive=False),
+                    gr.Button(interactive=True),
+                    gr.HTML(value=running_status),
+                )
+            else:
+                error_status = f"<div style='text-align: center; color: #f44336; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 8px; margin: 10px 0;'>❌ Failed to start load simulator: {result['message']}</div>"
+                return (
+                    gr.Button(interactive=True),
+                    gr.Button(interactive=False),
+                    gr.HTML(value=error_status),
+                )
+                
+        except Exception as e:
+            logger.error(f"Error starting load simulator from UI: {e}")
+            error_status = f"<div style='text-align: center; color: #f44336; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 8px; margin: 10px 0;'>❌ Error starting load simulator: {str(e)}</div>"
+            return (
+                gr.Button(interactive=True),
+                gr.Button(interactive=False),
+                gr.HTML(value=error_status),
+            )
+
+    def stop_load_simulator_ui(self):
+        """Stop load simulator from UI - replacement for stop_automation."""
+        try:
+            result = self.stop_load_simulator()
+            
+            if result["success"]:
+                stopped_status = "<div style='text-align: center; color: #ffa726; padding: 10px; background: rgba(255, 167, 38, 0.1); border-radius: 8px; margin: 10px 0;'>⏹️ Load Simulator stopped - Click Start to begin HTTP traffic generation</div>"
+                logger.info("Load simulator stopped successfully from UI")
+                return (
+                    gr.Button(interactive=True),
+                    gr.Button(interactive=False),
+                    gr.HTML(value=stopped_status),
+                )
+            else:
+                error_status = f"<div style='text-align: center; color: #f44336; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 8px; margin: 10px 0;'>❌ Failed to stop load simulator: {result['message']}</div>"
+                return (
+                    gr.Button(interactive=True),
+                    gr.Button(interactive=True),
+                    gr.HTML(value=error_status),
+                )
+                
+        except Exception as e:
+            logger.error(f"Error stopping load simulator from UI: {e}")
+            error_status = f"<div style='text-align: center; color: #f44336; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 8px; margin: 10px 0;'>❌ Error stopping load simulator: {str(e)}</div>"
+            return (
+                gr.Button(interactive=True),
+                gr.Button(interactive=False),
+                gr.HTML(value=error_status),
+            )
+
 
 def create_interface():
     logger.info("Creating Gradio interface.")
@@ -1881,19 +2124,19 @@ def create_interface():
                     """
                     )
 
-                    # Automation and Config Controls Row
+                    # Load Simulator and Config Controls Row
                     with gr.Row():
                         with gr.Column(scale=2):
-                            # Always show automation buttons, even if automation is disabled in environment
+                            # Load simulator controls - launches HTTP traffic generator pod dynamically
                             with gr.Row():
                                 start_auto_btn = gr.Button(
-                                    "▶️ Start Automation",
+                                    "▶️ Start Load Simulator",
                                     variant="primary",
                                     size="sm",
                                     interactive=True,
                                 )
                                 stop_auto_btn = gr.Button(
-                                    "⏹️ Stop Automation",
+                                    "⏹️ Stop Load Simulator",
                                     variant="secondary",
                                     size="sm",
                                     interactive=False,
@@ -1972,8 +2215,11 @@ def create_interface():
 
                     clear_btn = gr.Button("🗑️ Clear All", variant="secondary", size="sm")
 
-                    # Removed automation status display per user request (red box area)
-                    automation_status = gr.HTML(value="", visible=False)
+                    # Load simulator status display
+                    automation_status = gr.HTML(
+                        value="<div style='text-align: center; color: #ffa726; padding: 10px; background: rgba(255, 167, 38, 0.1); border-radius: 8px; margin: 10px 0;'>⏹️ Load Simulator stopped - Click Start to begin HTTP traffic generation</div>", 
+                        visible=True
+                    )
 
         # Configuration Modal (initially hidden)
         with gr.Column(visible=False) as config_panel:
@@ -2240,9 +2486,9 @@ def create_interface():
             "UI refresh mechanism ready - background processes controlled by automation state"
         )
 
-        # --- Automation Event Handlers - Always available ---
+        # --- Load Simulator Event Handlers - Dynamic pod launch ---
         start_auto_btn.click(
-            chat_instance.start_automation,
+            chat_instance.start_load_simulator_ui,
             inputs=[
                 model_dropdown,
                 automation_interval_input,
@@ -2251,7 +2497,7 @@ def create_interface():
             outputs=[start_auto_btn, stop_auto_btn, automation_status],
         )
         stop_auto_btn.click(
-            chat_instance.stop_automation,
+            chat_instance.stop_load_simulator_ui,
             outputs=[start_auto_btn, stop_auto_btn, automation_status],
         )
 

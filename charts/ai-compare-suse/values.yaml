@@ -105,40 +105,36 @@ llmChat:
   httpApi:
     enabled: true
     port: 8080
-# Frontend End User UI (Optional - SUSE NGINX from Application Collection)
+# HTTP Load Simulator (Optional - HTTP traffic generation for observability)  
 frontend:
-  enabled: false # Disabled by default - enable for HTTP traffic generation and End User UI
-  replicaCount: 1
-  image:
-    # SUSE Application Collection NGINX (enterprise-hardened)
-    repository: registry.suse.com/suse/nginx
-    tag: "1.25"
-    pullPolicy: IfNotPresent
-  service:
-    type: NodePort # NodePort by default for easier demo access
-    port: 80
-    annotations: {}
-  resources:
-    limits:
-      cpu: 200m
-      memory: 256Mi
-    requests:
-      cpu: 100m
-      memory: 128Mi
-  podSecurityContext:
-    runAsNonRoot: true
-    runAsUser: 101
-    runAsGroup: 101
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    capabilities:
-      drop:
-        - ALL
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
-  podAnnotations: {}
+  enabled: false # Disabled by default - enable for HTTP traffic generation
+  loadSimulator:
+    enabled: true
+    image:
+      repository: ghcr.io/wiredquill/ai-demos-load-simulator
+      tag: "latest"
+      pullPolicy: Always
+    intervalSeconds: 30
+    requestTimeout: 30
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests:
+        cpu: 50m
+        memory: 64Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      runAsUser: 1000
+      capabilities:
+        drop:
+          - ALL
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+    podAnnotations: {}
 # Demo Configuration for Observable Failures
 demo:
   # ConfigMap-based availability demo

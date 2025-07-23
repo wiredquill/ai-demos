@@ -106,41 +106,28 @@ questions:
   default: "/data/ai-models"
   show_if: "ollama.modelCache.nfs.enabled=true"
 
-# Frontend Settings Group - Optional End User UI with SUSE NGINX
+# Load Simulator Settings Group - HTTP traffic generation for observability
 - variable: frontend.enabled
-  group: "Frontend Settings"
-  label: "Enable End User Frontend (SUSE NGINX)"
-  description: "Deploy an optional NGINX-based End User Interface using SUSE Application Collection NGINX for HTTP traffic generation and SUSE Observability monitoring. Provides a clean web UI for comparing AI responses with enterprise-grade security."
+  group: "Load Simulator Settings"
+  label: "Enable HTTP Load Simulator"
+  description: "Deploy a dedicated HTTP load simulator for consistent traffic generation and SUSE Observability monitoring. Replaces frontend UI with automated testing."
   type: "boolean"
   default: false
 
-- variable: frontend.image.repository
-  group: "Frontend Settings"
-  label: "SUSE NGINX Image Repository"
-  description: "SUSE Application Collection NGINX container image repository. Defaults to enterprise-hardened SUSE NGINX from registry.suse.com/suse/nginx."
-  type: "string"
-  default: "registry.suse.com/suse/nginx"
+- variable: frontend.loadSimulator.intervalSeconds
+  group: "Load Simulator Settings"
+  label: "Request Interval (Seconds)"
+  description: "Time between HTTP requests to the AI Compare API (default: 30 seconds)"
+  type: "int"
+  default: 30
   show_if: "frontend.enabled=true"
 
-- variable: frontend.image.tag
-  group: "Frontend Settings"
-  label: "SUSE NGINX Image Tag"
-  description: "SUSE Application Collection NGINX container image tag from SUSE BCI (Base Container Images)."
-  type: "string"
-  default: "1.25"
-  show_if: "frontend.enabled=true"
-
-- variable: frontend.service.type
-  group: "Frontend Settings"
-  label: "Frontend Service Type"
-  description: "Method to expose the SUSE NGINX frontend service."
-  type: "enum"
-  required: true
-  default: "NodePort"
-  options:
-    - "ClusterIP"
-    - "NodePort"
-    - "LoadBalancer"
+- variable: frontend.loadSimulator.requestTimeout
+  group: "Load Simulator Settings"
+  label: "Request Timeout (Seconds)"
+  description: "HTTP request timeout for API calls (default: 30 seconds)"
+  type: "int"
+  default: 30
   show_if: "frontend.enabled=true"
 
 # Networking Group - For configuring how services are exposed
