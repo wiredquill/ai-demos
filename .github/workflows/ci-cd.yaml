@@ -6,6 +6,7 @@ on:
     branches: [ main ]
     paths:
       - 'app/**'
+      - 'frontend/**'
       - 'charts/**'
       - '.github/workflows/ci-cd.yaml'
   workflow_dispatch:
@@ -113,6 +114,19 @@ jobs:
           tags: |
             ghcr.io/${{ env.OWNER_LC }}/${{ env.SUSE_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
             ghcr.io/${{ env.OWNER_LC }}/${{ env.SUSE_IMAGE_NAME }}:latest
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Load Simulator Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: frontend
+          file: frontend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ env.OWNER_LC }}/${{ env.BASE_IMAGE_NAME }}-load-simulator:${{ env.IMAGE_TAG }}
+            ghcr.io/${{ env.OWNER_LC }}/${{ env.BASE_IMAGE_NAME }}-load-simulator:latest
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
