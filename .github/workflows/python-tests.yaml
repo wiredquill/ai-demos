@@ -215,12 +215,12 @@ jobs:
             config_path = f.name
             
         try:
-            # Mock the config path
-            original_init = app.ChatInterface.__init__
-            def patched_init(self):
-                self.config_path = config_path
-                original_init(self)
-            app.ChatInterface.__init__ = patched_init
+            # Mock the config loading method
+            original_load_config = app.ChatInterface.load_or_create_config
+            def patched_load_config(self):
+                with open(config_path, 'r') as f:
+                    return json.load(f)
+            app.ChatInterface.load_or_create_config = patched_load_config
             
             interface = app.ChatInterface()
             assert 'Test' in interface.config['providers']
