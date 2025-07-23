@@ -10,8 +10,8 @@ data:
   dlp-sensor.json: |
     {
       "config": {
-        "name": "credit-card-detection",
-        "comment": "Detect credit card patterns for AI Compare security demo",
+        "name": "sensitive-data-detection",
+        "comment": "Detect credit card and SSN patterns for AI Compare security demo",
         "rules": [
           {
             "name": "credit-card-pattern", 
@@ -23,7 +23,19 @@ data:
                 "context": "body"
               }
             ],
-            "action": "block"
+            "action": "alert"
+          },
+          {
+            "name": "ssn-pattern",
+            "patterns": [
+              {
+                "key": "ssn",
+                "op": "regex", 
+                "value": "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+                "context": "body"
+              }
+            ],
+            "action": "alert"
           }
         ]
       }
@@ -42,7 +54,7 @@ data:
         "cap_quarantine": false,
         "dlp_sensors": [
           {
-            "name": "credit-card-detection",
+            "name": "sensitive-data-detection",
             "action": "alert"
           }
         ],
