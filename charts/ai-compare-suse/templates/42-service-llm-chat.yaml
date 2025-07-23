@@ -8,12 +8,12 @@ spec:
   ports:
   # Gradio UI port (7860)
   - protocol: TCP
-    port: {{ .Values.llmChat.service.port }}
-    targetPort: {{ .Values.llmChat.service.port }}
+    port: {{ .Values.aiCompare.service.port }}
+    targetPort: {{ .Values.aiCompare.service.port }}
     name: gradio
   # HTTP API server port (8080) for frontend communication
   - protocol: TCP
-    port: {{ .Values.llmChat.httpApi.port }}
-    targetPort: {{ .Values.llmChat.httpApi.port }}
+    port: {{ .Values.aiCompare.httpApi.port }}
+    targetPort: {{ .Values.aiCompare.httpApi.port }}
     name: http-api
-  type: {{ .Values.llmChat.service.type }}
+  type: {{ .Values.aiCompare.service.type }}

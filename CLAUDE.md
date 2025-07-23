@@ -149,18 +149,24 @@ The application includes a sophisticated availability demo that creates **real**
 # View current ConfigMap state
 kubectl get configmap <release-name>-demo-config -n <namespace> -o yaml
 
-# Fix the broken app externally (during demo)
-kubectl patch configmap <release-name>-demo-config -n <namespace> --type=json -p='[
-  {"op": "remove", "path": "/data/models_latest"},
-  {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest,llama2:latest"}
-]'
-
-# Break the app externally (alternative demo approach)
+# Break the app (turn availability demo ON) - Creates HTTP 500 errors
 kubectl patch configmap <release-name>-demo-config -n <namespace> --type=json -p='[
   {"op": "remove", "path": "/data/models-latest"},
   {"op": "add", "path": "/data/models_latest", "value": "broken-model:invalid"}
 ]'
+
+# Fix the app (turn availability demo OFF) - Restores HTTP 200 responses  
+kubectl patch configmap <release-name>-demo-config -n <namespace> --type=json -p='[
+  {"op": "remove", "path": "/data/models_latest"},
+  {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest,llama2:latest"}
+]'
 ```
+
+**Demo Observable Effects:**
+- **ON State**: Application returns HTTP 500 errors, health checks fail, error rate spikes in observability
+- **OFF State**: Application returns HTTP 200 responses, health checks pass, normal operation resumed
+- **ConfigMap Key Logic**: App reads `models-latest` (hyphen) but broken state uses `models_latest` (underscore)
+- **Recovery Time**: Effects visible within 30-60 seconds after ConfigMap manipulation
 
 **Demo Integration:**
 - Frontend toggle button shows real-time ON/OFF state

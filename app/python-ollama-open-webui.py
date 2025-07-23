@@ -326,6 +326,10 @@ class ChatInterface:
         self.config_path = "config.json"
         self.config = self.load_or_create_config()
 
+        # Initialize availability demo state tracking
+        self.availability_demo_last_check = 0
+        self.availability_demo_auto_off_timer = None
+
         # Initialize provider status with pre-drawn boxes (default offline)
         # CRITICAL: Always guarantee all 10 providers are present from startup
         default_providers = {
@@ -691,6 +695,87 @@ class ChatInterface:
         except Exception as e:
             logger.error(f"ConfigMap failure simulation error: {e}")
             return False
+
+    def _check_configmap_demo_state(self) -> tuple:
+        """Check current ConfigMap state to determine availability demo status."""
+        try:
+            import os
+            import subprocess
+            import json
+
+            # Get namespace and ConfigMap name from environment or use defaults
+            namespace = os.getenv("KUBERNETES_NAMESPACE", "ai-compare")
+            configmap_name = os.getenv("DEMO_CONFIGMAP_NAME", "ai-compare-demo-config")
+
+            # Get ConfigMap data
+            result = subprocess.run(
+                [
+                    "kubectl",
+                    "get",
+                    "configmap",
+                    configmap_name,
+                    "-n",
+                    namespace,
+                    "-o",
+                    "json",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+
+            if result.returncode != 0:
+                logger.warning(f"Could not read ConfigMap {configmap_name}: {result.stderr}")
+                return False, "unknown", "ConfigMap not accessible"
+
+            configmap_data = json.loads(result.stdout)
+            data = configmap_data.get("data", {})
+
+            # Check if demo is ON (broken key exists) or OFF (working key exists)
+            if "models_latest" in data:
+                # Demo is ON - broken configuration
+                broken_value = data["models_latest"]
+                return True, "ON", f"Broken config: {broken_value}"
+            elif "models-latest" in data:
+                # Demo is OFF - working configuration  
+                working_value = data["models-latest"]
+                return False, "OFF", f"Working config: {working_value}"
+            else:
+                # Neither key exists - unknown state
+                return False, "unknown", "No demo configuration found"
+
+        except Exception as e:
+            logger.error(f"Error checking ConfigMap demo state: {e}")
+            return False, "error", f"Error: {str(e)}"
+
+    def _start_auto_off_timer(self):
+        """Start a 60-second timer to automatically turn off demo after ConfigMap is fixed."""
+        def auto_off_worker():
+            """Worker thread that waits 60 seconds then checks ConfigMap and turns off demo."""
+            import time
+            
+            logger.info("Auto-off timer started - will check ConfigMap in 60 seconds")
+            time.sleep(60)
+            
+            # Check if ConfigMap has been fixed (working key exists)
+            is_demo_on, state, config_value = self._check_configmap_demo_state()
+            
+            if not is_demo_on and state == "OFF":
+                # ConfigMap has been fixed, turn off internal demo state
+                logger.info("Auto-off timer triggered - ConfigMap fixed, turning off demo")
+                self.service_health_failure = False
+                self.availability_demo_auto_off_timer = None
+            else:
+                logger.info(f"Auto-off timer expired but ConfigMap still broken ({state})")
+                self.availability_demo_auto_off_timer = None
+        
+        # Cancel any existing timer
+        if self.availability_demo_auto_off_timer and self.availability_demo_auto_off_timer.is_alive():
+            logger.info("Canceling existing auto-off timer")
+        
+        # Start new timer
+        self.availability_demo_auto_off_timer = threading.Thread(target=auto_off_worker, daemon=True)
+        self.availability_demo_auto_off_timer.start()
 
     def _restore_configmap_health(self) -> bool:
         """Restore ConfigMap health by fixing the broken configuration."""
@@ -1465,8 +1550,9 @@ class ChatInterface:
                 logger.info(
                     "✅ ConfigMap manipulation successful - App should start failing!"
                 )
-                # Update local state
+                # Update local state and start auto-off timer
                 self.service_health_failure = True
+                self._start_auto_off_timer()
 
                 # Generate immediate observable failures for SUSE Observability
                 logger.error(
@@ -1564,12 +1650,14 @@ class ChatInterface:
                 "Running availability demo - simulating service failure for SUSE Observability"
             )
 
-            # Check current service health status
-            if self.service_health_failure:
-                # Service is already failed, restore it
+            # Check current ConfigMap state to determine action
+            is_demo_on, state, config_value = self._check_configmap_demo_state()
+            
+            if is_demo_on:
+                # Demo is ON, turn it OFF
                 return self.restore_service_health()
             else:
-                # Service is healthy, simulate failure
+                # Demo is OFF, turn it ON
                 return self.simulate_service_failure()
 
         except Exception as e:
@@ -2620,30 +2708,33 @@ def create_interface():
             """Run availability demo directly and update button state."""
             _, message, status = chat_instance.run_availability_demo()
 
+            # Check current ConfigMap state to get accurate status and config value
+            is_demo_on, state, config_value = chat_instance._check_configmap_demo_state()
+
+            # Create enhanced status message with ConfigMap value when demo is ON
+            if is_demo_on:
+                enhanced_message = f"{message}<br/><strong>ConfigMap Value:</strong> <code>{config_value}</code><br/><em>Will auto-turn OFF in 60s after ConfigMap is fixed</em>"
+            else:
+                enhanced_message = message
+
             # Create status message HTML based on status with better contrast
             if status == "success":
-                status_html = f"<div style='color: #1b5e20; background: rgba(76, 175, 80, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #4CAF50; font-weight: 500;'>{message}</div>"
+                status_html = f"<div style='color: #1b5e20; background: rgba(76, 175, 80, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #4CAF50; font-weight: 500;'>{enhanced_message}</div>"
             elif status == "warning":
-                status_html = f"<div style='color: #e65100; background: rgba(255, 167, 38, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #ffa726; font-weight: 500;'>{message}</div>"
+                status_html = f"<div style='color: #e65100; background: rgba(255, 167, 38, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #ffa726; font-weight: 500;'>{enhanced_message}</div>"
             else:
-                status_html = f"<div style='color: #c62828; background: rgba(244, 67, 54, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #f44336; font-weight: 500;'>{message}</div>"
+                status_html = f"<div style='color: #c62828; background: rgba(244, 67, 54, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #f44336; font-weight: 500;'>{enhanced_message}</div>"
 
-            # Update button text and style based on ACTUAL current state
-            # Force refresh the state from the demo result to ensure accuracy
-            actual_current_state = getattr(
-                chat_instance, "service_health_failure", False
-            )
-
-            # Log the state for debugging
+            # Update button text and style based on ConfigMap state (not internal state)
             logger.info(
-                f"Button update - Demo state: {actual_current_state}, Status: {status}"
+                f"Button update - ConfigMap Demo state: {is_demo_on} ({state}), Status: {status}"
             )
 
-            if actual_current_state:
-                button_text = "🔴 Availability Demo: ON"
+            if is_demo_on:
+                button_text = f"🔴 Availability Demo: {state}"
                 button_variant = "stop"
             else:
-                button_text = "🟢 Availability Demo: OFF"
+                button_text = f"🟢 Availability Demo: {state}"
                 button_variant = "secondary"
 
             return (

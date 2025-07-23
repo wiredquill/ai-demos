@@ -2,6 +2,13 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "ai-compare-suse.fullname" . }}-app
+  annotations:
+    configmap.dependency/demo-config: "{{ include "ai-compare-suse.fullname" . }}-demo-config"
+    configmap.dependency/critical: "true"
+    observability.suse.com/configmap-monitor: "{{ include "ai-compare-suse.fullname" . }}-demo-config"
+    description: "CRITICAL: This deployment depends on demo-config ConfigMap for availability demo functionality"
+  labels:
+    configmap.dependency: "demo-config-critical"
 spec:
   replicas: 1
   selector:
@@ -9,8 +16,15 @@ spec:
       app: {{ include "ai-compare-suse.fullname" . }}-app
   template:
     metadata:
+      annotations:
+        configmap.dependency/demo-config: "{{ include "ai-compare-suse.fullname" . }}-demo-config"
+        configmap.dependency/required: "true"
+        suse.observability/monitor-configmap: "{{ include "ai-compare-suse.fullname" . }}-demo-config"
+        pod.description: "Pod requires demo-config ConfigMap for availability demo - monitor ConfigMap changes"
       labels:
         app: {{ include "ai-compare-suse.fullname" . }}-app
+        configmap.dependency: "demo-config-critical"
+        observability.target: "configmap-monitoring"
     spec:
       serviceAccountName: ai-compare-service-account
       {{- with .Values.imagePullSecrets }}
@@ -19,12 +33,12 @@ spec:
       {{- end }}
       containers:
         - name: app
-          image: "{{ .Values.llmChat.image.repository }}:{{ .Values.llmChat.image.tag }}"
+          image: "{{ .Values.aiCompare.image.repository }}:{{ .Values.aiCompare.image.tag }}"
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           ports:
-            - containerPort: {{ .Values.llmChat.service.port }}
+            - containerPort: {{ .Values.aiCompare.service.port }}
               name: gradio
-            - containerPort: {{ .Values.llmChat.httpApi.port }}
+            - containerPort: {{ .Values.aiCompare.httpApi.port }}
               name: http-api
           env:
             - name: OLLAMA_BASE_URL
@@ -38,20 +52,20 @@ spec:
               value: "{{ .Values.pipelines.autoConfig.apiKey }}"
             # --- NEW ENVIRONMENT VARIABLES ---
             - name: AUTOMATION_ENABLED
-              value: "{{ .Values.llmChat.automation.enabled }}"
+              value: "{{ .Values.aiCompare.automation.enabled }}"
             - name: AUTOMATION_PROMPT
-              value: "{{ .Values.llmChat.automation.defaultPrompt }}"
+              value: "{{ .Values.aiCompare.automation.defaultPrompt }}"
             - name: AUTOMATION_INTERVAL
-              value: "{{ .Values.llmChat.automation.intervalSeconds }}"
+              value: "{{ .Values.aiCompare.automation.intervalSeconds }}"
             - name: AUTOMATION_SEND_MESSAGES
-              value: "{{ .Values.llmChat.automation.sendMessages }}"
+              value: "{{ .Values.aiCompare.automation.sendMessages }}"
             # Observability configuration
             - name: OBSERVABILITY_ENABLED
-              value: "{{ .Values.llmChat.observability.enabled }}"
+              value: "{{ .Values.aiCompare.observability.enabled }}"
             - name: OTLP_ENDPOINT
-              value: "{{ .Values.llmChat.observability.otlpEndpoint }}"
+              value: "{{ .Values.aiCompare.observability.otlpEndpoint }}"
             - name: COLLECT_GPU_STATS
-              value: "{{ .Values.llmChat.observability.collectGpuStats }}"
+              value: "{{ .Values.aiCompare.observability.collectGpuStats }}"
             # Model configuration for demo
             - name: MODEL_CONFIG
               valueFrom:
@@ -69,16 +83,19 @@ spec:
               value: "{{ include "ai-compare-suse.fullname" . }}-app"
             # HTTP API configuration
             - name: HTTP_API_ENABLED
-              value: {{ .Values.llmChat.httpApi.enabled | quote }}
+              value: {{ .Values.aiCompare.httpApi.enabled | quote }}
             - name: HTTP_API_PORT
-              value: {{ .Values.llmChat.httpApi.port | quote }}
+              value: {{ .Values.aiCompare.httpApi.port | quote }}
             - name: DEMO_CONFIG_PATH
               value: "/app/demo-config"
             # Demo ConfigMap manipulation settings
             - name: KUBERNETES_NAMESPACE
               value: "{{ .Release.Namespace }}"
+            # CRITICAL: ConfigMap dependency for availability demo
             - name: DEMO_CONFIGMAP_NAME
               value: "{{ include "ai-compare-suse.fullname" . }}-demo-config"
+            - name: DEMO_CONFIGMAP_CRITICAL
+              value: "true"
             # Timeout configuration for SUSE security policy compatibility
             - name: CONNECTION_TIMEOUT
               value: "5"
@@ -90,7 +107,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: {{ .Values.llmChat.httpApi.port }}
+              port: {{ .Values.aiCompare.httpApi.port }}
             initialDelaySeconds: 15
             periodSeconds: 10
             timeoutSeconds: 5
@@ -98,7 +115,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /health
-              port: {{ .Values.llmChat.httpApi.port }}
+              port: {{ .Values.aiCompare.httpApi.port }}
             initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 3
