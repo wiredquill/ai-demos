@@ -2099,9 +2099,14 @@ def create_interface():
             else:
                 status_html = f"<div style='color: #c62828; background: rgba(244, 67, 54, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #f44336; font-weight: 500;'>{message}</div>"
 
-            # Update button text and style based on current state
-            current_state = getattr(chat_instance, 'service_health_failure', False)
-            if current_state:
+            # Update button text and style based on ACTUAL current state
+            # Force refresh the state from the demo result to ensure accuracy
+            actual_current_state = getattr(chat_instance, 'service_health_failure', False)
+            
+            # Log the state for debugging
+            logger.info(f"Button update - Demo state: {actual_current_state}, Status: {status}")
+            
+            if actual_current_state:
                 button_text = "🔴 Availability Demo: ON"
                 button_variant = "stop"
             else:
