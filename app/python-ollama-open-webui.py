@@ -525,26 +525,23 @@ class ChatInterface:
             
             # Get namespace and ConfigMap name from environment or use defaults
             namespace = os.getenv('KUBERNETES_NAMESPACE', 'ai-compare')
-            configmap_name = os.getenv('DEMO_CONFIGMAP_NAME', None)
+            configmap_name = os.getenv('DEMO_CONFIGMAP_NAME', 'ai-compare-demo-config')
             
-            # Try to determine ConfigMap name if not provided
-            if not configmap_name:
-                # Look for ConfigMaps with 'demo-config' in the name
-                try:
-                    result = subprocess.run([
-                        'kubectl', 'get', 'configmap', '-n', namespace, 
-                        '-o', 'name', '--field-selector=metadata.name~=demo-config'
-                    ], capture_output=True, text=True, timeout=10)
-                    
-                    if result.returncode == 0 and result.stdout.strip():
-                        configmap_name = result.stdout.strip().split('/')[-1]
-                        logger.info(f"Found demo ConfigMap: {configmap_name}")
-                    else:
-                        logger.warning("No demo ConfigMap found, falling back to local simulation")
-                        return False
-                except Exception as e:
-                    logger.warning(f"Failed to find ConfigMap: {e}, falling back to local simulation")
+            # Verify ConfigMap exists
+            try:
+                result = subprocess.run([
+                    'kubectl', 'get', 'configmap', configmap_name, '-n', namespace, 
+                    '-o', 'name'
+                ], capture_output=True, text=True, timeout=10)
+                
+                if result.returncode != 0:
+                    logger.error(f"ConfigMap {configmap_name} not found in namespace {namespace}")
                     return False
+                else:
+                    logger.info(f"Found demo ConfigMap: {configmap_name}")
+            except Exception as e:
+                logger.error(f"Failed to verify ConfigMap: {e}")
+                return False
             
             # Step 1: Remove the working key 'models-latest'
             logger.info(f"Removing working ConfigMap key 'models-latest' from {configmap_name}")
@@ -585,25 +582,23 @@ class ChatInterface:
             
             # Get namespace and ConfigMap name from environment or use defaults
             namespace = os.getenv('KUBERNETES_NAMESPACE', 'ai-compare')
-            configmap_name = os.getenv('DEMO_CONFIGMAP_NAME', None)
+            configmap_name = os.getenv('DEMO_CONFIGMAP_NAME', 'ai-compare-demo-config')
             
-            # Try to determine ConfigMap name if not provided
-            if not configmap_name:
-                try:
-                    result = subprocess.run([
-                        'kubectl', 'get', 'configmap', '-n', namespace, 
-                        '-o', 'name', '--field-selector=metadata.name~=demo-config'
-                    ], capture_output=True, text=True, timeout=10)
-                    
-                    if result.returncode == 0 and result.stdout.strip():
-                        configmap_name = result.stdout.strip().split('/')[-1]
-                        logger.info(f"Found demo ConfigMap: {configmap_name}")
-                    else:
-                        logger.warning("No demo ConfigMap found, falling back to local simulation")
-                        return False
-                except Exception as e:
-                    logger.warning(f"Failed to find ConfigMap: {e}, falling back to local simulation")
+            # Verify ConfigMap exists
+            try:
+                result = subprocess.run([
+                    'kubectl', 'get', 'configmap', configmap_name, '-n', namespace, 
+                    '-o', 'name'
+                ], capture_output=True, text=True, timeout=10)
+                
+                if result.returncode != 0:
+                    logger.error(f"ConfigMap {configmap_name} not found in namespace {namespace}")
                     return False
+                else:
+                    logger.info(f"Found demo ConfigMap: {configmap_name}")
+            except Exception as e:
+                logger.error(f"Failed to verify ConfigMap: {e}")
+                return False
             
             # Step 1: Remove the broken key 'models_latest'
             logger.info(f"Removing broken ConfigMap key 'models_latest' from {configmap_name}")
