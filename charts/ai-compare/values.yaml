@@ -99,33 +99,43 @@ llmChat:
   httpApi:
     enabled: true
     port: 8080
-# Frontend End User UI (Optional - NGINX-based)
+# HTTP Load Simulator (replaces frontend UI for traffic generation)
 frontend:
-  enabled: false # Disabled by default - enable for HTTP traffic generation and End User UI
+  enabled: false # Disabled by default - enable for HTTP traffic generation
   replicaCount: 1
   image:
-    # Upstream NGINX (default)
-    repository: nginx
-    tag: "1.25-alpine"
     pullPolicy: IfNotPresent
-    # For SUSE variant, use SUSE App Collection NGINX:
-    # repository: registry.suse.com/suse/nginx
-    # tag: "1.25"
+  # Load simulator configuration
+  loadSimulator:
+    enabled: true
+    image:
+      repository: ghcr.io/wiredquill/ai-demos-load-simulator
+      tag: "latest"
+    # Load simulation settings
+    intervalSeconds: 30  # Send requests every 30 seconds
+    requestTimeout: 30   # HTTP request timeout
+    # Custom prompts (optional) - if not provided, uses built-in defaults
+    customPrompts: []
+    # Example custom prompts:
+    # customPrompts:
+    #   - "Explain SUSE Observability benefits"
+    #   - "How does Kubernetes improve application deployment?"
+    #   - "What are the advantages of using containers?"
   service:
     type: ClusterIP
-    port: 80
+    port: 80  # Not used by load simulator, but kept for compatibility
     annotations: {}
   resources:
     limits:
-      cpu: 200m
-      memory: 256Mi
+      cpu: 100m      # Lower CPU - just sending HTTP requests
+      memory: 128Mi   # Lower memory - minimal Python script
     requests:
-      cpu: 100m
-      memory: 128Mi
+      cpu: 50m
+      memory: 64Mi
   podSecurityContext:
     runAsNonRoot: true
-    runAsUser: 101
-    runAsGroup: 101
+    runAsUser: 1000
+    runAsGroup: 1000
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
