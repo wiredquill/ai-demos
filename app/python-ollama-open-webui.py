@@ -935,8 +935,8 @@ class ChatInterface:
         logger.info("Updating all provider statuses.")
         updated_status = {}
         start_time = time.time()
-        # Optimized timeout: Most providers use 1s timeout, so 3s total is enough
-        max_total_time = 3  # Allow 3 seconds total for all parallel provider checks (was 10s)
+        # Allow 10 seconds total to judge if ALL models are online or offline
+        max_total_time = 10  # Allow 10 seconds total for all parallel provider checks
 
         try:
             providers = self.config.get("providers", {})
