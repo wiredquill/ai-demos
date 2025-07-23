@@ -76,7 +76,7 @@ pipelines:
 llmChat:
   image:
     repository: ghcr.io/wiredquill/ai-demos-suse
-    tag: "b1b7fdf"
+    tag: "018d4e8"
   service:
     port: 7860
     type: NodePort
