@@ -32,8 +32,8 @@ COPY app/python-ollama-open-webui.py /app/python-ollama-open-webui.py
 COPY frontend /app/frontend
 
 
-# Expose the port Gradio will run on
-EXPOSE 7860
+# Expose the ports for Gradio and HTTP API
+EXPOSE 7860 8080
 
 # Command to run the application
 # Using unbuffered python output for better logging in containers

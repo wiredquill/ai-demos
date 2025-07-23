@@ -7,7 +7,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -59,7 +59,6 @@ def config_file(temp_dir, sample_config):
 @pytest.fixture
 def mock_requests():
     """Mock requests module for HTTP testing."""
-    from unittest.mock import patch
     with patch("requests.get") as mock_get, patch(
         "requests.post"
     ) as mock_post, patch("requests.head") as mock_head:
@@ -96,7 +95,6 @@ def mock_environment():
         "COLLECT_GPU_STATS": "false",
     }
 
-    from unittest.mock import patch
     with patch.dict(os.environ, env_vars):
         yield env_vars
 
@@ -110,7 +108,6 @@ def observability_environment():
         "COLLECT_GPU_STATS": "true",
     }
 
-    from unittest.mock import patch
     with patch.dict(os.environ, env_vars):
         yield env_vars
 
@@ -124,7 +121,6 @@ def automation_environment():
         "AUTOMATION_INTERVAL": "30",
     }
 
-    from unittest.mock import patch
     with patch.dict(os.environ, env_vars):
         yield env_vars
 
