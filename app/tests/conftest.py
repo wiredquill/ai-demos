@@ -59,9 +59,10 @@ def config_file(temp_dir, sample_config):
 @pytest.fixture
 def mock_requests():
     """Mock requests module for HTTP testing."""
-    with pytest.mock.patch("requests.get") as mock_get, pytest.mock.patch(
+    from unittest.mock import patch
+    with patch("requests.get") as mock_get, patch(
         "requests.post"
-    ) as mock_post, pytest.mock.patch("requests.head") as mock_head:
+    ) as mock_post, patch("requests.head") as mock_head:
 
         # Default successful responses
         mock_response = Mock()
@@ -95,7 +96,8 @@ def mock_environment():
         "COLLECT_GPU_STATS": "false",
     }
 
-    with pytest.mock.patch.dict(os.environ, env_vars):
+    from unittest.mock import patch
+    with patch.dict(os.environ, env_vars):
         yield env_vars
 
 
@@ -108,7 +110,8 @@ def observability_environment():
         "COLLECT_GPU_STATS": "true",
     }
 
-    with pytest.mock.patch.dict(os.environ, env_vars):
+    from unittest.mock import patch
+    with patch.dict(os.environ, env_vars):
         yield env_vars
 
 
@@ -121,7 +124,8 @@ def automation_environment():
         "AUTOMATION_INTERVAL": "30",
     }
 
-    with pytest.mock.patch.dict(os.environ, env_vars):
+    from unittest.mock import patch
+    with patch.dict(os.environ, env_vars):
         yield env_vars
 
 
