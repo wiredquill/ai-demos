@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
-import { useAppStore } from '@/store/useAppStore'
-import { apiRequest } from '@/lib/utils'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Button } from './ui/button'
+import { Progress } from './ui/progress'
+import { useAppStore } from '../store/useAppStore'
+import { apiRequest } from '../lib/utils'
 import { Play, Square, BarChart3, Clock } from 'lucide-react'
 
 export const LoadSimulator: React.FC = () => {

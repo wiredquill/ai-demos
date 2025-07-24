@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { useAppStore } from '@/store/useAppStore'
-import { apiRequest } from '@/lib/utils'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Button } from './ui/button'
+import { useAppStore } from '../store/useAppStore'
+import { apiRequest } from '../lib/utils'
 import { Send, Trash2, MessageSquare, Bot, User } from 'lucide-react'
 
 export const ChatInterface: React.FC = () => {

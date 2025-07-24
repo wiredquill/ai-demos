@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react'
-import { useAppStore } from '@/store/useAppStore'
-import { apiRequest, debounce } from '@/lib/utils'
+import { useAppStore } from '../store/useAppStore'
+import { apiRequest, debounce } from '../lib/utils'
 
 export const useProviderStatus = () => {
   const { setProviders, setConnected, setLastUpdate } = useAppStore()
@@ -19,7 +19,7 @@ export const useProviderStatus = () => {
 
       // Transform the response to match our store interface
       const transformedProviders = Object.entries(response.providers).reduce(
-        (acc, [name, provider]) => {
+        (acc, [name, provider]: [string, any]) => {
           acc[name] = {
             name,
             status: provider.status as 'online' | 'offline' | 'warning' | 'unknown',
