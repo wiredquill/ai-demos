@@ -175,11 +175,11 @@ export const DemoControls: React.FC = () => {
             <div className="mt-2 space-y-2 font-mono text-xs bg-muted p-2 rounded">
               <div>
                 <p className="font-sans font-medium mb-1">Break the app:</p>
-                <code className="block">kubectl patch configmap &lt;release&gt;-demo-config -n &lt;namespace&gt; --type=json -p='[{"op": "remove", "path": "/data/models-latest"}, {"op": "add", "path": "/data/models_latest", "value": "broken-model:invalid"}]'</code>
+                <code className="block">kubectl patch configmap &lt;release&gt;-demo-config -n &lt;namespace&gt; --type=json -p='[{`{"op": "remove", "path": "/data/models-latest"}`}, {`{"op": "add", "path": "/data/models_latest", "value": "broken-model:invalid"}`}]'</code>
               </div>
               <div>
                 <p className="font-sans font-medium mb-1">Fix the app:</p>
-                <code className="block">kubectl patch configmap &lt;release&gt;-demo-config -n &lt;namespace&gt; --type=json -p='[{"op": "remove", "path": "/data/models_latest"}, {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest,llama2:latest"}]'</code>
+                <code className="block">kubectl patch configmap &lt;release&gt;-demo-config -n &lt;namespace&gt; --type=json -p='[{`{"op": "remove", "path": "/data/models_latest"}`}, {`{"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest,llama2:latest"}`}]'</code>
               </div>
             </div>
           </details>
