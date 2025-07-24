@@ -61,7 +61,7 @@ export default {
         // Status colors for providers
         status: {
           online: '#10B981',
-          offline: '#EF4444',
+          offline: '#EF4444', 
           warning: '#F59E0B',
           unknown: '#6B7280',
         }
@@ -85,8 +85,8 @@ export default {
           to: { opacity: '1', transform: 'translateY(0)' },
         },
         'pulse-glow': {
-          '0%, 100%': { boxShadow: '0 0 5px rgba(0, 192, 129, 0.5)' },
-          '50%': { boxShadow: '0 0 20px rgba(0, 192, 129, 0.8)' },
+          '0%, 100%': { boxShadow: '0 0 8px rgba(220, 38, 38, 0.6)' },
+          '50%': { boxShadow: '0 0 25px rgba(220, 38, 38, 0.9)' },
         }
       },
       animation: {

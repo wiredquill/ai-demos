@@ -64,19 +64,19 @@
   }
   
   .status-online {
-    @apply bg-status-online animate-pulse;
+    @apply bg-green-500 animate-pulse;
   }
   
   .status-offline {
-    @apply bg-status-offline;
+    @apply bg-red-500;
   }
   
   .status-warning {
-    @apply bg-status-warning animate-pulse;
+    @apply bg-amber-500 animate-pulse;
   }
   
   .status-unknown {
-    @apply bg-status-unknown;
+    @apply bg-gray-500;
   }
 
   .demo-button-active {

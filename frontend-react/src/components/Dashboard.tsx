@@ -50,13 +50,13 @@ export const Dashboard: React.FC = () => {
               <div className="flex items-center space-x-1 px-3 py-1 rounded-full bg-muted text-sm">
                 {isConnected ? (
                   <>
-                    <Wifi className="h-3 w-3 text-status-online" />
-                    <span className="text-status-online">Connected</span>
+                    <Wifi className="h-3 w-3 text-green-500" />
+                    <span className="text-green-500 font-medium">Connected</span>
                   </>
                 ) : (
                   <>
-                    <WifiOff className="h-3 w-3 text-status-offline" />
-                    <span className="text-status-offline">Disconnected</span>
+                    <WifiOff className="h-3 w-3 text-red-500" />
+                    <span className="text-red-500 font-medium">Disconnected</span>
                   </>
                 )}
               </div>

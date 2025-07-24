@@ -140,8 +140,11 @@ export const DemoControls: React.FC = () => {
             <p>• Manipulates ConfigMap to simulate service failures</p>
             <p>• Creates HTTP 500 errors for SUSE Observability monitoring</p>
             {demoState.availability.isActive && demoState.availability.configValue && (
-              <div className="p-2 bg-muted rounded text-xs">
-                <strong>ConfigMap Value:</strong> <code>{demoState.availability.configValue}</code>
+              <div className="p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded text-xs">
+                <strong className="text-red-800 dark:text-red-200">ConfigMap Value:</strong>{' '}
+                <code className="bg-red-100 dark:bg-red-900 text-red-900 dark:text-red-100 px-1 py-0.5 rounded font-mono">
+                  {demoState.availability.configValue}
+                </code>
               </div>
             )}
           </div>

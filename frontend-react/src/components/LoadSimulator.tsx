@@ -85,9 +85,9 @@ export const LoadSimulator: React.FC = () => {
   }
 
   const getStatusColor = (): string => {
-    if (loadSimulator.isRunning) return 'text-status-online'
-    if (loadSimulator.status === 'error') return 'text-status-offline'
-    return 'text-status-warning'
+    if (loadSimulator.isRunning) return 'text-green-500 font-medium'
+    if (loadSimulator.status === 'error') return 'text-red-500 font-medium'
+    return 'text-amber-500 font-medium'
   }
 
   return (
@@ -162,7 +162,7 @@ export const LoadSimulator: React.FC = () => {
           <p>• Health checks and metrics endpoint testing</p>
           {loadSimulator.isRunning && (
             <div className="p-2 bg-muted rounded">
-              <p className="text-status-online">✅ Generating observable HTTP traffic patterns</p>
+              <p className="text-green-500 font-medium">✅ Generating observable HTTP traffic patterns</p>
             </div>
           )}
         </div>

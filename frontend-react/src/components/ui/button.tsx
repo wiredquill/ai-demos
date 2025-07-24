@@ -25,7 +25,7 @@ const buttonVariants = cva(
         link: 'text-primary underline-offset-4 hover:underline',
         // Custom variants for demos
         demo: 'bg-suse-primary text-white hover:bg-suse-primary/90',
-        'demo-active': 'bg-destructive text-destructive-foreground animate-pulse-glow',
+        'demo-active': 'bg-red-600 text-white font-bold border-2 border-red-400 shadow-lg animate-pulse-glow',
       },
       size: {
         default: 'h-10 px-4 py-2',

@@ -10,10 +10,10 @@ function formatResponseTime(responseTime: string | number): string {
 
 function getStatusColor(status: string): string {
   switch (status.toLowerCase()) {
-    case 'online': case '🟢': return 'text-status-online';
-    case 'offline': case '🔴': return 'text-status-offline';
-    case 'warning': case '🟡': return 'text-status-warning';
-    default: return 'text-status-unknown';
+    case 'online': case '🟢': return 'text-green-500 font-medium';
+    case 'offline': case '🔴': return 'text-red-500 font-medium';
+    case 'warning': case '🟡': return 'text-amber-500 font-medium';
+    default: return 'text-gray-500 font-medium';
   }
 }
 
