@@ -124,10 +124,13 @@ class ObservableAPIServer:
             """Demo status endpoint for React frontend."""
             logger.info("Demo status endpoint accessed")
             try:
+                # Get real-time ConfigMap state for availability demo
+                is_active, state, config_value = self.chat_interface._check_configmap_demo_state()
+                
                 return jsonify({
                     "availability_demo": {
-                        "is_active": getattr(self.chat_interface, "service_health_failure", False),
-                        "config_value": getattr(self.chat_interface, "availability_demo_config_value", None),
+                        "is_active": is_active,
+                        "config_value": config_value,
                         "last_toggled": getattr(self.chat_interface, "availability_demo_last_toggled", None),
                     },
                     "data_leak_demo": {
@@ -273,6 +276,58 @@ class ObservableAPIServer:
 
             except Exception as e:
                 logger.error(f"Data leak demo API error: {e}")
+                return jsonify({"error": str(e), "status": "error"}), 500
+
+        @self.app.route("/api/load-simulator/status", methods=["GET", "OPTIONS"])
+        def load_simulator_status():
+            """Get load simulator status."""
+            try:
+                is_running = self.chat_interface.check_load_simulator_status()
+                
+                return jsonify({
+                    "status": "running" if is_running else "stopped",
+                    "is_running": is_running,
+                    "request_count": getattr(self.chat_interface, "load_simulator_request_count", 0),
+                    "last_request": getattr(self.chat_interface, "load_simulator_last_request", None),
+                    "timestamp": time.time(),
+                }), 200
+                
+            except Exception as e:
+                logger.error(f"Load simulator status API error: {e}")
+                return jsonify({"error": str(e), "status": "error"}), 500
+
+        @self.app.route("/api/load-simulator/start", methods=["POST", "OPTIONS"])
+        def start_load_simulator():
+            """Start load simulator."""
+            try:
+                success, message = self.chat_interface.start_load_simulator()
+                
+                return jsonify({
+                    "message": message,
+                    "status": "running" if success else "error",
+                    "simulator_status": "running" if success else "error",
+                    "timestamp": time.time(),
+                }), 200 if success else 500
+                
+            except Exception as e:
+                logger.error(f"Start load simulator API error: {e}")
+                return jsonify({"error": str(e), "status": "error"}), 500
+
+        @self.app.route("/api/load-simulator/stop", methods=["POST", "OPTIONS"])
+        def stop_load_simulator():
+            """Stop load simulator."""
+            try:
+                success, message = self.chat_interface.stop_load_simulator()
+                
+                return jsonify({
+                    "message": message,
+                    "status": "stopped" if success else "error",
+                    "simulator_status": "stopped" if success else "error",
+                    "timestamp": time.time(),
+                }), 200 if success else 500
+                
+            except Exception as e:
+                logger.error(f"Stop load simulator API error: {e}")
                 return jsonify({"error": str(e), "status": "error"}), 500
 
         @self.app.route("/api/metrics", methods=["GET", "OPTIONS"])
