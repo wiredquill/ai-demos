@@ -105,6 +105,20 @@ class ObservableAPIServer:
                 200,
             )
 
+        @self.app.route("/api/status", methods=["GET", "OPTIONS"])
+        def provider_status():
+            """Provider status endpoint for React frontend."""
+            logger.info("Provider status endpoint accessed")
+            try:
+                # Return current provider status in the format expected by React frontend
+                return jsonify({
+                    "providers": self.chat_interface.provider_status,
+                    "timestamp": time.time(),
+                }), 200
+            except Exception as e:
+                logger.error(f"Provider status endpoint error: {e}")
+                return jsonify({"error": str(e), "providers": {}, "timestamp": time.time()}), 500
+
         @self.app.route("/api/chat", methods=["POST", "OPTIONS"])
         def chat_completion():
             """Chat completion endpoint for frontend communication."""

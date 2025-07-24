@@ -3,16 +3,29 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { useAppStore } from '../store/useAppStore'
 // Inline apiRequest to avoid module resolution issues
-async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+async function apiRequest<T>(endpoint: string, options: RequestInit = {}, retries = 2): Promise<T> {
   const baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : '';
-  const response = await fetch(`${baseUrl}${endpoint}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    ...options,
-  });
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+  
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(`${baseUrl}${endpoint}`, {
+        headers: { 'Content-Type': 'application/json', ...options.headers },
+        ...options,
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      }
+      
+      return response.json();
+    } catch (error) {
+      if (attempt === retries) {
+        throw error;
+      }
+      await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+    }
   }
-  return response.json();
+  throw new Error('Max retries exceeded');
 }
 import { AlertTriangle, Shield, Zap, Info } from 'lucide-react'
 
