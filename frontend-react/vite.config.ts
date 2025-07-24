@@ -32,7 +32,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
-          'ui-vendor': ['@radix-ui/react-button', '@radix-ui/react-card'],
+          'ui-vendor': ['@radix-ui/react-slot', '@radix-ui/react-progress'],
           'chart-vendor': ['recharts'],
         }
       }
