@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { useAppStore } from '../store/useAppStore'
+import { useDemoState } from '../hooks/useApi'
 // Inline apiRequest to avoid module resolution issues
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}, retries = 2): Promise<T> {
   const baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : '';
@@ -33,6 +34,9 @@ export const DemoControls: React.FC = () => {
   const { demoState, setAvailabilityDemo, setDataLeakDemo } = useAppStore()
   const [isLoading, setIsLoading] = useState({ availability: false, dataLeak: false })
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
+  
+  // Enable real-time demo state polling
+  useDemoState()
 
   const handleAvailabilityDemo = async () => {
     setIsLoading(prev => ({ ...prev, availability: true }))

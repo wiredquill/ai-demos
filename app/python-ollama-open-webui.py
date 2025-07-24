@@ -119,6 +119,27 @@ class ObservableAPIServer:
                 logger.error(f"Provider status endpoint error: {e}")
                 return jsonify({"error": str(e), "providers": {}, "timestamp": time.time()}), 500
 
+        @self.app.route("/api/demo/status", methods=["GET", "OPTIONS"])
+        def demo_status():
+            """Demo status endpoint for React frontend."""
+            logger.info("Demo status endpoint accessed")
+            try:
+                return jsonify({
+                    "availability_demo": {
+                        "is_active": getattr(self.chat_interface, "service_health_failure", False),
+                        "config_value": getattr(self.chat_interface, "availability_demo_config_value", None),
+                        "last_toggled": getattr(self.chat_interface, "availability_demo_last_toggled", None),
+                    },
+                    "data_leak_demo": {
+                        "is_active": False,  # Data leak demo is always momentary
+                        "last_triggered": getattr(self.chat_interface, "data_leak_last_triggered", None),
+                    },
+                    "timestamp": time.time(),
+                }), 200
+            except Exception as e:
+                logger.error(f"Demo status endpoint error: {e}")
+                return jsonify({"error": str(e), "timestamp": time.time()}), 500
+
         @self.app.route("/api/chat", methods=["POST", "OPTIONS"])
         def chat_completion():
             """Chat completion endpoint for frontend communication."""
