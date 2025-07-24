@@ -35,9 +35,7 @@ export const ChatInterface: React.FC = () => {
     setIsLoading(true)
 
     // Add message to store
-    const messageId = crypto.randomUUID()
-    addChatMessage({
-      id: messageId,
+    const messageId = addChatMessage({
       prompt: currentPrompt,
       isLoading: true,
     })

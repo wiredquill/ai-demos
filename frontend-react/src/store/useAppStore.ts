@@ -50,7 +50,7 @@ interface AppState {
 
   // Chat interface
   chatMessages: ChatMessage[]
-  addChatMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void
+  addChatMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => string
   updateChatMessage: (id: string, updates: Partial<ChatMessage>) => void
   clearChatMessages: () => void
 
@@ -114,17 +114,20 @@ export const useAppStore = create<AppState>()(
 
       // Chat interface
       chatMessages: [],
-      addChatMessage: (message) =>
+      addChatMessage: (message) => {
+        const id = crypto.randomUUID()
         set((state) => ({
           chatMessages: [
             ...state.chatMessages,
             {
               ...message,
-              id: crypto.randomUUID(),
+              id,
               timestamp: new Date(),
             },
           ],
-        })),
+        }))
+        return id
+      },
       updateChatMessage: (id, updates) =>
         set((state) => ({
           chatMessages: state.chatMessages.map((msg) =>
