@@ -1,6 +1,25 @@
 import { useEffect, useCallback } from 'react'
 import { useAppStore } from '../store/useAppStore'
-import { apiRequest, debounce } from '../lib/utils'
+// Inline utils to avoid module resolution issues
+async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : '';
+  const response = await fetch(`${baseUrl}${endpoint}`, {
+    headers: { 'Content-Type': 'application/json', ...options.headers },
+    ...options,
+  });
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+  }
+  return response.json();
+}
+
+function debounce<T extends (...args: any[]) => void>(func: T, wait: number): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
 
 export const useProviderStatus = () => {
   const { setProviders, setConnected, setLastUpdate } = useAppStore()

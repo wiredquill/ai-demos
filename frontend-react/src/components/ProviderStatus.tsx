@@ -2,7 +2,29 @@ import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Progress } from './ui/progress'
 import { useAppStore } from '../store/useAppStore'
-import { formatResponseTime, getStatusColor, getStatusIcon } from '../lib/utils'
+// Inline utils to avoid module resolution issues
+function formatResponseTime(responseTime: string | number): string {
+  if (typeof responseTime === 'string') return responseTime;
+  return `${responseTime}ms`;
+}
+
+function getStatusColor(status: string): string {
+  switch (status.toLowerCase()) {
+    case 'online': case '🟢': return 'text-status-online';
+    case 'offline': case '🔴': return 'text-status-offline';
+    case 'warning': case '🟡': return 'text-status-warning';
+    default: return 'text-status-unknown';
+  }
+}
+
+function getStatusIcon(status: string): string {
+  switch (status.toLowerCase()) {
+    case 'online': case '🟢': return '🟢';
+    case 'offline': case '🔴': return '🔴';
+    case 'warning': case '🟡': return '🟡';
+    default: return '⚪';
+  }
+}
 
 export const ProviderStatus: React.FC = () => {
   const { providers, isConnected, lastUpdate } = useAppStore()
