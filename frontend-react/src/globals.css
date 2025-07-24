@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 224 71.4% 4.1%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 71.4% 4.1%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71.4% 4.1%;
+    --primary: 159 82% 38%;
+    --primary-foreground: 210 20% 98%;
+    --secondary: 220 14.3% 95.9%;
+    --secondary-foreground: 220.9 39.3% 11%;
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 220 8.9% 46.1%;
+    --accent: 220 14.3% 95.9%;
+    --accent-foreground: 220.9 39.3% 11%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 159 82% 38%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 224 71.4% 4.1%;
+    --foreground: 210 20% 98%;
+    --card: 224 71.4% 4.1%;
+    --card-foreground: 210 20% 98%;
+    --popover: 224 71.4% 4.1%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 159 82% 38%;
+    --primary-foreground: 210 20% 98%;
+    --secondary: 215 27.9% 16.9%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 215 27.9% 16.9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
+    --accent: 215 27.9% 16.9%;
+    --accent-foreground: 210 20% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 215 27.9% 16.9%;
+    --input: 215 27.9% 16.9%;
+    --ring: 159 82% 38%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .status-indicator {
+    @apply inline-flex items-center justify-center w-3 h-3 rounded-full;
+  }
+  
+  .status-online {
+    @apply bg-status-online animate-pulse;
+  }
+  
+  .status-offline {
+    @apply bg-status-offline;
+  }
+  
+  .status-warning {
+    @apply bg-status-warning animate-pulse;
+  }
+  
+  .status-unknown {
+    @apply bg-status-unknown;
+  }
+
+  .demo-button-active {
+    @apply bg-destructive text-destructive-foreground animate-pulse-glow;
+  }
+  
+  .demo-button-inactive {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+  }
+
+  .provider-card {
+    @apply p-4 rounded-lg border bg-card text-card-foreground shadow-sm transition-all duration-200;
+  }
+  
+  .provider-card:hover {
+    @apply shadow-md scale-[1.02];
+  }
+
+  .chat-message {
+    @apply p-4 rounded-lg bg-muted/50 border-l-4 border-primary;
+  }
+  
+  .chat-response {
+    @apply p-4 rounded-lg bg-card border shadow-sm;
+  }
+
+  .gradient-bg {
+    background: linear-gradient(135deg, #0a2f26 0%, #0c322c 50%, #0f3a2f 100%);
+  }
+}

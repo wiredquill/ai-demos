@@ -131,6 +131,19 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Build and push React Frontend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: frontend-react
+          file: frontend-react/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ env.OWNER_LC }}/${{ env.BASE_IMAGE_NAME }}-frontend-react:${{ env.IMAGE_TAG }}
+            ghcr.io/${{ env.OWNER_LC }}/${{ env.BASE_IMAGE_NAME }}-frontend-react:latest
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
 
   update-and-commit-charts:
     needs: build-and-push-images

@@ -105,11 +105,34 @@ aiCompare:
   httpApi:
     enabled: true
     port: 8080
-# HTTP Load Simulator (Optional - HTTP traffic generation for observability)  
+# Frontend Configuration
 frontend:
-  enabled: false # Disabled by default - enable for HTTP traffic generation
+  # Modern React-based dashboard (recommended)
+  react:
+    enabled: false # Set to true to enable React frontend
+    replicas: 1
+    image:
+      repository: ghcr.io/wiredquill/ai-demos-frontend-react
+      tag: "latest"
+      pullPolicy: Always
+    service:
+      type: NodePort
+      port: 3000
+      nodePort: null # Auto-assign if null
+    resources:
+      limits:
+        cpu: 200m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+    
+  # HTTP Load Simulator (Optional - HTTP traffic generation for observability)  
   loadSimulator:
-    enabled: true
+    enabled: false # Disabled by default - enable for HTTP traffic generation
     image:
       repository: ghcr.io/wiredquill/ai-demos-load-simulator
       tag: "latest"
