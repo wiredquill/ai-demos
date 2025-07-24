@@ -770,7 +770,9 @@ class ChatInterface:
                 self.availability_demo_auto_off_timer = None
         
         # Cancel any existing timer
-        if self.availability_demo_auto_off_timer and self.availability_demo_auto_off_timer.is_alive():
+        if (hasattr(self, 'availability_demo_auto_off_timer') and 
+            self.availability_demo_auto_off_timer and 
+            self.availability_demo_auto_off_timer.is_alive()):
             logger.info("Canceling existing auto-off timer")
         
         # Start new timer
