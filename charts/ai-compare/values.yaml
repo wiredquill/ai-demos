@@ -75,7 +75,7 @@ pipelines:
 llmChat:
   image:
     repository: ghcr.io/wiredquill/ai-demos
-    tag: "2898e99"
+    tag: "5703aec"
   service:
     port: 7860
     type: NodePort
@@ -91,7 +91,7 @@ llmChat:
     sendMessages: true # Enable/disable sending test messages to models
   # Observability settings for OpenTelemetry and OpenLit (development option)
   observability:
-    enabled: false  # Disabled by default - development/testing option only
+    enabled: false # Disabled by default - development/testing option only
     otlpEndpoint: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
     collectGpuStats: false
     schedule: "*/5 * * * *"
