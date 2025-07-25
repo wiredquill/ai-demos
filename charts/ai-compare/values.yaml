@@ -19,7 +19,7 @@ ollama:
     type: "nvidia" # Options: "nvidia", "apple"
   # -- OpenTelemetry observability for Ollama
   observability:
-    enabled: false  # Set to true to enable OpenTelemetry instrumentation
+    enabled: false # Set to true to enable OpenTelemetry instrumentation
     otlpEndpoint: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
   # -- Resource allocation for the main Ollama container
   resources:
@@ -79,7 +79,7 @@ pipelines:
 llmChat:
   image:
     repository: ghcr.io/wiredquill/ai-demos
-    tag: "ddf2c3c"
+    tag: "a344b41"
   service:
     port: 7860
     type: NodePort
