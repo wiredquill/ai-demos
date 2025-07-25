@@ -48,7 +48,7 @@ spec:
       fi
       
       # Test observability config (if enabled)
-      {{- if .Values.llmChat.observability.enabled }}
+      {{- if .Values.aiCompare.observability.enabled }}
       if [ -n "$OBSERVABILITY_ENABLED" ]; then
         echo "✅ Observability is enabled: $OBSERVABILITY_ENABLED"
       else
@@ -72,12 +72,12 @@ spec:
           name: ai-compare-opentelemetry-config
           key: MODEL_CONFIG
     - name: AUTOMATION_ENABLED
-      value: "{{ .Values.llmChat.automation.enabled }}"
-    {{- if .Values.llmChat.observability.enabled }}
+      value: "{{ .Values.aiCompare.automation.enabled }}"
+    {{- if .Values.aiCompare.observability.enabled }}
     - name: OBSERVABILITY_ENABLED
-      value: "{{ .Values.llmChat.observability.enabled }}"
+      value: "{{ .Values.aiCompare.observability.enabled }}"
     - name: OTLP_ENDPOINT
-      value: "{{ .Values.llmChat.observability.otlpEndpoint }}"
+      value: "{{ .Values.aiCompare.observability.otlpEndpoint }}"
     {{- end }}
     volumeMounts:
     - name: config
