@@ -649,6 +649,12 @@ class ChatInterface:
         dev_mode = os.getenv("DEV_MODE", "false").lower() == "true"
         observability_enabled = os.getenv("OBSERVABILITY_ENABLED", "false").lower() == "true"
         
+        # Enhanced GenAI observability settings (for OpenTelemetry edition)
+        token_tracking = os.getenv("TOKEN_TRACKING_ENABLED", "false").lower() == "true"
+        cost_tracking = os.getenv("COST_TRACKING_ENABLED", "false").lower() == "true"
+        model_metrics = os.getenv("MODEL_METRICS_ENABLED", "false").lower() == "true"
+        trace_requests = os.getenv("TRACE_REQUESTS_ENABLED", "false").lower() == "true"
+        
         if not observability_enabled and not dev_mode:
             logger.info("OpenLit observability disabled (production default). Enable with OBSERVABILITY_ENABLED=true or DEV_MODE=true")
             return
@@ -682,12 +688,37 @@ class ChatInterface:
             finally:
                 sock.close()
             
-            # Initialize OpenLit with configuration
-            openlit.init(
-                otlp_endpoint=otlp_endpoint, collect_gpu_stats=collect_gpu_stats
-            )
+            # Initialize OpenLit with enhanced GenAI configuration
+            openlit_config = {
+                "otlp_endpoint": otlp_endpoint,
+                "collect_gpu_stats": collect_gpu_stats
+            }
+            
+            # Add enhanced GenAI observability features if enabled
+            if token_tracking or cost_tracking or model_metrics or trace_requests:
+                logger.info("Enhanced GenAI observability features enabled:")
+                if token_tracking:
+                    logger.info("  - Token usage tracking per model and request")
+                if cost_tracking:
+                    logger.info("  - Cost calculations and budget monitoring")
+                if model_metrics:
+                    logger.info("  - Detailed model performance metrics")
+                if trace_requests:
+                    logger.info("  - Full request tracing through the stack")
+            
+            openlit.init(**openlit_config)
+            
+            # Store observability settings for use in request handling
+            self.observability_settings = {
+                "token_tracking": token_tracking,
+                "cost_tracking": cost_tracking,
+                "model_metrics": model_metrics,
+                "trace_requests": trace_requests,
+                "collect_gpu_stats": collect_gpu_stats
+            }
+            
             logger.info(
-                f"OpenLit observability initialized successfully. Endpoint: {otlp_endpoint}, GPU Stats: {collect_gpu_stats}"
+                f"OpenLit observability initialized successfully. Endpoint: {otlp_endpoint}, GPU Stats: {collect_gpu_stats}, Enhanced GenAI: {any([token_tracking, cost_tracking, model_metrics, trace_requests])}"
             )
         except Exception as e:
             logger.warning(f"Failed to initialize OpenLit observability: {e} - continuing without observability")

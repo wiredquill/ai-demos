@@ -87,6 +87,10 @@ helm install my-release charts/ai-compare-suse \
   --set aiCompare.observability.otlpEndpoint="http://opentelemetry-collector.suse-observability.svc.cluster.local:4318" \
   --set ollama.observability.enabled=true \
   --set ollama.observability.otlpEndpoint="http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
+
+# OpenTelemetry Edition - Advanced GenAI observability with token/cost tracking (NEW)
+helm install my-release charts/ai-compare-opentelemetry \
+  --set frontend.enabled=true
 ```
 
 ### Fleet GitOps Deployment
@@ -124,6 +128,18 @@ kubectl label cluster my-cluster needs-llm=true        # For upstream variant
 - **Telemetry Collected**: HTTP response times, request counts, error rates, model inference metrics
 - **Integration**: Sidecar OpenTelemetry collector sends data to SUSE Observability
 - **Resource Usage**: Minimal overhead (50m CPU, 64Mi memory requests)
+
+**AI Compare OpenTelemetry Edition (NEW):**
+- **Purpose**: Advanced GenAI observability with comprehensive token-level cost tracking
+- **Default State**: All observability features enabled by default
+- **Enhanced Features**:
+  - `tokenTracking`: Per-request and per-model token usage monitoring
+  - `costTracking`: Real-time cost calculations and budget tracking
+  - `modelMetrics`: Detailed model performance and efficiency metrics
+  - `traceRequests`: Full request tracing from input to model response
+  - GPU statistics and hardware utilization monitoring
+- **Based On**: SUSE BCI images with enterprise-grade security and compliance
+- **Integration**: Native SUSE Observability with OpenLit GenAI instrumentation
 
 **Helm Values Structure:**
 - `ollama.*`: Ollama deployment configuration

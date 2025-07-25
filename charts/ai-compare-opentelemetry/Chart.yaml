@@ -1,0 +1,30 @@
+apiVersion: v2
+name: ai-compare-opentelemetry
+description: "AI Compare OpenTelemetry Edition - Advanced observability-focused AI response comparison platform. Features comprehensive GenAI telemetry, token-level cost tracking, model performance monitoring, and deep integration with SUSE Observability."
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - ai
+  - llm
+  - ollama
+  - machine-learning
+  - opentelemetry
+  - observability
+  - telemetry
+  - monitoring
+  - genai
+  - tokens
+  - cost-tracking
+  - demo
+home: https://github.com/wiredquill/ai-demos
+sources:
+  - https://github.com/wiredquill/ai-demos
+maintainers:
+  - name: AI Compare OpenTelemetry Team
+    email: noreply@anthropic.com
+annotations:
+  category: AI/ML
+  licenses: MIT
+  opentelemetry.io/instrumented: "true"
+  observability.suse.com/compatible: "true"
