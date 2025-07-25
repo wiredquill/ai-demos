@@ -20,7 +20,7 @@ spec:
       set -e
       echo "=== AI Compare Security Demo Tests ==="
       
-      AI_COMPARE_URL="http://ai-compare-suse-chat-service:{{ .Values.llmChat.service.port }}"
+      AI_COMPARE_URL="http://ai-compare-suse-chat-service:{{ .Values.aiCompare.service.port }}"
       
       # Test main interface accessibility
       echo "Testing main AI Compare interface..."

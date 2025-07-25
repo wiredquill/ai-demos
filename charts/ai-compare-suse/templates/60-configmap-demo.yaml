@@ -29,7 +29,7 @@ data:
       "name": "ai-compare-suse-app",
       "version": "{{ .Chart.AppVersion }}",
       "demo_enabled": true,
-      "observability_endpoint": "{{ .Values.llmChat.observability.otlpEndpoint }}",
+      "observability_endpoint": "{{ .Values.aiCompare.observability.otlpEndpoint }}",
       "last_updated": "{{ now | date "2006-01-02T15:04:05Z" }}"
     }
   
