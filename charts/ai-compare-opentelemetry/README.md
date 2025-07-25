@@ -100,7 +100,7 @@ This chart deploys a complete AI comparison stack optimized for SUSE environment
 
 ### SUSE Observability Integration
 ```yaml
-llmChat:
+aiCompare:
   observability:
     enabled: true
     otlpEndpoint: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"

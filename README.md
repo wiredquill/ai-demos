@@ -125,7 +125,7 @@ The flagship AI Compare application provides real-time comparison between:
 # SUSE Enterprise Edition
 helm install ai-demo charts/ai-compare-suse \
   --set ollama.gpu.enabled=true \
-  --set llmChat.observability.enabled=true
+  --set aiCompare.observability.enabled=true
 
 # Upstream Community Edition  
 helm install ai-demo charts/ai-compare
@@ -203,7 +203,7 @@ ollama:
 
 ### **Enterprise Observability**
 ```yaml
-llmChat:
+aiCompare:
   observability:
     enabled: true
     otlpEndpoint: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
@@ -220,7 +220,7 @@ neuvector:
 
 ### **Development Mode**
 ```yaml
-llmChat:
+aiCompare:
   devMode:
     enabled: true
     persistence:

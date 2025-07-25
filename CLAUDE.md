@@ -57,15 +57,15 @@ helm install my-release charts/ai-compare-suse \
 
 # Enable development mode with SSH access
 helm install my-release charts/ai-compare \
-  --set llmChat.devMode.enabled=true \
-  --set llmChat.devMode.persistence.enabled=true
+  --set aiCompare.devMode.enabled=true \
+  --set aiCompare.devMode.persistence.enabled=true
 
 # Enable OpenTelemetry observability for development/testing (disabled by default)
 # Note: OpenLit is a development option - not recommended for production
 helm install my-release charts/ai-compare-suse \
-  --set llmChat.observability.enabled=true \
-  --set llmChat.observability.otlpEndpoint="http://opentelemetry-collector.suse-observability.svc.cluster.local:4318" \
-  --set llmChat.observability.collectGpuStats=true
+  --set aiCompare.observability.enabled=true \
+  --set aiCompare.observability.otlpEndpoint="http://opentelemetry-collector.suse-observability.svc.cluster.local:4318" \
+  --set aiCompare.observability.collectGpuStats=true
 
 # Enable optional NGINX frontend for End User UI and HTTP traffic generation
 helm install my-release charts/ai-compare \
@@ -144,8 +144,8 @@ kubectl label cluster my-cluster needs-llm=true        # For upstream variant
 **Helm Values Structure:**
 - `ollama.*`: Ollama deployment configuration
 - `openWebui.*`: Open WebUI configuration
-- `llmChat.*`: Chat application configuration
-- `llmChat.observability.*`: OpenTelemetry observability configuration
+- `aiCompare.*`: Chat application configuration
+- `aiCompare.observability.*`: OpenTelemetry observability configuration
 - `*.persistence.enabled`: Enable persistent storage
 - `ollama.gpu.enabled`: Enable GPU acceleration
 - `frontend.enabled`: Enable optional NGINX frontend with End User UI
@@ -314,7 +314,7 @@ The application includes development-specific features disabled by default for p
 - **Purpose**: Model usage tracking, token counting, performance monitoring
 
 **SSH Access for Development**:
-1. Enable `llmChat.devMode.enabled=true` in Helm values
+1. Enable `aiCompare.devMode.enabled=true` in Helm values
 2. Application code persisted on PVC for git pulls inside container
 3. SSH access on port 22 (default password: `suse`)
 4. Port forward: `kubectl port-forward service/chat-service 2222:22`
@@ -323,12 +323,12 @@ The application includes development-specific features disabled by default for p
 ```bash
 # Enable development mode with observability
 helm install my-release charts/ai-compare-suse \
-  --set llmChat.devMode.enabled=true \
-  --set llmChat.observability.enabled=true
+  --set aiCompare.devMode.enabled=true \
+  --set aiCompare.observability.enabled=true
 
 # Or use environment variable approach
 helm install my-release charts/ai-compare-suse \
-  --set-string llmChat.env.DEV_MODE=true
+  --set-string aiCompare.env.DEV_MODE=true
 ```
 
 ## File Structure Notes

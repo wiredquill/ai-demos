@@ -118,7 +118,7 @@ ollama:
     type: nvidia
 
 # Observability
-llmChat:
+aiCompare:
   observability:
     enabled: true
     otlpEndpoint: "http://your-collector:4318"

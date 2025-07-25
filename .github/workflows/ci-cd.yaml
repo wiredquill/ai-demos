@@ -168,11 +168,11 @@ jobs:
           NEW_IMAGE_TAG="${{ needs.build-and-push-images.outputs.IMAGE_TAG }}"
 
           echo "Updating $UPSTREAM_VALUES_PATH with image tag: $NEW_IMAGE_TAG"
-          yq eval ".llmChat.image.tag = \"$NEW_IMAGE_TAG\"" -i "$UPSTREAM_VALUES_PATH"
+          yq eval ".aiCompare.image.tag = \"$NEW_IMAGE_TAG\"" -i "$UPSTREAM_VALUES_PATH"
           cat "$UPSTREAM_VALUES_PATH"
 
           echo "Updating $SUSE_VALUES_PATH with image tag: $NEW_IMAGE_TAG"
-          yq eval ".llmChat.image.tag = \"$NEW_IMAGE_TAG\"" -i "$SUSE_VALUES_PATH"
+          yq eval ".aiCompare.image.tag = \"$NEW_IMAGE_TAG\"" -i "$SUSE_VALUES_PATH"
           cat "$SUSE_VALUES_PATH"
 
       - name: Increment Chart.yaml versions
