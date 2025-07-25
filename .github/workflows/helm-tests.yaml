@@ -103,7 +103,7 @@ jobs:
       uses: helm/kind-action@v1.8.0
       with:
         cluster_name: helm-test
-        kubectl_version: latest
+        kubectl_version: v1.29.0
         
     - name: Test Helm install (dry-run)
       run: |
@@ -152,7 +152,7 @@ jobs:
       uses: helm/kind-action@v1.8.0
       with:
         cluster_name: ai-compare-test
-        kubectl_version: latest
+        kubectl_version: v1.29.0
         config: |
           kind: Cluster
           apiVersion: kind.x-k8s.io/v1alpha4
