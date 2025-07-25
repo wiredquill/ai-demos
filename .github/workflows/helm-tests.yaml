@@ -97,13 +97,13 @@ jobs:
     - name: Set up kubectl
       uses: azure/setup-kubectl@v4
       with:
-        version: '1.28.0'
+        version: '1.31.0'
         
     - name: Create kind cluster
       uses: helm/kind-action@v1.8.0
       with:
         cluster_name: helm-test
-        kubectl_version: v1.28.0
+        kubectl_version: v1.31.0
         
     - name: Test Helm install (dry-run)
       run: |
@@ -146,13 +146,13 @@ jobs:
     - name: Set up kubectl
       uses: azure/setup-kubectl@v4
       with:
-        version: '1.28.0'
+        version: '1.31.0'
         
     - name: Create kind cluster with config
       uses: helm/kind-action@v1.8.0
       with:
         cluster_name: ai-compare-test
-        kubectl_version: v1.28.0
+        kubectl_version: v1.31.0
         config: |
           kind: Cluster
           apiVersion: kind.x-k8s.io/v1alpha4
@@ -181,7 +181,7 @@ jobs:
           --wait \
           --timeout 10m \
           --set ollama.models.tinyllama=true \
-          --set llmChat.automation.enabled=false \
+          --set aiCompare.automation.enabled=false \
           --set neuvector.enabled=false
           
         # Wait for pods to be ready
