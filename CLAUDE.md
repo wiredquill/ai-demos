@@ -60,7 +60,8 @@ helm install my-release charts/ai-compare \
   --set llmChat.devMode.enabled=true \
   --set llmChat.devMode.persistence.enabled=true
 
-# Enable OpenTelemetry observability with SUSE Observability
+# Enable OpenTelemetry observability for development/testing (disabled by default)
+# Note: OpenLit is a development option - not recommended for production
 helm install my-release charts/ai-compare-suse \
   --set llmChat.observability.enabled=true \
   --set llmChat.observability.otlpEndpoint="http://opentelemetry-collector.suse-observability.svc.cluster.local:4318" \
@@ -99,11 +100,13 @@ kubectl label cluster my-cluster needs-llm=true        # For upstream variant
 - `AUTOMATION_ENABLED`: Enable automated testing loop
 - `AUTOMATION_PROMPT`: Default prompt for automation
 - `AUTOMATION_INTERVAL`: Automation interval in seconds
-- `OBSERVABILITY_ENABLED`: Enable OpenTelemetry observability via OpenLit
+- `OBSERVABILITY_ENABLED`: Enable OpenTelemetry observability via OpenLit (development option)
+- `DEV_MODE`: Enable development features including observability (alternative to OBSERVABILITY_ENABLED)
 - `OTLP_ENDPOINT`: OpenTelemetry collector endpoint for SUSE Observability
 - `COLLECT_GPU_STATS`: Enable GPU statistics collection
 - `KUBERNETES_NAMESPACE`: Kubernetes namespace for ConfigMap manipulation
 - `DEMO_CONFIGMAP_NAME`: ConfigMap name for availability demo
+- `SERVICE_HEALTH_FAILURE`: Enable ConfigMap-based health check failures (required for availability demo)
 - `CONNECTION_TIMEOUT`: Network connection timeout (optimized for SUSE security policies)
 - `REQUEST_TIMEOUT`: HTTP request timeout (optimized for SUSE security policies)
 - `INFERENCE_TIMEOUT`: LLM inference timeout
@@ -124,10 +127,17 @@ kubectl label cluster my-cluster needs-llm=true        # For upstream variant
 
 The application includes a sophisticated availability demo that creates **real** observable failures for SUSE Observability monitoring:
 
+**Quick Status Check:**
+```bash
+# Check if app is working or broken (replace <namespace> with your namespace)
+kubectl get configmap <release-name>-demo-config -n <namespace> -o jsonpath='{.data}' | jq -r 'if has("models-latest") then "✅ APP WORKING" elif has("models_latest") then "❌ APP BROKEN" else "❓ UNKNOWN STATE" end'
+```
+
 **How It Works:**
 1. **ON Toggle**: Manipulates Kubernetes ConfigMap to break application configuration
    - Removes working config key `models-latest`
    - Adds broken config key `models_latest` (underscore breaks lookup)
+   - **Requires `SERVICE_HEALTH_FAILURE=true`** to activate ConfigMap checking
    - Application starts returning HTTP 500 errors
    - Health checks fail with real error conditions
 
@@ -150,16 +160,39 @@ The application includes a sophisticated availability demo that creates **real**
 kubectl get configmap <release-name>-demo-config -n <namespace> -o yaml
 
 # Break the app (turn availability demo ON) - Creates HTTP 500 errors
+# Step 1: Break ConfigMap
 kubectl patch configmap <release-name>-demo-config -n <namespace> --type=json -p='[
   {"op": "remove", "path": "/data/models-latest"},
   {"op": "add", "path": "/data/models_latest", "value": "broken-model:invalid"}
 ]'
 
-# Fix the app (turn availability demo OFF) - Restores HTTP 200 responses  
+# Step 2: Activate failure mode (REQUIRED for health checks to fail)
+kubectl patch deployment <release-name>-app -n <namespace> -p='{"spec":{"template":{"spec":{"containers":[{"name":"app","env":[{"name":"SERVICE_HEALTH_FAILURE","value":"true"}]}]}}}}'
+
+# Fix the app (turn availability demo OFF) - Restores HTTP 200 responses
+# Step 1: Fix ConfigMap
 kubectl patch configmap <release-name>-demo-config -n <namespace> --type=json -p='[
   {"op": "remove", "path": "/data/models_latest"},
-  {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest,llama2:latest"}
+  {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest"}
 ]'
+
+# Step 2: Deactivate failure mode
+kubectl patch deployment <release-name>-app -n <namespace> -p='{"spec":{"template":{"spec":{"containers":[{"name":"app","env":[{"name":"SERVICE_HEALTH_FAILURE","value":"false"}]}]}}}}'
+```
+
+**Check Demo Status:**
+```bash
+# Quick status check (shows WORKING ✅ or BROKEN ❌)
+kubectl get configmap <release-name>-demo-config -n <namespace> -o jsonpath='{.data}' | jq -r 'if has("models-latest") then "✅ APP WORKING" elif has("models_latest") then "❌ APP BROKEN" else "❓ UNKNOWN STATE" end'
+
+# Health + ConfigMap status
+echo -n "Health: " && kubectl exec deployment/<release-name>-app -n <namespace> -- curl -s http://localhost:8080/health | jq -r '.status' && echo -n "ConfigMap: " && kubectl get configmap <release-name>-demo-config -n <namespace> -o jsonpath='{.data}' | jq -r 'if has("models-latest") then "WORKING ✅" elif has("models_latest") then "BROKEN ❌" else "UNKNOWN ❓" end'
+
+# Example for ai-compare namespace:
+kubectl get configmap ai-compare-demo-config -n ai-compare -o jsonpath='{.data}' | jq -r 'if has("models-latest") then "✅ APP WORKING" elif has("models_latest") then "❌ APP BROKEN" else "❓ UNKNOWN STATE" end'
+
+# Example for load-gen namespace:
+kubectl get configmap load-gen-ai-compare-demo-config -n load-gen -o jsonpath='{.data}' | jq -r 'if has("models-latest") then "✅ APP WORKING" elif has("models_latest") then "❌ APP BROKEN" else "❓ UNKNOWN STATE" end'
 ```
 
 **Demo Observable Effects:**
@@ -167,6 +200,38 @@ kubectl patch configmap <release-name>-demo-config -n <namespace> --type=json -p
 - **OFF State**: Application returns HTTP 200 responses, health checks pass, normal operation resumed
 - **ConfigMap Key Logic**: App reads `models-latest` (hyphen) but broken state uses `models_latest` (underscore)
 - **Recovery Time**: Effects visible within 30-60 seconds after ConfigMap manipulation
+
+**Demo Workflow Example:**
+```bash
+# 1. Check initial status
+kubectl get configmap ai-compare-demo-config -n ai-compare -o jsonpath='{.data}' | jq -r 'if has("models-latest") then "✅ APP WORKING" elif has("models_latest") then "❌ APP BROKEN" else "❓ UNKNOWN STATE" end'
+
+# 2. Break the app for demo (requires BOTH steps)
+# Step 2a: Break ConfigMap
+kubectl patch configmap ai-compare-demo-config -n ai-compare --type=json -p='[
+  {"op": "remove", "path": "/data/models-latest"},
+  {"op": "add", "path": "/data/models_latest", "value": "broken-model:invalid"}
+]'
+
+# Step 2b: Activate failure mode (REQUIRED for observable failures)
+kubectl patch deployment ai-compare-app -n ai-compare -p='{"spec":{"template":{"spec":{"containers":[{"name":"app","env":[{"name":"SERVICE_HEALTH_FAILURE","value":"true"}]}]}}}}'
+
+# 3. Verify it's broken (ConfigMap check)
+kubectl get configmap ai-compare-demo-config -n ai-compare -o jsonpath='{.data}' | jq -r 'if has("models-latest") then "✅ APP WORKING" elif has("models_latest") then "❌ APP BROKEN" else "❓ UNKNOWN STATE" end'
+
+# 4. Fix the app (requires BOTH steps)
+# Step 4a: Fix ConfigMap
+kubectl patch configmap ai-compare-demo-config -n ai-compare --type=json -p='[
+  {"op": "remove", "path": "/data/models_latest"},
+  {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest"}
+]'
+
+# Step 4b: Deactivate failure mode
+kubectl patch deployment ai-compare-app -n ai-compare -p='{"spec":{"template":{"spec":{"containers":[{"name":"app","env":[{"name":"SERVICE_HEALTH_FAILURE","value":"false"}]}]}}}}'
+
+# 5. Verify it's working
+kubectl get configmap ai-compare-demo-config -n ai-compare -o jsonpath='{.data}' | jq -r 'if has("models-latest") then "✅ APP WORKING" elif has("models_latest") then "❌ APP BROKEN" else "❓ UNKNOWN STATE" end'
+```
 
 **Demo Integration:**
 - Frontend toggle button shows real-time ON/OFF state
@@ -223,11 +288,31 @@ GitHub Actions workflow (`.github/workflows/ci-cd.yaml`) automatically:
 
 ## Development Mode
 
-Special development setup allows SSH access to running pods for rapid iteration:
+### Development Features
+The application includes development-specific features disabled by default for production stability:
+
+**OpenLit Observability** (Development Only):
+- **Default**: Disabled in production
+- **Enable**: Set `OBSERVABILITY_ENABLED=true` or `DEV_MODE=true`
+- **Purpose**: Model usage tracking, token counting, performance monitoring
+
+**SSH Access for Development**:
 1. Enable `llmChat.devMode.enabled=true` in Helm values
 2. Application code persisted on PVC for git pulls inside container
 3. SSH access on port 22 (default password: `suse`)
 4. Port forward: `kubectl port-forward service/chat-service 2222:22`
+
+**Development Installation Examples**:
+```bash
+# Enable development mode with observability
+helm install my-release charts/ai-compare-suse \
+  --set llmChat.devMode.enabled=true \
+  --set llmChat.observability.enabled=true
+
+# Or use environment variable approach
+helm install my-release charts/ai-compare-suse \
+  --set-string llmChat.env.DEV_MODE=true
+```
 
 ## File Structure Notes
 

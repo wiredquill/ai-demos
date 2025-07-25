@@ -67,7 +67,7 @@ restore_health() {
         # Manual restore
         kubectl patch configmap ${RELEASE_NAME}-demo-config -n ${NAMESPACE} --type='json' -p='[
             {"op": "remove", "path": "/data/models_latest"},
-            {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest,llama2:latest"}
+            {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest"}
         ]' 2>/dev/null || {
             echo "⚠️  Manual patch failed, restoring via template..."
             kubectl get configmap ${RELEASE_NAME}-demo-config -n ${NAMESPACE} -o yaml | \

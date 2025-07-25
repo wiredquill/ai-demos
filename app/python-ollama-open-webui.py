@@ -621,21 +621,44 @@ class ChatInterface:
         # Read observability configuration from environment variables
         otlp_endpoint = os.getenv("OTLP_ENDPOINT")
         collect_gpu_stats = os.getenv("COLLECT_GPU_STATS", "false").lower() == "true"
-        observability_enabled = (
-            os.getenv("OBSERVABILITY_ENABLED", "false").lower() == "true"
-        )
-
-        if not observability_enabled:
-            logger.info(
-                "Observability disabled via OBSERVABILITY_ENABLED environment variable"
-            )
+        
+        # Development option - disabled by default for production stability
+        dev_mode = os.getenv("DEV_MODE", "false").lower() == "true"
+        observability_enabled = os.getenv("OBSERVABILITY_ENABLED", "false").lower() == "true"
+        
+        if not observability_enabled and not dev_mode:
+            logger.info("OpenLit observability disabled (production default). Enable with OBSERVABILITY_ENABLED=true or DEV_MODE=true")
             return
-
+            
         if not otlp_endpoint:
-            logger.warning("OTLP_ENDPOINT not configured - observability disabled")
+            logger.info("OTLP_ENDPOINT not configured - observability disabled")  
             return
 
         try:
+            logger.info(f"Initializing OpenLit observability with endpoint: {otlp_endpoint}")
+            
+            # Test connectivity to OTLP endpoint first with a short timeout
+            import socket
+            import urllib.parse
+            
+            parsed_url = urllib.parse.urlparse(otlp_endpoint)
+            host = parsed_url.hostname
+            port = parsed_url.port or (443 if parsed_url.scheme == 'https' else 80)
+            
+            # Quick connectivity test with 3 second timeout
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(3)
+            try:
+                result = sock.connect_ex((host, port))
+                if result != 0:
+                    logger.warning(f"Cannot connect to OTLP endpoint {host}:{port} - skipping OpenLit initialization")
+                    return
+            except Exception as conn_test_error:
+                logger.warning(f"OTLP endpoint connectivity test failed: {conn_test_error} - skipping OpenLit initialization")
+                return
+            finally:
+                sock.close()
+            
             # Initialize OpenLit with configuration
             openlit.init(
                 otlp_endpoint=otlp_endpoint, collect_gpu_stats=collect_gpu_stats
@@ -644,7 +667,7 @@ class ChatInterface:
                 f"OpenLit observability initialized successfully. Endpoint: {otlp_endpoint}, GPU Stats: {collect_gpu_stats}"
             )
         except Exception as e:
-            logger.error(f"Failed to initialize OpenLit observability: {e}")
+            logger.warning(f"Failed to initialize OpenLit observability: {e} - continuing without observability")
 
     def _initialize_api_server(self):
         """Initialize HTTP API server if enabled."""
@@ -770,7 +793,7 @@ class ChatInterface:
                     "✅ ConfigMap manipulation successful - app should start failing!"
                 )
                 logger.info(
-                    '🔧 To fix externally: kubectl patch configmap <name> -n <namespace> --type=json -p=\'[{"op": "remove", "path": "/data/models_latest"}, {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest,llama2:latest"}]\''
+                    '🔧 To fix externally: kubectl patch configmap <name> -n <namespace> --type=json -p=\'[{"op": "remove", "path": "/data/models_latest"}, {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest"}]\''
                 )
                 return True
             else:
@@ -941,7 +964,7 @@ class ChatInterface:
                     "-n",
                     namespace,
                     "--type=json",
-                    '-p=[{"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest,llama2:latest"}]',
+                    '-p=[{"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest"}]',
                 ],
                 capture_output=True,
                 text=True,
@@ -1659,7 +1682,7 @@ class ChatInterface:
 
                 return (
                     gr.Column(visible=False),
-                    '🔴 Availability Demo ACTIVATED!\n\n✅ ConfigMap manipulated - app should start failing\n📊 SUSE Observability should detect:\n• HTTP 500 error rate spike\n• Health check failures\n• Configuration errors\n\n🔧 To fix externally in Kubernetes:\nkubectl patch configmap <demo-config> -n <namespace> --type=json -p=\'[{"op": "remove", "path": "/data/models_latest"}, {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest,llama2:latest"}]\'',
+                    '🔴 Availability Demo ACTIVATED!\n\n✅ ConfigMap manipulated - app should start failing\n📊 SUSE Observability should detect:\n• HTTP 500 error rate spike\n• Health check failures\n• Configuration errors\n\n🔧 To fix externally in Kubernetes:\nkubectl patch configmap <demo-config> -n <namespace> --type=json -p=\'[{"op": "remove", "path": "/data/models_latest"}, {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest"}]\'',
                     "warning",
                 )
             else:

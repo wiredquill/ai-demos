@@ -203,14 +203,24 @@ export const DemoControls: React.FC = () => {
             <summary className="cursor-pointer hover:text-foreground transition-colors">
               External kubectl Commands
             </summary>
-            <div className="mt-2 space-y-2 font-mono text-xs bg-muted p-2 rounded">
+            <div className="mt-2 space-y-3 font-mono text-xs bg-muted p-2 rounded">
               <div>
-                <p className="font-sans font-medium mb-1">Break the app:</p>
-                <code className="block">kubectl patch configmap &lt;release&gt;-demo-config -n &lt;namespace&gt; --type=json -p='[{`{"op": "remove", "path": "/data/models-latest"}`}, {`{"op": "add", "path": "/data/models_latest", "value": "broken-model:invalid"}`}]'</code>
+                <p className="font-sans font-medium mb-1 text-red-600 dark:text-red-400">Break the app (requires BOTH steps):</p>
+                <div className="space-y-1">
+                  <p className="font-sans text-xs">Step 1: Break ConfigMap</p>
+                  <code className="block text-xs">kubectl patch configmap &lt;release&gt;-demo-config -n &lt;namespace&gt; --type=json -p='[{`{"op": "remove", "path": "/data/models-latest"}`}, {`{"op": "add", "path": "/data/models_latest", "value": "broken-model:invalid"}`}]'</code>
+                  <p className="font-sans text-xs">Step 2: Activate failure mode</p>
+                  <code className="block text-xs">kubectl patch deployment &lt;release&gt;-app -n &lt;namespace&gt; -p='{`{"spec":{"template":{"spec":{"containers":[{"name":"app","env":[{"name":"SERVICE_HEALTH_FAILURE","value":"true"}]}]}}}}`}'</code>
+                </div>
               </div>
               <div>
-                <p className="font-sans font-medium mb-1">Fix the app:</p>
-                <code className="block">kubectl patch configmap &lt;release&gt;-demo-config -n &lt;namespace&gt; --type=json -p='[{`{"op": "remove", "path": "/data/models_latest"}`}, {`{"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest,llama2:latest"}`}]'</code>
+                <p className="font-sans font-medium mb-1 text-green-600 dark:text-green-400">Fix the app (requires BOTH steps):</p>
+                <div className="space-y-1">
+                  <p className="font-sans text-xs">Step 1: Fix ConfigMap</p>
+                  <code className="block text-xs">kubectl patch configmap &lt;release&gt;-demo-config -n &lt;namespace&gt; --type=json -p='[{`{"op": "remove", "path": "/data/models_latest"}`}, {`{"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest"}`}]'</code>
+                  <p className="font-sans text-xs">Step 2: Deactivate failure mode</p>
+                  <code className="block text-xs">kubectl patch deployment &lt;release&gt;-app -n &lt;namespace&gt; -p='{`{"spec":{"template":{"spec":{"containers":[{"name":"app","env":[{"name":"SERVICE_HEALTH_FAILURE","value":"false"}]}]}}}}`}'</code>
+                </div>
               </div>
             </div>
           </details>

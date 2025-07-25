@@ -89,9 +89,9 @@ llmChat:
     defaultPrompt: "Why is the sky blue? Be concise."
     intervalSeconds: 30
     sendMessages: true # Enable/disable sending test messages to models
-  # Observability settings for OpenTelemetry and OpenLit
+  # Observability settings for OpenTelemetry and OpenLit (development option)
   observability:
-    enabled: true
+    enabled: false  # Disabled by default - development/testing option only
     otlpEndpoint: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
     collectGpuStats: false
     schedule: "*/5 * * * *"
@@ -153,7 +153,7 @@ demo:
     # Key that application reads for model configuration
     configKey: "models-latest" # Change to "models_latest" to break app
     # Real config value that works
-    validValue: "tinyllama:latest,llama2:latest"
+    validValue: "tinyllama:latest"
     # Invalid config that causes observable failures
     invalidValue: "broken-model:invalid"
 # NeuVector Security Configuration

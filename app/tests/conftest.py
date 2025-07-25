@@ -191,7 +191,7 @@ def chat_interface_mock():
 
     mock_interface.current_prompt_index = 0
     mock_interface.selected_model = "tinyllama:latest"
-    mock_interface.ollama_models = ["tinyllama:latest", "llama2:7b"]
+    mock_interface.ollama_models = ["tinyllama:latest"]
     mock_interface.automation_send_messages = True
 
     return mock_interface

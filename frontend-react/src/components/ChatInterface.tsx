@@ -118,8 +118,6 @@ export const ChatInterface: React.FC = () => {
               className="text-sm border rounded px-2 py-1 bg-background"
             >
               <option value="tinyllama:latest">TinyLlama</option>
-              <option value="llama2:latest">Llama 2</option>
-              <option value="mistral:latest">Mistral</option>
             </select>
             <Button
               onClick={clearChatMessages}
