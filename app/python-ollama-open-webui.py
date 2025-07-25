@@ -52,14 +52,15 @@ class ObservableAPIServer:
 
         @self.app.route("/health", methods=["GET", "OPTIONS"])
         def health_check():
-            """Health check endpoint - returns 500 when availability demo is active."""
+            """Health check endpoint - automatically fails when availability demo ConfigMap is in broken state."""
             try:
+                # First, check if SERVICE_HEALTH_FAILURE is explicitly set to true (for manual control)
                 if (
                     hasattr(self.chat_interface, "service_health_failure")
                     and self.chat_interface.service_health_failure
                 ):
                     logger.error(
-                        "Health check failed - SERVICE_HEALTH_FAILURE=true (SUSE Observability pattern)"
+                        "Health check failed - SERVICE_HEALTH_FAILURE=true (manual override)"
                     )
                     return (
                         jsonify(
@@ -71,6 +72,28 @@ class ObservableAPIServer:
                         ),
                         500,
                     )
+                
+                # Automatically check ConfigMap state for availability demo
+                try:
+                    is_demo_active, demo_state, config_value = self.chat_interface._check_configmap_demo_state()
+                    if is_demo_active and demo_state == "ON":
+                        logger.error(
+                            f"Health check failed - Availability demo ACTIVE (ConfigMap broken: {config_value})"
+                        )
+                        return (
+                            jsonify(
+                                {
+                                    "status": "FAILING",
+                                    "error": f"Availability demo active - {config_value}",
+                                    "demo_state": demo_state,
+                                    "timestamp": time.time(),
+                                }
+                            ),
+                            500,
+                        )
+                except Exception as configmap_error:
+                    # If ConfigMap check fails, log but don't fail health check
+                    logger.debug(f"ConfigMap check failed (health check continues): {configmap_error}")
 
                 logger.info("Health check successful - service operational")
                 return (

@@ -137,15 +137,16 @@ kubectl get configmap <release-name>-demo-config -n <namespace> -o jsonpath='{.d
 1. **ON Toggle**: Manipulates Kubernetes ConfigMap to break application configuration
    - Removes working config key `models-latest`
    - Adds broken config key `models_latest` (underscore breaks lookup)
-   - **Requires `SERVICE_HEALTH_FAILURE=true`** to activate ConfigMap checking
-   - Application starts returning HTTP 500 errors
-   - Health checks fail with real error conditions
+   - **Application automatically detects broken ConfigMap state**
+   - Health checks immediately start returning HTTP 500 errors
+   - Real observable failures without additional setup
 
 2. **OFF Toggle**: Restores Kubernetes ConfigMap to fix application
    - Removes broken config key `models_latest`
    - Restores working config key `models-latest` with valid values
-   - Application resumes normal HTTP 200 operations
-   - Health checks return to healthy status
+   - **Application automatically detects fixed ConfigMap state**
+   - Health checks immediately return to HTTP 200 status
+   - Service resumes normal operation
 
 **Observable Patterns for SUSE Observability:**
 - HTTP error rate spike (0% → 50%+)
@@ -159,25 +160,17 @@ kubectl get configmap <release-name>-demo-config -n <namespace> -o jsonpath='{.d
 # View current ConfigMap state
 kubectl get configmap <release-name>-demo-config -n <namespace> -o yaml
 
-# Break the app (turn availability demo ON) - Creates HTTP 500 errors
-# Step 1: Break ConfigMap
+# Break the app (turn availability demo ON) - Creates HTTP 500 errors immediately
 kubectl patch configmap <release-name>-demo-config -n <namespace> --type=json -p='[
   {"op": "remove", "path": "/data/models-latest"},
   {"op": "add", "path": "/data/models_latest", "value": "broken-model:invalid"}
 ]'
 
-# Step 2: Activate failure mode (REQUIRED for health checks to fail)
-kubectl patch deployment <release-name>-app -n <namespace> -p='{"spec":{"template":{"spec":{"containers":[{"name":"app","env":[{"name":"SERVICE_HEALTH_FAILURE","value":"true"}]}]}}}}'
-
-# Fix the app (turn availability demo OFF) - Restores HTTP 200 responses
-# Step 1: Fix ConfigMap
+# Fix the app (turn availability demo OFF) - Restores HTTP 200 responses immediately  
 kubectl patch configmap <release-name>-demo-config -n <namespace> --type=json -p='[
   {"op": "remove", "path": "/data/models_latest"},
   {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest"}
 ]'
-
-# Step 2: Deactivate failure mode
-kubectl patch deployment <release-name>-app -n <namespace> -p='{"spec":{"template":{"spec":{"containers":[{"name":"app","env":[{"name":"SERVICE_HEALTH_FAILURE","value":"false"}]}]}}}}'
 ```
 
 **Check Demo Status:**
@@ -199,35 +192,27 @@ kubectl get configmap load-gen-ai-compare-demo-config -n load-gen -o jsonpath='{
 - **ON State**: Application returns HTTP 500 errors, health checks fail, error rate spikes in observability
 - **OFF State**: Application returns HTTP 200 responses, health checks pass, normal operation resumed
 - **ConfigMap Key Logic**: App reads `models-latest` (hyphen) but broken state uses `models_latest` (underscore)
-- **Recovery Time**: Effects visible within 30-60 seconds after ConfigMap manipulation
+- **Response Time**: Effects visible immediately after ConfigMap manipulation
 
 **Demo Workflow Example:**
 ```bash
 # 1. Check initial status
 kubectl get configmap ai-compare-demo-config -n ai-compare -o jsonpath='{.data}' | jq -r 'if has("models-latest") then "✅ APP WORKING" elif has("models_latest") then "❌ APP BROKEN" else "❓ UNKNOWN STATE" end'
 
-# 2. Break the app for demo (requires BOTH steps)
-# Step 2a: Break ConfigMap
+# 2. Break the app for demo (one command - immediate effect)
 kubectl patch configmap ai-compare-demo-config -n ai-compare --type=json -p='[
   {"op": "remove", "path": "/data/models-latest"},
   {"op": "add", "path": "/data/models_latest", "value": "broken-model:invalid"}
 ]'
 
-# Step 2b: Activate failure mode (REQUIRED for observable failures)
-kubectl patch deployment ai-compare-app -n ai-compare -p='{"spec":{"template":{"spec":{"containers":[{"name":"app","env":[{"name":"SERVICE_HEALTH_FAILURE","value":"true"}]}]}}}}'
-
 # 3. Verify it's broken (ConfigMap check)
 kubectl get configmap ai-compare-demo-config -n ai-compare -o jsonpath='{.data}' | jq -r 'if has("models-latest") then "✅ APP WORKING" elif has("models_latest") then "❌ APP BROKEN" else "❓ UNKNOWN STATE" end'
 
-# 4. Fix the app (requires BOTH steps)
-# Step 4a: Fix ConfigMap
+# 4. Fix the app (one command - immediate effect)
 kubectl patch configmap ai-compare-demo-config -n ai-compare --type=json -p='[
   {"op": "remove", "path": "/data/models_latest"},
   {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest"}
 ]'
-
-# Step 4b: Deactivate failure mode
-kubectl patch deployment ai-compare-app -n ai-compare -p='{"spec":{"template":{"spec":{"containers":[{"name":"app","env":[{"name":"SERVICE_HEALTH_FAILURE","value":"false"}]}]}}}}'
 
 # 5. Verify it's working
 kubectl get configmap ai-compare-demo-config -n ai-compare -o jsonpath='{.data}' | jq -r 'if has("models-latest") then "✅ APP WORKING" elif has("models_latest") then "❌ APP BROKEN" else "❓ UNKNOWN STATE" end'
@@ -265,6 +250,8 @@ GitHub Actions workflow (`.github/workflows/ci-cd.yaml`) automatically:
 **ConfigMap Manipulation Methods:**
 - `_simulate_configmap_failure()`: Uses kubectl to break ConfigMap
 - `_restore_configmap_health()`: Uses kubectl to fix ConfigMap
+- `_check_configmap_demo_state()`: Automatically monitors ConfigMap state 
+- **Health Check Integration**: Automatically fails when ConfigMap broken (no manual activation needed)
 - Requires proper RBAC permissions for ConfigMap manipulation
 - Environment variables provide namespace and ConfigMap names
 
