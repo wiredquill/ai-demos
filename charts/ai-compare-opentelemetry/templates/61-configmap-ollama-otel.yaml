@@ -35,7 +35,7 @@ data:
             endpoint: 0.0.0.0:4318
 
     processors:
-      # Add resource attributes to identify Ollama service
+      # Add resource attributes to identify Ollama service with GenAI context
       resource:
         attributes:
           - key: service.name
@@ -55,6 +55,25 @@ data:
             action: upsert
           - key: k8s.pod.name
             from_attribute: k8s.pod.name
+            action: upsert
+          # GenAI-specific resource attributes for SUSE Observability detection
+          - key: ai.framework
+            value: "ollama"
+            action: upsert
+          - key: ai.model.type
+            value: "llm"
+            action: upsert
+          - key: genai.application
+            value: "true"
+            action: upsert
+          - key: ai.component.type
+            value: "inference-server"
+            action: upsert
+          - key: genai.observability.enabled
+            value: "true"
+            action: upsert
+          - key: ai.application.category
+            value: "model-inference"
             action: upsert
             
       # Batch processor for efficiency

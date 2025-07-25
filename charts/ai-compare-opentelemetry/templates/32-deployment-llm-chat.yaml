@@ -7,8 +7,21 @@ metadata:
     configmap.dependency/critical: "true"
     observability.suse.com/configmap-monitor: "{{ include "ai-compare-opentelemetry.fullname" . }}-demo-config"
     description: "CRITICAL: This deployment depends on demo-config ConfigMap for availability demo functionality"
+    # GenAI Application Annotations for SUSE Observability
+    genai.observability/enabled: "true"
+    genai.observability/type: "chat-application"
+    genai.observability/models: "llama3.2:latest"
+    genai.observability/framework: "ollama"
+    observability.suse.com/genai-app: "true"
+    ai.application.category: "conversational-ai"
   labels:
     configmap.dependency: "demo-config-critical"
+    app.kubernetes.io/name: {{ include "ai-compare-opentelemetry.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: genai-chat
+    app.kubernetes.io/part-of: genai-stack
+    ai.framework: "gradio-ollama"
+    genai.application: "true"
 spec:
   replicas: 1
   selector:

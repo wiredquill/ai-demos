@@ -1,23 +1,23 @@
 questions:
-# Ollama Settings Group - Priority settings for the AI model server
+# Main Configuration - Front Page Options
 - variable: advancedConfig
-  group: "Ollama Settings"
-  label: "Show Advanced Configuration Options"
-  description: "Enable to show advanced settings like SUSE Application Collection Images, Pipeline Integration, and Automation. Keep disabled for simplified deployment."
+  group: "Main Configuration"
+  label: "Enable Advanced"
+  description: "Show advanced settings like SUSE Application Collection Images, Pipeline Integration, and Automation. Keep disabled for simplified deployment."
   type: "boolean"
   default: false
 
-- variable: ollama.gpu.enabled
-  group: "Ollama Settings"
-  label: "Enable GPU Acceleration"
-  description: "Requires a node with GPU drivers and the k8s device plugin installed."
+- variable: ollama.gpu.enabled  
+  group: "Main Configuration"
+  label: "Enable GPU"
+  description: "Enable GPU acceleration for Ollama. Requires a node with GPU drivers and the k8s device plugin installed."
   type: "boolean"
   default: false
 
 - variable: ollama.hardware.type
-  group: "Ollama Settings"
-  label: "Target Hardware for Ollama"
-  description: "Select the target hardware architecture for the Ollama deployment."
+  group: "Main Configuration"
+  label: "Ollama GPU Type"
+  description: "Select the target GPU hardware architecture for the Ollama deployment."
   type: "enum"
   required: true
   default: "nvidia"
@@ -27,6 +27,22 @@ questions:
       value: "nvidia"
     - label: "Apple Silicon / CPU (arm64)"
       value: "apple"
+
+# Load Simulator - Main front page option
+- variable: frontend.enabled
+  group: "Main Configuration"
+  label: "Enable Load Simulator"
+  description: "Deploy HTTP load simulator for traffic generation and observability monitoring. Shows detailed settings when enabled."
+  type: "boolean"
+  default: false
+
+# Observability - Main front page option  
+- variable: aiCompare.observability.enabled
+  group: "Main Configuration"
+  label: "Enable Observability"
+  description: "Enable OpenTelemetry observability for GenAI monitoring, cost tracking, and performance metrics. Shows detailed settings when enabled."
+  type: "boolean" 
+  default: true
 
 - variable: ollama.resources.requests.cpu
   group: "Ollama Settings"
@@ -105,14 +121,6 @@ questions:
   type: "string"
   default: "/data/ai-models"
   show_if: "ollama.modelCache.nfs.enabled=true"
-
-# Load Simulator - Main front page option
-- variable: frontend.enabled
-  group: "Main Configuration"
-  label: "Enable Load Simulator"
-  description: "Deploy HTTP load simulator for traffic generation and observability monitoring. Shows detailed settings when enabled."
-  type: "boolean"
-  default: false
 
 # Load Simulator Settings Sub-Panel - Appears when Load Simulator is enabled
 - variable: frontend.loadSimulator.intervalSeconds
@@ -287,14 +295,6 @@ questions:
   type: "string"
   default: "Why is the sky blue? Be concise."
   show_if: "advancedConfig=true&&aiCompare.automation.sendMessages=true"
-
-# Observability - Main front page option  
-- variable: aiCompare.observability.enabled
-  group: "Main Configuration"
-  label: "Enable Observability"
-  description: "Enable OpenTelemetry observability for GenAI monitoring, cost tracking, and performance metrics. Shows detailed settings when enabled."
-  type: "boolean" 
-  default: true
 
 # Observability Settings Sub-Panel - Appears when Observability is enabled
 - variable: aiCompare.observability.otlpEndpoint
