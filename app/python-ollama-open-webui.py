@@ -1887,6 +1887,27 @@ class ChatInterface:
         self.update_all_provider_status()
         return gr.HTML(value=self.get_provider_status_html())
 
+    def run_data_leak_demo_simple(self) -> gr.HTML:
+        """Simple data leak demo for Gradio UI - returns just status message."""
+        logger.info("Data leak demo button clicked - simple version")
+        try:
+            _, message, status = self.run_data_leak_demo()
+            logger.info(f"Data leak demo executed successfully. Status: {status}")
+            
+            # Create status message HTML (same as local function)
+            if status == "success":
+                status_html = f"<div style='color: #1b5e20; background: rgba(76, 175, 80, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #4CAF50; font-weight: 500;'>{message}</div>"
+            elif status == "warning":
+                status_html = f"<div style='color: #e65100; background: rgba(255, 167, 38, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #ffa726; font-weight: 500;'>{message}</div>"
+            else:
+                status_html = f"<div style='color: #c62828; background: rgba(244, 67, 54, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #f44336; font-weight: 500;'>{message}</div>"
+            
+            return gr.HTML(value=status_html, visible=True)
+        except Exception as e:
+            logger.error(f"Data leak demo simple function error: {e}")
+            error_html = f"<div style='color: #c62828; background: rgba(244, 67, 54, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #f44336; font-weight: 500;'>Error: {str(e)}</div>"
+            return gr.HTML(value=error_html, visible=True)
+
     def refresh_ollama_models(self) -> gr.Dropdown:
         """Refreshes the dropdown with models from Ollama."""
         logger.info("Refreshing Ollama models dropdown.")
@@ -2968,7 +2989,7 @@ def create_interface():
             run_availability_demo, outputs=[demo_status_msg, availability_demo_btn]
         )
         data_leak_demo_btn.click(
-            run_data_leak_demo, outputs=[demo_status_msg, data_leak_demo_btn]
+            chat_instance.run_data_leak_demo_simple, outputs=[demo_status_msg]
         )
         demo_help_btn.click(show_demo_help_modal, outputs=[demo_help_modal])
         close_demo_help_btn.click(hide_demo_help_modal, outputs=[demo_help_modal])
