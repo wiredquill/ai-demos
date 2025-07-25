@@ -50,9 +50,9 @@ spec:
             echo "NFS Server: {{ .Values.ollama.modelCache.nfs.server }}"
             echo "NFS Path: {{ .Values.ollama.modelCache.nfs.path }}"
             echo "Cache Path: /mnt/nfs-cache"
-            echo "Target Model: tinyllama:latest"
+            echo "Target Model: llama3.2:latest (large model for cost tracking)"
             
-            MODEL_NAME="tinyllama"
+            MODEL_NAME="llama3.2"
             MODEL_TAG="latest"
             CACHE_PATH="/mnt/nfs-cache/${MODEL_NAME}_${MODEL_TAG}"
             
@@ -138,7 +138,7 @@ spec:
       - name: ollama-pull-model
         image: "{{ .Values.ollama.image.repository }}:{{ .Values.ollama.image.tag }}"
         imagePullPolicy: {{ .Values.imagePullPolicy }}
-        command: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull tinyllama:latest"]
+        command: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull bge-large:latest && ollama pull llama3.2:latest"]
         volumeMounts:
         - name: ollama-models
           mountPath: /root/.ollama

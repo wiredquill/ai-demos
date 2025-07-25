@@ -23,7 +23,7 @@ data:
   {{ .Values.demo.availability.configKey }}: {{ .Values.demo.availability.validValue | quote }}
   
   # Backup configurations for demonstration
-  models-backup: "tinyllama:latest"
+  models-backup: "llama3.2:latest"
   service-info: |
     {
       "name": "ai-compare-opentelemetry-app",

@@ -181,7 +181,7 @@ demo:
     # Key that application reads for model configuration
     configKey: "models-latest" # Change to "models_latest" to break app
     # Real config value that works
-    validValue: "tinyllama:latest"
+    validValue: "llama3.2:latest"
     # Invalid config that causes observable failures
     invalidValue: "broken-model:invalid"
 # NeuVector Security Configuration
