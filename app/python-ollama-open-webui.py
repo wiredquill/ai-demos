@@ -2913,7 +2913,14 @@ def create_interface():
 
         def run_data_leak_demo():
             """Run data leak demo directly and update button state."""
-            _, message, status = chat_instance.run_data_leak_demo()
+            logger.info("Gradio data leak demo button clicked - executing function")
+            try:
+                _, message, status = chat_instance.run_data_leak_demo()
+                logger.info(f"Data leak demo executed successfully. Status: {status}, Message: {message[:100]}...")
+            except Exception as e:
+                logger.error(f"Data leak demo Gradio function error: {e}")
+                message = f"Error executing data leak demo: {str(e)}"
+                status = "error"
 
             # Create status message HTML based on status with better contrast
             if status == "success":
