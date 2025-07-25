@@ -75,11 +75,18 @@ helm install my-release charts/ai-compare \
 helm install my-release charts/ai-compare-suse \
   --set frontend.enabled=true
 
-# Complete observability setup with frontend enabled
+# Enable Ollama OpenTelemetry observability (optional)
+helm install my-release charts/ai-compare-suse \
+  --set ollama.observability.enabled=true \
+  --set ollama.observability.otlpEndpoint="http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
+
+# Complete observability setup with both AI Compare app and Ollama server telemetry
 helm install my-release charts/ai-compare-suse \
   --set frontend.enabled=true \
-  --set llmChat.observability.enabled=true \
-  --set llmChat.observability.otlpEndpoint="http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
+  --set aiCompare.observability.enabled=true \
+  --set aiCompare.observability.otlpEndpoint="http://opentelemetry-collector.suse-observability.svc.cluster.local:4318" \
+  --set ollama.observability.enabled=true \
+  --set ollama.observability.otlpEndpoint="http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
 ```
 
 ### Fleet GitOps Deployment
@@ -94,7 +101,7 @@ kubectl label cluster my-cluster needs-llm=true        # For upstream variant
 
 ## Key Configuration
 
-**Environment Variables (LLM Chat App):**
+**Environment Variables (AI Compare App):**
 - `OLLAMA_BASE_URL`: Ollama service endpoint
 - `OPEN_WEBUI_BASE_URL`: Open WebUI service endpoint  
 - `AUTOMATION_ENABLED`: Enable automated testing loop
@@ -110,6 +117,13 @@ kubectl label cluster my-cluster needs-llm=true        # For upstream variant
 - `CONNECTION_TIMEOUT`: Network connection timeout (optimized for SUSE security policies)
 - `REQUEST_TIMEOUT`: HTTP request timeout (optimized for SUSE security policies)
 - `INFERENCE_TIMEOUT`: LLM inference timeout
+
+**Ollama OpenTelemetry Observability (Optional):**
+- **Default**: Disabled (`ollama.observability.enabled=false`)
+- **Purpose**: HTTP metrics, request tracing, and performance monitoring for Ollama server
+- **Telemetry Collected**: HTTP response times, request counts, error rates, model inference metrics
+- **Integration**: Sidecar OpenTelemetry collector sends data to SUSE Observability
+- **Resource Usage**: Minimal overhead (50m CPU, 64Mi memory requests)
 
 **Helm Values Structure:**
 - `ollama.*`: Ollama deployment configuration
