@@ -106,14 +106,15 @@ questions:
   default: "/data/ai-models"
   show_if: "ollama.modelCache.nfs.enabled=true"
 
-# Load Simulator Settings Group - HTTP traffic generation for observability
+# Load Simulator - Main front page option
 - variable: frontend.enabled
-  group: "Load Simulator Settings"
-  label: "Enable HTTP Load Simulator"
-  description: "Deploy a dedicated HTTP load simulator for consistent traffic generation and SUSE Observability monitoring. Replaces frontend UI with automated testing."
+  group: "Main Configuration"
+  label: "Enable Load Simulator"
+  description: "Deploy HTTP load simulator for traffic generation and observability monitoring. Shows detailed settings when enabled."
   type: "boolean"
   default: false
 
+# Load Simulator Settings Sub-Panel - Appears when Load Simulator is enabled
 - variable: frontend.loadSimulator.intervalSeconds
   group: "Load Simulator Settings"
   label: "Request Interval (Seconds)"
