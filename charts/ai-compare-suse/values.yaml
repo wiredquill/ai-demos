@@ -183,4 +183,4 @@ neuvector:
   password: "admin"
 llmChat:
   image:
-    tag: "3c70d96"
+    tag: "ddf2c3c"
