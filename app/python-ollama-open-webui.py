@@ -510,7 +510,7 @@ class ChatInterface:
 
         # --- NEW: Model Config Management State ---
         self.model_config_value = os.getenv("MODEL_CONFIG", "models-latest")
-        self.config_map_name = os.getenv("CONFIG_MAP_NAME", "llm-chat-config")
+        self.config_map_name = os.getenv("CONFIG_MAP_NAME", "ai-compare-config")
         self.config_map_namespace = os.getenv("CONFIG_MAP_NAMESPACE", "default")
 
         # --- NEW: Service Health Failure Simulation State ---

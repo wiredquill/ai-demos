@@ -40,7 +40,7 @@ spec:
       
       # Test AI Compare App service
       echo "Testing AI Compare App service connectivity..."
-      if curl -f -s http://{{ include "ai-compare.fullname" . }}-app-service:{{ .Values.llmChat.service.port }}/; then
+      if curl -f -s http://{{ include "ai-compare.fullname" . }}-app-service:{{ .Values.aiCompare.service.port }}/; then
         echo "✅ AI Compare App service is accessible"
       else
         echo "❌ Failed to connect to AI Compare App service"

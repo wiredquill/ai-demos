@@ -15,12 +15,12 @@ spec:
       serviceAccountName: ai-compare-service-account
       containers:
         - name: app
-          image: "{{ .Values.llmChat.image.repository }}:{{ .Values.llmChat.image.tag }}"
+          image: "{{ .Values.aiCompare.image.repository }}:{{ .Values.aiCompare.image.tag }}"
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           ports:
-            - containerPort: {{ .Values.llmChat.service.port }}
+            - containerPort: {{ .Values.aiCompare.service.port }}
               name: gradio
-            - containerPort: {{ .Values.llmChat.httpApi.port }}
+            - containerPort: {{ .Values.aiCompare.httpApi.port }}
               name: http-api
           env:
             - name: OLLAMA_BASE_URL
@@ -34,20 +34,20 @@ spec:
               value: "{{ .Values.pipelines.autoConfig.apiKey }}"
             # --- NEW ENVIRONMENT VARIABLES ---
             - name: AUTOMATION_ENABLED
-              value: "{{ .Values.llmChat.automation.enabled }}"
+              value: "{{ .Values.aiCompare.automation.enabled }}"
             - name: AUTOMATION_PROMPT
-              value: "{{ .Values.llmChat.automation.defaultPrompt }}"
+              value: "{{ .Values.aiCompare.automation.defaultPrompt }}"
             - name: AUTOMATION_INTERVAL
-              value: "{{ .Values.llmChat.automation.intervalSeconds }}"
+              value: "{{ .Values.aiCompare.automation.intervalSeconds }}"
             - name: AUTOMATION_SEND_MESSAGES
-              value: "{{ .Values.llmChat.automation.sendMessages }}"
+              value: "{{ .Values.aiCompare.automation.sendMessages }}"
             # Observability configuration
             - name: OBSERVABILITY_ENABLED
-              value: "{{ .Values.llmChat.observability.enabled }}"
+              value: "{{ .Values.aiCompare.observability.enabled }}"
             - name: OTLP_ENDPOINT
-              value: "{{ .Values.llmChat.observability.otlpEndpoint }}"
+              value: "{{ .Values.aiCompare.observability.otlpEndpoint }}"
             - name: COLLECT_GPU_STATS
-              value: "{{ .Values.llmChat.observability.collectGpuStats }}"
+              value: "{{ .Values.aiCompare.observability.collectGpuStats }}"
             # Model configuration for demo
             - name: MODEL_CONFIG
               valueFrom:
@@ -65,9 +65,9 @@ spec:
               value: "{{ include "ai-compare.fullname" . }}-app"
             # HTTP API configuration
             - name: HTTP_API_ENABLED
-              value: {{ .Values.llmChat.httpApi.enabled | quote }}
+              value: {{ .Values.aiCompare.httpApi.enabled | quote }}
             - name: HTTP_API_PORT
-              value: {{ .Values.llmChat.httpApi.port | quote }}
+              value: {{ .Values.aiCompare.httpApi.port | quote }}
             - name: DEMO_CONFIG_PATH
               value: "/app/demo-config"
             # Demo ConfigMap manipulation settings
@@ -86,7 +86,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: {{ .Values.llmChat.httpApi.port }}
+              port: {{ .Values.aiCompare.httpApi.port }}
             initialDelaySeconds: 15
             periodSeconds: 10
             timeoutSeconds: 5
@@ -94,7 +94,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /health
-              port: {{ .Values.llmChat.httpApi.port }}
+              port: {{ .Values.aiCompare.httpApi.port }}
             initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 3
@@ -108,7 +108,7 @@ spec:
               mountPath: /app/demo-config
               readOnly: true
           resources:
-            {{- toYaml .Values.llmChat.resources | nindent 12 }}
+            {{- toYaml .Values.aiCompare.resources | nindent 12 }}
       volumes:
         - name: config-volume
           configMap:

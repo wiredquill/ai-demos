@@ -106,7 +106,7 @@ class Pipeline:
             import json
             
             # Try to get ConfigMap value
-            cmd = ["kubectl", "get", "configmap", "llm-chat-config", "-o", "jsonpath={.data.MODEL_CONFIG}"]
+            cmd = ["kubectl", "get", "configmap", "ai-compare-config", "-o", "jsonpath={.data.MODEL_CONFIG}"]
             result = subprocess.run(cmd, capture_output=True, text=True, check=False)
             
             if result.returncode == 0 and result.stdout:

@@ -1,4 +1,4 @@
-{{- if .Values.llmChat.persistence.enabled }}
+{{- if .Values.aiCompare.persistence.enabled }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -8,8 +8,8 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: {{ .Values.llmChat.persistence.size }}
-  {{- if .Values.llmChat.persistence.storageClassName }}
-  storageClassName: {{ .Values.llmChat.persistence.storageClassName }}
+      storage: {{ .Values.aiCompare.persistence.size }}
+  {{- if .Values.aiCompare.persistence.storageClassName }}
+  storageClassName: {{ .Values.aiCompare.persistence.storageClassName }}
   {{- end }}
 {{- end }}

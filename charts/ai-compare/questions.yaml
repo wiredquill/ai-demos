@@ -132,7 +132,7 @@ questions:
   show_if: "frontend.enabled=true"
 
 # Networking Group - For configuring how services are exposed
-- variable: llmChat.service.type
+- variable: aiCompare.service.type
   group: "Networking"
   label: "AI Compare Service Type"
   description: "Method to expose the AI Compare service."
@@ -239,7 +239,7 @@ questions:
   default: "main"
   show_if: "advancedConfig=true"
 
-- variable: llmChat.image.tag
+- variable: aiCompare.image.tag
   group: "Images"
   label: "AI Compare Image Tag"
   description: "The container image tag for the AI Compare App."
@@ -248,7 +248,7 @@ questions:
   show_if: "advancedConfig=true"
 
 # Automation Settings Group - Settings for the automated test runner
-- variable: llmChat.automation.enabled
+- variable: aiCompare.automation.enabled
   group: "Automation Settings"
   label: "Enable Automated Runner"
   description: "If true, the application will automatically run a test on a timer to monitor provider status and test AI responses."
@@ -256,61 +256,61 @@ questions:
   default: false
   show_if: "advancedConfig=true"
 
-- variable: llmChat.automation.sendMessages
+- variable: aiCompare.automation.sendMessages
   group: "Automation Settings"
   label: "Send Test Messages to AI Models"
   description: "When enabled, automation will send test questions to both Ollama and Open WebUI."
   type: "boolean"
   default: true
-  show_if: "advancedConfig=true&&llmChat.automation.enabled=true"
+  show_if: "advancedConfig=true&&aiCompare.automation.enabled=true"
 
-- variable: llmChat.automation.providerTest
+- variable: aiCompare.automation.providerTest
   group: "Automation Settings"
   label: "Enable Model Provider Status Test"
   description: "When enabled, regularly tests connectivity to model providers and updates status."
   type: "boolean"
   default: false
-  show_if: "advancedConfig=true&&llmChat.automation.enabled=true"
+  show_if: "advancedConfig=true&&aiCompare.automation.enabled=true"
 
-- variable: llmChat.automation.intervalSeconds
+- variable: aiCompare.automation.intervalSeconds
   group: "Automation Settings"
   label: "Automation Interval (Seconds)"
   description: "The time in seconds between each automated test run."
   type: "int"
   default: 30
-  show_if: "advancedConfig=true&&llmChat.automation.enabled=true"
+  show_if: "advancedConfig=true&&aiCompare.automation.enabled=true"
 
-- variable: llmChat.automation.defaultPrompt
+- variable: aiCompare.automation.defaultPrompt
   group: "Automation Settings"
   label: "Automation Test Prompt"
   description: "The recurring prompt to send to AI models during automated testing."
   type: "string"
   default: "Why is the sky blue? Be concise."
-  show_if: "advancedConfig=true&&llmChat.automation.sendMessages=true"
+  show_if: "advancedConfig=true&&aiCompare.automation.sendMessages=true"
 
 # Observability Settings Group - OpenTelemetry and monitoring configuration
-- variable: llmChat.observability.enabled
+- variable: aiCompare.observability.enabled
   group: "Observability Settings"
   label: "Enable OpenTelemetry Observability"
   description: "Enable OpenLIT observability for LLM request tracing, token usage monitoring, and performance metrics."
   type: "boolean"
   default: false
 
-- variable: llmChat.observability.otlpEndpoint
+- variable: aiCompare.observability.otlpEndpoint
   group: "Observability Settings"
   label: "OpenTelemetry Collector Endpoint"
   description: "OTLP endpoint URL for sending telemetry data (e.g., http://opentelemetry-collector.suse-observability.svc.cluster.local:4318)"
   type: "string"
   default: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
-  show_if: "llmChat.observability.enabled=true"
+  show_if: "aiCompare.observability.enabled=true"
 
-- variable: llmChat.observability.collectGpuStats
+- variable: aiCompare.observability.collectGpuStats
   group: "Observability Settings"
   label: "Enable GPU Statistics Collection"
   description: "Collect GPU utilization and memory usage statistics. Requires GPU nodes and proper scheduling."
   type: "boolean"
   default: false
-  show_if: "llmChat.observability.enabled=true"
+  show_if: "aiCompare.observability.enabled=true"
 
 # Security Settings Group - NeuVector integration and DLP configuration
 - variable: neuvector.enabled

@@ -76,7 +76,7 @@ pipelines:
     apiKey: "0p3n-w3bu!"
     modelId: "response_level"
     connectionName: "Response Level Pipeline"
-llmChat:
+aiCompare:
   image:
     repository: ghcr.io/wiredquill/ai-demos
     tag: "83fda09"
@@ -85,8 +85,8 @@ llmChat:
     type: NodePort
   persistence:
     enabled: false
-    size: 10Gi
-    storageClassName: "" # Use default if empty, or specify a storage class
+    size: 1Gi
+    storageClassName: ""
   # Automation settings for the recurring test runner
   automation:
     enabled: false
