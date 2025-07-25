@@ -106,14 +106,15 @@ questions:
   default: "/data/ai-models"
   show_if: "ollama.modelCache.nfs.enabled=true"
 
-# Load Simulator Settings Group - HTTP traffic generation for observability
+# Load Simulator - Main front page option
 - variable: frontend.enabled
-  group: "Load Simulator Settings"
-  label: "Enable HTTP Load Simulator"
-  description: "Deploy a dedicated HTTP load simulator for consistent traffic generation and SUSE Observability monitoring. Replaces frontend UI with automated testing."
+  group: "Main Configuration"
+  label: "Enable Load Simulator"
+  description: "Deploy HTTP load simulator for traffic generation and observability monitoring. Shows detailed settings when enabled."
   type: "boolean"
   default: false
 
+# Load Simulator Settings Sub-Panel - Appears when Load Simulator is enabled
 - variable: frontend.loadSimulator.intervalSeconds
   group: "Load Simulator Settings"
   label: "Request Interval (Seconds)"
@@ -287,14 +288,15 @@ questions:
   default: "Why is the sky blue? Be concise."
   show_if: "advancedConfig=true&&aiCompare.automation.sendMessages=true"
 
-# Observability Settings Group - OpenTelemetry and monitoring configuration
+# Observability - Main front page option  
 - variable: aiCompare.observability.enabled
-  group: "Observability Settings"
-  label: "Enable OpenTelemetry Observability"
-  description: "Enable OpenLIT observability for LLM request tracing, token usage monitoring, and performance metrics."
-  type: "boolean"
-  default: false
+  group: "Main Configuration"
+  label: "Enable Observability"
+  description: "Enable OpenTelemetry observability for GenAI monitoring, cost tracking, and performance metrics. Shows detailed settings when enabled."
+  type: "boolean" 
+  default: true
 
+# Observability Settings Sub-Panel - Appears when Observability is enabled
 - variable: aiCompare.observability.otlpEndpoint
   group: "Observability Settings"
   label: "OpenTelemetry Collector Endpoint"
@@ -308,7 +310,39 @@ questions:
   label: "Enable GPU Statistics Collection"
   description: "Collect GPU utilization and memory usage statistics. Requires GPU nodes and proper scheduling."
   type: "boolean"
-  default: false
+  default: true
+  show_if: "aiCompare.observability.enabled=true"
+
+- variable: aiCompare.observability.tokenTracking
+  group: "Observability Settings"
+  label: "Enable Token Usage Tracking"
+  description: "Track token consumption per model and request for cost analysis"
+  type: "boolean"
+  default: true
+  show_if: "aiCompare.observability.enabled=true"
+
+- variable: aiCompare.observability.costTracking
+  group: "Observability Settings"
+  label: "Enable Cost Tracking"
+  description: "Calculate and track costs per model usage for financial monitoring"
+  type: "boolean"
+  default: true
+  show_if: "aiCompare.observability.enabled=true"
+
+- variable: aiCompare.observability.modelMetrics
+  group: "Observability Settings"
+  label: "Enable Model Performance Metrics"
+  description: "Collect detailed model performance and latency metrics"
+  type: "boolean"
+  default: true
+  show_if: "aiCompare.observability.enabled=true"
+
+- variable: aiCompare.observability.traceRequests
+  group: "Observability Settings"
+  label: "Enable Request Tracing"
+  description: "Full request tracing through the GenAI stack for debugging"
+  type: "boolean"
+  default: true
   show_if: "aiCompare.observability.enabled=true"
 
 # Security Settings Group - NeuVector integration and DLP configuration
