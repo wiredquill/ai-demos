@@ -105,6 +105,14 @@ aiCompare:
   httpApi:
     enabled: true
     port: 8080
+  # Resource allocation for AI Compare app
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
 # Frontend Configuration
 frontend:
   # Modern React-based dashboard (recommended)

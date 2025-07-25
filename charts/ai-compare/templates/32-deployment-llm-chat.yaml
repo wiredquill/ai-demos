@@ -107,6 +107,8 @@ spec:
             - name: demo-config-volume
               mountPath: /app/demo-config
               readOnly: true
+          resources:
+            {{- toYaml .Values.llmChat.resources | nindent 12 }}
       volumes:
         - name: config-volume
           configMap:

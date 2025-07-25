@@ -99,6 +99,14 @@ llmChat:
   httpApi:
     enabled: true
     port: 8080
+  # Resource allocation for AI Compare app
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
 # HTTP Load Simulator (replaces frontend UI for traffic generation)
 frontend:
   enabled: false # Disabled by default - enable for HTTP traffic generation
