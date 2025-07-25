@@ -190,6 +190,3 @@ neuvector:
   controllerUrl: "https://neuvector-svc-controller.neuvector.svc.cluster.local:10443"
   username: "admin"
   password: "admin"
-llmChat:
-  image:
-    tag: "ddf2c3c"

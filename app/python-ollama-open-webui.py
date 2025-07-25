@@ -1908,6 +1908,36 @@ class ChatInterface:
             error_html = f"<div style='color: #c62828; background: rgba(244, 67, 54, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #f44336; font-weight: 500;'>Error: {str(e)}</div>"
             return gr.HTML(value=error_html, visible=True)
 
+    def run_availability_demo_simple(self) -> gr.HTML:
+        """Simple availability demo for Gradio UI - returns just status message."""
+        logger.info("Availability demo button clicked - simple version")
+        try:
+            _, message, status = self.run_availability_demo()
+            logger.info(f"Availability demo executed successfully. Status: {status}")
+            
+            # Check current ConfigMap state to get accurate status and config value
+            is_demo_on, state, config_value = self._check_configmap_demo_state()
+            
+            # Create enhanced status message with ConfigMap value when demo is ON
+            if is_demo_on:
+                enhanced_message = f"{message}<br/><strong>ConfigMap Value:</strong> <code>{config_value}</code><br/><em>Will auto-turn OFF in 60s after ConfigMap is fixed</em>"
+            else:
+                enhanced_message = message
+            
+            # Create status message HTML (same as local function)
+            if status == "success":
+                status_html = f"<div style='color: #1b5e20; background: rgba(76, 175, 80, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #4CAF50; font-weight: 500;'>{enhanced_message}</div>"
+            elif status == "warning":
+                status_html = f"<div style='color: #e65100; background: rgba(255, 167, 38, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #ffa726; font-weight: 500;'>{enhanced_message}</div>"
+            else:
+                status_html = f"<div style='color: #c62828; background: rgba(244, 67, 54, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #f44336; font-weight: 500;'>{enhanced_message}</div>"
+            
+            return gr.HTML(value=status_html, visible=True)
+        except Exception as e:
+            logger.error(f"Availability demo simple function error: {e}")
+            error_html = f"<div style='color: #c62828; background: rgba(244, 67, 54, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #f44336; font-weight: 500;'>Error: {str(e)}</div>"
+            return gr.HTML(value=error_html, visible=True)
+
     def refresh_ollama_models(self) -> gr.Dropdown:
         """Refreshes the dropdown with models from Ollama."""
         logger.info("Refreshing Ollama models dropdown.")
@@ -2986,7 +3016,7 @@ def create_interface():
 
         # Security demo modal handlers
         availability_demo_btn.click(
-            run_availability_demo, outputs=[demo_status_msg, availability_demo_btn]
+            chat_instance.run_availability_demo_simple, outputs=[demo_status_msg]
         )
         data_leak_demo_btn.click(
             chat_instance.run_data_leak_demo_simple, outputs=[demo_status_msg]
