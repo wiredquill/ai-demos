@@ -122,14 +122,6 @@ questions:
   default: "/data/ai-models"
   show_if: "ollama.modelCache.nfs.enabled=true"
 
-# Load Simulator - Main front page option
-- variable: frontend.enabled
-  group: "Main Configuration"
-  label: "Enable Load Simulator"
-  description: "Deploy HTTP load simulator for traffic generation and observability monitoring. Shows detailed settings when enabled."
-  type: "boolean"
-  default: false
-
 # Load Simulator Settings Sub-Panel - Appears when Load Simulator is enabled
 - variable: frontend.loadSimulator.intervalSeconds
   group: "Load Simulator Settings"
