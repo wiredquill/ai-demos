@@ -2,10 +2,8 @@
 Simple unit tests for AI Compare application core functionality.
 """
 
-import json
 import os
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch

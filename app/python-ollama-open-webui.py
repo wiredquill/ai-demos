@@ -7,7 +7,7 @@ import threading
 
 # GitHub Actions test rebuild
 import time
-from typing import Any, Dict, List
+from typing import Dict, List
 
 import gradio as gr
 import requests
@@ -961,9 +961,9 @@ class ChatInterface:
     def _check_configmap_demo_state(self) -> tuple:
         """Check current ConfigMap state to determine availability demo status."""
         try:
+            import json
             import os
             import subprocess
-            import json
 
             # Get namespace and ConfigMap name from environment or use defaults
             namespace = os.getenv("KUBERNETES_NAMESPACE", "ai-compare")
@@ -1245,14 +1245,14 @@ class ChatInterface:
             logger.warning(
                 f"Service health failure detected: SERVICE_HEALTH_FAILURE=true"
             )
-            broken_response = f"🔴 **SERVICE DEGRADED**: Health failure detected!\n\n"
-            broken_response += f"❌ Service Status: DEVIATING\n"
-            broken_response += f"🔧 Cause: SERVICE_HEALTH_FAILURE=true\n\n"
+            broken_response = "🔴 **SERVICE DEGRADED**: Health failure detected!\n\n"
+            broken_response += "❌ Service Status: DEVIATING\n"
+            broken_response += "🔧 Cause: SERVICE_HEALTH_FAILURE=true\n\n"
             broken_response += (
-                f"💡 Service cannot process requests while in degraded state.\n"
+                "💡 Service cannot process requests while in degraded state.\n"
             )
-            broken_response += f"⚠️ This demonstrates SUSE Observability's ability to detect configuration changes and service health degradation.\n\n"
-            broken_response += f"🔄 To fix: Use 'Restore Service Health' in the Service Health Simulation modal."
+            broken_response += "⚠️ This demonstrates SUSE Observability's ability to detect configuration changes and service health degradation.\n\n"
+            broken_response += "🔄 To fix: Use 'Restore Service Health' in the Service Health Simulation modal."
             return broken_response
 
         # Try Pipelines service first if available, otherwise fall back to Open WebUI
@@ -1746,15 +1746,15 @@ class ChatInterface:
                     if "ms" in rt_str and rt_str != "---ms":
                         rt = int(rt_str.replace("ms", ""))
                         response_times.append(rt)
-                except:
+                except Exception:
                     pass
         avg_rt = int(sum(response_times) / len(response_times)) if response_times else 0
 
         html_content = f"""
         <div style='background: linear-gradient(135deg, #0c322c 0%, #1a4a3a 100%); padding: 15px; border-radius: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);'>
             <h3 style='color: #30ba78; margin: 0 0 15px 0; font-size: 16px; text-align: center; font-weight: 600;'>🤖 Model Providers</h3>
-            
-            
+
+
             <!-- Model Provider List -->
             <div style='margin-bottom: 15px;'>
         """
@@ -1788,7 +1788,7 @@ class ChatInterface:
 
         html_content += f"""
             </div>
-            
+
             <!-- Compact Statistics -->
             <div style='background: linear-gradient(135deg, rgba(48, 186, 120, 0.1) 0%, rgba(48, 186, 120, 0.05) 100%); border: 1px solid rgba(48, 186, 120, 0.2); border-radius: 12px; padding: 12px; text-align: center;'>
                 <div style='display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; font-size: 11px;'>
@@ -1962,7 +1962,7 @@ class ChatInterface:
             try:
                 requests.post("http://httpbin.org/post", data=data, timeout=1)
                 logger.warning(
-                    f"Data leak demo executed - credit card and SSN data sent to httpbin.org for DLP testing"
+                    "Data leak demo executed - credit card and SSN data sent to httpbin.org for DLP testing"
                 )
             except Exception as endpoint_error:
                 logger.debug(
@@ -2211,20 +2211,20 @@ class ChatInterface:
                 <span style='color: #73ba25; font-weight: 600; font-size: 0.9em;'>🕐 {result.get('timestamp', 'N/A')}</span>
                 <span style='color: #888; font-size: 0.8em;'>{'Messages Enabled' if result.get('send_messages_enabled', False) else 'Monitoring Only'}</span>
             </div>
-            
+
             <div style='margin-bottom: 12px;'>
                 <div style='color: #fff; font-weight: 500; margin-bottom: 5px;'>❓ Test Question:</div>
                 <div style='background: rgba(115,186,37,0.1); padding: 8px; border-radius: 6px; color: #e0e0e0; font-size: 0.9em;'>
                     {result.get('prompt', 'N/A')}
                 </div>
             </div>
-            
+
             <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 10px;'>
                 <div style='background: rgba(76,175,80,0.1); padding: 10px; border-radius: 6px; border-left: 3px solid #4CAF50;'>
                     <div style='color: #4CAF50; font-weight: 600; font-size: 0.8em; margin-bottom: 5px;'>🤖 OLLAMA RESPONSE</div>
                     <div style='color: #e0e0e0; font-size: 0.8em; line-height: 1.4;'>{ollama_response}</div>
                 </div>
-                
+
                 <div style='background: rgba(33,150,243,0.1); padding: 10px; border-radius: 6px; border-left: 3px solid #2196F3;'>
                     <div style='color: #2196F3; font-weight: 600; font-size: 0.8em; margin-bottom: 5px;'>🌐 OPEN WEBUI RESPONSE</div>
                     <div style='color: #e0e0e0; font-size: 0.8em; line-height: 1.4;'>{webui_response}</div>
@@ -2517,66 +2517,66 @@ def create_interface():
     chat_instance = ChatInterface()
 
     css = """
-    .gradio-container { 
-        background: linear-gradient(135deg, #0a2f26 0%, #0c322c 50%, #0f3a2f 100%); 
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-        color: #efefef; 
+    .gradio-container {
+        background: linear-gradient(135deg, #0a2f26 0%, #0c322c 50%, #0f3a2f 100%);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #efefef;
         min-height: 100vh;
         height: 100vh;
         overflow-y: auto;
     }
-    .main-header { 
-        background: linear-gradient(135deg, #30ba78 0%, #28a745 100%); 
-        border: 1px solid #30ba78; 
-        border-radius: 15px; 
-        box-shadow: 0 8px 32px rgba(48, 186, 120, 0.3); 
-        padding: 25px; 
-        margin-bottom: 25px; 
+    .main-header {
+        background: linear-gradient(135deg, #30ba78 0%, #28a745 100%);
+        border: 1px solid #30ba78;
+        border-radius: 15px;
+        box-shadow: 0 8px 32px rgba(48, 186, 120, 0.3);
+        padding: 25px;
+        margin-bottom: 25px;
     }
-    .control-panel, .chat-container { 
-        background: rgba(255, 255, 255, 0.05); 
-        border: 1px solid rgba(48, 186, 120, 0.2); 
-        border-radius: 15px; 
-        padding: 20px; 
+    .control-panel, .chat-container {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(48, 186, 120, 0.2);
+        border-radius: 15px;
+        padding: 20px;
         backdrop-filter: blur(10px);
     }
     h1, h2, h3, h4 { color: #ffffff; font-weight: 600; }
-    .gr-button { 
-        background: #73ba25; 
-        color: #ffffff; 
-        border: none; 
-        border-radius: 6px; 
-        box-shadow: 0 2px 8px rgba(115, 186, 37, 0.3); 
-        font-weight: 600; 
+    .gr-button {
+        background: #73ba25;
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(115, 186, 37, 0.3);
+        font-weight: 600;
         transition: all 0.3s ease;
     }
-    .gr-button:hover { 
-        background: #5a9e1c; 
+    .gr-button:hover {
+        background: #5a9e1c;
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(115, 186, 37, 0.4);
     }
-    .refresh-btn { 
-        background: linear-gradient(135deg, #2453ff 0%, #4f75ff 100%); 
-    } 
-    .refresh-btn:hover { 
-        background: linear-gradient(135deg, #4f75ff 0%, #6c8cff 100%); 
+    .refresh-btn {
+        background: linear-gradient(135deg, #2453ff 0%, #4f75ff 100%);
     }
-    .stop-btn { 
-        background: linear-gradient(135deg, #dc3545 0%, #e04f5e 100%); 
-    } 
-    .stop-btn:hover { 
-        background: linear-gradient(135deg, #e04f5e 0%, #e8606f 100%); 
+    .refresh-btn:hover {
+        background: linear-gradient(135deg, #4f75ff 0%, #6c8cff 100%);
     }
-    .gr-textbox { 
-        background: #ffffff; 
-        border: 2px solid #73ba25; 
-        border-radius: 8px; 
+    .stop-btn {
+        background: linear-gradient(135deg, #dc3545 0%, #e04f5e 100%);
+    }
+    .stop-btn:hover {
+        background: linear-gradient(135deg, #e04f5e 0%, #e8606f 100%);
+    }
+    .gr-textbox {
+        background: #ffffff;
+        border: 2px solid #73ba25;
+        border-radius: 8px;
         color: #000000;
         box-shadow: 0 2px 8px rgba(115, 186, 37, 0.2);
     }
-    .gr-textbox:focus { 
-        border-color: #73ba25; 
-        box-shadow: 0 0 12px rgba(115, 186, 37, 0.4); 
+    .gr-textbox:focus {
+        border-color: #73ba25;
+        box-shadow: 0 0 12px rgba(115, 186, 37, 0.4);
         background: #ffffff;
     }
     .gr-textbox textarea, .gr-textbox input {
@@ -2589,10 +2589,10 @@ def create_interface():
         color: #666666 !important;
         font-style: italic;
     }
-    .gr-dropdown { 
-        background: #ffffff; 
-        border: 2px solid #73ba25; 
-        border-radius: 8px; 
+    .gr-dropdown {
+        background: #ffffff;
+        border: 2px solid #73ba25;
+        border-radius: 8px;
         box-shadow: 0 2px 8px rgba(115, 186, 37, 0.2);
     }
     .gr-dropdown:focus-within {
@@ -2696,7 +2696,7 @@ def create_interface():
         color: #ffffff !important;
         border: 2px solid rgba(115, 186, 37, 0.3) !important;
     }
-    
+
     /* Input field styling only - leave response boxes to their original designs */
     .input-box .gr-textbox {
         border: 2px solid rgba(115, 186, 37, 0.3) !important;
@@ -2948,7 +2948,7 @@ def create_interface():
                 )
 
             with gr.Row():
-                automation_provider_test_input = gr.Checkbox(
+                _automation_provider_test_input = gr.Checkbox(
                     label="Enable Model Provider Status test",
                     value=True,
                     info="When enabled, regularly tests connectivity to model providers and updates status",
@@ -2970,7 +2970,7 @@ def create_interface():
                 """
             <div style='background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(220, 53, 69, 0.3); border-radius: 8px; padding: 12px; margin: 10px 0;'>
                 <p style='color: #ff6b6b; margin: 0; font-size: 0.9em; font-weight: 600;'>
-                    🔒 <strong>SUSE Security Demonstration:</strong> These demos simulate real security scenarios that 
+                    🔒 <strong>SUSE Security Demonstration:</strong> These demos simulate real security scenarios that
                     SUSE NeuVector and SUSE Observability can detect and alert on.
                 </p>
             </div>
@@ -3332,10 +3332,10 @@ def create_interface():
                 let refreshInterval;
                 let refreshAttempts = 0;
                 const maxRefreshAttempts = 5;
-                
+
                 function findAndClickRefreshButton() {
                     console.log('=== Auto-refresh attempt ===');
-                    
+
                     // Strategy 1: Find by ID
                     let refreshButton = document.getElementById('automation-refresh-btn');
                     if (refreshButton && refreshButton.style.display !== 'none') {
@@ -3344,7 +3344,7 @@ def create_interface():
                         refreshAttempts = 0;
                         return true;
                     }
-                    
+
                     // Strategy 2: Find by text content
                     const allButtons = document.querySelectorAll('button');
                     for (let btn of allButtons) {
@@ -3355,8 +3355,8 @@ def create_interface():
                             return true;
                         }
                     }
-                    
-                    // Strategy 3: Try to trigger Gradio event directly 
+
+                    // Strategy 3: Try to trigger Gradio event directly
                     try {
                         const gradioApp = document.querySelector('.gradio-container');
                         if (gradioApp) {
@@ -3370,25 +3370,25 @@ def create_interface():
                     } catch (e) {
                         console.log('⚠️ Gradio event trigger failed:', e);
                     }
-                    
+
                     refreshAttempts++;
                     console.log(`❌ Refresh attempt ${refreshAttempts}/${maxRefreshAttempts} failed`);
-                    
+
                     // Stop trying after max attempts
                     if (refreshAttempts >= maxRefreshAttempts) {
                         console.log('❌ Stopping auto-refresh after max attempts');
                         clearInterval(refreshInterval);
                     }
-                    
+
                     return false;
                 }
-                
+
                 // Start auto-refresh after page loads
                 setTimeout(() => {
                     console.log('🚀 Starting auto-refresh system');
                     refreshInterval = setInterval(findAndClickRefreshButton, 5000);
                 }, 5000);
-                
+
                 // Also listen for manual refresh clicks to reset counter
                 document.addEventListener('click', (e) => {
                     if (e.target.textContent.includes('🔄 Refresh')) {
@@ -3396,38 +3396,38 @@ def create_interface():
                         refreshAttempts = 0;
                     }
                 });
-                
+
                 // Enhanced JavaScript for UI feedback and button interactions
                 console.log('🎨 AI Compare UI initialized - using native Gradio styling');
-                
+
                 // Add enhanced button press feedback
                 function addButtonFeedback() {
                     const buttons = document.querySelectorAll('.gr-button');
                     buttons.forEach(button => {
                         if (!button.classList.contains('feedback-enhanced')) {
                             button.classList.add('feedback-enhanced');
-                            
+
                             button.addEventListener('click', function() {
                                 // Visual feedback on click
                                 this.style.transform = 'scale(0.95)';
                                 this.style.opacity = '0.8';
-                                
+
                                 // Reset after short delay
                                 setTimeout(() => {
                                     this.style.transform = '';
                                     this.style.opacity = '';
                                 }, 150);
-                                
+
                                 console.log('🔘 Button clicked:', this.textContent);
                             });
                         }
                     });
                 }
-                
+
                 // Apply button feedback immediately and on DOM changes
                 setTimeout(addButtonFeedback, 500);
                 setInterval(addButtonFeedback, 2000);
-                
+
                 // Apply on DOM mutations
                 const observer = new MutationObserver(() => {
                     setTimeout(addButtonFeedback, 100);
