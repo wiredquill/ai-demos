@@ -97,11 +97,16 @@ class ObservableAPIServer:
                         logger.error(
                             f"Health check failed - Availability demo ACTIVE (ConfigMap broken: {config_value})"
                         )
-                        
+
                         # Return HTTP 500 error first for immediate error information
                         import random
-                        if random.random() < 0.5:  # 50% chance - return HTTP 500 with error details
-                            logger.info("Returning HTTP 500 error for observability monitoring")
+
+                        if (
+                            random.random() < 0.5
+                        ):  # 50% chance - return HTTP 500 with error details
+                            logger.info(
+                                "Returning HTTP 500 error for observability monitoring"
+                            )
                             return (
                                 jsonify(
                                     {
@@ -114,14 +119,19 @@ class ObservableAPIServer:
                                 500,
                             )
                         else:  # 50% chance - hang connection to simulate service down
-                            logger.warning("Simulating service down - hanging connection for observability monitoring")
+                            logger.warning(
+                                "Simulating service down - hanging connection for observability monitoring"
+                            )
                             import time
-                            time.sleep(60)  # Hang for 60 seconds to timeout monitoring requests
+
+                            time.sleep(
+                                60
+                            )  # Hang for 60 seconds to timeout monitoring requests
                             # This should never be reached due to timeout, but return error if it somehow does
                             return (
                                 jsonify(
                                     {
-                                        "status": "TIMEOUT_SIMULATION", 
+                                        "status": "TIMEOUT_SIMULATION",
                                         "error": f"Service unresponsive - {config_value}",
                                         "demo_state": demo_state,
                                         "timestamp": time.time(),
@@ -263,11 +273,16 @@ class ObservableAPIServer:
                         logger.error(
                             f"Chat API failed - Availability demo ACTIVE (ConfigMap broken: {config_value})"
                         )
-                        
+
                         # Same dual behavior as health endpoint - 50% HTTP 500, 50% timeout
                         import random
-                        if random.random() < 0.5:  # 50% chance - return HTTP 500 with error details
-                            logger.info("Chat API returning HTTP 500 error for observability monitoring")
+
+                        if (
+                            random.random() < 0.5
+                        ):  # 50% chance - return HTTP 500 with error details
+                            logger.info(
+                                "Chat API returning HTTP 500 error for observability monitoring"
+                            )
                             return (
                                 jsonify(
                                     {
@@ -280,9 +295,14 @@ class ObservableAPIServer:
                                 500,
                             )
                         else:  # 50% chance - hang connection to simulate service down
-                            logger.warning("Chat API simulating service down - hanging connection")
+                            logger.warning(
+                                "Chat API simulating service down - hanging connection"
+                            )
                             import time
-                            time.sleep(60)  # Hang for 60 seconds to timeout monitoring requests
+
+                            time.sleep(
+                                60
+                            )  # Hang for 60 seconds to timeout monitoring requests
                             # This should never be reached due to timeout
                             return (
                                 jsonify(
