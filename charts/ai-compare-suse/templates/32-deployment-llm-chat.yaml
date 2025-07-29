@@ -106,7 +106,7 @@ spec:
           # Health checks to ensure proper startup sequencing
           livenessProbe:
             httpGet:
-              path: /health
+              path: /healthz
               port: {{ .Values.aiCompare.httpApi.port }}
             initialDelaySeconds: 15
             periodSeconds: 10
@@ -114,7 +114,7 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /health
+              path: /healthz
               port: {{ .Values.aiCompare.httpApi.port }}
             initialDelaySeconds: 10
             periodSeconds: 5

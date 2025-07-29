@@ -50,9 +50,24 @@ class ObservableAPIServer:
     def setup_routes(self):
         """Setup HTTP API routes for observable traffic."""
 
+        @self.app.route("/healthz", methods=["GET", "OPTIONS"])
+        def kubernetes_liveness():
+            """Kubernetes liveness probe endpoint - always returns healthy for pod stability."""
+            logger.debug("Kubernetes liveness check - always healthy")
+            return (
+                jsonify(
+                    {
+                        "status": "HEALTHY",
+                        "timestamp": time.time(),
+                        "check_type": "liveness",
+                    }
+                ),
+                200,
+            )
+
         @self.app.route("/health", methods=["GET", "OPTIONS"])
         def health_check():
-            """Health check endpoint - automatically fails when availability demo ConfigMap is in broken state."""
+            """Health check endpoint for observability - automatically fails when availability demo ConfigMap is in broken state."""
             try:
                 # First, check if SERVICE_HEALTH_FAILURE is explicitly set to true (for manual control)
                 if (
