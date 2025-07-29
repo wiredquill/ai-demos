@@ -99,12 +99,11 @@ class ObservableAPIServer:
                             f"Health check failed - Availability demo ACTIVE (ConfigMap broken: {config_value})"
                         )
 
-                        # Return HTTP 500 error first for immediate error information
-                        import random
+                        # Use predictable pattern based on time for consistent observability
+                        # Cycle every 60 seconds: 40s of HTTP 500, 20s of timeouts
+                        cycle_time = int(time.time()) % 60
 
-                        if (
-                            random.random() < 0.5
-                        ):  # 50% chance - return HTTP 500 with error details
+                        if cycle_time < 40:  # First 40 seconds - return HTTP 500 errors
                             logger.info(
                                 "Returning HTTP 500 error for observability monitoring"
                             )
@@ -119,9 +118,9 @@ class ObservableAPIServer:
                                 ),
                                 500,
                             )
-                        else:  # 50% chance - hang connection to simulate service down
+                        else:  # Last 20 seconds - hang connection to simulate service down
                             logger.warning(
-                                "Simulating service down - hanging connection for observability monitoring"
+                                f"Simulating service down (cycle: {cycle_time}s) - hanging connection for observability monitoring"
                             )
 
                             time.sleep(
@@ -275,12 +274,11 @@ class ObservableAPIServer:
                             f"Chat API failed - Availability demo ACTIVE (ConfigMap broken: {config_value})"
                         )
 
-                        # Same dual behavior as health endpoint - 50% HTTP 500, 50% timeout
-                        import random
+                        # Same predictable pattern as health endpoint for consistent observability
+                        # Cycle every 60 seconds: 40s of HTTP 500, 20s of timeouts
+                        cycle_time = int(time.time()) % 60
 
-                        if (
-                            random.random() < 0.5
-                        ):  # 50% chance - return HTTP 500 with error details
+                        if cycle_time < 40:  # First 40 seconds - return HTTP 500 errors
                             logger.info(
                                 "Chat API returning HTTP 500 error for observability monitoring"
                             )
@@ -295,9 +293,9 @@ class ObservableAPIServer:
                                 ),
                                 500,
                             )
-                        else:  # 50% chance - hang connection to simulate service down
+                        else:  # Last 20 seconds - hang connection to simulate service down
                             logger.warning(
-                                "Chat API simulating service down - hanging connection"
+                                f"Chat API simulating service down (cycle: {cycle_time}s) - hanging connection"
                             )
 
                             time.sleep(
