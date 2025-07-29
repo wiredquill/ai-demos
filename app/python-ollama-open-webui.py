@@ -99,45 +99,27 @@ class ObservableAPIServer:
                             f"Health check failed - Availability demo ACTIVE (ConfigMap broken: {config_value})"
                         )
 
-                        # Use predictable pattern based on time for consistent observability
-                        # Cycle every 60 seconds: 40s of HTTP 500, 20s of timeouts
-                        cycle_time = int(time.time()) % 60
+                        # Pure service down mode - always hang connection to simulate complete service failure
+                        logger.warning(
+                            "Availability demo ACTIVE - simulating complete service down (hanging connection)"
+                        )
 
-                        if cycle_time < 40:  # First 40 seconds - return HTTP 500 errors
-                            logger.info(
-                                "Returning HTTP 500 error for observability monitoring"
-                            )
-                            return (
-                                jsonify(
-                                    {
-                                        "status": "FAILING",
-                                        "error": f"Availability demo active - {config_value}",
-                                        "demo_state": demo_state,
-                                        "timestamp": time.time(),
-                                    }
-                                ),
-                                500,
-                            )
-                        else:  # Last 20 seconds - hang connection to simulate service down
-                            logger.warning(
-                                f"Simulating service down (cycle: {cycle_time}s) - hanging connection for observability monitoring"
-                            )
+                        # Hang connection indefinitely to simulate service completely down
+                        # This will cause monitoring systems to see connection timeouts/refused
+                        time.sleep(120)  # Hang for 2 minutes to ensure timeout
 
-                            time.sleep(
-                                60
-                            )  # Hang for 60 seconds to timeout monitoring requests
-                            # This should never be reached due to timeout, but return error if it somehow does
-                            return (
-                                jsonify(
-                                    {
-                                        "status": "TIMEOUT_SIMULATION",
-                                        "error": f"Service unresponsive - {config_value}",
-                                        "demo_state": demo_state,
-                                        "timestamp": time.time(),
-                                    }
-                                ),
-                                503,  # Service Unavailable
-                            )
+                        # This should never be reached due to timeout, but return error if it somehow does
+                        return (
+                            jsonify(
+                                {
+                                    "status": "SERVICE_DOWN_SIMULATION",
+                                    "error": f"Service completely unresponsive - {config_value}",
+                                    "demo_state": demo_state,
+                                    "timestamp": time.time(),
+                                }
+                            ),
+                            503,  # Service Unavailable
+                        )
                 except Exception as configmap_error:
                     # If ConfigMap check fails, log but don't fail health check
                     logger.debug(
@@ -274,45 +256,27 @@ class ObservableAPIServer:
                             f"Chat API failed - Availability demo ACTIVE (ConfigMap broken: {config_value})"
                         )
 
-                        # Same predictable pattern as health endpoint for consistent observability
-                        # Cycle every 60 seconds: 40s of HTTP 500, 20s of timeouts
-                        cycle_time = int(time.time()) % 60
+                        # Pure service down mode - always hang connection to simulate complete service failure
+                        logger.warning(
+                            "Availability demo ACTIVE - Chat API simulating complete service down (hanging connection)"
+                        )
 
-                        if cycle_time < 40:  # First 40 seconds - return HTTP 500 errors
-                            logger.info(
-                                "Chat API returning HTTP 500 error for observability monitoring"
-                            )
-                            return (
-                                jsonify(
-                                    {
-                                        "error": f"Service degraded - availability demo active: {config_value}",
-                                        "status": "availability_demo_failure",
-                                        "demo_state": demo_state,
-                                        "timestamp": time.time(),
-                                    }
-                                ),
-                                500,
-                            )
-                        else:  # Last 20 seconds - hang connection to simulate service down
-                            logger.warning(
-                                f"Chat API simulating service down (cycle: {cycle_time}s) - hanging connection"
-                            )
+                        # Hang connection indefinitely to simulate service completely down
+                        # This will cause monitoring systems to see connection timeouts/refused
+                        time.sleep(120)  # Hang for 2 minutes to ensure timeout
 
-                            time.sleep(
-                                60
-                            )  # Hang for 60 seconds to timeout monitoring requests
-                            # This should never be reached due to timeout
-                            return (
-                                jsonify(
-                                    {
-                                        "error": f"Chat service unresponsive - {config_value}",
-                                        "status": "chat_timeout_simulation",
-                                        "demo_state": demo_state,
-                                        "timestamp": time.time(),
-                                    }
-                                ),
-                                503,  # Service Unavailable
-                            )
+                        # This should never be reached due to timeout, but return error if it somehow does
+                        return (
+                            jsonify(
+                                {
+                                    "error": f"Chat service completely unresponsive - {config_value}",
+                                    "status": "chat_service_down_simulation",
+                                    "demo_state": demo_state,
+                                    "timestamp": time.time(),
+                                }
+                            ),
+                            503,  # Service Unavailable
+                        )
                 except Exception as configmap_error:
                     logger.debug(
                         f"ConfigMap check failed (chat API continues): {configmap_error}"
