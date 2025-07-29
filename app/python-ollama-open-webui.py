@@ -52,8 +52,43 @@ class ObservableAPIServer:
 
         @self.app.route("/healthz", methods=["GET", "OPTIONS"])
         def kubernetes_liveness():
-            """Kubernetes liveness probe endpoint - always returns healthy for pod stability."""
-            logger.debug("Kubernetes liveness check - always healthy")
+            """Kubernetes liveness probe endpoint - fails when availability demo is active to ensure service shows as down."""
+            import os
+            import time
+
+            # Check if availability demo is active via ConfigMap state
+            try:
+                is_demo_active, demo_state, config_value = (
+                    self.chat_interface._check_configmap_demo_state()
+                )
+                if is_demo_active and demo_state == "ON":
+                    logger.warning(
+                        f"Kubernetes liveness check FAILED - Availability demo ACTIVE (ConfigMap broken: {config_value})"
+                    )
+                    # Make the entire service unresponsive for SUSE Observability
+                    # Use a longer hang time to ensure persistent failure detection
+                    time.sleep(300)  # Hang for 5 minutes to ensure sustained outage
+
+                    # Should never reach here due to timeout
+                    return (
+                        jsonify(
+                            {
+                                "status": "DEMO_FAILURE",
+                                "demo_state": demo_state,
+                                "error": f"Service down - {config_value}",
+                                "timestamp": time.time(),
+                                "check_type": "liveness",
+                            }
+                        ),
+                        503,
+                    )
+            except Exception as configmap_error:
+                logger.debug(
+                    f"ConfigMap check failed (liveness continues): {configmap_error}"
+                )
+
+            # Normal healthy response when demo is OFF
+            logger.debug("Kubernetes liveness check - healthy")
             return (
                 jsonify(
                     {
@@ -106,7 +141,7 @@ class ObservableAPIServer:
 
                         # Hang connection indefinitely to simulate service completely down
                         # This will cause monitoring systems to see connection timeouts/refused
-                        time.sleep(120)  # Hang for 2 minutes to ensure timeout
+                        time.sleep(300)  # Hang for 5 minutes to ensure sustained outage
 
                         # This should never be reached due to timeout, but return error if it somehow does
                         return (
@@ -263,7 +298,7 @@ class ObservableAPIServer:
 
                         # Hang connection indefinitely to simulate service completely down
                         # This will cause monitoring systems to see connection timeouts/refused
-                        time.sleep(120)  # Hang for 2 minutes to ensure timeout
+                        time.sleep(300)  # Hang for 5 minutes to ensure sustained outage
 
                         # This should never be reached due to timeout, but return error if it somehow does
                         return (
