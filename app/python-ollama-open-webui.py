@@ -185,6 +185,7 @@ class ObservableAPIServer:
         def chat_completion():
             """Chat completion endpoint for frontend communication."""
             try:
+                # Check for manual service health failure
                 if (
                     hasattr(self.chat_interface, "service_health_failure")
                     and self.chat_interface.service_health_failure
@@ -202,6 +203,27 @@ class ObservableAPIServer:
                         ),
                         500,
                     )
+
+                # Check ConfigMap-based availability demo state
+                try:
+                    is_demo_active, demo_state, config_value = self.chat_interface._check_configmap_demo_state()
+                    if is_demo_active and demo_state == "ON":
+                        logger.error(
+                            f"Chat API failed - Availability demo ACTIVE (ConfigMap broken: {config_value})"
+                        )
+                        return (
+                            jsonify(
+                                {
+                                    "error": f"Service degraded - availability demo active: {config_value}",
+                                    "status": "availability_demo_failure",
+                                    "demo_state": demo_state,
+                                    "timestamp": time.time(),
+                                }
+                            ),
+                            500,
+                        )
+                except Exception as configmap_error:
+                    logger.debug(f"ConfigMap check failed (chat API continues): {configmap_error}")
 
                 data = request.get_json()
                 if not data or "message" not in data:
