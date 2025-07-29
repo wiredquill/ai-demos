@@ -68,6 +68,8 @@ class ObservableAPIServer:
         @self.app.route("/health", methods=["GET", "OPTIONS"])
         def health_check():
             """Health check endpoint for observability - automatically fails when availability demo ConfigMap is in broken state."""
+            import time  # Add time import at function top
+
             try:
                 # First, check if SERVICE_HEALTH_FAILURE is explicitly set to true (for manual control)
                 if (
@@ -122,7 +124,6 @@ class ObservableAPIServer:
                             logger.warning(
                                 "Simulating service down - hanging connection for observability monitoring"
                             )
-                            import time
 
                             time.sleep(
                                 60
@@ -244,6 +245,8 @@ class ObservableAPIServer:
         @self.app.route("/api/chat", methods=["POST", "OPTIONS"])
         def chat_completion():
             """Chat completion endpoint for frontend communication."""
+            import time  # Add time import at function top
+
             try:
                 # Check for manual service health failure
                 if (
@@ -298,7 +301,6 @@ class ObservableAPIServer:
                             logger.warning(
                                 "Chat API simulating service down - hanging connection"
                             )
-                            import time
 
                             time.sleep(
                                 60
