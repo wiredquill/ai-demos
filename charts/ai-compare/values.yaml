@@ -79,7 +79,7 @@ pipelines:
 aiCompare:
   image:
     repository: ghcr.io/wiredquill/ai-demos
-    tag: "cada2c2"
+    tag: "6fbb048"
   service:
     port: 7860
     type: NodePort
@@ -106,11 +106,11 @@ aiCompare:
   # Resource allocation for AI Compare app
   resources:
     requests:
-      cpu: "500m"       # Increased from 200m for better performance
-      memory: "1Gi"     # Increased from 512Mi for more headroom
+      cpu: "500m" # Increased from 200m for better performance
+      memory: "1Gi" # Increased from 512Mi for more headroom
     limits:
-      cpu: "2000m"      # Increased from 1000m for handling spikes
-      memory: "4Gi"     # Increased from 2Gi for better caching
+      cpu: "2000m" # Increased from 1000m for handling spikes
+      memory: "4Gi" # Increased from 2Gi for better caching
 # HTTP Load Simulator (replaces frontend UI for traffic generation)
 frontend:
   enabled: false # Disabled by default - enable for HTTP traffic generation
