@@ -71,11 +71,10 @@ class ObservableAPIServer:
             import time  # Add time import at function top
 
             try:
-                # First, check if SERVICE_HEALTH_FAILURE is explicitly set to true (for manual control)
-                if (
-                    hasattr(self.chat_interface, "service_health_failure")
-                    and self.chat_interface.service_health_failure
-                ):
+                # First, check if SERVICE_HEALTH_FAILURE environment variable is explicitly set to true (for manual control)
+                import os
+
+                if os.getenv("SERVICE_HEALTH_FAILURE", "false").lower() == "true":
                     logger.error(
                         "Health check failed - SERVICE_HEALTH_FAILURE=true (manual override)"
                     )
@@ -248,11 +247,10 @@ class ObservableAPIServer:
             import time  # Add time import at function top
 
             try:
-                # Check for manual service health failure
-                if (
-                    hasattr(self.chat_interface, "service_health_failure")
-                    and self.chat_interface.service_health_failure
-                ):
+                # Check for manual service health failure via environment variable
+                import os
+
+                if os.getenv("SERVICE_HEALTH_FAILURE", "false").lower() == "true":
                     logger.error(
                         "Chat API failed - SERVICE_HEALTH_FAILURE=true (SUSE Observability pattern)"
                     )
