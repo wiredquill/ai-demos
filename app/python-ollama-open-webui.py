@@ -87,10 +87,12 @@ class ObservableAPIServer:
                         ),
                         500,
                     )
-                
+
                 # Automatically check ConfigMap state for availability demo
                 try:
-                    is_demo_active, demo_state, config_value = self.chat_interface._check_configmap_demo_state()
+                    is_demo_active, demo_state, config_value = (
+                        self.chat_interface._check_configmap_demo_state()
+                    )
                     if is_demo_active and demo_state == "ON":
                         logger.error(
                             f"Health check failed - Availability demo ACTIVE (ConfigMap broken: {config_value})"
@@ -108,7 +110,9 @@ class ObservableAPIServer:
                         )
                 except Exception as configmap_error:
                     # If ConfigMap check fails, log but don't fail health check
-                    logger.debug(f"ConfigMap check failed (health check continues): {configmap_error}")
+                    logger.debug(
+                        f"ConfigMap check failed (health check continues): {configmap_error}"
+                    )
 
                 logger.info("Health check successful - service operational")
                 return (
@@ -149,13 +153,23 @@ class ObservableAPIServer:
             logger.info("Provider status endpoint accessed")
             try:
                 # Return current provider status in the format expected by React frontend
-                return jsonify({
-                    "providers": self.chat_interface.provider_status,
-                    "timestamp": time.time(),
-                }), 200
+                return (
+                    jsonify(
+                        {
+                            "providers": self.chat_interface.provider_status,
+                            "timestamp": time.time(),
+                        }
+                    ),
+                    200,
+                )
             except Exception as e:
                 logger.error(f"Provider status endpoint error: {e}")
-                return jsonify({"error": str(e), "providers": {}, "timestamp": time.time()}), 500
+                return (
+                    jsonify(
+                        {"error": str(e), "providers": {}, "timestamp": time.time()}
+                    ),
+                    500,
+                )
 
         @self.app.route("/api/demo/status", methods=["GET", "OPTIONS"])
         def demo_status():
@@ -163,20 +177,35 @@ class ObservableAPIServer:
             logger.info("Demo status endpoint accessed")
             try:
                 # Get real-time ConfigMap state for availability demo
-                is_active, state, config_value = self.chat_interface._check_configmap_demo_state()
-                
-                return jsonify({
-                    "availability_demo": {
-                        "is_active": is_active,
-                        "config_value": config_value,
-                        "last_toggled": getattr(self.chat_interface, "availability_demo_last_toggled", None),
-                    },
-                    "data_leak_demo": {
-                        "is_active": False,  # Data leak demo is always momentary
-                        "last_triggered": getattr(self.chat_interface, "data_leak_last_triggered", None),
-                    },
-                    "timestamp": time.time(),
-                }), 200
+                is_active, state, config_value = (
+                    self.chat_interface._check_configmap_demo_state()
+                )
+
+                return (
+                    jsonify(
+                        {
+                            "availability_demo": {
+                                "is_active": is_active,
+                                "config_value": config_value,
+                                "last_toggled": getattr(
+                                    self.chat_interface,
+                                    "availability_demo_last_toggled",
+                                    None,
+                                ),
+                            },
+                            "data_leak_demo": {
+                                "is_active": False,  # Data leak demo is always momentary
+                                "last_triggered": getattr(
+                                    self.chat_interface,
+                                    "data_leak_last_triggered",
+                                    None,
+                                ),
+                            },
+                            "timestamp": time.time(),
+                        }
+                    ),
+                    200,
+                )
             except Exception as e:
                 logger.error(f"Demo status endpoint error: {e}")
                 return jsonify({"error": str(e), "timestamp": time.time()}), 500
@@ -206,7 +235,9 @@ class ObservableAPIServer:
 
                 # Check ConfigMap-based availability demo state
                 try:
-                    is_demo_active, demo_state, config_value = self.chat_interface._check_configmap_demo_state()
+                    is_demo_active, demo_state, config_value = (
+                        self.chat_interface._check_configmap_demo_state()
+                    )
                     if is_demo_active and demo_state == "ON":
                         logger.error(
                             f"Chat API failed - Availability demo ACTIVE (ConfigMap broken: {config_value})"
@@ -223,7 +254,9 @@ class ObservableAPIServer:
                             500,
                         )
                 except Exception as configmap_error:
-                    logger.debug(f"ConfigMap check failed (chat API continues): {configmap_error}")
+                    logger.debug(
+                        f"ConfigMap check failed (chat API continues): {configmap_error}"
+                    )
 
                 data = request.get_json()
                 if not data or "message" not in data:
@@ -343,15 +376,24 @@ class ObservableAPIServer:
             """Get load simulator status."""
             try:
                 is_running = self.chat_interface.check_load_simulator_status()
-                
-                return jsonify({
-                    "status": "running" if is_running else "stopped",
-                    "is_running": is_running,
-                    "request_count": getattr(self.chat_interface, "load_simulator_request_count", 0),
-                    "last_request": getattr(self.chat_interface, "load_simulator_last_request", None),
-                    "timestamp": time.time(),
-                }), 200
-                
+
+                return (
+                    jsonify(
+                        {
+                            "status": "running" if is_running else "stopped",
+                            "is_running": is_running,
+                            "request_count": getattr(
+                                self.chat_interface, "load_simulator_request_count", 0
+                            ),
+                            "last_request": getattr(
+                                self.chat_interface, "load_simulator_last_request", None
+                            ),
+                            "timestamp": time.time(),
+                        }
+                    ),
+                    200,
+                )
+
             except Exception as e:
                 logger.error(f"Load simulator status API error: {e}")
                 return jsonify({"error": str(e), "status": "error"}), 500
@@ -361,14 +403,16 @@ class ObservableAPIServer:
             """Start load simulator."""
             try:
                 success, message = self.chat_interface.start_load_simulator()
-                
-                return jsonify({
-                    "message": message,
-                    "status": "running" if success else "error",
-                    "simulator_status": "running" if success else "error",
-                    "timestamp": time.time(),
-                }), 200 if success else 500
-                
+
+                return jsonify(
+                    {
+                        "message": message,
+                        "status": "running" if success else "error",
+                        "simulator_status": "running" if success else "error",
+                        "timestamp": time.time(),
+                    }
+                ), (200 if success else 500)
+
             except Exception as e:
                 logger.error(f"Start load simulator API error: {e}")
                 return jsonify({"error": str(e), "status": "error"}), 500
@@ -378,14 +422,16 @@ class ObservableAPIServer:
             """Stop load simulator."""
             try:
                 success, message = self.chat_interface.stop_load_simulator()
-                
-                return jsonify({
-                    "message": message,
-                    "status": "stopped" if success else "error",
-                    "simulator_status": "stopped" if success else "error",
-                    "timestamp": time.time(),
-                }), 200 if success else 500
-                
+
+                return jsonify(
+                    {
+                        "message": message,
+                        "status": "stopped" if success else "error",
+                        "simulator_status": "stopped" if success else "error",
+                        "timestamp": time.time(),
+                    }
+                ), (200 if success else 500)
+
             except Exception as e:
                 logger.error(f"Stop load simulator API error: {e}")
                 return jsonify({"error": str(e), "status": "error"}), 500
@@ -681,56 +727,66 @@ class ChatInterface:
         # Read observability configuration from environment variables
         otlp_endpoint = os.getenv("OTLP_ENDPOINT")
         collect_gpu_stats = os.getenv("COLLECT_GPU_STATS", "false").lower() == "true"
-        
+
         # Development option - disabled by default for production stability
         dev_mode = os.getenv("DEV_MODE", "false").lower() == "true"
-        observability_enabled = os.getenv("OBSERVABILITY_ENABLED", "false").lower() == "true"
-        
+        observability_enabled = (
+            os.getenv("OBSERVABILITY_ENABLED", "false").lower() == "true"
+        )
+
         # Enhanced GenAI observability settings (for OpenTelemetry edition)
         token_tracking = os.getenv("TOKEN_TRACKING_ENABLED", "false").lower() == "true"
         cost_tracking = os.getenv("COST_TRACKING_ENABLED", "false").lower() == "true"
         model_metrics = os.getenv("MODEL_METRICS_ENABLED", "false").lower() == "true"
         trace_requests = os.getenv("TRACE_REQUESTS_ENABLED", "false").lower() == "true"
-        
+
         if not observability_enabled and not dev_mode:
-            logger.info("OpenLit observability disabled (production default). Enable with OBSERVABILITY_ENABLED=true or DEV_MODE=true")
+            logger.info(
+                "OpenLit observability disabled (production default). Enable with OBSERVABILITY_ENABLED=true or DEV_MODE=true"
+            )
             return
-            
+
         if not otlp_endpoint:
-            logger.info("OTLP_ENDPOINT not configured - observability disabled")  
+            logger.info("OTLP_ENDPOINT not configured - observability disabled")
             return
 
         try:
-            logger.info(f"Initializing OpenLit observability with endpoint: {otlp_endpoint}")
-            
+            logger.info(
+                f"Initializing OpenLit observability with endpoint: {otlp_endpoint}"
+            )
+
             # Test connectivity to OTLP endpoint first with a short timeout
             import socket
             import urllib.parse
-            
+
             parsed_url = urllib.parse.urlparse(otlp_endpoint)
             host = parsed_url.hostname
-            port = parsed_url.port or (443 if parsed_url.scheme == 'https' else 80)
-            
+            port = parsed_url.port or (443 if parsed_url.scheme == "https" else 80)
+
             # Quick connectivity test with 3 second timeout
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(3)
             try:
                 result = sock.connect_ex((host, port))
                 if result != 0:
-                    logger.warning(f"Cannot connect to OTLP endpoint {host}:{port} - skipping OpenLit initialization")
+                    logger.warning(
+                        f"Cannot connect to OTLP endpoint {host}:{port} - skipping OpenLit initialization"
+                    )
                     return
             except Exception as conn_test_error:
-                logger.warning(f"OTLP endpoint connectivity test failed: {conn_test_error} - skipping OpenLit initialization")
+                logger.warning(
+                    f"OTLP endpoint connectivity test failed: {conn_test_error} - skipping OpenLit initialization"
+                )
                 return
             finally:
                 sock.close()
-            
+
             # Initialize OpenLit with enhanced GenAI configuration
             openlit_config = {
                 "otlp_endpoint": otlp_endpoint,
-                "collect_gpu_stats": collect_gpu_stats
+                "collect_gpu_stats": collect_gpu_stats,
             }
-            
+
             # Add enhanced GenAI observability features if enabled
             if token_tracking or cost_tracking or model_metrics or trace_requests:
                 logger.info("Enhanced GenAI observability features enabled:")
@@ -742,23 +798,25 @@ class ChatInterface:
                     logger.info("  - Detailed model performance metrics")
                 if trace_requests:
                     logger.info("  - Full request tracing through the stack")
-            
+
             openlit.init(**openlit_config)
-            
+
             # Store observability settings for use in request handling
             self.observability_settings = {
                 "token_tracking": token_tracking,
                 "cost_tracking": cost_tracking,
                 "model_metrics": model_metrics,
                 "trace_requests": trace_requests,
-                "collect_gpu_stats": collect_gpu_stats
+                "collect_gpu_stats": collect_gpu_stats,
             }
-            
+
             logger.info(
                 f"OpenLit observability initialized successfully. Endpoint: {otlp_endpoint}, GPU Stats: {collect_gpu_stats}, Enhanced GenAI: {any([token_tracking, cost_tracking, model_metrics, trace_requests])}"
             )
         except Exception as e:
-            logger.warning(f"Failed to initialize OpenLit observability: {e} - continuing without observability")
+            logger.warning(
+                f"Failed to initialize OpenLit observability: {e} - continuing without observability"
+            )
 
     def _initialize_api_server(self):
         """Initialize HTTP API server if enabled."""
@@ -929,7 +987,9 @@ class ChatInterface:
             )
 
             if result.returncode != 0:
-                logger.warning(f"Could not read ConfigMap {configmap_name}: {result.stderr}")
+                logger.warning(
+                    f"Could not read ConfigMap {configmap_name}: {result.stderr}"
+                )
                 return False, "unknown", "ConfigMap not accessible"
 
             configmap_data = json.loads(result.stdout)
@@ -941,7 +1001,7 @@ class ChatInterface:
                 broken_value = data["models_latest"]
                 return True, "ON", f"Broken config: {broken_value}"
             elif "models-latest" in data:
-                # Demo is OFF - working configuration  
+                # Demo is OFF - working configuration
                 working_value = data["models-latest"]
                 return False, "OFF", f"Working config: {working_value}"
             else:
@@ -954,33 +1014,42 @@ class ChatInterface:
 
     def _start_auto_off_timer(self):
         """Start a 60-second timer to automatically turn off demo after ConfigMap is fixed."""
+
         def auto_off_worker():
             """Worker thread that waits 60 seconds then checks ConfigMap and turns off demo."""
             import time
-            
+
             logger.info("Auto-off timer started - will check ConfigMap in 60 seconds")
             time.sleep(60)
-            
+
             # Check if ConfigMap has been fixed (working key exists)
             is_demo_on, state, config_value = self._check_configmap_demo_state()
-            
+
             if not is_demo_on and state == "OFF":
                 # ConfigMap has been fixed, turn off internal demo state
-                logger.info("Auto-off timer triggered - ConfigMap fixed, turning off demo")
+                logger.info(
+                    "Auto-off timer triggered - ConfigMap fixed, turning off demo"
+                )
                 self.service_health_failure = False
                 self.availability_demo_auto_off_timer = None
             else:
-                logger.info(f"Auto-off timer expired but ConfigMap still broken ({state})")
+                logger.info(
+                    f"Auto-off timer expired but ConfigMap still broken ({state})"
+                )
                 self.availability_demo_auto_off_timer = None
-        
+
         # Cancel any existing timer
-        if (hasattr(self, 'availability_demo_auto_off_timer') and 
-            self.availability_demo_auto_off_timer and 
-            self.availability_demo_auto_off_timer.is_alive()):
+        if (
+            hasattr(self, "availability_demo_auto_off_timer")
+            and self.availability_demo_auto_off_timer
+            and self.availability_demo_auto_off_timer.is_alive()
+        ):
             logger.info("Canceling existing auto-off timer")
-        
+
         # Start new timer
-        self.availability_demo_auto_off_timer = threading.Thread(target=auto_off_worker, daemon=True)
+        self.availability_demo_auto_off_timer = threading.Thread(
+            target=auto_off_worker, daemon=True
+        )
         self.availability_demo_auto_off_timer.start()
 
     def _restore_configmap_health(self) -> bool:
@@ -1858,7 +1927,7 @@ class ChatInterface:
 
             # Check current ConfigMap state to determine action
             is_demo_on, state, config_value = self._check_configmap_demo_state()
-            
+
             if is_demo_on:
                 # Demo is ON, turn it OFF
                 return self.restore_service_health()
@@ -1930,7 +1999,7 @@ class ChatInterface:
         try:
             _, message, status = self.run_data_leak_demo()
             logger.info(f"Data leak demo executed successfully. Status: {status}")
-            
+
             # Create status message HTML (same as local function)
             if status == "success":
                 status_html = f"<div style='color: #1b5e20; background: rgba(76, 175, 80, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #4CAF50; font-weight: 500;'>{message}</div>"
@@ -1938,7 +2007,7 @@ class ChatInterface:
                 status_html = f"<div style='color: #e65100; background: rgba(255, 167, 38, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #ffa726; font-weight: 500;'>{message}</div>"
             else:
                 status_html = f"<div style='color: #c62828; background: rgba(244, 67, 54, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #f44336; font-weight: 500;'>{message}</div>"
-            
+
             return gr.HTML(value=status_html, visible=True)
         except Exception as e:
             logger.error(f"Data leak demo simple function error: {e}")
@@ -1951,16 +2020,16 @@ class ChatInterface:
         try:
             _, message, status = self.run_availability_demo()
             logger.info(f"Availability demo executed successfully. Status: {status}")
-            
+
             # Check current ConfigMap state to get accurate status and config value
             is_demo_on, state, config_value = self._check_configmap_demo_state()
-            
+
             # Create enhanced status message with ConfigMap value when demo is ON
             if is_demo_on:
                 enhanced_message = f"{message}<br/><strong>ConfigMap Value:</strong> <code>{config_value}</code><br/><em>Will auto-turn OFF in 60s after ConfigMap is fixed</em>"
             else:
                 enhanced_message = message
-            
+
             # Create status message HTML (same as local function)
             if status == "success":
                 status_html = f"<div style='color: #1b5e20; background: rgba(76, 175, 80, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #4CAF50; font-weight: 500;'>{enhanced_message}</div>"
@@ -1968,7 +2037,7 @@ class ChatInterface:
                 status_html = f"<div style='color: #e65100; background: rgba(255, 167, 38, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #ffa726; font-weight: 500;'>{enhanced_message}</div>"
             else:
                 status_html = f"<div style='color: #c62828; background: rgba(244, 67, 54, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #f44336; font-weight: 500;'>{enhanced_message}</div>"
-            
+
             return gr.HTML(value=status_html, visible=True)
         except Exception as e:
             logger.error(f"Availability demo simple function error: {e}")
@@ -2966,7 +3035,9 @@ def create_interface():
             _, message, status = chat_instance.run_availability_demo()
 
             # Check current ConfigMap state to get accurate status and config value
-            is_demo_on, state, config_value = chat_instance._check_configmap_demo_state()
+            is_demo_on, state, config_value = (
+                chat_instance._check_configmap_demo_state()
+            )
 
             # Create enhanced status message with ConfigMap value when demo is ON
             if is_demo_on:
@@ -3004,7 +3075,9 @@ def create_interface():
             logger.info("Gradio data leak demo button clicked - executing function")
             try:
                 _, message, status = chat_instance.run_data_leak_demo()
-                logger.info(f"Data leak demo executed successfully. Status: {status}, Message: {message[:100]}...")
+                logger.info(
+                    f"Data leak demo executed successfully. Status: {status}, Message: {message[:100]}..."
+                )
             except Exception as e:
                 logger.error(f"Data leak demo Gradio function error: {e}")
                 message = f"Error executing data leak demo: {str(e)}"
