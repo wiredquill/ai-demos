@@ -79,7 +79,7 @@ pipelines:
 aiCompare:
   image:
     repository: ghcr.io/wiredquill/ai-demos
-    tag: "6fbb048"
+    tag: "bd00281"
   service:
     port: 7860
     type: NodePort
