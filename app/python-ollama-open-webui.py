@@ -1904,7 +1904,18 @@ class ChatInterface:
 
                 return (
                     gr.Column(visible=False),
-                    '🔴 Availability Demo ACTIVATED!\n\n✅ ConfigMap manipulated - app should start failing\n📊 SUSE Observability should detect:\n• HTTP 500 error rate spike\n• Health check failures\n• Configuration errors\n\n🔧 To fix externally in Kubernetes:\nkubectl patch configmap <demo-config> -n <namespace> --type=json -p=\'[{"op": "remove", "path": "/data/models_latest"}, {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest"}]\'',
+                    """🔴 **Availability Demo: ACTIVATED**
+
+**Status:** ConfigMap manipulation successful  
+**Effect:** Application will start failing with HTTP 500 errors  
+**ConfigMap Value:** `broken-model:invalid`
+
+**SUSE Observability should detect:**
+• HTTP 500 error rate spike
+• Health check failures  
+• Service degradation patterns
+
+**To fix externally:** Use kubectl to patch the ConfigMap""",
                     "warning",
                 )
             else:
@@ -1919,7 +1930,13 @@ class ChatInterface:
 
                 return (
                     gr.Column(visible=False),
-                    "🔴 Availability Demo ACTIVATED!\n\n⚠️ ConfigMap manipulation failed - using fallback mode\n📊 Health checks will return HTTP 500\n\n🔧 ConfigMap manipulation requires kubectl access",
+                    """🔴 **Availability Demo: ACTIVATED**
+
+**Status:** ConfigMap manipulation failed - using fallback mode  
+**Effect:** Health checks will return HTTP 500 errors  
+**Mode:** Environment variable override
+
+**Note:** ConfigMap manipulation requires kubectl access""",
                     "warning",
                 )
 
@@ -1957,7 +1974,18 @@ class ChatInterface:
 
                 return (
                     gr.Column(visible=False),
-                    "🔵 Availability Demo DEACTIVATED!\n\n✅ ConfigMap restored - app should start working\n📊 SUSE Observability should detect:\n• HTTP 200 success rate recovery\n• Health check restoration\n• Error rate return to normal\n\n🎉 Service fully operational!",
+                    """🔵 **Availability Demo: DEACTIVATED**
+
+**Status:** ConfigMap restored successfully  
+**Effect:** Application should start working normally  
+**ConfigMap Value:** `tinyllama:latest`
+
+**SUSE Observability should detect:**
+• HTTP 200 success rate recovery
+• Health check restoration
+• Error rate return to normal
+
+🎉 **Service fully operational!**""",
                     "success",
                 )
             else:
@@ -2038,7 +2066,16 @@ class ChatInterface:
             )
 
             # Detailed message showing what data was "leaked" for NeuVector DLP detection
-            message = f"🔒 Data Leak Demo Executed!\n\n💳 Credit Card: {credit_card_pattern}\n🆔 SSN: {ssn_pattern}\n\n⚠️ Sensitive data transmitted to external endpoints for NeuVector DLP detection. This triggers security alerts in SUSE NeuVector for demonstration purposes."
+            message = f"""🔒 **Data Leak Demo: EXECUTED**
+
+**Sensitive Data Transmitted:**
+• Credit Card: `{credit_card_pattern}`
+• SSN: `{ssn_pattern}`
+
+**Purpose:** NeuVector DLP detection testing  
+**Effect:** Triggers security alerts in SUSE NeuVector
+
+⚠️ **Demo purposes only** - Real sensitive data detection"""
             return gr.Column(visible=False), message, "warning"
 
         except Exception as e:
@@ -2046,7 +2083,16 @@ class ChatInterface:
             # Even on failure, show detailed message for demo purposes (this is a security demo)
             credit_card_pattern = "3412-1234-1234-2222"
             ssn_pattern = "123-45-6789"
-            message = f"🔒 Data Leak Demo Executed!\n\n💳 Credit Card: {credit_card_pattern}\n🆔 SSN: {ssn_pattern}\n\n⚠️ Network failed but sensitive data patterns processed for NeuVector DLP testing. Demo completed successfully."
+            message = f"""🔒 **Data Leak Demo: EXECUTED**
+
+**Sensitive Data Processed:**
+• Credit Card: `{credit_card_pattern}`
+• SSN: `{ssn_pattern}`
+
+**Status:** Network failed but demo completed  
+**Purpose:** NeuVector DLP detection testing  
+
+⚠️ **Local processing successful** - Demo purposes only"""
             return gr.Column(visible=False), message, "warning"
 
     def refresh_providers(self) -> gr.HTML:
