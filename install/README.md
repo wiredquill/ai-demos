@@ -5,7 +5,7 @@ This guide provides a concise set of instructions to configure a SUSE Linux Ente
 
 ## Installation Guides
 
-*   [Installation Guide: NVIDIA Drivers](Enable-SUSE-AI-Observability.md)
+*   [Installation Guide: NVIDIA Drivers](Install-NVIDIA-drivers.md)
 *   [Installation Guide: NVIDIA Datacenter GPU Manager (DCGM)](Install-NVIDIA-dcgm.md)
 *   [Installation Guide: NVIDIA GPU Operator](Install-GPU-Operator.md)
 *   [Configuration Guide: SUSE AI Observability Plugin](Enable-SUSE-AI-Observability.md)
