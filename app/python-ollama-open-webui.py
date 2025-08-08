@@ -780,6 +780,8 @@ class ChatInterface:
 
     def _initialize_observability(self):
         """Initialize OpenLit observability if enabled and available."""
+        import os
+        
         if not OPENLIT_AVAILABLE:
             logger.info("OpenLit not available - skipping observability initialization")
             return
@@ -875,7 +877,6 @@ class ChatInterface:
             try:
                 from opentelemetry import resource
                 from opentelemetry.sdk.resources import Resource
-                import os
 
                 # Create resource with GenAI semantic conventions
                 genai_resource = Resource.create(
