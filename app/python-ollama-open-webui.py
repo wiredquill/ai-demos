@@ -1248,23 +1248,19 @@ class ChatInterface:
         try:
             # Use ollama Python SDK for proper OpenLit instrumentation
             import ollama
-            
+
             # Configure client with our Ollama service endpoint
             ollama_client = ollama.Client(host=self.ollama_base_url)
-            
+
             # Send chat request using SDK
-            response = ollama_client.chat(
-                model=model,
-                messages=messages,
-                stream=False
-            )
-            
+            response = ollama_client.chat(model=model, messages=messages, stream=False)
+
             # Extract message content from response
-            if response and 'message' in response and 'content' in response['message']:
-                return response['message']['content']
+            if response and "message" in response and "content" in response["message"]:
+                return response["message"]["content"]
             else:
                 return "Error: Unexpected response format from Ollama."
-                
+
         except Exception as e:
             logger.error(f"Error communicating with Ollama via SDK: {str(e)}")
             # Fallback to HTTP if SDK fails
