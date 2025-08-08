@@ -4,3 +4,4 @@ openlit
 ollama
 flask
 psutil
+opentelemetry-sdk
