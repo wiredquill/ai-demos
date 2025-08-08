@@ -862,9 +862,12 @@ class ChatInterface:
             # Ensure ollama library is imported before OpenLit initialization for proper detection
             try:
                 import ollama
+
                 logger.info("Pre-imported ollama library for OpenLit instrumentation")
             except ImportError:
-                logger.warning("Could not import ollama library for OpenLit instrumentation")
+                logger.warning(
+                    "Could not import ollama library for OpenLit instrumentation"
+                )
 
             openlit.init(**openlit_config)
 
@@ -873,38 +876,48 @@ class ChatInterface:
                 from opentelemetry import resource
                 from opentelemetry.sdk.resources import Resource
                 import os
-                
+
                 # Create resource with GenAI semantic conventions
-                genai_resource = Resource.create({
-                    "gen_ai.system": "ollama",
-                    "gen_ai.environment": "ai-compare-otel", 
-                    "ai.framework": "ollama",
-                    "ai.model.type": "llm",
-                    "ai.application.category": "model-inference",
-                    "ai.component.type": "inference-server",
-                    "genai.application": "true",
-                    "genai.observability.enabled": "true",
-                    "service.name": "ai-compare-genai-app",
-                    "service.version": "1.0.0",
-                })
+                genai_resource = Resource.create(
+                    {
+                        "gen_ai.system": "ollama",
+                        "gen_ai.environment": "ai-compare-otel",
+                        "ai.framework": "ollama",
+                        "ai.model.type": "llm",
+                        "ai.application.category": "model-inference",
+                        "ai.component.type": "inference-server",
+                        "genai.application": "true",
+                        "genai.observability.enabled": "true",
+                        "service.name": "ai-compare-genai-app",
+                        "service.version": "1.0.0",
+                    }
+                )
                 
                 # Merge with existing resource (OpenLit may have set some attributes)
                 from opentelemetry.sdk.trace import TracerProvider
                 from opentelemetry.sdk.metrics import MeterProvider
                 from opentelemetry import trace, metrics
-                
+
                 # Get current providers and merge resources
                 current_tracer_provider = trace.get_tracer_provider()
                 current_meter_provider = metrics.get_meter_provider()
-                
-                if hasattr(current_tracer_provider, 'resource'):
-                    merged_resource = current_tracer_provider.resource.merge(genai_resource)
-                    logger.info("Merged GenAI semantic conventions with existing OpenTelemetry resource")
+
+                if hasattr(current_tracer_provider, "resource"):
+                    merged_resource = current_tracer_provider.resource.merge(
+                        genai_resource
+                    )
+                    logger.info(
+                        "Merged GenAI semantic conventions with existing OpenTelemetry resource"
+                    )
                 else:
-                    logger.info("Applied GenAI semantic conventions to OpenTelemetry resource")
+                    logger.info(
+                        "Applied GenAI semantic conventions to OpenTelemetry resource"
+                    )
                     
             except Exception as e:
-                logger.warning(f"Failed to add GenAI semantic conventions: {e} - continuing with basic OpenLit")
+                logger.warning(
+                    f"Failed to add GenAI semantic conventions: {e} - continuing with basic OpenLit"
+                )
 
             # Store observability settings for use in request handling
             self.observability_settings = {
