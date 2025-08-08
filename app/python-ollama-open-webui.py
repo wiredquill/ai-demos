@@ -10,6 +10,7 @@ import time
 from typing import Dict, List
 
 import gradio as gr
+import ollama  # Import at top level for OpenLit instrumentation
 import requests
 from flask import Flask, jsonify, request, send_from_directory
 from werkzeug.serving import make_server
@@ -1247,8 +1248,6 @@ class ChatInterface:
         logger.info(f"Attempting to chat with Ollama model: {model}")
         try:
             # Use ollama Python SDK for proper OpenLit instrumentation
-            import ollama
-
             # Configure client with our Ollama service endpoint
             ollama_client = ollama.Client(host=self.ollama_base_url)
 
