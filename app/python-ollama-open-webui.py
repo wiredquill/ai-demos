@@ -781,7 +781,7 @@ class ChatInterface:
     def _initialize_observability(self):
         """Initialize OpenLit observability if enabled and available."""
         import os
-        
+
         if not OPENLIT_AVAILABLE:
             logger.info("OpenLit not available - skipping observability initialization")
             return
