@@ -892,7 +892,7 @@ class ChatInterface:
                         "service.version": "1.0.0",
                     }
                 )
-                
+
                 # Merge with existing resource (OpenLit may have set some attributes)
                 from opentelemetry.sdk.trace import TracerProvider
                 from opentelemetry.sdk.metrics import MeterProvider
@@ -913,7 +913,6 @@ class ChatInterface:
                     logger.info(
                         "Applied GenAI semantic conventions to OpenTelemetry resource"
                     )
-                    
             except Exception as e:
                 logger.warning(
                     f"Failed to add GenAI semantic conventions: {e} - continuing with basic OpenLit"
