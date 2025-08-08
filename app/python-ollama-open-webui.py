@@ -841,10 +841,23 @@ class ChatInterface:
             finally:
                 sock.close()
 
-            # Initialize OpenLit with enhanced GenAI configuration
+            # Initialize OpenLit with enhanced GenAI configuration and semantic conventions
             openlit_config = {
                 "otlp_endpoint": otlp_endpoint,
                 "collect_gpu_stats": collect_gpu_stats,
+                # Add OpenTelemetry GenAI semantic conventions for SUSE Observability AI section
+                "resource_attributes": {
+                    "gen_ai.system": "ollama",
+                    "gen_ai.environment": "ai-compare-otel", 
+                    "ai.framework": "ollama",
+                    "ai.model.type": "llm",
+                    "ai.application.category": "model-inference",
+                    "ai.component.type": "inference-server",
+                    "genai.application": "true",
+                    "genai.observability.enabled": "true",
+                    "service.name": "ai-compare-genai-app",
+                    "service.version": "1.0.0",
+                },
             }
 
             # Add enhanced GenAI observability features if enabled
