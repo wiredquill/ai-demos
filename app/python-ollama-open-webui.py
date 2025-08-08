@@ -859,6 +859,13 @@ class ChatInterface:
                 if trace_requests:
                     logger.info("  - Full request tracing through the stack")
 
+            # Ensure ollama library is imported before OpenLit initialization for proper detection
+            try:
+                import ollama
+                logger.info("Pre-imported ollama library for OpenLit instrumentation")
+            except ImportError:
+                logger.warning("Could not import ollama library for OpenLit instrumentation")
+
             openlit.init(**openlit_config)
 
             # Store observability settings for use in request handling
