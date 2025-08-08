@@ -18,9 +18,9 @@ ollama:
   # -- Hardware Configuration for Ollama
   hardware:
     type: "nvidia" # Options: "nvidia", "apple"
-  # -- OpenTelemetry observability for Ollama (enabled by default in OpenTelemetry edition)
+  # -- OpenTelemetry observability for Ollama (disabled - using direct app instrumentation instead)
   observability:
-    enabled: true  # Enabled by default for comprehensive GenAI monitoring
+    enabled: false  # Disabled to avoid sidecar collector conflicts, using AI Compare app instrumentation
     otlpEndpoint: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
   # -- Resource allocation for the main Ollama container
   resources:
@@ -80,7 +80,7 @@ pipelines:
 aiCompare:
   image:
     repository: ghcr.io/wiredquill/ai-demos-suse
-    tag: "46f5112"
+    tag: "1c5cf5f"
   service:
     port: 7860
     type: NodePort
