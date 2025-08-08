@@ -1243,22 +1243,45 @@ class ChatInterface:
             return ["Connection Error - Is Ollama running?"]
 
     def chat_with_ollama(self, messages: List[Dict[str, str]], model: str) -> str:
-        """Sends a conversation history to the Ollama /api/chat endpoint."""
+        """Sends a conversation history to Ollama using the Python SDK for OpenLit instrumentation."""
         logger.info(f"Attempting to chat with Ollama model: {model}")
         try:
-            payload = {"model": model, "messages": messages, "stream": False}
-            response = requests.post(
-                f"{self.ollama_base_url}/api/chat",
-                json=payload,
-                timeout=self.inference_timeout,
+            # Use ollama Python SDK for proper OpenLit instrumentation
+            import ollama
+            
+            # Configure client with our Ollama service endpoint
+            ollama_client = ollama.Client(host=self.ollama_base_url)
+            
+            # Send chat request using SDK
+            response = ollama_client.chat(
+                model=model,
+                messages=messages,
+                stream=False
             )
-            response.raise_for_status()
-            response_data = response.json()
-            return response_data.get("message", {}).get(
-                "content", "Error: Unexpected response format from Ollama."
-            )
+            
+            # Extract message content from response
+            if response and 'message' in response and 'content' in response['message']:
+                return response['message']['content']
+            else:
+                return "Error: Unexpected response format from Ollama."
+                
         except Exception as e:
-            return f"Error communicating with Ollama: {str(e)}"
+            logger.error(f"Error communicating with Ollama via SDK: {str(e)}")
+            # Fallback to HTTP if SDK fails
+            try:
+                payload = {"model": model, "messages": messages, "stream": False}
+                response = requests.post(
+                    f"{self.ollama_base_url}/api/chat",
+                    json=payload,
+                    timeout=self.inference_timeout,
+                )
+                response.raise_for_status()
+                response_data = response.json()
+                return response_data.get("message", {}).get(
+                    "content", "Error: Unexpected response format from Ollama."
+                )
+            except Exception as fallback_error:
+                return f"Error communicating with Ollama: {str(fallback_error)}"
 
     def chat_with_open_webui(self, messages: List[Dict[str, str]], model: str) -> str:
         """Sends a conversation history with pipeline-modified prompts for response level cycling."""

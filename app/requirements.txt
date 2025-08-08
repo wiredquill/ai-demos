@@ -1,5 +1,6 @@
 gradio>=4.0.0
 requests
 openlit
+ollama
 flask
 psutil
