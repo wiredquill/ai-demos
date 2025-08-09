@@ -877,19 +877,15 @@ class ChatInterface:
             try:
                 from opentelemetry.sdk.resources import Resource
 
-                # Create resource with GenAI semantic conventions
+                # Create resource with official OpenTelemetry GenAI semantic conventions
                 genai_resource = Resource.create(
                     {
                         "gen_ai.system": "ollama",
-                        "gen_ai.environment": "ai-compare-otel",
-                        "ai.framework": "ollama",
-                        "ai.model.type": "llm",
-                        "ai.application.category": "model-inference",
-                        "ai.component.type": "inference-server",
-                        "genai.application": "true",
-                        "genai.observability.enabled": "true",
+                        "gen_ai.operation.name": "chat",
+                        "gen_ai.request.model": "llama3.2:latest",
                         "service.name": "ai-compare-genai-app",
                         "service.version": "1.0.0",
+                        "deployment.environment": "ai-compare-otel",
                     }
                 )
 
