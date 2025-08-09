@@ -890,9 +890,9 @@ class ChatInterface:
                 )
 
                 # Merge with existing resource (OpenLit may have set some attributes)
-                from opentelemetry.sdk.trace import TracerProvider
+                from opentelemetry import metrics, trace
                 from opentelemetry.sdk.metrics import MeterProvider
-                from opentelemetry import trace, metrics
+                from opentelemetry.sdk.trace import TracerProvider
 
                 # Get current providers and merge resources
                 current_tracer_provider = trace.get_tracer_provider()
