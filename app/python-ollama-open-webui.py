@@ -875,7 +875,6 @@ class ChatInterface:
 
             # Add OpenTelemetry GenAI semantic conventions for SUSE Observability AI section
             try:
-                from opentelemetry import resource
                 from opentelemetry.sdk.resources import Resource
 
                 # Create resource with GenAI semantic conventions
