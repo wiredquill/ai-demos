@@ -860,6 +860,12 @@ class ChatInterface:
                     logger.info("  - Detailed model performance metrics")
                 if trace_requests:
                     logger.info("  - Full request tracing through the stack")
+                logger.info("GenAI Application Categorization:")
+                logger.info("  - gen_ai.system: ollama")
+                logger.info("  - gen_ai.application.name: ai-compare") 
+                logger.info("  - application.type: genai")
+                logger.info("  - ai.model.provider: meta (Llama 3.2)")
+                logger.info("  - ai.workload.type: inference")
 
             # Ensure ollama library is imported before OpenLit initialization for proper detection
             try:
@@ -877,15 +883,35 @@ class ChatInterface:
             try:
                 from opentelemetry.sdk.resources import Resource
 
-                # Create resource with official OpenTelemetry GenAI semantic conventions
+                # Create resource with comprehensive OpenTelemetry GenAI semantic conventions
                 genai_resource = Resource.create(
                     {
+                        # Core GenAI semantic conventions (required for SUSE Observability GenAI categorization)
                         "gen_ai.system": "ollama",
                         "gen_ai.operation.name": "chat",
                         "gen_ai.request.model": "llama3.2:latest",
+                        "gen_ai.application.name": "ai-compare",
+                        "gen_ai.environment": "production",
+                        "gen_ai.workload.type": "inference",
+                        
+                        # AI/ML specific attributes for enhanced categorization
+                        "ai.model.provider": "meta",
+                        "ai.model.type": "llm",
+                        "ai.model.family": "llama",
+                        "ai.model.version": "3.2",
+                        "ai.workload.type": "inference",
+                        "ai.framework": "ollama",
+                        
+                        # Service identification
                         "service.name": "ai-compare-genai-app",
                         "service.version": "1.0.0",
+                        "service.namespace": "ai-compare-otel",
                         "deployment.environment": "ai-compare-otel",
+                        
+                        # Application categorization
+                        "application.type": "genai",
+                        "application.category": "llm-inference",
+                        "telemetry.sdk.language": "python",
                     }
                 )
 
