@@ -937,7 +937,7 @@ class ChatInterface:
                 from opentelemetry import trace
                 
                 # Create dedicated GenAI tracer for manual instrumentation
-                tracer = trace.get_tracer("ollama-genai-sdk", version="1.0.0")
+                tracer = trace.get_tracer("ollama-genai-sdk")
                 
                 # Store tracer for manual use in Ollama calls
                 self.genai_tracer = tracer
