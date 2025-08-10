@@ -199,34 +199,42 @@ class ObservableAPIServer:
         def ask_endpoint():
             """GenAI ask endpoint for SUSE Observability detection - matches pattern from working GenAI apps."""
             logger.info("GenAI /ask endpoint called for SUSE Observability detection")
-            
+
             try:
                 # Use a simple test prompt to generate telemetry
-                test_prompt = "Hello, this is a SUSE Observability GenAI detection test."
-                
+                test_prompt = (
+                    "Hello, this is a SUSE Observability GenAI detection test."
+                )
+
                 # Generate telemetry through Ollama
                 response = self.chat_interface.chat_with_ollama(test_prompt)
-                
-                return jsonify({
-                    "status": "success",
-                    "genai_system": "ollama",
-                    "model": "llama3.2:latest",
-                    "response": response[:100] + "..." if len(response) > 100 else response,
-                    "application": "ai-compare-genai-app",
-                    "framework": "gradio-ollama-openlit",
-                    "observability": "suse-observability-enabled"
-                })
+
+                return jsonify(
+                    {
+                        "status": "success",
+                        "genai_system": "ollama",
+                        "model": "llama3.2:latest",
+                        "response": (
+                            response[:100] + "..." if len(response) > 100 else response
+                        ),
+                        "application": "ai-compare-genai-app",
+                        "framework": "gradio-ollama-openlit",
+                        "observability": "suse-observability-enabled",
+                    }
+                )
             except Exception as e:
                 logger.error(f"GenAI /ask endpoint error: {e}")
-                return jsonify({
-                    "status": "success",  # Return success even on error for detection
-                    "genai_system": "ollama",
-                    "model": "llama3.2:latest", 
-                    "application": "ai-compare-genai-app",
-                    "framework": "gradio-ollama-openlit",
-                    "observability": "suse-observability-enabled",
-                    "note": "GenAI endpoint active for SUSE Observability detection"
-                })
+                return jsonify(
+                    {
+                        "status": "success",  # Return success even on error for detection
+                        "genai_system": "ollama",
+                        "model": "llama3.2:latest",
+                        "application": "ai-compare-genai-app",
+                        "framework": "gradio-ollama-openlit",
+                        "observability": "suse-observability-enabled",
+                        "note": "GenAI endpoint active for SUSE Observability detection",
+                    }
+                )
 
         @self.app.route("/api/status", methods=["GET", "OPTIONS"])
         def provider_status():
