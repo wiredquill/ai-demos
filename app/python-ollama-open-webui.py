@@ -868,10 +868,11 @@ class ChatInterface:
                 logger.info("  - ai.workload.type: inference")
                 # Get Kubernetes pod information for SUSE Observability detection
                 import os
+
                 k8s_pod_name = os.environ.get("HOSTNAME", "unknown-pod")
                 k8s_pod_uid = os.environ.get("K8S_POD_UID", "unknown-uid")
                 k8s_node_name = os.environ.get("K8S_NODE_NAME", "unknown-node")
-                
+
                 logger.info("SUSE Observability Kubernetes Integration:")
                 logger.info(f"  - k8s.namespace.name: ai-compare-otel")
                 logger.info(f"  - k8s.pod.name: {k8s_pod_name}")
