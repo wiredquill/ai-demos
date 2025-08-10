@@ -1407,8 +1407,9 @@ class ChatInterface:
         # Manual GenAI telemetry instrumentation for SUSE Observability
         try:
             from opentelemetry import trace
+
             tracer = trace.get_tracer("ollama-genai-chat")
-            
+
             with tracer.start_as_current_span("gen_ai.chat.completions") as span:
                 # Set GenAI semantic conventions
                 span.set_attribute("gen_ai.system", "ollama")
@@ -1425,27 +1426,30 @@ class ChatInterface:
                     ollama_client = ollama.Client(host=self.ollama_base_url)
 
                     # Send chat request using SDK
-                    response = ollama_client.chat(model=model, messages=messages, stream=False)
-                    
+                    response = ollama_client.chat(
+                        model=model, messages=messages, stream=False
+                    )
+
                     # Add response metadata to span
                     if response and "message" in response:
                         span.set_attribute("gen_ai.response.finish_reason", "stop")
                         content = response["message"].get("content", "")
                         span.set_attribute("gen_ai.response.length", len(content))
-                    
+
                     span.set_status(trace.Status(trace.StatusCode.OK))
-                    
+
                 except Exception as e:
                     span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
                     raise
-                    
         except ImportError:
             logger.warning("OpenTelemetry not available for manual GenAI instrumentation")
             # Fallback to original implementation
             try:
                 ollama_client = ollama.Client(host=self.ollama_base_url)
-                response = ollama_client.chat(model=model, messages=messages, stream=False)
-                
+                response = ollama_client.chat(
+                    model=model, messages=messages, stream=False
+                )
+
                 # Extract message content from response
                 if response and "message" in response and "content" in response["message"]:
                     return response["message"]["content"]
@@ -1454,7 +1458,7 @@ class ChatInterface:
             except Exception as e:
                 logger.error(f"Fallback Ollama SDK call failed: {e}")
                 return f"Error: {e}"
-        
+
         # Extract message content from response (for successful traced calls)
         try:
             if response and "message" in response and "content" in response["message"]:
