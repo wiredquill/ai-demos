@@ -883,15 +883,15 @@ class ChatInterface:
 
             openlit.init(**openlit_config)
 
+            # Get Kubernetes pod information for SUSE Observability detection
+            import os
+            k8s_pod_name = os.environ.get("HOSTNAME", "unknown-pod")
+            k8s_pod_uid = os.environ.get("K8S_POD_UID", "unknown-uid")
+            k8s_node_name = os.environ.get("K8S_NODE_NAME", "unknown-node")
+
             # Add OpenTelemetry GenAI semantic conventions for SUSE Observability AI section
             try:
                 from opentelemetry.sdk.resources import Resource
-
-                # Get Kubernetes pod information for SUSE Observability detection
-                import os
-                k8s_pod_name = os.environ.get("HOSTNAME", "unknown-pod")
-                k8s_pod_uid = os.environ.get("K8S_POD_UID", "unknown-uid")
-                k8s_node_name = os.environ.get("K8S_NODE_NAME", "unknown-node")
 
                 # Create resource with comprehensive OpenTelemetry GenAI semantic conventions
                 genai_resource = Resource.create(
