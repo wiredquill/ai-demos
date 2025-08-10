@@ -931,16 +931,25 @@ class ChatInterface:
 
             openlit.init(**openlit_config)
 
-            # Manual Ollama SDK instrumentation for SUSE Observability GenAI detection
+            # Enhanced GenAI telemetry for SUSE Observability detection
             try:
                 import ollama
-                from openlit.integrations.ollama import instrument_ollama
-                instrument_ollama(ollama)
-                logger.info("✅ Manually instrumented Ollama SDK for OpenLit GenAI telemetry")
+                from opentelemetry import trace
+                
+                # Create dedicated GenAI tracer for manual instrumentation
+                tracer = trace.get_tracer("ollama-genai-sdk", version="1.0.0")
+                
+                # Store tracer for manual use in Ollama calls
+                self.genai_tracer = tracer
+                logger.info("✅ Created dedicated GenAI tracer for Ollama operations")
+                logger.info("✅ Manual GenAI telemetry instrumentation ready for SUSE Observability")
+                
             except ImportError as e:
-                logger.warning(f"Failed to manually instrument Ollama SDK: {e}")
+                logger.warning(f"Failed to set up GenAI telemetry tracer: {e}")
+                self.genai_tracer = None
             except Exception as e:
-                logger.warning(f"Error during manual Ollama instrumentation: {e}")
+                logger.warning(f"Error during GenAI telemetry setup: {e}")
+                self.genai_tracer = None
 
             # Add OpenTelemetry GenAI semantic conventions for SUSE Observability AI section
             try:
@@ -1392,17 +1401,62 @@ class ChatInterface:
             return ["Connection Error - Is Ollama running?"]
 
     def chat_with_ollama(self, messages: List[Dict[str, str]], model: str) -> str:
-        """Sends a conversation history to Ollama using the Python SDK for OpenLit instrumentation."""
+        """Sends a conversation history to Ollama using the Python SDK with manual GenAI instrumentation."""
         logger.info(f"Attempting to chat with Ollama model: {model}")
+        
+        # Manual GenAI telemetry instrumentation for SUSE Observability
         try:
-            # Use ollama Python SDK for proper OpenLit instrumentation
-            # Configure client with our Ollama service endpoint
-            ollama_client = ollama.Client(host=self.ollama_base_url)
+            from opentelemetry import trace
+            tracer = trace.get_tracer("ollama-genai-chat")
+            
+            with tracer.start_as_current_span("gen_ai.chat.completions") as span:
+                # Set GenAI semantic conventions
+                span.set_attribute("gen_ai.system", "ollama")
+                span.set_attribute("gen_ai.operation.name", "chat")
+                span.set_attribute("gen_ai.request.model", model)
+                span.set_attribute("gen_ai.application.name", "ai-compare")
+                span.set_attribute("ai.model.provider", "meta")
+                span.set_attribute("ai.workload.type", "inference")
+                span.set_attribute("service.name", "ai-compare-genai-app")
+                
+                try:
+                    # Use ollama Python SDK
+                    # Configure client with our Ollama service endpoint
+                    ollama_client = ollama.Client(host=self.ollama_base_url)
 
-            # Send chat request using SDK
-            response = ollama_client.chat(model=model, messages=messages, stream=False)
-
-            # Extract message content from response
+                    # Send chat request using SDK
+                    response = ollama_client.chat(model=model, messages=messages, stream=False)
+                    
+                    # Add response metadata to span
+                    if response and "message" in response:
+                        span.set_attribute("gen_ai.response.finish_reason", "stop")
+                        content = response["message"].get("content", "")
+                        span.set_attribute("gen_ai.response.length", len(content))
+                    
+                    span.set_status(trace.Status(trace.StatusCode.OK))
+                    
+                except Exception as e:
+                    span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
+                    raise
+                    
+        except ImportError:
+            logger.warning("OpenTelemetry not available for manual GenAI instrumentation")
+            # Fallback to original implementation
+            try:
+                ollama_client = ollama.Client(host=self.ollama_base_url)
+                response = ollama_client.chat(model=model, messages=messages, stream=False)
+                
+                # Extract message content from response
+                if response and "message" in response and "content" in response["message"]:
+                    return response["message"]["content"]
+                else:
+                    return "Error: Unexpected response format from Ollama."
+            except Exception as e:
+                logger.error(f"Fallback Ollama SDK call failed: {e}")
+                return f"Error: {e}"
+        
+        # Extract message content from response (for successful traced calls)
+        try:
             if response and "message" in response and "content" in response["message"]:
                 return response["message"]["content"]
             else:
