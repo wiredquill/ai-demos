@@ -1432,20 +1432,14 @@ class ChatInterface:
 
                     # Add response metadata to span
                     if response and "message" in response:
-                        span.set_attribute(
-                            "gen_ai.response.finish_reason", "stop"
-                        )
+                        span.set_attribute("gen_ai.response.finish_reason", "stop")
                         content = response["message"].get("content", "")
-                        span.set_attribute(
-                            "gen_ai.response.length", len(content)
-                        )
+                        span.set_attribute("gen_ai.response.length", len(content))
 
                     span.set_status(trace.Status(trace.StatusCode.OK))
 
                 except Exception as e:
-                    span.set_status(
-                        trace.Status(trace.StatusCode.ERROR, str(e))
-                    )
+                    span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
                     raise
         except ImportError:
             logger.warning(
@@ -1473,11 +1467,7 @@ class ChatInterface:
 
         # Extract message content from response (for successful traced calls)
         try:
-            if (
-                response
-                and "message" in response
-                and "content" in response["message"]
-            ):
+            if response and "message" in response and "content" in response["message"]:
                 return response["message"]["content"]
             else:
                 return "Error: Unexpected response format from Ollama."
