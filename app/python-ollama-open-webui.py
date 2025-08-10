@@ -931,6 +931,17 @@ class ChatInterface:
 
             openlit.init(**openlit_config)
 
+            # Manual Ollama SDK instrumentation for SUSE Observability GenAI detection
+            try:
+                import ollama
+                from openlit.integrations.ollama import instrument_ollama
+                instrument_ollama(ollama)
+                logger.info("✅ Manually instrumented Ollama SDK for OpenLit GenAI telemetry")
+            except ImportError as e:
+                logger.warning(f"Failed to manually instrument Ollama SDK: {e}")
+            except Exception as e:
+                logger.warning(f"Error during manual Ollama instrumentation: {e}")
+
             # Add OpenTelemetry GenAI semantic conventions for SUSE Observability AI section
             try:
                 from opentelemetry.sdk.resources import Resource
