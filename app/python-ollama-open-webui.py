@@ -922,6 +922,25 @@ class ChatInterface:
                 logger.info(f"  - k8s.pod.name: {k8s_pod_name}")
                 logger.info(f"  - service.instance.id: {k8s_pod_uid}")
 
+            # Set OpenTelemetry service name environment variable before OpenLit initialization
+            # This ensures SUSE Observability detects it as a GenAI service
+            os.environ["OTEL_SERVICE_NAME"] = "ai-compare-genai-app"
+            os.environ["OTEL_SERVICE_NAMESPACE"] = "ai-compare-otel"
+            os.environ["OTEL_SERVICE_VERSION"] = "1.0.0"
+            
+            # Set GenAI-specific attributes for SUSE Observability detection
+            os.environ["OTEL_RESOURCE_ATTRIBUTES"] = (
+                "service.name=ai-compare-genai-app,"
+                "service.namespace=ai-compare-otel,"
+                "service.version=1.0.0,"
+                "gen_ai.system=ollama,"
+                "gen_ai.operation.name=chat,"
+                "gen_ai.request.model=llama3.2:latest,"
+                "gen_ai.application.name=ai-compare,"
+                "ai.model.provider=meta,"
+                "ai.workload.type=inference"
+            )
+
             # Ensure ollama library is imported before OpenLit initialization for proper detection
             try:
                 import ollama
