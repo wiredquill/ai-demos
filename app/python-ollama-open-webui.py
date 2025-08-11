@@ -927,7 +927,6 @@ class ChatInterface:
             os.environ["OTEL_SERVICE_NAME"] = "ai-compare-genai-app"
             os.environ["OTEL_SERVICE_NAMESPACE"] = "ai-compare-otel"
             os.environ["OTEL_SERVICE_VERSION"] = "1.0.0"
-            
             # Set GenAI-specific attributes for SUSE Observability detection
             os.environ["OTEL_RESOURCE_ATTRIBUTES"] = (
                 "service.name=ai-compare-genai-app,"
