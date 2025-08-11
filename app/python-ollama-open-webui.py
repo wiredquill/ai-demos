@@ -936,6 +936,9 @@ class ChatInterface:
                 "gen_ai.operation.name=chat,"
                 "gen_ai.request.model=llama3.2:latest,"
                 "gen_ai.application.name=ai-compare,"
+                "gen.ai.environment=default,"
+                "gen_ai_app=true,"
+                "openlit=dev-ai,"
                 "ai.model.provider=meta,"
                 "ai.workload.type=inference"
             )
