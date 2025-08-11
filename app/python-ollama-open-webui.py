@@ -206,8 +206,9 @@ class ObservableAPIServer:
                     "Hello, this is a SUSE Observability GenAI detection test."
                 )
 
-                # Generate telemetry through Ollama
-                response = self.chat_interface.chat_with_ollama(test_prompt)
+                # Generate telemetry through Ollama with proper format
+                messages = [{"role": "user", "content": test_prompt}]
+                response = self.chat_interface.chat_with_ollama(messages, "llama3.2:latest")
 
                 return jsonify(
                     {
