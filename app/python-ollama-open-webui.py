@@ -948,7 +948,7 @@ class ChatInterface:
                 logger.info(
                     "✅ Manual GenAI telemetry instrumentation ready for SUSE Observability"
                 )
-                
+
             except ImportError as e:
                 logger.warning(f"Failed to set up GenAI telemetry tracer: {e}")
                 self.genai_tracer = None
