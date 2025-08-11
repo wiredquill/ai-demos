@@ -208,7 +208,9 @@ class ObservableAPIServer:
 
                 # Generate telemetry through Ollama with proper format
                 messages = [{"role": "user", "content": test_prompt}]
-                response = self.chat_interface.chat_with_ollama(messages, "llama3.2:latest")
+                response = self.chat_interface.chat_with_ollama(
+                    messages, "llama3.2:latest"
+                )
 
                 return jsonify(
                     {
@@ -936,14 +938,16 @@ class ChatInterface:
             try:
                 import ollama
                 from opentelemetry import trace
-                
+
                 # Create dedicated GenAI tracer for manual instrumentation
                 tracer = trace.get_tracer("ollama-genai-sdk")
-                
+
                 # Store tracer for manual use in Ollama calls
                 self.genai_tracer = tracer
                 logger.info("✅ Created dedicated GenAI tracer for Ollama operations")
-                logger.info("✅ Manual GenAI telemetry instrumentation ready for SUSE Observability")
+                logger.info(
+                    "✅ Manual GenAI telemetry instrumentation ready for SUSE Observability"
+                )
                 
             except ImportError as e:
                 logger.warning(f"Failed to set up GenAI telemetry tracer: {e}")
@@ -1404,7 +1408,7 @@ class ChatInterface:
     def chat_with_ollama(self, messages: List[Dict[str, str]], model: str) -> str:
         """Sends a conversation history to Ollama using the Python SDK with manual GenAI instrumentation."""
         logger.info(f"Attempting to chat with Ollama model: {model}")
-        
+
         # Manual GenAI telemetry instrumentation for SUSE Observability
         try:
             from opentelemetry import trace
@@ -1420,7 +1424,7 @@ class ChatInterface:
                 span.set_attribute("ai.model.provider", "meta")
                 span.set_attribute("ai.workload.type", "inference")
                 span.set_attribute("service.name", "ai-compare-genai-app")
-                
+
                 try:
                     # Use ollama Python SDK
                     # Configure client with our Ollama service endpoint
