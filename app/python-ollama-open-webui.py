@@ -932,6 +932,7 @@ class ChatInterface:
                 "service.name=ai-compare-genai-app,"
                 "service.namespace=ai-compare-otel,"
                 "service.version=1.0.0,"
+                "stackpack=open-telemetry,"
                 "gen_ai.system=ollama,"
                 "gen_ai.operation.name=chat,"
                 "gen_ai.request.model=llama3.2:latest,"
