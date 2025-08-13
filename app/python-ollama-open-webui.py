@@ -1454,14 +1454,16 @@ class ChatInterface:
 
                     # Send chat request using SDK with timeout protection
                     import signal
-                    
+
                     def timeout_handler(signum, frame):
-                        raise TimeoutError(f"Ollama chat request timed out after {self.inference_timeout}s")
-                    
+                        raise TimeoutError(
+                            f"Ollama chat request timed out after {self.inference_timeout}s"
+                        )
+
                     # Set up timeout signal
                     signal.signal(signal.SIGALRM, timeout_handler)
                     signal.alarm(self.inference_timeout)
-                    
+
                     try:
                         response = ollama_client.chat(
                             model=model, messages=messages, stream=False
@@ -1487,16 +1489,18 @@ class ChatInterface:
             # Fallback to original implementation
             try:
                 ollama_client = ollama.Client(host=self.ollama_base_url)
-                
+
                 # Add timeout protection for fallback call too
                 import signal
-                
+
                 def timeout_handler(signum, frame):
-                    raise TimeoutError(f"Ollama fallback chat request timed out after {self.inference_timeout}s")
-                
+                    raise TimeoutError(
+                        f"Ollama fallback chat request timed out after {self.inference_timeout}s"
+                    )
+
                 signal.signal(signal.SIGALRM, timeout_handler)
                 signal.alarm(self.inference_timeout)
-                
+
                 try:
                     response = ollama_client.chat(
                         model=model, messages=messages, stream=False
