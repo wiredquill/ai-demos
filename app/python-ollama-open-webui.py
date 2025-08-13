@@ -1452,24 +1452,46 @@ class ChatInterface:
                     # Configure client with our Ollama service endpoint
                     ollama_client = ollama.Client(host=self.ollama_base_url)
 
-                    # Send chat request using SDK with timeout protection
-                    import signal
+                    # Send chat request using SDK with thread-safe timeout protection
+                    import threading
+                    import queue
 
-                    def timeout_handler(signum, frame):
+                    # Use threading for timeout since signal doesn't work in threads
+                    result_queue = queue.Queue()
+                    exception_queue = queue.Queue()
+
+                    def ollama_call():
+                        try:
+                            response = ollama_client.chat(
+                                model=model, messages=messages, stream=False
+                            )
+                            result_queue.put(response)
+                        except Exception as e:
+                            exception_queue.put(e)
+
+                    # Start the call in a separate thread
+                    call_thread = threading.Thread(target=ollama_call)
+                    call_thread.daemon = True
+                    call_thread.start()
+
+                    # Wait for result with timeout
+                    call_thread.join(timeout=self.inference_timeout)
+
+                    if call_thread.is_alive():
+                        # Thread is still running - timeout occurred
                         raise TimeoutError(
                             f"Ollama chat request timed out after {self.inference_timeout}s"
                         )
 
-                    # Set up timeout signal
-                    signal.signal(signal.SIGALRM, timeout_handler)
-                    signal.alarm(self.inference_timeout)
+                    # Check for exceptions
+                    if not exception_queue.empty():
+                        raise exception_queue.get()
 
-                    try:
-                        response = ollama_client.chat(
-                            model=model, messages=messages, stream=False
-                        )
-                    finally:
-                        signal.alarm(0)  # Cancel the timeout
+                    # Get the result
+                    if not result_queue.empty():
+                        response = result_queue.get()
+                    else:
+                        raise Exception("Ollama call completed but no result received")
 
                     # Add response metadata to span
                     if response and "message" in response:
@@ -1490,23 +1512,48 @@ class ChatInterface:
             try:
                 ollama_client = ollama.Client(host=self.ollama_base_url)
 
-                # Add timeout protection for fallback call too
-                import signal
+                # Add thread-safe timeout protection for fallback call too
+                import threading
+                import queue
 
-                def timeout_handler(signum, frame):
+                # Use threading for timeout since signal doesn't work in threads
+                result_queue = queue.Queue()
+                exception_queue = queue.Queue()
+
+                def ollama_fallback_call():
+                    try:
+                        response = ollama_client.chat(
+                            model=model, messages=messages, stream=False
+                        )
+                        result_queue.put(response)
+                    except Exception as e:
+                        exception_queue.put(e)
+
+                # Start the call in a separate thread
+                call_thread = threading.Thread(target=ollama_fallback_call)
+                call_thread.daemon = True
+                call_thread.start()
+
+                # Wait for result with timeout
+                call_thread.join(timeout=self.inference_timeout)
+
+                if call_thread.is_alive():
+                    # Thread is still running - timeout occurred
                     raise TimeoutError(
                         f"Ollama fallback chat request timed out after {self.inference_timeout}s"
                     )
 
-                signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(self.inference_timeout)
+                # Check for exceptions
+                if not exception_queue.empty():
+                    raise exception_queue.get()
 
-                try:
-                    response = ollama_client.chat(
-                        model=model, messages=messages, stream=False
+                # Get the result
+                if not result_queue.empty():
+                    response = result_queue.get()
+                else:
+                    raise Exception(
+                        "Ollama fallback call completed but no result received"
                     )
-                finally:
-                    signal.alarm(0)  # Cancel the timeout
 
                 # Extract message content from response
                 if (
