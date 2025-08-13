@@ -11,7 +11,7 @@ Before you begin, ensure you have the following:
     * **Data Center GPUs:** A100, H100, L40S, etc.
     * **RTX Series:** RTX 6000 Ada, RTX 50-series (5090), RTX 40-series (4090, 4080), RTX 30-series (3090, 3080).
 
-## 2. Host Preparation: Install NVIDIA Drivers
+## 2. Host Preparation: Configure NVIDIA Drivers Repo (If Needed)
 
 Choose one of the two methods below to install the NVIDIA drivers. The SUSE-provided method is recommended for official support, while the upstream NVIDIA method can be useful for newer drivers or to resolve dependency conflicts.
 
@@ -67,9 +67,9 @@ This method uses the official NVIDIA repositories for all components, which can 
 
 ---
 
-### Continue Installation (For Both Methods)
 
-After adding repositories using either Method A or B, complete the installation with the following steps.
+## 3. Host Preparation: Install NVIDIA Drivers
+
 
 1. Uninstall the current drivers (Trust me, this solve most driver issues...)
 
