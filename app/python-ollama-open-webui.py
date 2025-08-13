@@ -675,14 +675,14 @@ class ChatInterface:
 
         # Configurable timeout settings optimized for SUSE security policies
         self.connection_timeout = int(
-            os.getenv("CONNECTION_TIMEOUT", "3")
-        )  # Very fast connection timeout for provider checks
+            os.getenv("CONNECTION_TIMEOUT", "5")
+        )  # Increased for container networking stability
         self.request_timeout = int(
-            os.getenv("REQUEST_TIMEOUT", "8")
-        )  # Quick request timeout
+            os.getenv("REQUEST_TIMEOUT", "15")
+        )  # Increased for model inference operations
         self.inference_timeout = int(
-            os.getenv("INFERENCE_TIMEOUT", "30")
-        )  # Reduced from 120s for network policies
+            os.getenv("INFERENCE_TIMEOUT", "45")
+        )  # Increased for large model inference
 
         # Don't add Open WebUI to the provider status list - keep it separate for functionality
 
@@ -2448,19 +2448,27 @@ class ChatInterface:
 
             # Send messages to models only if enabled
             if self.automation_send_messages:
-                # 1. Send to Ollama
+                # 1. Send to Ollama with timeout protection
                 logger.info("About to call Ollama...")
-                ollama_reply = self.chat_with_ollama(
-                    [{"role": "user", "content": current_prompt}], model
-                )
-                logger.info(f"Ollama replied: {ollama_reply[:100]}...")
+                try:
+                    ollama_reply = self.chat_with_ollama(
+                        [{"role": "user", "content": current_prompt}], model
+                    )
+                    logger.info(f"Ollama replied: {ollama_reply[:100]}...")
+                except Exception as e:
+                    logger.warning(f"Ollama automation call failed: {e}")
+                    ollama_reply = f"Automation Error: Ollama timeout/failure - {e}"
 
-                # 2. Send to Open WebUI
+                # 2. Send to Open WebUI with timeout protection
                 logger.info("About to call Open WebUI...")
-                webui_reply = self.chat_with_open_webui(
-                    [{"role": "user", "content": current_prompt}], model
-                )
-                logger.info(f"Open WebUI replied: {webui_reply[:100]}...")
+                try:
+                    webui_reply = self.chat_with_open_webui(
+                        [{"role": "user", "content": current_prompt}], model
+                    )
+                    logger.info(f"Open WebUI replied: {webui_reply[:100]}...")
+                except Exception as e:
+                    logger.warning(f"Open WebUI automation call failed: {e}")
+                    webui_reply = f"Automation Error: Open WebUI timeout/failure - {e}"
             else:
                 logger.info(
                     "Skipping message sending - automation_send_messages is disabled"

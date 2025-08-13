@@ -1,7 +1,9 @@
 gradio>=4.0.0
 requests
 openlit==1.28.0
-ollama
+ollama==0.3.3
+httpx==0.24.1
+httpcore==0.17.3
 flask
 psutil
 opentelemetry-api
