@@ -1453,8 +1453,8 @@ class ChatInterface:
                     ollama_client = ollama.Client(host=self.ollama_base_url)
 
                     # Send chat request using SDK with thread-safe timeout protection
-                    import threading
                     import queue
+                    import threading
 
                     # Use threading for timeout since signal doesn't work in threads
                     result_queue = queue.Queue()
@@ -1513,8 +1513,8 @@ class ChatInterface:
                 ollama_client = ollama.Client(host=self.ollama_base_url)
 
                 # Add thread-safe timeout protection for fallback call too
-                import threading
                 import queue
+                import threading
 
                 # Use threading for timeout since signal doesn't work in threads
                 result_queue = queue.Queue()
