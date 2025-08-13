@@ -1452,10 +1452,22 @@ class ChatInterface:
                     # Configure client with our Ollama service endpoint
                     ollama_client = ollama.Client(host=self.ollama_base_url)
 
-                    # Send chat request using SDK
-                    response = ollama_client.chat(
-                        model=model, messages=messages, stream=False
-                    )
+                    # Send chat request using SDK with timeout protection
+                    import signal
+                    
+                    def timeout_handler(signum, frame):
+                        raise TimeoutError(f"Ollama chat request timed out after {self.inference_timeout}s")
+                    
+                    # Set up timeout signal
+                    signal.signal(signal.SIGALRM, timeout_handler)
+                    signal.alarm(self.inference_timeout)
+                    
+                    try:
+                        response = ollama_client.chat(
+                            model=model, messages=messages, stream=False
+                        )
+                    finally:
+                        signal.alarm(0)  # Cancel the timeout
 
                     # Add response metadata to span
                     if response and "message" in response:
@@ -1475,9 +1487,22 @@ class ChatInterface:
             # Fallback to original implementation
             try:
                 ollama_client = ollama.Client(host=self.ollama_base_url)
-                response = ollama_client.chat(
-                    model=model, messages=messages, stream=False
-                )
+                
+                # Add timeout protection for fallback call too
+                import signal
+                
+                def timeout_handler(signum, frame):
+                    raise TimeoutError(f"Ollama fallback chat request timed out after {self.inference_timeout}s")
+                
+                signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(self.inference_timeout)
+                
+                try:
+                    response = ollama_client.chat(
+                        model=model, messages=messages, stream=False
+                    )
+                finally:
+                    signal.alarm(0)  # Cancel the timeout
 
                 # Extract message content from response
                 if (
