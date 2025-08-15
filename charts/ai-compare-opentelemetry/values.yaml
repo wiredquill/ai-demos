@@ -116,7 +116,7 @@ aiCompare:
     port: 8080
   # Environment variables override for namespace consistency
   env:
-    OTEL_SERVICE_NAMESPACE: "ai-compare"
+    OTEL_SERVICE_NAMESPACE: "" # Will be set to actual deployment namespace
     OTEL_SERVICE_NAME: "ai-compare"
   # Resource allocation for AI Compare app
   resources:

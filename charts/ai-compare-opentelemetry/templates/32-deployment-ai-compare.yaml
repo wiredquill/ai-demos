@@ -128,8 +128,13 @@ spec:
             # OpenTelemetry service configuration overrides
             {{- if .Values.aiCompare.env }}
             {{- range $key, $value := .Values.aiCompare.env }}
+            {{- if eq $key "OTEL_SERVICE_NAMESPACE" }}
+            - name: {{ $key }}
+              value: {{ $.Release.Namespace | quote }}
+            {{- else }}
             - name: {{ $key }}
               value: {{ $value | quote }}
+            {{- end }}
             {{- end }}
             {{- end }}
           # Health checks to ensure proper startup sequencing
