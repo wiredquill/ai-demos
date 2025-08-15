@@ -925,19 +925,19 @@ class ChatInterface:
             # Set OpenTelemetry service name environment variable before OpenLit initialization
             # This ensures SUSE Observability detects it as a GenAI service
             os.environ["OTEL_SERVICE_NAME"] = "ai-compare"
-            os.environ["OTEL_SERVICE_NAMESPACE"] = "new-ai-compare"
+            os.environ["OTEL_SERVICE_NAMESPACE"] = "ai-compare-opentelemetry"
             os.environ["OTEL_SERVICE_VERSION"] = "1.0.0"
             # Set GenAI-specific attributes for SUSE Observability detection
             os.environ["OTEL_RESOURCE_ATTRIBUTES"] = (
                 "service.name=ai-compare,"
-                "service.namespace=new-ai-compare,"
+                "service.namespace=ai-compare-opentelemetry,"
                 "service.version=1.0.0,"
                 "stackpack=open-telemetry,"
                 "gen_ai.system=ollama,"
                 "gen_ai.operation.name=chat,"
                 "gen_ai.request.model=llama3.2:latest,"
                 "gen_ai.application.name=ai-compare,"
-                "gen.ai.environment=new-ai-compare,"
+                "gen.ai.environment=ai-compare-opentelemetry,"
                 "gen_ai_app=true,"
                 "openlit=dev-ai,"
                 "ai.model.provider=meta,"
