@@ -1,0 +1,20 @@
+---
+# MetalLB IP Address Pool
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: default-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 10.9.0.200-10.9.0.219
+---
+# MetalLB L2Advertisement
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: default-l2
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - default-pool

@@ -1,0 +1,67 @@
+# MetalLB Helm Values Configuration
+# Using SUSE Application Collection compatible settings
+
+controller:
+  # Use SUSE BCI base images when available
+  image:
+    repository: quay.io/metallb/controller
+    tag: v0.14.8
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    fsGroup: 65534
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+      - ALL
+
+speaker:
+  # Use SUSE BCI base images when available
+  image:
+    repository: quay.io/metallb/speaker
+    tag: v0.14.8
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
+  # Security context for speaker (needs network capabilities)
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+      - ALL
+      add:
+      - NET_RAW
+
+# Configure for SUSE environments
+rbac:
+  create: true
+
+serviceAccount:
+  controller:
+    create: true
+    name: ""
+  speaker:
+    create: true
+    name: ""
+
+# Prometheus monitoring integration
+prometheus:
+  serviceAccount: ""
+  namespace: ""
+  serviceMonitor:
+    enabled: false
+  prometheusRule:
+    enabled: false
