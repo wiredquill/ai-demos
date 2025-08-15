@@ -80,7 +80,7 @@ pipelines:
 aiCompare:
   image:
     repository: ghcr.io/wiredquill/ai-demos-suse
-    tag: "3554c84"
+    tag: "f5859c9"
   service:
     port: 7860
     type: NodePort
@@ -95,7 +95,7 @@ aiCompare:
     gitBranch: "main"
   # Automation settings for the recurring test runner
   automation:
-    enabled: false
+    enabled: true
     defaultPrompt: "Why is the sky blue? Be concise."
     intervalSeconds: 30
     sendMessages: true # Enable/disable sending test messages to models
@@ -114,6 +114,10 @@ aiCompare:
   httpApi:
     enabled: true
     port: 8080
+  # Environment variables override for namespace consistency
+  env:
+    OTEL_SERVICE_NAMESPACE: "ai-compare"
+    OTEL_SERVICE_NAME: "ai-compare"
   # Resource allocation for AI Compare app
   resources:
     requests:

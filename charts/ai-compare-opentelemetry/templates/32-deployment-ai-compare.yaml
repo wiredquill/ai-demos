@@ -125,6 +125,13 @@ spec:
               value: "8"
             - name: INFERENCE_TIMEOUT
               value: "30"
+            # OpenTelemetry service configuration overrides
+            {{- if .Values.aiCompare.env }}
+            {{- range $key, $value := .Values.aiCompare.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- end }}
           # Health checks to ensure proper startup sequencing
           livenessProbe:
             httpGet:
