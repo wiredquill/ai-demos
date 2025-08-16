@@ -227,7 +227,7 @@ def opentelemetry_environment():
         "OTEL_SERVICE_NAMESPACE": "test-namespace",
         "TOKEN_TRACKING_ENABLED": "true",
         "COST_TRACKING_ENABLED": "true",
-        "MODEL_METRICS_ENABLED": "true", 
+        "MODEL_METRICS_ENABLED": "true",
         "TRACE_REQUESTS_ENABLED": "true",
         "HOSTNAME": "test-pod-123",
         "K8S_POD_UID": "test-uid-456",
@@ -264,7 +264,7 @@ def mock_opentelemetry_span():
     return mock_span
 
 
-@pytest.fixture 
+@pytest.fixture
 def mock_opentelemetry_tracer(mock_opentelemetry_span):
     """Create a mock OpenTelemetry tracer for testing."""
     mock_tracer = Mock()
@@ -279,10 +279,10 @@ def mock_opentelemetry_resource():
     mock_resource = Mock()
     mock_resource.attributes = {
         "service.name": "test-ai-compare",
-        "service.namespace": "test-namespace", 
+        "service.namespace": "test-namespace",
         "gen_ai.system": "ollama",
         "gen_ai.operation.name": "chat",
-        "ai.model.provider": "meta"
+        "ai.model.provider": "meta",
     }
     mock_resource.merge = Mock(return_value=mock_resource)
     return mock_resource
@@ -314,21 +314,18 @@ def mock_socket_failure():
 def mock_ollama_client():
     """Create a mock Ollama client for testing."""
     mock_client = Mock()
-    
+
     # Default successful response
     mock_response = {
-        "message": {
-            "content": "Test response from Ollama",
-            "role": "assistant"
-        },
+        "message": {"content": "Test response from Ollama", "role": "assistant"},
         "model": "tinyllama:latest",
-        "done": True
+        "done": True,
     }
-    
+
     mock_client.chat.return_value = mock_response
     mock_client.list.return_value = {"models": [{"name": "tinyllama:latest"}]}
     mock_client.pull.return_value = {"status": "success"}
-    
+
     return mock_client
 
 
@@ -348,11 +345,21 @@ def observability_test_data():
         "messages": [
             [{"role": "user", "content": "Hello, how are you?"}],
             [{"role": "user", "content": "What is the capital of France?"}],
-            [{"role": "user", "content": "Explain quantum computing"}]
+            [{"role": "user", "content": "Explain quantum computing"}],
         ],
         "expected_responses": [
             {"message": {"content": "I'm doing well, thank you!", "role": "assistant"}},
-            {"message": {"content": "The capital of France is Paris.", "role": "assistant"}},
-            {"message": {"content": "Quantum computing uses quantum bits...", "role": "assistant"}}
-        ]
+            {
+                "message": {
+                    "content": "The capital of France is Paris.",
+                    "role": "assistant",
+                }
+            },
+            {
+                "message": {
+                    "content": "Quantum computing uses quantum bits...",
+                    "role": "assistant",
+                }
+            },
+        ],
     }
