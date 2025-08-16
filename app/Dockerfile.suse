@@ -1,40 +1,110 @@
-# fleet/Dockerfile.suse
-# Base image: SUSE BCI Python
-# Using Python 3.11 as an example; adjust version as needed.
-FROM registry.suse.com/bci/python:3.11
+# AI Compare SUSE Edition - Optimized Multi-stage Build
+# Base image: SUSE BCI Python 3.11
+# Optimized for BuildKit remote server with enhanced caching
 
-RUN zypper ref && zypper install -y bash git
+# =============================================================================
+# Stage 1: System Dependencies Builder
+# =============================================================================
+FROM registry.suse.com/bci/python:3.11 AS system-builder
 
-LABEL maintainer="your-email@example.com"
-LABEL version="1.0-suse"
-LABEL description="SUSE version of the application with Ollama."
-
-# Set the working directory
-WORKDIR /app
-
-# Install system dependencies including kubectl for ConfigMap manipulation
-# ca-certificates is good practice for HTTPS calls
-# curl for downloading kubectl and other tools
+# Install system packages in single layer with optimal ordering
 RUN zypper refresh && \
-    zypper install -y --no-confirm ca-certificates gzip tar curl sudo && \
-    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
-    chmod +x kubectl && mv kubectl /usr/local/bin/ && \
+    zypper install -y --no-confirm \
+        ca-certificates \
+        gzip \
+        tar \
+        curl \
+        sudo \
+        bash \
+        git && \
     zypper clean -a
 
-# Copy application requirements first to leverage Docker cache
-COPY app/requirements.txt /app/requirements.txt
+# Download kubectl in separate layer for better caching
+RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
+    chmod +x kubectl && \
+    mv kubectl /usr/local/bin/kubectl
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# =============================================================================
+# Stage 2: Python Dependencies Builder  
+# =============================================================================
+FROM registry.suse.com/bci/python:3.11 AS python-builder
 
-# Copy the rest of the application code into the container
+# Copy system dependencies from previous stage
+COPY --from=system-builder /usr/local/bin/kubectl /usr/local/bin/kubectl
+COPY --from=system-builder /etc/zypp/repos.d/ /etc/zypp/repos.d/
+
+# Install minimal system dependencies needed for Python packages
+RUN zypper refresh && \
+    zypper install -y --no-confirm \
+        ca-certificates \
+        curl \
+        gcc \
+        python311-devel && \
+    zypper clean -a
+
+# Create virtual environment for isolated dependency management
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy requirements first for optimal Docker layer caching
+COPY app/requirements.txt /tmp/requirements.txt
+
+# Install Python dependencies with optimized flags
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir --no-compile -r /tmp/requirements.txt
+
+# =============================================================================
+# Stage 3: Runtime Image
+# =============================================================================
+FROM registry.suse.com/bci/python:3.11 AS runtime
+
+# Add build metadata for tracking and debugging
+LABEL maintainer="your-email@example.com" \
+      version="2.0-suse-optimized" \
+      description="AI Compare SUSE Edition - BuildKit Optimized" \
+      org.opencontainers.image.source="https://github.com/wiredquill/ai-demos" \
+      org.opencontainers.image.title="AI Compare SUSE" \
+      org.opencontainers.image.description="Multi-stage optimized container for AI Compare application"
+
+# Install minimal runtime dependencies only
+RUN zypper refresh && \
+    zypper install -y --no-confirm \
+        ca-certificates \
+        bash \
+        sudo && \
+    zypper clean -a
+
+# Copy system tools from builder stage
+COPY --from=system-builder /usr/local/bin/kubectl /usr/local/bin/kubectl
+
+# Copy Python virtual environment from builder stage
+COPY --from=python-builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Set working directory
+WORKDIR /app
+
+# Copy application code in optimal order (least to most frequently changed)
+# Frontend assets (change less frequently)
+COPY frontend/ /app/frontend/
+
+# Main application code (changes most frequently - keep last)
 COPY app/python-ollama-open-webui.py /app/python-ollama-open-webui.py
-COPY frontend /app/frontend
 
+# Create non-root user for security
+RUN groupadd -r aicompare && \
+    useradd -r -g aicompare -s /bin/bash aicompare && \
+    chown -R aicompare:aicompare /app
 
-# Expose the ports for Gradio and HTTP API
+# Switch to non-root user
+USER aicompare
+
+# Expose ports for Gradio and HTTP API
 EXPOSE 7860 8080
 
-# Command to run the application
-# Using unbuffered python output for better logging in containers
-CMD ["python3", "-u", "python-ollama-open-webui.py"]
+# Health check for container orchestration
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Command to run the application with optimized settings
+CMD ["python3", "-u", "-O", "python-ollama-open-webui.py"]

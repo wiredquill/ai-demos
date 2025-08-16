@@ -9,7 +9,8 @@ import os
 import socket
 import sys
 import urllib.parse
-from unittest.mock import MagicMock, Mock, patch, call
+from unittest.mock import MagicMock, Mock, call, patch
+
 import pytest
 
 # Mock opentelemetry modules before importing the application
@@ -74,14 +75,9 @@ class TestOpenTelemetryInitialization:
             "OTLP_ENDPOINT": "",
         }
 
-    def test_observability_disabled_by_default(
-        self, mock_chat_interface, disabled_observability_env_vars
-    ):
+    def test_observability_disabled_by_default(self, mock_chat_interface, disabled_observability_env_vars):
         """Test that observability is disabled by default in production."""
-        with patch.dict(os.environ, disabled_observability_env_vars), patch(
-            "openlit.init"
-        ) as mock_openlit_init:
-
+        with patch.dict(os.environ, disabled_observability_env_vars), patch("openlit.init") as mock_openlit_init:
             mock_chat_interface._initialize_observability()
 
             # OpenLit should not be initialized when disabled
@@ -95,10 +91,9 @@ class TestOpenTelemetryInitialization:
             "COLLECT_GPU_STATS": "false",
         }
 
-        with patch.dict(os.environ, env_vars), patch(
-            "openlit.init"
-        ) as mock_openlit_init, patch("socket.socket") as mock_socket:
-
+        with patch.dict(os.environ, env_vars), patch("openlit.init") as mock_openlit_init, patch(
+            "socket.socket"
+        ) as mock_socket:
             # Mock successful connectivity test
             mock_sock = Mock()
             mock_sock.connect_ex.return_value = 0
@@ -120,10 +115,9 @@ class TestOpenTelemetryInitialization:
             "COLLECT_GPU_STATS": "true",
         }
 
-        with patch.dict(os.environ, env_vars), patch(
-            "openlit.init"
-        ) as mock_openlit_init, patch("socket.socket") as mock_socket:
-
+        with patch.dict(os.environ, env_vars), patch("openlit.init") as mock_openlit_init, patch(
+            "socket.socket"
+        ) as mock_socket:
             # Mock successful connectivity test
             mock_sock = Mock()
             mock_sock.connect_ex.return_value = 0
@@ -144,10 +138,7 @@ class TestOpenTelemetryInitialization:
             "OTLP_ENDPOINT": "",  # Empty endpoint
         }
 
-        with patch.dict(os.environ, env_vars), patch(
-            "openlit.init"
-        ) as mock_openlit_init:
-
+        with patch.dict(os.environ, env_vars), patch("openlit.init") as mock_openlit_init:
             mock_chat_interface._initialize_observability()
 
             # OpenLit should not be initialized
@@ -160,10 +151,9 @@ class TestOpenTelemetryInitialization:
             "OTLP_ENDPOINT": "http://unreachable-collector:4318",
         }
 
-        with patch.dict(os.environ, env_vars), patch(
-            "openlit.init"
-        ) as mock_openlit_init, patch("socket.socket") as mock_socket:
-
+        with patch.dict(os.environ, env_vars), patch("openlit.init") as mock_openlit_init, patch(
+            "socket.socket"
+        ) as mock_socket:
             # Mock failed connectivity test
             mock_sock = Mock()
             mock_sock.connect_ex.return_value = 1  # Connection failed
@@ -174,19 +164,16 @@ class TestOpenTelemetryInitialization:
             # OpenLit should not be initialized due to connectivity failure
             mock_openlit_init.assert_not_called()
 
-    def test_connectivity_test_exception_skips_initialization(
-        self, mock_chat_interface
-    ):
+    def test_connectivity_test_exception_skips_initialization(self, mock_chat_interface):
         """Test that connectivity test exception skips observability initialization."""
         env_vars = {
             "OBSERVABILITY_ENABLED": "true",
             "OTLP_ENDPOINT": "http://test-collector:4318",
         }
 
-        with patch.dict(os.environ, env_vars), patch(
-            "openlit.init"
-        ) as mock_openlit_init, patch("socket.socket") as mock_socket:
-
+        with patch.dict(os.environ, env_vars), patch("openlit.init") as mock_openlit_init, patch(
+            "socket.socket"
+        ) as mock_socket:
             # Mock socket exception
             mock_sock = Mock()
             mock_sock.connect_ex.side_effect = Exception("Network error")
@@ -197,14 +184,11 @@ class TestOpenTelemetryInitialization:
             # OpenLit should not be initialized due to exception
             mock_openlit_init.assert_not_called()
 
-    def test_service_name_configuration(
-        self, mock_chat_interface, observability_env_vars
-    ):
+    def test_service_name_configuration(self, mock_chat_interface, observability_env_vars):
         """Test OpenTelemetry service name configuration."""
-        with patch.dict(os.environ, observability_env_vars), patch(
-            "openlit.init"
-        ) as mock_openlit_init, patch("socket.socket") as mock_socket:
-
+        with patch.dict(os.environ, observability_env_vars), patch("openlit.init") as mock_openlit_init, patch(
+            "socket.socket"
+        ) as mock_socket:
             # Mock successful connectivity test
             mock_sock = Mock()
             mock_sock.connect_ex.return_value = 0
@@ -224,10 +208,9 @@ class TestOpenTelemetryInitialization:
             "OTLP_ENDPOINT": "http://test-collector:4318",
         }
 
-        with patch.dict(os.environ, env_vars), patch(
-            "openlit.init"
-        ) as mock_openlit_init, patch("socket.socket") as mock_socket:
-
+        with patch.dict(os.environ, env_vars), patch("openlit.init") as mock_openlit_init, patch(
+            "socket.socket"
+        ) as mock_socket:
             # Mock successful connectivity test
             mock_sock = Mock()
             mock_sock.connect_ex.return_value = 0
@@ -239,14 +222,11 @@ class TestOpenTelemetryInitialization:
             assert os.environ["OTEL_SERVICE_NAME"] == "ai-compare"
             assert os.environ["OTEL_SERVICE_NAMESPACE"] == "ai-compare"
 
-    def test_resource_attributes_configuration(
-        self, mock_chat_interface, observability_env_vars
-    ):
+    def test_resource_attributes_configuration(self, mock_chat_interface, observability_env_vars):
         """Test OpenTelemetry resource attributes configuration."""
-        with patch.dict(os.environ, observability_env_vars), patch(
-            "openlit.init"
-        ) as mock_openlit_init, patch("socket.socket") as mock_socket:
-
+        with patch.dict(os.environ, observability_env_vars), patch("openlit.init") as mock_openlit_init, patch(
+            "socket.socket"
+        ) as mock_socket:
             # Mock successful connectivity test
             mock_sock = Mock()
             mock_sock.connect_ex.return_value = 0
@@ -266,14 +246,11 @@ class TestOpenTelemetryInitialization:
             assert "ai.workload.type=inference" in resource_attrs
             assert "stackpack=open-telemetry" in resource_attrs
 
-    def test_enhanced_genai_features_configuration(
-        self, mock_chat_interface, observability_env_vars
-    ):
+    def test_enhanced_genai_features_configuration(self, mock_chat_interface, observability_env_vars):
         """Test enhanced GenAI observability features configuration."""
-        with patch.dict(os.environ, observability_env_vars), patch(
-            "openlit.init"
-        ) as mock_openlit_init, patch("socket.socket") as mock_socket:
-
+        with patch.dict(os.environ, observability_env_vars), patch("openlit.init") as mock_openlit_init, patch(
+            "socket.socket"
+        ) as mock_socket:
             # Mock successful connectivity test
             mock_sock = Mock()
             mock_sock.connect_ex.return_value = 0
@@ -292,12 +269,9 @@ class TestOpenTelemetryInitialization:
 
     def test_genai_tracer_creation(self, mock_chat_interface, observability_env_vars):
         """Test GenAI tracer creation for manual instrumentation."""
-        with patch.dict(os.environ, observability_env_vars), patch(
-            "openlit.init"
-        ) as mock_openlit_init, patch("socket.socket") as mock_socket, patch(
-            "opentelemetry.trace.get_tracer"
-        ) as mock_get_tracer:
-
+        with patch.dict(os.environ, observability_env_vars), patch("openlit.init") as mock_openlit_init, patch(
+            "socket.socket"
+        ) as mock_socket, patch("opentelemetry.trace.get_tracer") as mock_get_tracer:
             # Mock successful connectivity test
             mock_sock = Mock()
             mock_sock.connect_ex.return_value = 0
@@ -316,12 +290,9 @@ class TestOpenTelemetryInitialization:
 
     def test_genai_resource_creation(self, mock_chat_interface, observability_env_vars):
         """Test GenAI semantic conventions resource creation."""
-        with patch.dict(os.environ, observability_env_vars), patch(
-            "openlit.init"
-        ) as mock_openlit_init, patch("socket.socket") as mock_socket, patch(
-            "opentelemetry.sdk.resources.Resource.create"
-        ) as mock_resource_create:
-
+        with patch.dict(os.environ, observability_env_vars), patch("openlit.init") as mock_openlit_init, patch(
+            "socket.socket"
+        ) as mock_socket, patch("opentelemetry.sdk.resources.Resource.create") as mock_resource_create:
             # Mock successful connectivity test
             mock_sock = Mock()
             mock_sock.connect_ex.return_value = 0
@@ -366,10 +337,9 @@ class TestOpenTelemetryInitialization:
                 "OTLP_ENDPOINT": otlp_endpoint,
             }
 
-            with patch.dict(os.environ, env_vars), patch(
-                "openlit.init"
-            ) as mock_openlit_init, patch("socket.socket") as mock_socket:
-
+            with patch.dict(os.environ, env_vars), patch("openlit.init") as mock_openlit_init, patch(
+                "socket.socket"
+            ) as mock_socket:
                 # Mock successful connectivity test
                 mock_sock = Mock()
                 mock_sock.connect_ex.return_value = 0
@@ -380,14 +350,11 @@ class TestOpenTelemetryInitialization:
                 # Verify connectivity test was called with correct host/port
                 mock_sock.connect_ex.assert_called_with((expected_host, expected_port))
 
-    def test_openlit_initialization_failure_continues_gracefully(
-        self, mock_chat_interface, observability_env_vars
-    ):
+    def test_openlit_initialization_failure_continues_gracefully(self, mock_chat_interface, observability_env_vars):
         """Test that OpenLit initialization failure doesn't crash the application."""
-        with patch.dict(os.environ, observability_env_vars), patch(
-            "openlit.init"
-        ) as mock_openlit_init, patch("socket.socket") as mock_socket:
-
+        with patch.dict(os.environ, observability_env_vars), patch("openlit.init") as mock_openlit_init, patch(
+            "socket.socket"
+        ) as mock_socket:
             # Mock successful connectivity test
             mock_sock = Mock()
             mock_sock.connect_ex.return_value = 0
@@ -402,12 +369,9 @@ class TestOpenTelemetryInitialization:
             # Verify OpenLit was attempted to be initialized
             mock_openlit_init.assert_called_once()
 
-    def test_openlit_import_error_skips_initialization(
-        self, mock_chat_interface, observability_env_vars
-    ):
+    def test_openlit_import_error_skips_initialization(self, mock_chat_interface, observability_env_vars):
         """Test that OpenLit import error gracefully skips initialization."""
         with patch.dict(os.environ, observability_env_vars):
-
             # Remove openlit mock to simulate import error
             if "openlit" in sys.modules:
                 del sys.modules["openlit"]
@@ -423,9 +387,7 @@ class TestOpenTelemetryInitialization:
                 # Should complete without errors
                 assert not hasattr(mock_chat_interface, "observability_settings")
 
-    def test_kubernetes_environment_detection(
-        self, mock_chat_interface, observability_env_vars
-    ):
+    def test_kubernetes_environment_detection(self, mock_chat_interface, observability_env_vars):
         """Test Kubernetes environment variable detection and usage."""
         # Test with custom Kubernetes environment variables
         k8s_env_vars = observability_env_vars.copy()
@@ -437,12 +399,9 @@ class TestOpenTelemetryInitialization:
             }
         )
 
-        with patch.dict(os.environ, k8s_env_vars), patch(
-            "openlit.init"
-        ) as mock_openlit_init, patch("socket.socket") as mock_socket, patch(
-            "opentelemetry.sdk.resources.Resource.create"
-        ) as mock_resource_create:
-
+        with patch.dict(os.environ, k8s_env_vars), patch("openlit.init") as mock_openlit_init, patch(
+            "socket.socket"
+        ) as mock_socket, patch("opentelemetry.sdk.resources.Resource.create") as mock_resource_create:
             # Mock successful connectivity test
             mock_sock = Mock()
             mock_sock.connect_ex.return_value = 0
@@ -457,9 +416,7 @@ class TestOpenTelemetryInitialization:
             assert call_args["k8s.node.name"] == "custom-node-ghi789"
             assert call_args["service.instance.id"] == "custom-uid-def456"
 
-    def test_unknown_kubernetes_environment_defaults(
-        self, mock_chat_interface, observability_env_vars
-    ):
+    def test_unknown_kubernetes_environment_defaults(self, mock_chat_interface, observability_env_vars):
         """Test default values when Kubernetes environment variables are missing."""
         # Remove Kubernetes environment variables
         k8s_env_vars = observability_env_vars.copy()
@@ -470,12 +427,9 @@ class TestOpenTelemetryInitialization:
         if "K8S_NODE_NAME" in k8s_env_vars:
             del k8s_env_vars["K8S_NODE_NAME"]
 
-        with patch.dict(os.environ, k8s_env_vars, clear=True), patch(
-            "openlit.init"
-        ) as mock_openlit_init, patch("socket.socket") as mock_socket, patch(
-            "opentelemetry.sdk.resources.Resource.create"
-        ) as mock_resource_create:
-
+        with patch.dict(os.environ, k8s_env_vars, clear=True), patch("openlit.init") as mock_openlit_init, patch(
+            "socket.socket"
+        ) as mock_socket, patch("opentelemetry.sdk.resources.Resource.create") as mock_resource_create:
             # Mock successful connectivity test
             mock_sock = Mock()
             mock_sock.connect_ex.return_value = 0
