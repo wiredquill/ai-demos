@@ -927,6 +927,10 @@ class ChatInterface:
             # Use environment variable overrides if available, otherwise use defaults
             service_name = os.getenv("OTEL_SERVICE_NAME", "ai-compare")
             service_namespace = os.getenv("OTEL_SERVICE_NAMESPACE", "ai-compare")
+            
+            logger.info(f"🔧 OpenTelemetry Configuration:")
+            logger.info(f"  - OTEL_SERVICE_NAME: {service_name}")
+            logger.info(f"  - OTEL_SERVICE_NAMESPACE: {service_namespace}")
 
             os.environ["OTEL_SERVICE_NAME"] = service_name
             os.environ["OTEL_SERVICE_NAMESPACE"] = service_namespace

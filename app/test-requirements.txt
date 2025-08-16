@@ -16,3 +16,17 @@ pytest-timeout>=2.1.0
 # For test reporting
 pytest-html>=3.2.0
 pytest-json-report>=1.5.0
+
+# For testing OpenTelemetry instrumentation
+opentelemetry-api>=1.20.0
+opentelemetry-sdk>=1.20.0
+opentelemetry-instrumentation>=0.41b0
+opentelemetry-instrumentation-requests>=0.41b0
+opentelemetry-test-utils>=0.41b0
+
+# For testing observability integrations
+openlit>=0.1.0
+
+# For testing network and socket operations
+requests-mock>=1.11.0
+socket-mock>=0.3.0
