@@ -25,7 +25,7 @@ RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/s
     mv kubectl /usr/local/bin/kubectl
 
 # =============================================================================
-# Stage 2: Python Dependencies Builder  
+# Stage 2: Python Dependencies Builder
 # =============================================================================
 FROM registry.suse.com/bci/python:3.11 AS python-builder
 
@@ -43,7 +43,7 @@ RUN zypper refresh && \
     zypper clean -a
 
 # Create virtual environment for isolated dependency management
-RUN python -m venv /opt/venv
+RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy requirements first for optimal Docker layer caching
