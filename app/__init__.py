@@ -1,0 +1,1 @@
+"""AI Compare application package."""
