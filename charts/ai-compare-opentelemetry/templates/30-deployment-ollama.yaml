@@ -2,6 +2,14 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ollama
+  annotations:
+    # GenAI Application Annotations for SUSE Observability
+    genai.observability/enabled: "true"
+    genai.observability/type: "llm-backend"
+    genai.observability/models: "llama3.2:latest"
+    genai.observability/framework: "ollama"
+    observability.suse.com/genai-app: "true"
+    ai.application.category: "model-serving"
 spec:
   replicas: 1
   selector:
@@ -11,6 +19,12 @@ spec:
     metadata:
       labels:
         app: ollama
+        app.kubernetes.io/name: ai-compare
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: llm-backend
+        app.kubernetes.io/part-of: genai-stack
+        ai.framework: "ollama"
+        genai.application: "true"
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:

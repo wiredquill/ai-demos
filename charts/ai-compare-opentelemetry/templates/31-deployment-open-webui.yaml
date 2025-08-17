@@ -61,11 +61,11 @@ spec:
         - name: OTEL_EXPORTER_OTLP_INSECURE
           value: "true"
         - name: OTEL_SERVICE_NAME
-          value: {{ .Values.openWebui.observability.serviceName | quote }}
+          value: "ai-compare-webui"
         - name: OTEL_SERVICE_NAMESPACE
           value: "{{ .Values.openWebui.observability.serviceNamespace | default .Release.Namespace }}"
         - name: OTEL_RESOURCE_ATTRIBUTES
-          value: "service.name={{ .Values.openWebui.observability.serviceName }},service.namespace={{ .Values.openWebui.observability.serviceNamespace | default .Release.Namespace }},service.version={{ .Values.openWebui.image.tag }},genai.application.name=ai-compare,genai.application.type=chat-interface,genai.framework=open-webui,ai.application.category=conversational-ui,app.kubernetes.io/part-of=genai-stack,app.kubernetes.io/instance={{ .Release.Name }}"
+          value: "service.name=ai-compare-webui,service.namespace={{ .Values.openWebui.observability.serviceNamespace | default .Release.Namespace }},service.version={{ .Values.openWebui.image.tag }},application.name=ai-compare,application.version=1.0.0,application.component=webui,genai.application.name=ai-compare,genai.application.type=chat-interface,genai.framework=open-webui,ai.application.category=conversational-ui,deployment.environment={{ .Release.Namespace }}"
         {{- if .Values.openWebui.observability.tracing }}
         - name: OTEL_TRACES_EXPORTER
           value: "otlp"

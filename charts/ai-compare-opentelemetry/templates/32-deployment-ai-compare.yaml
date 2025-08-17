@@ -125,6 +125,9 @@ spec:
               value: "8"
             - name: INFERENCE_TIMEOUT
               value: "30"
+            # OpenTelemetry resource attributes for application grouping
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "service.name=ai-compare,service.namespace={{ .Release.Namespace }},service.version=1.0.0,application.name=ai-compare,application.version=1.0.0,application.component=backend,genai.application.name=ai-compare,genai.application.type=chat-application,genai.framework=gradio-ollama,ai.application.category=conversational-ai,deployment.environment={{ .Release.Namespace }}"
             # OpenTelemetry service configuration overrides
             {{- if .Values.aiCompare.env }}
             {{- range $key, $value := .Values.aiCompare.env }}
