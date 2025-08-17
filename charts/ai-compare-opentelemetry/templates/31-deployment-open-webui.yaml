@@ -2,6 +2,14 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: open-webui
+  annotations:
+    # GenAI Application Annotations for SUSE Observability
+    genai.observability/enabled: "true"
+    genai.observability/type: "chat-interface"
+    genai.observability/models: "llama3.2:latest"
+    genai.observability/framework: "open-webui"
+    observability.suse.com/genai-app: "true"
+    ai.application.category: "conversational-ui"
 spec:
   replicas: 1
   selector:
@@ -11,6 +19,12 @@ spec:
     metadata:
       labels:
         app: open-webui
+        app.kubernetes.io/name: ai-compare
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: genai-ui
+        app.kubernetes.io/part-of: genai-stack
+        ai.framework: "open-webui"
+        genai.application: "true"
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -28,6 +42,43 @@ spec:
           value: "http://ollama-service:11434"
         - name: WEBUI_AUTH
           value: "false"
+        {{- if .Values.openWebui.observability.enabled }}
+        # OpenTelemetry configuration for Open WebUI (Using Open WebUI-specific variables)
+        - name: ENABLE_OTEL
+          value: "true"
+        - name: ENABLE_OTEL_METRICS
+          value: "true"
+        - name: ENABLE_OTEL_LOGS
+          value: "true"
+        # Open WebUI-specific endpoint override variables
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: {{ .Values.openWebui.observability.otlpEndpoint | quote }}
+        - name: OTEL_METRICS_EXPORTER_OTLP_ENDPOINT
+          value: {{ .Values.openWebui.observability.otlpEndpoint | quote }}
+        - name: OTEL_LOGS_EXPORTER_OTLP_ENDPOINT
+          value: {{ .Values.openWebui.observability.otlpEndpoint | quote }}
+        # Security and protocol settings
+        - name: OTEL_EXPORTER_OTLP_INSECURE
+          value: "true"
+        - name: OTEL_SERVICE_NAME
+          value: {{ .Values.openWebui.observability.serviceName | quote }}
+        - name: OTEL_SERVICE_NAMESPACE
+          value: "{{ .Values.openWebui.observability.serviceNamespace | default .Release.Namespace }}"
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.name={{ .Values.openWebui.observability.serviceName }},service.namespace={{ .Values.openWebui.observability.serviceNamespace | default .Release.Namespace }},service.version={{ .Values.openWebui.image.tag }},genai.application.name=ai-compare,genai.application.type=chat-interface,genai.framework=open-webui,ai.application.category=conversational-ui,app.kubernetes.io/part-of=genai-stack,app.kubernetes.io/instance={{ .Release.Name }}"
+        {{- if .Values.openWebui.observability.tracing }}
+        - name: OTEL_TRACES_EXPORTER
+          value: "otlp"
+        {{- end }}
+        {{- if .Values.openWebui.observability.metrics }}
+        - name: OTEL_METRICS_EXPORTER
+          value: "otlp"
+        {{- end }}
+        {{- if .Values.openWebui.observability.logging }}
+        - name: OTEL_LOGS_EXPORTER
+          value: "otlp"
+        {{- end }}
+        {{- end }}
         volumeMounts:
         - name: open-webui-data
           mountPath: /app/backend/data

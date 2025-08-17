@@ -43,8 +43,8 @@ ollama:
       path: "/data/ai-models" # NFS share path for caching models
 openWebui:
   image:
-    repository: dp.apps.rancher.io/containers/open-webui
-    tag: "0.6.9-10.31" # Pipeline-enabled version  
+    repository: ghcr.io/open-webui/open-webui
+    tag: "v0.6.22" # Latest official version with OpenTelemetry support
   service:
     port: 8080
     type: NodePort
@@ -52,6 +52,16 @@ openWebui:
   pipelines:
     enabled: true
     url: "http://pipelines-service:9099"
+  # OpenTelemetry observability settings
+  observability:
+    enabled: true # Enable OpenTelemetry integration
+    otlpEndpoint: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4317" # GRPC endpoint (Open WebUI default)
+    serviceName: "open-webui"
+    serviceNamespace: "" # Will be set to deployment namespace
+    # Enhanced telemetry features
+    tracing: true # Enable distributed tracing
+    metrics: true # Enable metrics collection
+    logging: true # Enable structured logging
 # Open WebUI Pipelines Service
 pipelines:
   enabled: true
@@ -150,7 +160,7 @@ frontend:
     nodeSelector: {}
     tolerations: []
     affinity: {}
-  # HTTP Load Simulator (Optional - HTTP traffic generation for observability)  
+  # HTTP Load Simulator (Optional - HTTP traffic generation for observability)
   loadSimulator:
     enabled: false # Disabled by default - enable for HTTP traffic generation
     image:
