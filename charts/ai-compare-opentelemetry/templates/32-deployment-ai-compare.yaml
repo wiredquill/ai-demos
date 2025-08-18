@@ -79,6 +79,9 @@ spec:
               value: "{{ .Values.aiCompare.observability.otlpEndpoint }}"
             - name: COLLECT_GPU_STATS
               value: "{{ .Values.aiCompare.observability.collectGpuStats }}"
+            # Force development mode for OpenLit instrumentation
+            - name: DEV_MODE
+              value: "true"
             # Enhanced GenAI observability settings
             - name: TOKEN_TRACKING_ENABLED
               value: "{{ .Values.aiCompare.observability.tokenTracking }}"
@@ -106,6 +109,11 @@ spec:
               value: "ai-compare"
             - name: OPENLIT_SERVICE_NAME
               value: "ai-compare"
+            # Force OpenLit to instrument all HTTP and LLM calls
+            - name: OPENLIT_AUTO_TRACE
+              value: "true"
+            - name: OPENLIT_TRACE_CONTENT
+              value: "true"
             # Enhanced cost tracking for SUSE Observability
             - name: GENAI_COST_TRACKING_ENABLED
               value: "true"
@@ -152,12 +160,14 @@ spec:
               value: "8"
             - name: INFERENCE_TIMEOUT
               value: "30"
-            # OpenTelemetry resource attributes for application grouping
+            # Clean OpenTelemetry resource attributes (remove service.name to prevent conflicts)
             - name: OTEL_RESOURCE_ATTRIBUTES
-              value: "service.name=ai-compare,service.namespace={{ .Release.Namespace }},service.version=1.0.0,service.instance.id=backend,component=backend,genai.application.name=ai-compare,genai.system.name=ai-compare,genai.operation.name=chat-application,genai.model.name=llama3.2,genai.request.model=llama3.2,gen_ai.system=ai-compare,gen_ai.request.model=llama3.2,gen_ai.application.name=ai-compare,gen_ai.usage.cost_currency=USD,gen_ai.usage.input_cost_per_token=0.0001,gen_ai.usage.output_cost_per_token=0.0002,deployment.environment={{ .Release.Namespace }}"
-            # Override any default service name to ensure clean naming
+              value: "service.namespace={{ .Release.Namespace }},service.version=1.0.0,service.instance.id=backend,component=backend,deployment.environment={{ .Release.Namespace }}"
+            # Explicit service name configuration
             - name: OTEL_SERVICE_NAME
               value: "ai-compare"
+            - name: OTEL_SERVICE_NAMESPACE
+              value: "{{ .Release.Namespace }}"
             # OpenTelemetry service configuration overrides  
             {{- if .Values.aiCompare.env }}
             {{- range $key, $value := .Values.aiCompare.env }}
