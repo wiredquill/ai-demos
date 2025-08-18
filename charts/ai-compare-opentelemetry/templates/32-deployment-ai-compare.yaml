@@ -102,6 +102,10 @@ spec:
               value: "{{ .Values.aiCompare.observability.collectGpuStats }}"
             - name: OPENLIT_ENVIRONMENT
               value: "{{ .Release.Namespace }}"
+            - name: OPENLIT_APPLICATION_NAME
+              value: "ai-compare"
+            - name: OPENLIT_SERVICE_NAME
+              value: "ai-compare"
             # Enhanced cost tracking for SUSE Observability
             - name: GENAI_COST_TRACKING_ENABLED
               value: "true"
