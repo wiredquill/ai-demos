@@ -97,11 +97,20 @@ spec:
               value: "true"
             # OpenLit cost tracking configuration
             - name: OPENLIT_PRICING_JSON
-              value: '{"llama3.2:latest": {"input_cost_per_token": 0.0001, "output_cost_per_token": 0.0002}}'
+              value: '{"llama3.2:latest": {"input_cost_per_token": 0.0001, "output_cost_per_token": 0.0002, "cost_per_request": 0.001}, "llama3.2": {"input_cost_per_token": 0.0001, "output_cost_per_token": 0.0002, "cost_per_request": 0.001}}'
             - name: OPENLIT_COLLECT_GPU_STATS
               value: "{{ .Values.aiCompare.observability.collectGpuStats }}"
             - name: OPENLIT_ENVIRONMENT
               value: "{{ .Release.Namespace }}"
+            # Enhanced cost tracking for SUSE Observability
+            - name: GENAI_COST_TRACKING_ENABLED
+              value: "true"
+            - name: GENAI_TOKEN_COST_INPUT
+              value: "0.0001"
+            - name: GENAI_TOKEN_COST_OUTPUT  
+              value: "0.0002"
+            - name: GENAI_REQUEST_COST
+              value: "0.001"
             # Model configuration for demo
             - name: MODEL_CONFIG
               valueFrom:
@@ -141,17 +150,17 @@ spec:
               value: "30"
             # OpenTelemetry resource attributes for application grouping
             - name: OTEL_RESOURCE_ATTRIBUTES
-              value: "service.name=ai-compare,service.namespace={{ .Release.Namespace }},service.version=1.0.0,service.instance.id=backend,component=backend,genai.application.name=ai-compare,genai.system.name=ai-compare,genai.operation.name=chat-application,genai.model.name=llama3.2,genai.request.model=llama3.2,gen_ai.system=ai-compare,gen_ai.request.model=llama3.2,deployment.environment={{ .Release.Namespace }}"
+              value: "service.name=ai-compare,service.namespace={{ .Release.Namespace }},service.version=1.0.0,service.instance.id=backend,component=backend,genai.application.name=ai-compare,genai.system.name=ai-compare,genai.operation.name=chat-application,genai.model.name=llama3.2,genai.request.model=llama3.2,gen_ai.system=ai-compare,gen_ai.request.model=llama3.2,gen_ai.application.name=ai-compare,gen_ai.usage.cost_currency=USD,gen_ai.usage.input_cost_per_token=0.0001,gen_ai.usage.output_cost_per_token=0.0002,deployment.environment={{ .Release.Namespace }}"
             # Override any default service name to ensure clean naming
             - name: OTEL_SERVICE_NAME
               value: "ai-compare"
-            # OpenTelemetry service configuration overrides
+            # OpenTelemetry service configuration overrides  
             {{- if .Values.aiCompare.env }}
             {{- range $key, $value := .Values.aiCompare.env }}
             {{- if eq $key "OTEL_SERVICE_NAMESPACE" }}
             - name: {{ $key }}
               value: {{ $.Release.Namespace | quote }}
-            {{- else }}
+            {{- else if ne $key "OTEL_SERVICE_NAME" }}
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
