@@ -1,0 +1,28 @@
+apiVersion: v2
+name: ollama-suse
+description: Wrapper chart for SUSE Application Collection Ollama with custom questions.yaml
+type: application
+version: 0.1.0
+appVersion: "1.0"
+
+dependencies:
+  - name: ollama
+    version: "^1.0.0"
+    repository: "oci://dp.apps.rancher.io/charts"
+
+maintainers:
+  - name: AI Demos Team
+    email: ai-demos@example.com
+
+keywords:
+  - ollama
+  - llm
+  - ai
+  - machine-learning
+  - suse
+  - enterprise
+
+annotations:
+  category: MachineLearning
+  suse.com/registry: "SUSE Application Collection"
+  suse.com/enterprise: "true"

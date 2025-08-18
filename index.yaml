@@ -1,0 +1,59 @@
+apiVersion: v1
+entries:
+  ollama-suse:
+  - annotations:
+      category: MachineLearning
+      suse.com/enterprise: "true"
+      suse.com/registry: SUSE Application Collection
+    apiVersion: v2
+    appVersion: "1.0"
+    created: "2025-08-16T16:30:34.484467-07:00"
+    dependencies:
+    - name: ollama
+      repository: oci://dp.apps.rancher.io/charts
+      version: ^1.0.0
+    description: Wrapper chart for SUSE Application Collection Ollama with custom
+      questions.yaml
+    digest: 2aca4f2aa10283f41bfee4cc2ba7e3bf13a99bd6650b57e4ef7f9f2580bce579
+    keywords:
+    - ollama
+    - llm
+    - ai
+    - machine-learning
+    - suse
+    - enterprise
+    maintainers:
+    - email: ai-demos@example.com
+      name: AI Demos Team
+    name: ollama-suse
+    type: application
+    urls:
+    - https://your-repo.example.com/charts/ollama-suse-0.1.0.tgz
+    version: 0.1.0
+  ollama-upstream:
+  - annotations:
+      category: MachineLearning
+    apiVersion: v2
+    appVersion: "1.0"
+    created: "2025-08-16T16:30:34.485129-07:00"
+    dependencies:
+    - name: ollama
+      repository: https://helm.otwld.com/
+      version: ^0.4.0
+    description: Wrapper chart for upstream Ollama with custom questions.yaml
+    digest: a810e84c8c950d950cca1337dba3635baa0a5127c8cdebaebe22d268768bea2c
+    keywords:
+    - ollama
+    - llm
+    - ai
+    - machine-learning
+    - upstream
+    maintainers:
+    - email: ai-demos@example.com
+      name: AI Demos Team
+    name: ollama-upstream
+    type: application
+    urls:
+    - https://your-repo.example.com/charts/ollama-upstream-0.1.0.tgz
+    version: 0.1.0
+generated: "2025-08-16T16:30:34.482543-07:00"

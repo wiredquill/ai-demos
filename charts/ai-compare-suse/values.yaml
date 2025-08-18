@@ -44,7 +44,7 @@ ollama:
 openWebui:
   image:
     repository: dp.apps.rancher.io/containers/open-webui
-    tag: "0.6.9-10.31" # Pipeline-enabled version  
+    tag: "0.6.9-10.31" # Pipeline-enabled version
   service:
     port: 8080
     type: NodePort
@@ -80,7 +80,7 @@ pipelines:
 aiCompare:
   image:
     repository: ghcr.io/wiredquill/ai-demos-suse
-    tag: "7730a50"
+    tag: "7730a50a"
   service:
     port: 7860
     type: NodePort
@@ -101,7 +101,7 @@ aiCompare:
     sendMessages: true # Enable/disable sending test messages to models
   # Observability settings for OpenTelemetry and OpenLit (development option)
   observability:
-    enabled: false # Disabled by default - development/testing option only  
+    enabled: false # Disabled by default - development/testing option only
     otlpEndpoint: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
     collectGpuStats: false
     schedule: "*/5 * * * *"
@@ -141,7 +141,7 @@ frontend:
     nodeSelector: {}
     tolerations: []
     affinity: {}
-  # HTTP Load Simulator (Optional - HTTP traffic generation for observability)  
+  # HTTP Load Simulator (Optional - HTTP traffic generation for observability)
   loadSimulator:
     enabled: false # Disabled by default - enable for HTTP traffic generation
     image:

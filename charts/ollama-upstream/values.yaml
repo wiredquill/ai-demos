@@ -1,0 +1,62 @@
+# Default values for ollama-upstream wrapper chart
+# This passes through to the upstream ollama chart
+
+ollama:
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 11434
+
+  # Resource configuration
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "1000m"
+    limits:
+      memory: "8Gi"
+      cpu: "4000m"
+
+  # GPU configuration
+  gpu:
+    enabled: false
+    type: "nvidia"
+    number: 1
+
+  # Storage configuration
+  persistence:
+    enabled: true
+    size: "50Gi"
+    storageClass: ""
+
+  # Model configuration
+  models:
+    autoDownload: []
+    pullPolicy: "IfNotPresent"
+
+  # Networking
+  ingress:
+    enabled: false
+    className: "nginx"
+    host: "ollama.local"
+    tls:
+      enabled: false
+
+  # Security
+  security:
+    runAsNonRoot: true
+    readOnlyRootFilesystem: false
+
+  # Observability
+  monitoring:
+    enabled: false
+    serviceMonitor:
+      enabled: false
+
+  logging:
+    level: "info"
+
+  # Image configuration (upstream defaults)
+  image:
+    repository: ollama/ollama
+    tag: latest
+    pullPolicy: IfNotPresent
