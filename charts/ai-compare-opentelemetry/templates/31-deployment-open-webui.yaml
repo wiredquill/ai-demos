@@ -65,7 +65,7 @@ spec:
         - name: OTEL_SERVICE_NAMESPACE
           value: "{{ .Values.openWebui.observability.serviceNamespace | default .Release.Namespace }}"
         - name: OTEL_RESOURCE_ATTRIBUTES
-          value: "service.name=ai-compare,service.namespace={{ .Values.openWebui.observability.serviceNamespace | default .Release.Namespace }},service.version={{ .Values.openWebui.image.tag }},service.instance.id={{ .Values.openWebui.observability.serviceName }},component=webui,genai.application.name=ai-compare,genai.system.name=ai-compare,genai.operation.name=chat-interface,genai.model.name=llama3.2,deployment.environment={{ .Release.Namespace }}"
+          value: "service.name=ai-compare,service.namespace={{ .Values.openWebui.observability.serviceNamespace | default .Release.Namespace }},service.version={{ .Values.openWebui.image.tag }},service.instance.id=webui,component=webui,genai.application.name=ai-compare,genai.system.name=ai-compare,genai.operation.name=chat-interface,genai.model.name=llama3.2,gen_ai.system=ai-compare,gen_ai.request.model=llama3.2,gen_ai.application.name=ai-compare,deployment.environment={{ .Release.Namespace }}"
         {{- if .Values.openWebui.observability.tracing }}
         - name: OTEL_TRACES_EXPORTER
           value: "otlp"

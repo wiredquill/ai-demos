@@ -95,6 +95,13 @@ spec:
               value: "USD"
             - name: GENAI_USAGE_TRACKING
               value: "true"
+            # OpenLit cost tracking configuration
+            - name: OPENLIT_PRICING_JSON
+              value: '{"llama3.2:latest": {"input_cost_per_token": 0.0001, "output_cost_per_token": 0.0002}}'
+            - name: OPENLIT_COLLECT_GPU_STATS
+              value: "{{ .Values.aiCompare.observability.collectGpuStats }}"
+            - name: OPENLIT_ENVIRONMENT
+              value: "{{ .Release.Namespace }}"
             # Model configuration for demo
             - name: MODEL_CONFIG
               valueFrom:
@@ -134,7 +141,10 @@ spec:
               value: "30"
             # OpenTelemetry resource attributes for application grouping
             - name: OTEL_RESOURCE_ATTRIBUTES
-              value: "service.name=ai-compare,service.namespace={{ .Release.Namespace }},service.version=1.0.0,service.instance.id=backend,component=backend,genai.application.name=ai-compare,genai.system.name=ai-compare,genai.operation.name=chat-application,genai.model.name=llama3.2,genai.request.model=llama3.2,deployment.environment={{ .Release.Namespace }}"
+              value: "service.name=ai-compare,service.namespace={{ .Release.Namespace }},service.version=1.0.0,service.instance.id=backend,component=backend,genai.application.name=ai-compare,genai.system.name=ai-compare,genai.operation.name=chat-application,genai.model.name=llama3.2,genai.request.model=llama3.2,gen_ai.system=ai-compare,gen_ai.request.model=llama3.2,deployment.environment={{ .Release.Namespace }}"
+            # Override any default service name to ensure clean naming
+            - name: OTEL_SERVICE_NAME
+              value: "ai-compare"
             # OpenTelemetry service configuration overrides
             {{- if .Values.aiCompare.env }}
             {{- range $key, $value := .Values.aiCompare.env }}
