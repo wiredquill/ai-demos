@@ -850,22 +850,26 @@ class ChatInterface:
             os.environ["OTEL_SERVICE_NAME"] = service_name
             os.environ["OTEL_SERVICE_NAMESPACE"] = service_namespace
             os.environ["OTEL_SERVICE_VERSION"] = "1.0.0"
-            # Set GenAI-specific attributes for SUSE Observability detection
-            os.environ["OTEL_RESOURCE_ATTRIBUTES"] = (
-                f"service.name={service_name},"
-                f"service.namespace={service_namespace},"
-                "service.version=1.0.0,"
-                "stackpack=open-telemetry,"
-                "gen_ai.system=ollama,"
-                "gen_ai.operation.name=chat,"
-                "gen_ai.request.model=llama3.2:latest,"
-                f"gen_ai.application.name={service_name},"
-                f"gen.ai.environment={service_namespace},"
-                "gen_ai_app=true,"
-                "openlit=dev-ai,"
-                "ai.model.provider=meta,"
-                "ai.workload.type=inference"
-            )
+            # Don't override OTEL_RESOURCE_ATTRIBUTES if already set by Helm
+            # Only add GenAI-specific attributes if not already configured
+            existing_resource_attrs = os.getenv("OTEL_RESOURCE_ATTRIBUTES", "")
+            if not existing_resource_attrs:
+                # Set GenAI-specific attributes for SUSE Observability detection
+                os.environ["OTEL_RESOURCE_ATTRIBUTES"] = (
+                    f"service.namespace={service_namespace},"
+                    "service.version=1.0.0,"
+                    "service.instance.id=backend,"
+                    "stackpack=open-telemetry,"
+                    "gen_ai.system=ollama,"
+                    "gen_ai.operation.name=chat,"
+                    "gen_ai.request.model=llama3.2:latest,"
+                    f"gen_ai.application.name={service_name},"
+                    f"gen.ai.environment={service_namespace},"
+                    "gen_ai_app=true,"
+                    "openlit=dev-ai,"
+                    "ai.model.provider=meta,"
+                    "ai.workload.type=inference"
+                )
 
             # Ensure ollama library is imported before OpenLit initialization for proper detection
             try:
