@@ -833,15 +833,19 @@ class ChatInterface:
                 k8s_node_name = os.environ.get("K8S_NODE_NAME", "unknown-node")
 
                 logger.info("SUSE Observability Kubernetes Integration:")
-                logger.info("  - k8s.namespace.name: ai-compare-otel")
+                # Set OpenTelemetry service name environment variable before logging
+                service_name = os.getenv("OTEL_SERVICE_NAME", "ai-compare")
+                service_namespace = os.getenv("OTEL_SERVICE_NAMESPACE", "ai-compare")
+                
+                logger.info(f"  - k8s.namespace.name: {service_namespace}")
                 logger.info(f"  - k8s.pod.name: {k8s_pod_name}")
                 logger.info(f"  - service.instance.id: {k8s_pod_uid}")
-
-            # Set OpenTelemetry service name environment variable before OpenLit initialization
-            # This ensures SUSE Observability detects it as a GenAI service
-            # Use environment variable overrides if available, otherwise use defaults
-            service_name = os.getenv("OTEL_SERVICE_NAME", "ai-compare")
-            service_namespace = os.getenv("OTEL_SERVICE_NAMESPACE", "ai-compare")
+            else:
+                # Set OpenTelemetry service name environment variable before OpenLit initialization
+                # This ensures SUSE Observability detects it as a GenAI service
+                # Use environment variable overrides if available, otherwise use defaults
+                service_name = os.getenv("OTEL_SERVICE_NAME", "ai-compare")
+                service_namespace = os.getenv("OTEL_SERVICE_NAMESPACE", "ai-compare")
 
             logger.info("🔧 OpenTelemetry Configuration:")
             logger.info(f"  - OTEL_SERVICE_NAME: {service_name}")
@@ -924,13 +928,13 @@ class ChatInterface:
                         "ai.workload.type": "inference",
                         "ai.framework": "ollama",
                         # Service identification
-                        "service.name": "ai-compare-genai-app",
+                        "service.name": service_name,
                         "service.version": "1.0.0",
-                        "service.namespace": "ai-compare-otel",
-                        "deployment.environment": "ai-compare-otel",
+                        "service.namespace": service_namespace,
+                        "deployment.environment": service_namespace,
                         # Kubernetes-specific attributes for SUSE Observability detection
                         "k8s.cluster.name": "dev-ai",
-                        "k8s.namespace.name": "ai-compare-otel",
+                        "k8s.namespace.name": service_namespace,
                         "k8s.deployment.name": "ai-compare-otel-ai-compare-opentelemetry-app",
                         "k8s.container.name": "app",
                         "k8s.pod.name": k8s_pod_name,
