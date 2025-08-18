@@ -88,6 +88,13 @@ spec:
               value: "{{ .Values.aiCompare.observability.modelMetrics }}"
             - name: TRACE_REQUESTS_ENABLED
               value: "{{ .Values.aiCompare.observability.traceRequests }}"
+            # Cost calculation configuration
+            - name: GENAI_MODEL_COST_PER_TOKEN
+              value: "0.0001"
+            - name: GENAI_COST_CURRENCY
+              value: "USD"
+            - name: GENAI_USAGE_TRACKING
+              value: "true"
             # Model configuration for demo
             - name: MODEL_CONFIG
               valueFrom:
@@ -127,7 +134,7 @@ spec:
               value: "30"
             # OpenTelemetry resource attributes for application grouping
             - name: OTEL_RESOURCE_ATTRIBUTES
-              value: "service.name=ai-compare,service.namespace={{ .Release.Namespace }},service.version=1.0.0,application.name=ai-compare,application.version=1.0.0,application.component=backend,genai.application.name=ai-compare,genai.application.type=chat-application,genai.framework=gradio-ollama,ai.application.category=conversational-ai,deployment.environment={{ .Release.Namespace }}"
+              value: "service.name=ai-compare,service.namespace={{ .Release.Namespace }},service.version=1.0.0,service.instance.id=backend,component=backend,genai.application.name=ai-compare,genai.system.name=ai-compare,genai.operation.name=chat-application,genai.model.name=llama3.2,genai.request.model=llama3.2,deployment.environment={{ .Release.Namespace }}"
             # OpenTelemetry service configuration overrides
             {{- if .Values.aiCompare.env }}
             {{- range $key, $value := .Values.aiCompare.env }}
