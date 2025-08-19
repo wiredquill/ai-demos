@@ -1338,7 +1338,7 @@ class ChatInterface:
                 span.set_attribute("gen_ai.application.name", "ai-compare")
                 span.set_attribute("ai.model.provider", "meta")
                 span.set_attribute("ai.workload.type", "inference")
-                span.set_attribute("service.name", "ai-compare-genai-app")
+                span.set_attribute("service.name", os.environ.get("OTEL_SERVICE_NAME", "ai-compare"))
 
                 try:
                     # Use ollama Python SDK
