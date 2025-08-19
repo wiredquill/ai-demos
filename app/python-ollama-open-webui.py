@@ -802,10 +802,18 @@ class ChatInterface:
             finally:
                 sock.close()
 
+            # Set OpenTelemetry service name environment variable before OpenLit initialization
+            # This ensures SUSE Observability detects it as a GenAI service
+            # Use environment variable overrides if available, otherwise use defaults
+            service_name = os.getenv("OTEL_SERVICE_NAME", "ai-compare")
+            service_namespace = os.getenv("OTEL_SERVICE_NAMESPACE", "ai-compare")
+
             # Initialize OpenLit with enhanced GenAI configuration
             openlit_config = {
                 "otlp_endpoint": otlp_endpoint,
                 "collect_gpu_stats": collect_gpu_stats,
+                "application_name": service_name,  # Ensure OpenLit uses correct service name
+                "environment": service_namespace,  # Set environment for proper categorization
             }
 
             # Add enhanced GenAI observability features if enabled
@@ -836,7 +844,7 @@ class ChatInterface:
                 # Set OpenTelemetry service name environment variable before logging
                 service_name = os.getenv("OTEL_SERVICE_NAME", "ai-compare")
                 service_namespace = os.getenv("OTEL_SERVICE_NAMESPACE", "ai-compare")
-                
+
                 logger.info(f"  - k8s.namespace.name: {service_namespace}")
                 logger.info(f"  - k8s.pod.name: {k8s_pod_name}")
                 logger.info(f"  - service.instance.id: {k8s_pod_uid}")
