@@ -6,7 +6,7 @@ entries:
       licenses: MIT
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-08-18T18:52:20.484984-07:00"
+    created: "2025-08-18T19:21:06.683997-07:00"
     description: AI Compare - Side-by-side AI response comparison platform. Features
       Ollama, Open WebUI, pipelines, and custom chat interface. Built on upstream
       open-source components with GPU support, observability integration, and security
@@ -41,7 +41,44 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-08-18T18:52:20.489109-07:00"
+    created: "2025-08-18T19:21:06.69187-07:00"
+    description: AI Compare OpenTelemetry Edition - Advanced observability-focused
+      AI response comparison platform. Features comprehensive GenAI telemetry, token-level
+      cost tracking, model performance monitoring, and deep integration with SUSE
+      Observability.
+    digest: 12da2608e5673ac8b5cf023f020fb889f3235e1f15fe985eda6ac498169e207e
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - ollama
+    - machine-learning
+    - opentelemetry
+    - observability
+    - telemetry
+    - monitoring
+    - genai
+    - tokens
+    - cost-tracking
+    - demo
+    maintainers:
+    - email: noreply@anthropic.com
+      name: AI Compare OpenTelemetry Team
+    name: ai-compare-opentelemetry
+    sources:
+    - https://github.com/wiredquill/ai-demos
+    type: application
+    urls:
+    - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ai-compare-opentelemetry-0.1.311.tgz
+    version: 0.1.311
+  - annotations:
+      category: AI/ML
+      licenses: MIT
+      observability.suse.com/compatible: "true"
+      opentelemetry.io/instrumented: "true"
+    apiVersion: v2
+    appVersion: 1.0.0
+    created: "2025-08-18T19:21:06.690926-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -78,7 +115,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-08-18T18:52:20.488111-07:00"
+    created: "2025-08-18T19:21:06.687674-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -115,7 +152,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-08-18T18:52:20.486853-07:00"
+    created: "2025-08-18T19:21:06.686234-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -153,7 +190,7 @@ entries:
       suse.com/certified: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-08-18T18:52:20.490101-07:00"
+    created: "2025-08-18T19:21:06.692822-07:00"
     description: AI Compare SUSE Edition - Enterprise AI response comparison platform
       optimized for SUSE environments. Features SUSE BCI images, native SUSE Observability
       integration, NeuVector security demos, and full SUSE cloud-native stack compatibility.
@@ -188,7 +225,7 @@ entries:
       suse.com/registry: SUSE Application Collection
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-08-18T18:52:20.495103-07:00"
+    created: "2025-08-18T19:21:06.69468-07:00"
     dependencies:
     - name: ollama
       repository: oci://dp.apps.rancher.io/charts
@@ -216,7 +253,7 @@ entries:
       category: MachineLearning
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-08-18T18:52:20.496004-07:00"
+    created: "2025-08-18T19:21:06.695521-07:00"
     dependencies:
     - name: ollama
       repository: https://helm.otwld.com/
@@ -237,4 +274,4 @@ entries:
     urls:
     - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ollama-upstream-0.1.0.tgz
     version: 0.1.0
-generated: "2025-08-18T18:52:20.48312-07:00"
+generated: "2025-08-18T19:21:06.682232-07:00"
