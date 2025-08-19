@@ -20,7 +20,7 @@ ollama:
     type: "nvidia" # Options: "nvidia", "apple"
   # -- OpenTelemetry observability for Ollama (disabled - using direct app instrumentation instead)
   observability:
-    enabled: false  # Disabled to avoid sidecar collector conflicts, using AI Compare app instrumentation
+    enabled: false # Disabled to avoid sidecar collector conflicts, using AI Compare app instrumentation
     otlpEndpoint: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
   # -- Resource allocation for the main Ollama container
   resources:
@@ -90,7 +90,7 @@ pipelines:
 aiCompare:
   image:
     repository: ghcr.io/wiredquill/ai-demos-suse
-    tag: "69e2f688"
+    tag: "b370929"
   service:
     port: 7860
     type: NodePort
@@ -113,13 +113,13 @@ aiCompare:
   observability:
     enabled: true # Enabled by default for comprehensive GenAI telemetry and cost tracking
     otlpEndpoint: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
-    collectGpuStats: true  # Enable GPU stats for complete hardware monitoring
+    collectGpuStats: true # Enable GPU stats for complete hardware monitoring
     schedule: "*/5 * * * *"
     # Enhanced GenAI observability settings
-    tokenTracking: true     # Track token usage per model and request
-    costTracking: true      # Enable cost calculations per model
-    modelMetrics: true      # Detailed model performance metrics
-    traceRequests: true     # Full request tracing through the stack
+    tokenTracking: true # Track token usage per model and request
+    costTracking: true # Enable cost calculations per model
+    modelMetrics: true # Detailed model performance metrics
+    traceRequests: true # Full request tracing through the stack
   # HTTP API server for observable traffic generation
   httpApi:
     enabled: true
