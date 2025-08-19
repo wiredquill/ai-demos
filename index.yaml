@@ -31,7 +31,7 @@ entries:
     - https://github.com/wiredquill/ai-demos
     type: application
     urls:
-    - https://github.com/wiredquill/ai-demos/releases/download/charts/ai-compare-0.1.306.tgz
+    - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ai-compare-0.1.306.tgz
     version: 0.1.306
   ai-compare-opentelemetry:
   - annotations:
@@ -69,7 +69,7 @@ entries:
     - https://github.com/wiredquill/ai-demos
     type: application
     urls:
-    - https://github.com/wiredquill/ai-demos/releases/download/charts/ai-compare-opentelemetry-0.1.310.tgz
+    - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ai-compare-opentelemetry-0.1.310.tgz
     version: 0.1.310
   - annotations:
       category: AI/ML
@@ -106,7 +106,7 @@ entries:
     - https://github.com/wiredquill/ai-demos
     type: application
     urls:
-    - https://github.com/wiredquill/ai-demos/releases/download/charts/ai-compare-opentelemetry-0.1.309.tgz
+    - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ai-compare-opentelemetry-0.1.309.tgz
     version: 0.1.309
   - annotations:
       category: AI/ML
@@ -143,7 +143,7 @@ entries:
     - https://github.com/wiredquill/ai-demos
     type: application
     urls:
-    - https://github.com/wiredquill/ai-demos/releases/download/charts/ai-compare-opentelemetry-0.1.304.tgz
+    - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ai-compare-opentelemetry-0.1.304.tgz
     version: 0.1.304
   ai-compare-suse:
   - annotations:
@@ -179,7 +179,7 @@ entries:
     - https://github.com/wiredquill/ai-demos
     type: application
     urls:
-    - https://github.com/wiredquill/ai-demos/releases/download/charts/ai-compare-suse-0.1.306.tgz
+    - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ai-compare-suse-0.1.306.tgz
     version: 0.1.306
   ollama-suse:
   - annotations:
@@ -209,7 +209,7 @@ entries:
     name: ollama-suse
     type: application
     urls:
-    - https://github.com/wiredquill/ai-demos/releases/download/charts/ollama-suse-0.1.0.tgz
+    - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ollama-suse-0.1.0.tgz
     version: 0.1.0
   ollama-upstream:
   - annotations:
@@ -235,6 +235,6 @@ entries:
     name: ollama-upstream
     type: application
     urls:
-    - https://github.com/wiredquill/ai-demos/releases/download/charts/ollama-upstream-0.1.0.tgz
+    - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ollama-upstream-0.1.0.tgz
     version: 0.1.0
 generated: "2025-08-18T18:06:00.757224-07:00"
