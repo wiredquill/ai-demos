@@ -815,6 +815,19 @@ class ChatInterface:
                 "application_name": service_name,  # Ensure OpenLit uses correct service name
                 "environment": service_namespace,  # Set environment for proper categorization
             }
+            
+            # Add cost tracking configuration if enabled
+            if cost_tracking:
+                # OpenLit cost tracking configuration
+                pricing_config = os.getenv("OPENLIT_PRICING_JSON")
+                if pricing_config:
+                    import json
+                    try:
+                        pricing_data = json.loads(pricing_config)
+                        openlit_config["pricing_info"] = pricing_data
+                        logger.info(f"Added pricing configuration for {len(pricing_data)} models")
+                    except json.JSONDecodeError:
+                        logger.warning("Failed to parse OPENLIT_PRICING_JSON, using default pricing")
 
             # Add enhanced GenAI observability features if enabled
             if token_tracking or cost_tracking or model_metrics or trace_requests:
