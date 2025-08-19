@@ -1403,7 +1403,7 @@ class ChatInterface:
                             # Calculate costs
                             total_cost = (input_tokens * input_cost_per_token) + (output_tokens * output_cost_per_token) + request_cost
                             
-                            # Set cost tracking attributes
+                            # Set cost tracking attributes (both experimental GenAI and fallback)
                             span.set_attribute("gen_ai.usage.input_tokens", int(input_tokens))
                             span.set_attribute("gen_ai.usage.output_tokens", int(output_tokens))
                             span.set_attribute("gen_ai.usage.total_tokens", int(input_tokens + output_tokens))
@@ -1411,6 +1411,22 @@ class ChatInterface:
                             span.set_attribute("gen_ai.cost.output", round(output_tokens * output_cost_per_token, 6))
                             span.set_attribute("gen_ai.cost.total", round(total_cost, 6))
                             span.set_attribute("gen_ai.cost.currency", "USD")
+                            
+                            # Fallback attributes for older collectors
+                            span.set_attribute("llm.usage.input_tokens", int(input_tokens))
+                            span.set_attribute("llm.usage.output_tokens", int(output_tokens))
+                            span.set_attribute("llm.usage.total_tokens", int(input_tokens + output_tokens))
+                            span.set_attribute("llm.cost.input", round(input_tokens * input_cost_per_token, 6))
+                            span.set_attribute("llm.cost.output", round(output_tokens * output_cost_per_token, 6))
+                            span.set_attribute("llm.cost.total", round(total_cost, 6))
+                            span.set_attribute("llm.cost.currency", "USD")
+                            
+                            # Generic cost attributes for maximum compatibility
+                            span.set_attribute("cost.total", round(total_cost, 6))
+                            span.set_attribute("cost.currency", "USD")
+                            span.set_attribute("tokens.input", int(input_tokens))
+                            span.set_attribute("tokens.output", int(output_tokens))
+                            span.set_attribute("tokens.total", int(input_tokens + output_tokens))
                             
                             logger.info(f"GenAI cost tracking - Tokens: {int(input_tokens + output_tokens)}, Cost: ${round(total_cost, 6)}")
                             
