@@ -6,7 +6,7 @@ entries:
       licenses: MIT
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-08-18T18:06:00.758629-07:00"
+    created: "2025-08-18T18:52:20.484984-07:00"
     description: AI Compare - Side-by-side AI response comparison platform. Features
       Ollama, Open WebUI, pipelines, and custom chat interface. Built on upstream
       open-source components with GPU support, observability integration, and security
@@ -41,12 +41,12 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-08-18T18:06:00.762662-07:00"
+    created: "2025-08-18T18:52:20.489109-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
       Observability.
-    digest: d769d17decf39a901f2638111c9eef0dacc505af7558009b8abf8ccfeb399ddf
+    digest: d1023063ec74cf638d55d123c4122e58395d52283c4efccdab3f49b2ad58b18c
     home: https://github.com/wiredquill/ai-demos
     keywords:
     - ai
@@ -78,7 +78,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-08-18T18:06:00.761803-07:00"
+    created: "2025-08-18T18:52:20.488111-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -115,7 +115,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-08-18T18:06:00.760674-07:00"
+    created: "2025-08-18T18:52:20.486853-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -153,7 +153,7 @@ entries:
       suse.com/certified: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-08-18T18:06:00.76353-07:00"
+    created: "2025-08-18T18:52:20.490101-07:00"
     description: AI Compare SUSE Edition - Enterprise AI response comparison platform
       optimized for SUSE environments. Features SUSE BCI images, native SUSE Observability
       integration, NeuVector security demos, and full SUSE cloud-native stack compatibility.
@@ -188,7 +188,7 @@ entries:
       suse.com/registry: SUSE Application Collection
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-08-18T18:06:00.766537-07:00"
+    created: "2025-08-18T18:52:20.495103-07:00"
     dependencies:
     - name: ollama
       repository: oci://dp.apps.rancher.io/charts
@@ -216,7 +216,7 @@ entries:
       category: MachineLearning
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-08-18T18:06:00.76734-07:00"
+    created: "2025-08-18T18:52:20.496004-07:00"
     dependencies:
     - name: ollama
       repository: https://helm.otwld.com/
@@ -237,4 +237,4 @@ entries:
     urls:
     - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ollama-upstream-0.1.0.tgz
     version: 0.1.0
-generated: "2025-08-18T18:06:00.757224-07:00"
+generated: "2025-08-18T18:52:20.48312-07:00"
