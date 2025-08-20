@@ -1428,6 +1428,18 @@ class ChatInterface:
                             span.set_attribute("tokens.output", int(output_tokens))
                             span.set_attribute("tokens.total", int(input_tokens + output_tokens))
                             
+                            # LangFuse/SUSE Observability specific attributes
+                            span.set_attribute("gen_ai.usage.cost", round(total_cost, 6))
+                            span.set_attribute("langfuse.observation.cost_details", f'{{"total": {round(total_cost, 6)}, "input": {round(input_tokens * input_cost_per_token, 6)}, "output": {round(output_tokens * output_cost_per_token, 6)}}}')
+                            span.set_attribute("langfuse.observation.usage_details", f'{{"input_tokens": {int(input_tokens)}, "output_tokens": {int(output_tokens)}, "total_tokens": {int(input_tokens + output_tokens)}}}')
+                            
+                            # SUSE AI Observability specific attributes
+                            span.set_attribute("ai.token.usage.input", int(input_tokens))
+                            span.set_attribute("ai.token.usage.output", int(output_tokens))
+                            span.set_attribute("ai.token.usage.total", int(input_tokens + output_tokens))
+                            span.set_attribute("ai.cost.total", round(total_cost, 6))
+                            span.set_attribute("ai.cost.currency", "USD")
+                            
                             logger.info(f"GenAI cost tracking - Tokens: {int(input_tokens + output_tokens)}, Cost: ${round(total_cost, 6)}")
                             
                         except Exception as cost_e:
