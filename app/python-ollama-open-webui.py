@@ -1326,6 +1326,7 @@ class ChatInterface:
         # Manual GenAI telemetry instrumentation for SUSE Observability
         try:
             import os
+
             from opentelemetry import trace
 
             tracer = trace.get_tracer("ollama-genai-chat")
@@ -1387,22 +1388,24 @@ class ChatInterface:
                         span.set_attribute("gen_ai.response.finish_reason", "stop")
                         content = response["message"].get("content", "")
                         span.set_attribute("gen_ai.response.length", len(content))
-                        
+
                         # Add cost tracking attributes for SUSE Observability
                         try:
                             # Calculate input tokens (approximate)
                             input_text = " ".join([msg.get("content", "") for msg in messages])
                             input_tokens = max(1, len(input_text.split()) * 1.3)  # Rough token estimate
                             output_tokens = max(1, len(content.split()) * 1.3)  # Rough token estimate
-                            
+
                             # Get pricing from environment
                             input_cost_per_token = float(os.environ.get("GENAI_TOKEN_COST_INPUT", "0.0001"))
                             output_cost_per_token = float(os.environ.get("GENAI_TOKEN_COST_OUTPUT", "0.0002"))
                             request_cost = float(os.environ.get("GENAI_REQUEST_COST", "0.001"))
-                            
+
                             # Calculate costs
-                            total_cost = (input_tokens * input_cost_per_token) + (output_tokens * output_cost_per_token) + request_cost
-                            
+                            total_cost = (
+                                (input_tokens * input_cost_per_token) + (output_tokens * output_cost_per_token) + request_cost
+                            )
+
                             # Set cost tracking attributes (both experimental GenAI and fallback)
                             span.set_attribute("gen_ai.usage.input_tokens", int(input_tokens))
                             span.set_attribute("gen_ai.usage.output_tokens", int(output_tokens))
@@ -1411,7 +1414,7 @@ class ChatInterface:
                             span.set_attribute("gen_ai.cost.output", round(output_tokens * output_cost_per_token, 6))
                             span.set_attribute("gen_ai.cost.total", round(total_cost, 6))
                             span.set_attribute("gen_ai.cost.currency", "USD")
-                            
+
                             # Fallback attributes for older collectors
                             span.set_attribute("llm.usage.input_tokens", int(input_tokens))
                             span.set_attribute("llm.usage.output_tokens", int(output_tokens))
@@ -1420,28 +1423,100 @@ class ChatInterface:
                             span.set_attribute("llm.cost.output", round(output_tokens * output_cost_per_token, 6))
                             span.set_attribute("llm.cost.total", round(total_cost, 6))
                             span.set_attribute("llm.cost.currency", "USD")
-                            
+
                             # Generic cost attributes for maximum compatibility
                             span.set_attribute("cost.total", round(total_cost, 6))
                             span.set_attribute("cost.currency", "USD")
                             span.set_attribute("tokens.input", int(input_tokens))
                             span.set_attribute("tokens.output", int(output_tokens))
                             span.set_attribute("tokens.total", int(input_tokens + output_tokens))
-                            
+
                             # LangFuse/SUSE Observability specific attributes
                             span.set_attribute("gen_ai.usage.cost", round(total_cost, 6))
-                            span.set_attribute("langfuse.observation.cost_details", f'{{"total": {round(total_cost, 6)}, "input": {round(input_tokens * input_cost_per_token, 6)}, "output": {round(output_tokens * output_cost_per_token, 6)}}}')
-                            span.set_attribute("langfuse.observation.usage_details", f'{{"input_tokens": {int(input_tokens)}, "output_tokens": {int(output_tokens)}, "total_tokens": {int(input_tokens + output_tokens)}}}')
-                            
+                            span.set_attribute(
+                                "langfuse.observation.cost_details",
+                                f'{{"total": {round(total_cost, 6)}, "input": {round(input_tokens * input_cost_per_token, 6)}, "output": {round(output_tokens * output_cost_per_token, 6)}}}',
+                            )
+                            span.set_attribute(
+                                "langfuse.observation.usage_details",
+                                f'{{"input_tokens": {int(input_tokens)}, "output_tokens": {int(output_tokens)}, "total_tokens": {int(input_tokens + output_tokens)}}}',
+                            )
+
                             # SUSE AI Observability specific attributes
                             span.set_attribute("ai.token.usage.input", int(input_tokens))
                             span.set_attribute("ai.token.usage.output", int(output_tokens))
                             span.set_attribute("ai.token.usage.total", int(input_tokens + output_tokens))
                             span.set_attribute("ai.cost.total", round(total_cost, 6))
                             span.set_attribute("ai.cost.currency", "USD")
-                            
-                            logger.info(f"GenAI cost tracking - Tokens: {int(input_tokens + output_tokens)}, Cost: ${round(total_cost, 6)}")
-                            
+
+                            # Add OpenTelemetry metrics for SUSE Observability cost dashboards
+                            try:
+                                from opentelemetry import metrics
+
+                                meter = metrics.get_meter("genai-cost-tracking", "1.0.0")
+
+                                # Create metrics instruments for cost tracking
+                                token_counter = meter.create_counter(
+                                    name="gen_ai.client.token.usage",
+                                    description="Number of tokens used in GenAI operations",
+                                    unit="token",
+                                )
+
+                                cost_histogram = meter.create_histogram(
+                                    name="gen_ai.client.operation.cost",
+                                    description="Cost of GenAI operations in USD",
+                                    unit="USD",
+                                )
+
+                                # Record token usage metrics with proper attributes
+                                token_counter.add(
+                                    int(input_tokens),
+                                    {
+                                        "gen_ai.operation.name": "chat",
+                                        "gen_ai.request.model": model,
+                                        "gen_ai.system": "ollama",
+                                        "gen_ai.token.type": "input",
+                                        "service.name": os.environ.get("OTEL_SERVICE_NAME", "ai-compare"),
+                                        "service.namespace": os.environ.get("KUBERNETES_NAMESPACE", "default"),
+                                    },
+                                )
+
+                                token_counter.add(
+                                    int(output_tokens),
+                                    {
+                                        "gen_ai.operation.name": "chat",
+                                        "gen_ai.request.model": model,
+                                        "gen_ai.system": "ollama",
+                                        "gen_ai.token.type": "output",
+                                        "service.name": os.environ.get("OTEL_SERVICE_NAME", "ai-compare"),
+                                        "service.namespace": os.environ.get("KUBERNETES_NAMESPACE", "default"),
+                                    },
+                                )
+
+                                # Record cost metrics
+                                cost_histogram.record(
+                                    round(total_cost, 6),
+                                    {
+                                        "gen_ai.operation.name": "chat",
+                                        "gen_ai.request.model": model,
+                                        "gen_ai.system": "ollama",
+                                        "gen_ai.cost.currency": "USD",
+                                        "service.name": os.environ.get("OTEL_SERVICE_NAME", "ai-compare"),
+                                        "service.namespace": os.environ.get("KUBERNETES_NAMESPACE", "default"),
+                                    },
+                                )
+
+                                logger.info(
+                                    f"GenAI metrics recorded - Tokens: {int(input_tokens + output_tokens)}, Cost: ${round(total_cost, 6)}"
+                                )
+
+                            except Exception as metrics_e:
+                                logger.warning(f"Failed to record OpenTelemetry metrics: {metrics_e}")
+
+                            logger.info(
+                                f"GenAI cost tracking - Tokens: {int(input_tokens + output_tokens)}, Cost: ${round(total_cost, 6)}"
+                            )
+
                         except Exception as cost_e:
                             logger.warning(f"Failed to add cost tracking attributes: {cost_e}")
 
