@@ -818,17 +818,13 @@ class ChatInterface:
 
             # Add cost tracking configuration if enabled
             if cost_tracking:
-                # OpenLit cost tracking configuration
+                # NOTE: OpenLit pricing_info parameter is not supported in current version
+                # Using manual cost tracking attributes instead (see chat_with_ollama method)
                 pricing_config = os.getenv("OPENLIT_PRICING_JSON")
                 if pricing_config:
-                    import json
-
-                    try:
-                        pricing_data = json.loads(pricing_config)
-                        openlit_config["pricing_info"] = pricing_data
-                        logger.info(f"Added pricing configuration for {len(pricing_data)} models")
-                    except json.JSONDecodeError:
-                        logger.warning("Failed to parse OPENLIT_PRICING_JSON, using default pricing")
+                    logger.info(f"Cost tracking enabled with custom pricing configuration (manual mode)")
+                else:
+                    logger.info(f"Cost tracking enabled with default pricing (manual mode)")
 
             # Add enhanced GenAI observability features if enabled
             if token_tracking or cost_tracking or model_metrics or trace_requests:

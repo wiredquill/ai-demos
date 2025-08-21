@@ -90,7 +90,7 @@ pipelines:
 aiCompare:
   image:
     repository: ghcr.io/wiredquill/ai-demos-suse
-    tag: "openlit-1.28.0"
+    tag: "manual-cost-final"
   service:
     port: 7860
     type: NodePort
