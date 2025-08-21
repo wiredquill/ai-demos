@@ -1,0 +1,586 @@
+#0 building with "rancher-desktop" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.suse
+#1 transferring dockerfile: 4.05kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for registry.suse.com/bci/python:3.11
+#2 DONE 5.5s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B 0.0s done
+#3 DONE 0.0s
+
+#4 [python-builder 1/7] FROM registry.suse.com/bci/python:3.11@sha256:b065d5944d3e4db7ec5c6384a349d3cd1389683344314f8bbd207dba3ed0d9f1
+#4 DONE 0.0s
+
+#5 [runtime 2/8] RUN zypper refresh &&     zypper install -y --no-confirm         ca-certificates         bash         sudo &&     zypper clean -a
+#5 CACHED
+
+#6 [system-builder 3/3] RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" &&     chmod +x kubectl &&     mv kubectl /usr/local/bin/kubectl
+#6 CACHED
+
+#7 [system-builder 2/3] RUN zypper refresh &&     zypper install -y --no-confirm         ca-certificates         gzip         tar         curl         sudo         bash         git &&     zypper clean -a
+#7 CACHED
+
+#8 [runtime 3/8] COPY --from=system-builder /usr/local/bin/kubectl /usr/local/bin/kubectl
+#8 CACHED
+
+#9 [internal] load build context
+#9 transferring context: 847B done
+#9 DONE 0.0s
+
+#10 [python-builder 4/7] RUN zypper refresh &&     zypper install -y --no-confirm         ca-certificates         curl         gcc         python311-devel &&     zypper clean -a
+#10 CACHED
+
+#11 [python-builder 5/7] RUN python3 -m venv /opt/venv
+#11 CACHED
+
+#12 [python-builder 3/7] COPY --from=system-builder /etc/zypp/repos.d/ /etc/zypp/repos.d/
+#12 CACHED
+
+#13 [python-builder 2/7] COPY --from=system-builder /usr/local/bin/kubectl /usr/local/bin/kubectl
+#13 CACHED
+
+#14 [python-builder 6/7] COPY app/requirements.txt /tmp/requirements.txt
+#14 CACHED
+
+#15 [python-builder 7/7] RUN pip install --no-cache-dir --upgrade pip &&     pip install --no-cache-dir --no-compile -r /tmp/requirements.txt
+#15 2.329 Requirement already satisfied: pip in /opt/venv/lib64/python3.11/site-packages (24.0)
+#15 3.838 Collecting pip
+#15 4.968   Downloading pip-25.2-py3-none-any.whl.metadata (4.7 kB)
+#15 5.005 Downloading pip-25.2-py3-none-any.whl (1.8 MB)
+#15 5.186    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 13.7 MB/s eta 0:00:00
+#15 5.440 Installing collected packages: pip
+#15 5.440   Attempting uninstall: pip
+#15 5.448     Found existing installation: pip 24.0
+#15 5.635     Uninstalling pip-24.0:
+#15 6.055       Successfully uninstalled pip-24.0
+#15 9.940 Successfully installed pip-25.2
+#15 14.67 Collecting gradio>=4.0.0 (from -r /tmp/requirements.txt (line 1))
+#15 15.85   Downloading gradio-5.43.1-py3-none-any.whl.metadata (16 kB)
+#15 16.00 Collecting requests (from -r /tmp/requirements.txt (line 2))
+#15 16.03   Downloading requests-2.32.5-py3-none-any.whl.metadata (4.9 kB)
+#15 16.20 Collecting openlit>=1.30.0 (from -r /tmp/requirements.txt (line 3))
+#15 16.23   Downloading openlit-1.35.0-py3-none-any.whl.metadata (24 kB)
+#15 16.40 Collecting ollama==0.3.3 (from -r /tmp/requirements.txt (line 4))
+#15 16.43   Downloading ollama-0.3.3-py3-none-any.whl.metadata (3.8 kB)
+#15 16.52 Collecting httpx<0.28.0,>=0.27.0 (from -r /tmp/requirements.txt (line 5))
+#15 16.55   Downloading httpx-0.27.2-py3-none-any.whl.metadata (7.1 kB)
+#15 16.63 Collecting flask (from -r /tmp/requirements.txt (line 6))
+#15 16.67   Downloading flask-3.1.2-py3-none-any.whl.metadata (3.2 kB)
+#15 16.97 Collecting psutil (from -r /tmp/requirements.txt (line 7))
+#15 17.00   Downloading psutil-7.0.0-cp36-abi3-manylinux_2_12_x86_64.manylinux2010_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (22 kB)
+#15 17.11 Collecting opentelemetry-api (from -r /tmp/requirements.txt (line 8))
+#15 17.14   Downloading opentelemetry_api-1.36.0-py3-none-any.whl.metadata (1.5 kB)
+#15 17.22 Collecting opentelemetry-sdk (from -r /tmp/requirements.txt (line 9))
+#15 17.25   Downloading opentelemetry_sdk-1.36.0-py3-none-any.whl.metadata (1.5 kB)
+#15 17.42 Collecting opentelemetry-instrumentation-requests (from -r /tmp/requirements.txt (line 10))
+#15 17.45   Downloading opentelemetry_instrumentation_requests-0.57b0-py3-none-any.whl.metadata (2.6 kB)
+#15 17.55 Collecting anyio (from httpx<0.28.0,>=0.27.0->-r /tmp/requirements.txt (line 5))
+#15 17.58   Downloading anyio-4.10.0-py3-none-any.whl.metadata (4.0 kB)
+#15 17.67 Collecting certifi (from httpx<0.28.0,>=0.27.0->-r /tmp/requirements.txt (line 5))
+#15 17.70   Downloading certifi-2025.8.3-py3-none-any.whl.metadata (2.4 kB)
+#15 17.79 Collecting httpcore==1.* (from httpx<0.28.0,>=0.27.0->-r /tmp/requirements.txt (line 5))
+#15 17.89   Downloading httpcore-1.0.9-py3-none-any.whl.metadata (21 kB)
+#15 17.96 Collecting idna (from httpx<0.28.0,>=0.27.0->-r /tmp/requirements.txt (line 5))
+#15 17.99   Downloading idna-3.10-py3-none-any.whl.metadata (10 kB)
+#15 18.04 Collecting sniffio (from httpx<0.28.0,>=0.27.0->-r /tmp/requirements.txt (line 5))
+#15 18.07   Downloading sniffio-1.3.1-py3-none-any.whl.metadata (3.9 kB)
+#15 18.11 Collecting h11>=0.16 (from httpcore==1.*->httpx<0.28.0,>=0.27.0->-r /tmp/requirements.txt (line 5))
+#15 18.14   Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+#15 18.19 Collecting aiofiles<25.0,>=22.0 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 18.22   Downloading aiofiles-24.1.0-py3-none-any.whl.metadata (10 kB)
+#15 18.37 Collecting brotli>=1.1.0 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 18.44   Downloading Brotli-1.1.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (5.5 kB)
+#15 18.64 Collecting fastapi<1.0,>=0.115.2 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 18.66   Downloading fastapi-0.116.1-py3-none-any.whl.metadata (28 kB)
+#15 18.73 Collecting ffmpy (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 18.76   Downloading ffmpy-0.6.1-py3-none-any.whl.metadata (2.9 kB)
+#15 18.86 Collecting gradio-client==1.12.1 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 18.96   Downloading gradio_client-1.12.1-py3-none-any.whl.metadata (7.1 kB)
+#15 19.03 Collecting groovy~=0.1 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 19.06   Downloading groovy-0.1.2-py3-none-any.whl.metadata (6.1 kB)
+#15 19.27 Collecting huggingface-hub<1.0,>=0.33.5 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 19.29   Downloading huggingface_hub-0.34.4-py3-none-any.whl.metadata (14 kB)
+#15 19.53 Collecting jinja2<4.0 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 19.56   Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+#15 19.79 Collecting markupsafe<4.0,>=2.0 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 19.82   Downloading MarkupSafe-3.0.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.0 kB)
+#15 20.74 Collecting numpy<3.0,>=1.0 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 20.77   Downloading numpy-2.3.2-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (62 kB)
+#15 22.12 Collecting orjson~=3.0 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 22.15   Downloading orjson-3.11.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (1.2 kB)
+#15 22.22 Collecting packaging (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 22.25   Downloading packaging-25.0-py3-none-any.whl.metadata (3.3 kB)
+#15 22.77 Collecting pandas<3.0,>=1.0 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 22.80   Downloading pandas-2.3.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (91 kB)
+#15 23.88 Collecting pillow<12.0,>=8.0 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 23.92   Downloading pillow-11.3.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (9.0 kB)
+#15 24.47 Collecting pydantic<2.12,>=2.0 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 24.50   Downloading pydantic-2.11.7-py3-none-any.whl.metadata (67 kB)
+#15 24.58 Collecting pydub (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 24.61   Downloading pydub-0.25.1-py2.py3-none-any.whl.metadata (1.4 kB)
+#15 24.75 Collecting python-multipart>=0.0.18 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 24.77   Downloading python_multipart-0.0.20-py3-none-any.whl.metadata (1.8 kB)
+#15 24.94 Collecting pyyaml<7.0,>=5.0 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 24.96   Downloading PyYAML-6.0.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (2.1 kB)
+#15 26.58 Collecting ruff>=0.9.3 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 26.60   Downloading ruff-0.12.9-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (25 kB)
+#15 26.64 Collecting safehttpx<0.2.0,>=0.1.6 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 26.67   Downloading safehttpx-0.1.6-py3-none-any.whl.metadata (4.2 kB)
+#15 26.73 Collecting semantic-version~=2.0 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 26.82   Downloading semantic_version-2.10.0-py2.py3-none-any.whl.metadata (9.7 kB)
+#15 26.95 Collecting starlette<1.0,>=0.40.0 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 26.97   Downloading starlette-0.47.2-py3-none-any.whl.metadata (6.2 kB)
+#15 27.05 Collecting tomlkit<0.14.0,>=0.12.0 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 27.08   Downloading tomlkit-0.13.3-py3-none-any.whl.metadata (2.8 kB)
+#15 27.16 Collecting typer<1.0,>=0.12 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 27.19   Downloading typer-0.16.1-py3-none-any.whl.metadata (15 kB)
+#15 27.28 Collecting typing-extensions~=4.0 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 27.34   Downloading typing_extensions-4.14.1-py3-none-any.whl.metadata (3.0 kB)
+#15 27.47 Collecting uvicorn>=0.14.0 (from gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 27.50   Downloading uvicorn-0.35.0-py3-none-any.whl.metadata (6.5 kB)
+#15 27.61 Collecting fsspec (from gradio-client==1.12.1->gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 27.64   Downloading fsspec-2025.7.0-py3-none-any.whl.metadata (12 kB)
+#15 28.24 Collecting websockets<16.0,>=10.0 (from gradio-client==1.12.1->gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 28.27   Downloading websockets-15.0.1-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.8 kB)
+#15 28.69 Collecting filelock (from huggingface-hub<1.0,>=0.33.5->gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 28.71   Downloading filelock-3.19.1-py3-none-any.whl.metadata (2.1 kB)
+#15 28.92 Collecting tqdm>=4.42.1 (from huggingface-hub<1.0,>=0.33.5->gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 28.94   Downloading tqdm-4.67.1-py3-none-any.whl.metadata (57 kB)
+#15 29.14 Collecting hf-xet<2.0.0,>=1.1.3 (from huggingface-hub<1.0,>=0.33.5->gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 29.17   Downloading hf_xet-1.1.8-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (703 bytes)
+#15 29.47 Collecting python-dateutil>=2.8.2 (from pandas<3.0,>=1.0->gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 29.49   Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+#15 29.67 Collecting pytz>=2020.1 (from pandas<3.0,>=1.0->gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 29.70   Downloading pytz-2025.2-py2.py3-none-any.whl.metadata (22 kB)
+#15 29.76 Collecting tzdata>=2022.7 (from pandas<3.0,>=1.0->gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 29.78   Downloading tzdata-2025.2-py2.py3-none-any.whl.metadata (1.4 kB)
+#15 29.83 Collecting annotated-types>=0.6.0 (from pydantic<2.12,>=2.0->gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 29.85   Downloading annotated_types-0.7.0-py3-none-any.whl.metadata (15 kB)
+#15 32.99 Collecting pydantic-core==2.33.2 (from pydantic<2.12,>=2.0->gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 33.10   Downloading pydantic_core-2.33.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.8 kB)
+#15 33.17 Collecting typing-inspection>=0.4.0 (from pydantic<2.12,>=2.0->gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 33.20   Downloading typing_inspection-0.4.1-py3-none-any.whl.metadata (2.6 kB)
+#15 33.40 Collecting click>=8.0.0 (from typer<1.0,>=0.12->gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 33.42   Downloading click-8.2.1-py3-none-any.whl.metadata (2.5 kB)
+#15 33.48 Collecting shellingham>=1.3.0 (from typer<1.0,>=0.12->gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 33.51   Downloading shellingham-1.5.4-py2.py3-none-any.whl.metadata (3.5 kB)
+#15 33.77 Collecting rich>=10.11.0 (from typer<1.0,>=0.12->gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 33.80   Downloading rich-14.1.0-py3-none-any.whl.metadata (18 kB)
+#15 34.19 Collecting charset_normalizer<4,>=2 (from requests->-r /tmp/requirements.txt (line 2))
+#15 34.23   Downloading charset_normalizer-3.4.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (36 kB)
+#15 34.39 Collecting urllib3<3,>=1.21.1 (from requests->-r /tmp/requirements.txt (line 2))
+#15 34.41   Downloading urllib3-2.5.0-py3-none-any.whl.metadata (6.5 kB)
+#15 34.61 Collecting anthropic<1.0.0,>=0.42.0 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 34.68   Downloading anthropic-0.64.0-py3-none-any.whl.metadata (27 kB)
+#15 36.13 Collecting boto3<2.0.0,>=1.34.0 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 36.24   Downloading boto3-1.40.13-py3-none-any.whl.metadata (6.7 kB)
+#15 38.00 Collecting botocore<2.0.0,>=1.34.0 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 38.04   Downloading botocore-1.40.13-py3-none-any.whl.metadata (5.7 kB)
+#15 38.45 Collecting langchain<0.4.0,>=0.3.15 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 38.48   Downloading langchain-0.3.27-py3-none-any.whl.metadata (7.8 kB)
+#15 38.82 Collecting openai<2.0.0,>=1.1.1 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 38.88   Downloading openai-1.100.2-py3-none-any.whl.metadata (29 kB)
+#15 38.96 Collecting openai-agents>=0.0.3 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 38.99   Downloading openai_agents-0.2.8-py3-none-any.whl.metadata (12 kB)
+#15 39.11 Collecting opentelemetry-exporter-otlp<2.0.0,>=1.30.0 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 39.13   Downloading opentelemetry_exporter_otlp-1.36.0-py3-none-any.whl.metadata (2.4 kB)
+#15 39.22 Collecting opentelemetry-instrumentation<1.0.0,>=0.52b0 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 39.25   Downloading opentelemetry_instrumentation-0.57b0-py3-none-any.whl.metadata (6.7 kB)
+#15 39.44 Collecting opentelemetry-instrumentation-aiohttp-client<1.0.0,>=0.52b0 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 39.48   Downloading opentelemetry_instrumentation_aiohttp_client-0.57b0-py3-none-any.whl.metadata (2.2 kB)
+#15 39.56 Collecting opentelemetry-instrumentation-asgi<1.0.0,>=0.52b0 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 39.58   Downloading opentelemetry_instrumentation_asgi-0.57b0-py3-none-any.whl.metadata (2.0 kB)
+#15 39.73 Collecting opentelemetry-instrumentation-django<1.0.0,>=0.52b0 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 39.76   Downloading opentelemetry_instrumentation_django-0.57b0-py3-none-any.whl.metadata (2.3 kB)
+#15 39.97 Collecting opentelemetry-instrumentation-falcon<1.0.0,>=0.52b0 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 40.00   Downloading opentelemetry_instrumentation_falcon-0.57b0-py3-none-any.whl.metadata (4.2 kB)
+#15 40.09 Collecting opentelemetry-instrumentation-fastapi<1.0.0,>=0.52b0 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 40.12   Downloading opentelemetry_instrumentation_fastapi-0.57b0-py3-none-any.whl.metadata (2.2 kB)
+#15 40.29 Collecting opentelemetry-instrumentation-flask<1.0.0,>=0.52b0 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 40.32   Downloading opentelemetry_instrumentation_flask-0.57b0-py3-none-any.whl.metadata (2.2 kB)
+#15 40.45 Collecting opentelemetry-instrumentation-httpx<1.0.0,>=0.52b0 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 40.48   Downloading opentelemetry_instrumentation_httpx-0.57b0-py3-none-any.whl.metadata (7.3 kB)
+#15 40.63 Collecting opentelemetry-instrumentation-pyramid<1.0.0,>=0.52b0 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 40.66   Downloading opentelemetry_instrumentation_pyramid-0.57b0-py3-none-any.whl.metadata (2.1 kB)
+#15 40.84 Collecting opentelemetry-instrumentation-starlette<1.0.0,>=0.52b0 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 40.87   Downloading opentelemetry_instrumentation_starlette-0.57b0-py3-none-any.whl.metadata (2.2 kB)
+#15 41.04 Collecting opentelemetry-instrumentation-tornado<1.0.0,>=0.52b0 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 41.06   Downloading opentelemetry_instrumentation_tornado-0.57b0-py3-none-any.whl.metadata (2.1 kB)
+#15 41.20 Collecting opentelemetry-instrumentation-urllib<1.0.0,>=0.52b0 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 41.22   Downloading opentelemetry_instrumentation_urllib-0.57b0-py3-none-any.whl.metadata (3.4 kB)
+#15 41.36 Collecting opentelemetry-instrumentation-urllib3<1.0.0,>=0.52b0 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 41.39   Downloading opentelemetry_instrumentation_urllib3-0.57b0-py3-none-any.whl.metadata (4.2 kB)
+#15 41.51 Collecting schedule<2.0.0,>=1.2.2 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 41.54   Downloading schedule-1.2.2-py3-none-any.whl.metadata (3.8 kB)
+#15 41.59 Collecting xmltodict<1.0.0,>=0.13.0 (from openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 41.62   Downloading xmltodict-0.14.2-py2.py3-none-any.whl.metadata (8.0 kB)
+#15 41.77 Collecting importlib-metadata<8.8.0,>=6.0 (from opentelemetry-api->-r /tmp/requirements.txt (line 8))
+#15 41.79   Downloading importlib_metadata-8.7.0-py3-none-any.whl.metadata (4.8 kB)
+#15 41.90 Collecting opentelemetry-semantic-conventions==0.57b0 (from opentelemetry-sdk->-r /tmp/requirements.txt (line 9))
+#15 41.93   Downloading opentelemetry_semantic_conventions-0.57b0-py3-none-any.whl.metadata (2.4 kB)
+#15 42.05 Collecting opentelemetry-util-http==0.57b0 (from opentelemetry-instrumentation-requests->-r /tmp/requirements.txt (line 10))
+#15 42.08   Downloading opentelemetry_util_http-0.57b0-py3-none-any.whl.metadata (2.6 kB)
+#15 42.62 Collecting wrapt<2.0.0,>=1.0.0 (from opentelemetry-instrumentation<1.0.0,>=0.52b0->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 42.65   Downloading wrapt-1.17.3-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (6.4 kB)
+#15 42.74 Collecting distro<2,>=1.7.0 (from anthropic<1.0.0,>=0.42.0->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 42.76   Downloading distro-1.9.0-py3-none-any.whl.metadata (6.8 kB)
+#15 43.04 Collecting jiter<1,>=0.4.0 (from anthropic<1.0.0,>=0.42.0->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 43.07   Downloading jiter-0.10.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (5.2 kB)
+#15 44.15 Collecting jmespath<2.0.0,>=0.7.1 (from boto3<2.0.0,>=1.34.0->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 44.17   Downloading jmespath-1.0.1-py3-none-any.whl.metadata (7.6 kB)
+#15 44.25 Collecting s3transfer<0.14.0,>=0.13.0 (from boto3<2.0.0,>=1.34.0->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 44.28   Downloading s3transfer-0.13.1-py3-none-any.whl.metadata (1.7 kB)
+#15 44.59 Collecting zipp>=3.20 (from importlib-metadata<8.8.0,>=6.0->opentelemetry-api->-r /tmp/requirements.txt (line 8))
+#15 44.62   Downloading zipp-3.23.0-py3-none-any.whl.metadata (3.6 kB)
+#15 44.81 Collecting langchain-core<1.0.0,>=0.3.72 (from langchain<0.4.0,>=0.3.15->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 44.84   Downloading langchain_core-0.3.74-py3-none-any.whl.metadata (5.8 kB)
+#15 44.90 Collecting langchain-text-splitters<1.0.0,>=0.3.9 (from langchain<0.4.0,>=0.3.15->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 44.93   Downloading langchain_text_splitters-0.3.9-py3-none-any.whl.metadata (1.9 kB)
+#15 45.25 Collecting langsmith>=0.1.17 (from langchain<0.4.0,>=0.3.15->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 45.28   Downloading langsmith-0.4.14-py3-none-any.whl.metadata (14 kB)
+#15 46.73 Collecting SQLAlchemy<3,>=1.4 (from langchain<0.4.0,>=0.3.15->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 46.87   Downloading sqlalchemy-2.0.43-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (9.6 kB)
+#15 47.28 Collecting tenacity!=8.4.0,<10.0.0,>=8.1.0 (from langchain-core<1.0.0,>=0.3.72->langchain<0.4.0,>=0.3.15->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 47.38   Downloading tenacity-9.1.2-py3-none-any.whl.metadata (1.2 kB)
+#15 47.58 Collecting jsonpatch<2.0,>=1.33 (from langchain-core<1.0.0,>=0.3.72->langchain<0.4.0,>=0.3.15->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 47.87   Downloading jsonpatch-1.33-py2.py3-none-any.whl.metadata (3.0 kB)
+#15 48.08 Collecting jsonpointer>=1.9 (from jsonpatch<2.0,>=1.33->langchain-core<1.0.0,>=0.3.72->langchain<0.4.0,>=0.3.15->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 48.24   Downloading jsonpointer-3.0.0-py2.py3-none-any.whl.metadata (2.3 kB)
+#15 48.59 Collecting opentelemetry-exporter-otlp-proto-grpc==1.36.0 (from opentelemetry-exporter-otlp<2.0.0,>=1.30.0->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 48.88   Downloading opentelemetry_exporter_otlp_proto_grpc-1.36.0-py3-none-any.whl.metadata (2.4 kB)
+#15 49.09 Collecting opentelemetry-exporter-otlp-proto-http==1.36.0 (from opentelemetry-exporter-otlp<2.0.0,>=1.30.0->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 49.22   Downloading opentelemetry_exporter_otlp_proto_http-1.36.0-py3-none-any.whl.metadata (2.3 kB)
+#15 49.36 Collecting googleapis-common-protos~=1.57 (from opentelemetry-exporter-otlp-proto-grpc==1.36.0->opentelemetry-exporter-otlp<2.0.0,>=1.30.0->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 49.43   Downloading googleapis_common_protos-1.70.0-py3-none-any.whl.metadata (9.3 kB)
+#15 51.69 Collecting grpcio<2.0.0,>=1.63.2 (from opentelemetry-exporter-otlp-proto-grpc==1.36.0->opentelemetry-exporter-otlp<2.0.0,>=1.30.0->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 51.78   Downloading grpcio-1.74.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (3.8 kB)
+#15 51.96 Collecting opentelemetry-exporter-otlp-proto-common==1.36.0 (from opentelemetry-exporter-otlp-proto-grpc==1.36.0->opentelemetry-exporter-otlp<2.0.0,>=1.30.0->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 52.11   Downloading opentelemetry_exporter_otlp_proto_common-1.36.0-py3-none-any.whl.metadata (1.8 kB)
+#15 52.32 Collecting opentelemetry-proto==1.36.0 (from opentelemetry-exporter-otlp-proto-grpc==1.36.0->opentelemetry-exporter-otlp<2.0.0,>=1.30.0->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 52.47   Downloading opentelemetry_proto-1.36.0-py3-none-any.whl.metadata (2.3 kB)
+#15 53.80 Collecting protobuf<7.0,>=5.0 (from opentelemetry-proto==1.36.0->opentelemetry-exporter-otlp-proto-grpc==1.36.0->opentelemetry-exporter-otlp<2.0.0,>=1.30.0->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 53.82   Downloading protobuf-6.32.0-cp39-abi3-manylinux2014_x86_64.whl.metadata (593 bytes)
+#15 54.15 Collecting asgiref~=3.0 (from opentelemetry-instrumentation-asgi<1.0.0,>=0.52b0->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 54.17   Downloading asgiref-3.9.1-py3-none-any.whl.metadata (9.3 kB)
+#15 54.34 Collecting opentelemetry-instrumentation-wsgi==0.57b0 (from opentelemetry-instrumentation-django<1.0.0,>=0.52b0->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 54.37   Downloading opentelemetry_instrumentation_wsgi-0.57b0-py3-none-any.whl.metadata (2.1 kB)
+#15 54.65 Collecting six>=1.5 (from python-dateutil>=2.8.2->pandas<3.0,>=1.0->gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 54.69   Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+#15 55.93 Collecting greenlet>=1 (from SQLAlchemy<3,>=1.4->langchain<0.4.0,>=0.3.15->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 55.96   Downloading greenlet-3.2.4-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (4.1 kB)
+#15 56.06 Collecting blinker>=1.9.0 (from flask->-r /tmp/requirements.txt (line 6))
+#15 56.08   Downloading blinker-1.9.0-py3-none-any.whl.metadata (1.6 kB)
+#15 56.15 Collecting itsdangerous>=2.2.0 (from flask->-r /tmp/requirements.txt (line 6))
+#15 56.17   Downloading itsdangerous-2.2.0-py3-none-any.whl.metadata (1.9 kB)
+#15 56.30 Collecting werkzeug>=3.1.0 (from flask->-r /tmp/requirements.txt (line 6))
+#15 56.32   Downloading werkzeug-3.1.3-py3-none-any.whl.metadata (3.7 kB)
+#15 56.75 Collecting requests-toolbelt>=1.0.0 (from langsmith>=0.1.17->langchain<0.4.0,>=0.3.15->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 56.78   Downloading requests_toolbelt-1.0.0-py2.py3-none-any.whl.metadata (14 kB)
+#15 57.08 Collecting zstandard>=0.23.0 (from langsmith>=0.1.17->langchain<0.4.0,>=0.3.15->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 57.11   Downloading zstandard-0.24.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (3.1 kB)
+#15 57.26 Collecting griffe<2,>=1.5.6 (from openai-agents>=0.0.3->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 57.29   Downloading griffe-1.12.1-py3-none-any.whl.metadata (5.0 kB)
+#15 57.36 Collecting mcp<2,>=1.11.0 (from openai-agents>=0.0.3->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 57.38   Downloading mcp-1.13.0-py3-none-any.whl.metadata (68 kB)
+#15 57.82 Collecting types-requests<3,>=2.0 (from openai-agents>=0.0.3->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 57.84   Downloading types_requests-2.32.4.20250809-py3-none-any.whl.metadata (2.0 kB)
+#15 57.93 Collecting colorama>=0.4 (from griffe<2,>=1.5.6->openai-agents>=0.0.3->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 57.96   Downloading colorama-0.4.6-py2.py3-none-any.whl.metadata (17 kB)
+#15 58.04 Collecting httpx-sse>=0.4 (from mcp<2,>=1.11.0->openai-agents>=0.0.3->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 58.07   Downloading httpx_sse-0.4.1-py3-none-any.whl.metadata (9.4 kB)
+#15 58.20 Collecting jsonschema>=4.20.0 (from mcp<2,>=1.11.0->openai-agents>=0.0.3->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 58.23   Downloading jsonschema-4.25.1-py3-none-any.whl.metadata (7.6 kB)
+#15 58.29 Collecting pydantic-settings>=2.5.2 (from mcp<2,>=1.11.0->openai-agents>=0.0.3->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 58.32   Downloading pydantic_settings-2.10.1-py3-none-any.whl.metadata (3.4 kB)
+#15 58.56 Collecting sse-starlette>=1.6.1 (from mcp<2,>=1.11.0->openai-agents>=0.0.3->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 58.59   Downloading sse_starlette-3.0.2-py3-none-any.whl.metadata (11 kB)
+#15 58.86 Collecting attrs>=22.2.0 (from jsonschema>=4.20.0->mcp<2,>=1.11.0->openai-agents>=0.0.3->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 58.89   Downloading attrs-25.3.0-py3-none-any.whl.metadata (10 kB)
+#15 58.97 Collecting jsonschema-specifications>=2023.03.6 (from jsonschema>=4.20.0->mcp<2,>=1.11.0->openai-agents>=0.0.3->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 58.99   Downloading jsonschema_specifications-2025.4.1-py3-none-any.whl.metadata (2.9 kB)
+#15 59.12 Collecting referencing>=0.28.4 (from jsonschema>=4.20.0->mcp<2,>=1.11.0->openai-agents>=0.0.3->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 59.14   Downloading referencing-0.36.2-py3-none-any.whl.metadata (2.8 kB)
+#15 60.31 Collecting rpds-py>=0.7.1 (from jsonschema>=4.20.0->mcp<2,>=1.11.0->openai-agents>=0.0.3->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 60.34   Downloading rpds_py-0.27.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.2 kB)
+#15 60.65 Collecting python-dotenv>=0.21.0 (from pydantic-settings>=2.5.2->mcp<2,>=1.11.0->openai-agents>=0.0.3->openlit>=1.30.0->-r /tmp/requirements.txt (line 3))
+#15 60.68   Downloading python_dotenv-1.1.1-py3-none-any.whl.metadata (24 kB)
+#15 61.12 Collecting markdown-it-py>=2.2.0 (from rich>=10.11.0->typer<1.0,>=0.12->gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 61.15   Downloading markdown_it_py-4.0.0-py3-none-any.whl.metadata (7.3 kB)
+#15 61.25 Collecting pygments<3.0.0,>=2.13.0 (from rich>=10.11.0->typer<1.0,>=0.12->gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 61.28   Downloading pygments-2.19.2-py3-none-any.whl.metadata (2.5 kB)
+#15 61.36 Collecting mdurl~=0.1 (from markdown-it-py>=2.2.0->rich>=10.11.0->typer<1.0,>=0.12->gradio>=4.0.0->-r /tmp/requirements.txt (line 1))
+#15 61.39   Downloading mdurl-0.1.2-py3-none-any.whl.metadata (1.6 kB)
+#15 61.80 Downloading ollama-0.3.3-py3-none-any.whl (10 kB)
+#15 61.83 Downloading httpx-0.27.2-py3-none-any.whl (76 kB)
+#15 61.85 Downloading httpcore-1.0.9-py3-none-any.whl (78 kB)
+#15 61.88 Downloading gradio-5.43.1-py3-none-any.whl (59.6 MB)
+#15 63.34    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 59.6/59.6 MB 42.2 MB/s  0:00:01
+#15 63.39 Downloading gradio_client-1.12.1-py3-none-any.whl (324 kB)
+#15 63.42 Downloading aiofiles-24.1.0-py3-none-any.whl (15 kB)
+#15 63.44 Downloading anyio-4.10.0-py3-none-any.whl (107 kB)
+#15 63.47 Downloading fastapi-0.116.1-py3-none-any.whl (95 kB)
+#15 63.50 Downloading groovy-0.1.2-py3-none-any.whl (14 kB)
+#15 63.53 Downloading huggingface_hub-0.34.4-py3-none-any.whl (561 kB)
+#15 63.55    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 561.5/561.5 kB 49.3 MB/s  0:00:00
+#15 63.58 Downloading hf_xet-1.1.8-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.2 MB)
+#15 63.65    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.2/3.2 MB 48.8 MB/s  0:00:00
+#15 63.68 Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+#15 63.71 Downloading MarkupSafe-3.0.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (23 kB)
+#15 63.74 Downloading numpy-2.3.2-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (16.9 MB)
+#15 64.10    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.9/16.9 MB 47.8 MB/s  0:00:00
+#15 64.14 Downloading orjson-3.11.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (121 kB)
+#15 64.19 Downloading pandas-2.3.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (12.4 MB)
+#15 64.60    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.4/12.4 MB 30.1 MB/s  0:00:00
+#15 64.63 Downloading pillow-11.3.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (6.6 MB)
+#15 64.83    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.6/6.6 MB 33.4 MB/s  0:00:00
+#15 64.86 Downloading pydantic-2.11.7-py3-none-any.whl (444 kB)
+#15 64.90 Downloading pydantic_core-2.33.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.0 MB)
+#15 64.98    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.0/2.0 MB 28.1 MB/s  0:00:00
+#15 65.01 Downloading PyYAML-6.0.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (762 kB)
+#15 65.03    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 763.0/763.0 kB 50.2 MB/s  0:00:00
+#15 65.05 Downloading safehttpx-0.1.6-py3-none-any.whl (8.7 kB)
+#15 65.08 Downloading semantic_version-2.10.0-py2.py3-none-any.whl (15 kB)
+#15 65.11 Downloading starlette-0.47.2-py3-none-any.whl (72 kB)
+#15 65.14 Downloading tomlkit-0.13.3-py3-none-any.whl (38 kB)
+#15 65.16 Downloading typer-0.16.1-py3-none-any.whl (46 kB)
+#15 65.19 Downloading typing_extensions-4.14.1-py3-none-any.whl (43 kB)
+#15 65.22 Downloading websockets-15.0.1-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (182 kB)
+#15 65.25 Downloading requests-2.32.5-py3-none-any.whl (64 kB)
+#15 65.28 Downloading charset_normalizer-3.4.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (150 kB)
+#15 65.31 Downloading idna-3.10-py3-none-any.whl (70 kB)
+#15 65.34 Downloading urllib3-2.5.0-py3-none-any.whl (129 kB)
+#15 65.38 Downloading openlit-1.35.0-py3-none-any.whl (378 kB)
+#15 65.42 Downloading opentelemetry_api-1.36.0-py3-none-any.whl (65 kB)
+#15 65.45 Downloading opentelemetry_sdk-1.36.0-py3-none-any.whl (119 kB)
+#15 65.49 Downloading opentelemetry_semantic_conventions-0.57b0-py3-none-any.whl (201 kB)
+#15 65.52 Downloading opentelemetry_instrumentation_requests-0.57b0-py3-none-any.whl (12 kB)
+#15 65.55 Downloading opentelemetry_instrumentation-0.57b0-py3-none-any.whl (32 kB)
+#15 65.58 Downloading opentelemetry_util_http-0.57b0-py3-none-any.whl (7.6 kB)
+#15 65.61 Downloading anthropic-0.64.0-py3-none-any.whl (297 kB)
+#15 65.65 Downloading boto3-1.40.13-py3-none-any.whl (140 kB)
+#15 65.68 Downloading botocore-1.40.13-py3-none-any.whl (14.0 MB)
+#15 66.07    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 14.0/14.0 MB 36.6 MB/s  0:00:00
+#15 66.10 Downloading distro-1.9.0-py3-none-any.whl (20 kB)
+#15 66.13 Downloading importlib_metadata-8.7.0-py3-none-any.whl (27 kB)
+#15 66.16 Downloading jiter-0.10.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (352 kB)
+#15 66.20 Downloading jmespath-1.0.1-py3-none-any.whl (20 kB)
+#15 66.23 Downloading langchain-0.3.27-py3-none-any.whl (1.0 MB)
+#15 66.26    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.0/1.0 MB 50.7 MB/s  0:00:00
+#15 66.29 Downloading langchain_core-0.3.74-py3-none-any.whl (443 kB)
+#15 66.33 Downloading jsonpatch-1.33-py2.py3-none-any.whl (12 kB)
+#15 66.36 Downloading langchain_text_splitters-0.3.9-py3-none-any.whl (33 kB)
+#15 66.38 Downloading openai-1.100.2-py3-none-any.whl (787 kB)
+#15 66.41    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 787.8/787.8 kB 50.9 MB/s  0:00:00
+#15 66.44 Downloading opentelemetry_exporter_otlp-1.36.0-py3-none-any.whl (7.0 kB)
+#15 66.47 Downloading opentelemetry_exporter_otlp_proto_grpc-1.36.0-py3-none-any.whl (18 kB)
+#15 66.50 Downloading opentelemetry_exporter_otlp_proto_common-1.36.0-py3-none-any.whl (18 kB)
+#15 66.53 Downloading opentelemetry_exporter_otlp_proto_http-1.36.0-py3-none-any.whl (18 kB)
+#15 66.56 Downloading opentelemetry_proto-1.36.0-py3-none-any.whl (72 kB)
+#15 66.58 Downloading googleapis_common_protos-1.70.0-py3-none-any.whl (294 kB)
+#15 66.62 Downloading grpcio-1.74.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (6.2 MB)
+#15 66.80    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.2/6.2 MB 35.8 MB/s  0:00:00
+#15 66.83 Downloading opentelemetry_instrumentation_aiohttp_client-0.57b0-py3-none-any.whl (12 kB)
+#15 66.86 Downloading opentelemetry_instrumentation_asgi-0.57b0-py3-none-any.whl (16 kB)
+#15 66.89 Downloading asgiref-3.9.1-py3-none-any.whl (23 kB)
+#15 66.92 Downloading opentelemetry_instrumentation_django-0.57b0-py3-none-any.whl (19 kB)
+#15 66.95 Downloading opentelemetry_instrumentation_wsgi-0.57b0-py3-none-any.whl (14 kB)
+#15 66.98 Downloading opentelemetry_instrumentation_falcon-0.57b0-py3-none-any.whl (14 kB)
+#15 67.00 Downloading opentelemetry_instrumentation_fastapi-0.57b0-py3-none-any.whl (12 kB)
+#15 67.03 Downloading opentelemetry_instrumentation_flask-0.57b0-py3-none-any.whl (14 kB)
+#15 67.05 Downloading opentelemetry_instrumentation_httpx-0.57b0-py3-none-any.whl (15 kB)
+#15 67.08 Downloading opentelemetry_instrumentation_pyramid-0.57b0-py3-none-any.whl (13 kB)
+#15 67.11 Downloading opentelemetry_instrumentation_starlette-0.57b0-py3-none-any.whl (11 kB)
+#15 67.15 Downloading opentelemetry_instrumentation_tornado-0.57b0-py3-none-any.whl (15 kB)
+#15 67.18 Downloading opentelemetry_instrumentation_urllib-0.57b0-py3-none-any.whl (12 kB)
+#15 67.21 Downloading opentelemetry_instrumentation_urllib3-0.57b0-py3-none-any.whl (13 kB)
+#15 67.24 Downloading protobuf-6.32.0-cp39-abi3-manylinux2014_x86_64.whl (322 kB)
+#15 67.27 Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+#15 67.33 Downloading s3transfer-0.13.1-py3-none-any.whl (85 kB)
+#15 67.36 Downloading schedule-1.2.2-py3-none-any.whl (12 kB)
+#15 67.39 Downloading sqlalchemy-2.0.43-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.3 MB)
+#15 67.48    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.3/3.3 MB 39.4 MB/s  0:00:00
+#15 67.50 Downloading tenacity-9.1.2-py3-none-any.whl (28 kB)
+#15 67.54 Downloading wrapt-1.17.3-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (82 kB)
+#15 67.57 Downloading xmltodict-0.14.2-py2.py3-none-any.whl (10.0 kB)
+#15 67.60 Downloading flask-3.1.2-py3-none-any.whl (103 kB)
+#15 67.63 Downloading psutil-7.0.0-cp36-abi3-manylinux_2_12_x86_64.manylinux2010_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (277 kB)
+#15 67.66 Downloading annotated_types-0.7.0-py3-none-any.whl (13 kB)
+#15 67.69 Downloading blinker-1.9.0-py3-none-any.whl (8.5 kB)
+#15 67.72 Downloading Brotli-1.1.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.9 MB)
+#15 67.82    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.9/2.9 MB 35.2 MB/s  0:00:00
+#15 67.84 Downloading certifi-2025.8.3-py3-none-any.whl (161 kB)
+#15 67.88 Downloading click-8.2.1-py3-none-any.whl (102 kB)
+#15 67.90 Downloading fsspec-2025.7.0-py3-none-any.whl (199 kB)
+#15 67.94 Downloading greenlet-3.2.4-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (587 kB)
+#15 67.96    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 587.7/587.7 kB 49.9 MB/s  0:00:00
+#15 67.99 Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+#15 68.02 Downloading itsdangerous-2.2.0-py3-none-any.whl (16 kB)
+#15 68.04 Downloading jsonpointer-3.0.0-py2.py3-none-any.whl (7.6 kB)
+#15 68.07 Downloading langsmith-0.4.14-py3-none-any.whl (373 kB)
+#15 68.11 Downloading openai_agents-0.2.8-py3-none-any.whl (168 kB)
+#15 68.16 Downloading griffe-1.12.1-py3-none-any.whl (138 kB)
+#15 68.19 Downloading mcp-1.13.0-py3-none-any.whl (160 kB)
+#15 68.22 Downloading types_requests-2.32.4.20250809-py3-none-any.whl (20 kB)
+#15 68.25 Downloading colorama-0.4.6-py2.py3-none-any.whl (25 kB)
+#15 68.28 Downloading httpx_sse-0.4.1-py3-none-any.whl (8.1 kB)
+#15 68.31 Downloading jsonschema-4.25.1-py3-none-any.whl (90 kB)
+#15 68.34 Downloading attrs-25.3.0-py3-none-any.whl (63 kB)
+#15 68.37 Downloading jsonschema_specifications-2025.4.1-py3-none-any.whl (18 kB)
+#15 68.40 Downloading packaging-25.0-py3-none-any.whl (66 kB)
+#15 68.43 Downloading pydantic_settings-2.10.1-py3-none-any.whl (45 kB)
+#15 68.46 Downloading python_dotenv-1.1.1-py3-none-any.whl (20 kB)
+#15 68.49 Downloading python_multipart-0.0.20-py3-none-any.whl (24 kB)
+#15 68.52 Downloading pytz-2025.2-py2.py3-none-any.whl (509 kB)
+#15 68.55 Downloading referencing-0.36.2-py3-none-any.whl (26 kB)
+#15 68.58 Downloading requests_toolbelt-1.0.0-py2.py3-none-any.whl (54 kB)
+#15 68.61 Downloading rich-14.1.0-py3-none-any.whl (243 kB)
+#15 68.64 Downloading pygments-2.19.2-py3-none-any.whl (1.2 MB)
+#15 68.67    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 51.0 MB/s  0:00:00
+#15 68.70 Downloading markdown_it_py-4.0.0-py3-none-any.whl (87 kB)
+#15 68.73 Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+#15 68.76 Downloading rpds_py-0.27.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (383 kB)
+#15 68.80 Downloading ruff-0.12.9-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (13.0 MB)
+#15 69.17    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.0/13.0 MB 35.1 MB/s  0:00:00
+#15 69.20 Downloading shellingham-1.5.4-py2.py3-none-any.whl (9.8 kB)
+#15 69.23 Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+#15 69.26 Downloading sniffio-1.3.1-py3-none-any.whl (10 kB)
+#15 69.29 Downloading sse_starlette-3.0.2-py3-none-any.whl (11 kB)
+#15 69.32 Downloading tqdm-4.67.1-py3-none-any.whl (78 kB)
+#15 69.35 Downloading typing_inspection-0.4.1-py3-none-any.whl (14 kB)
+#15 69.37 Downloading tzdata-2025.2-py2.py3-none-any.whl (347 kB)
+#15 69.41 Downloading uvicorn-0.35.0-py3-none-any.whl (66 kB)
+#15 69.43 Downloading werkzeug-3.1.3-py3-none-any.whl (224 kB)
+#15 69.46 Downloading zipp-3.23.0-py3-none-any.whl (10 kB)
+#15 69.49 Downloading zstandard-0.24.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (5.6 MB)
+#15 69.66    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.6/5.6 MB 33.9 MB/s  0:00:00
+#15 69.69 Downloading ffmpy-0.6.1-py3-none-any.whl (5.5 kB)
+#15 69.72 Downloading filelock-3.19.1-py3-none-any.whl (15 kB)
+#15 69.74 Downloading pydub-0.25.1-py2.py3-none-any.whl (32 kB)
+#15 73.51 Installing collected packages: pytz, pydub, brotli, zstandard, zipp, xmltodict, wrapt, websockets, urllib3, tzdata, typing-extensions, tqdm, tomlkit, tenacity, sniffio, six, shellingham, semantic-version, schedule, ruff, rpds-py, pyyaml, python-multipart, python-dotenv, pygments, psutil, protobuf, pillow, packaging, orjson, opentelemetry-util-http, numpy, mdurl, markupsafe, jsonpointer, jmespath, jiter, itsdangerous, idna, httpx-sse, hf-xet, h11, grpcio, groovy, greenlet, fsspec, filelock, ffmpy, distro, colorama, click, charset_normalizer, certifi, blinker, attrs, asgiref, annotated-types, aiofiles, werkzeug, uvicorn, typing-inspection, types-requests, SQLAlchemy, requests, referencing, python-dateutil, pydantic-core, opentelemetry-proto, markdown-it-py, jsonpatch, jinja2, importlib-metadata, httpcore, griffe, googleapis-common-protos, anyio, starlette, sse-starlette, rich, requests-toolbelt, pydantic, pandas, opentelemetry-exporter-otlp-proto-common, opentelemetry-api, jsonschema-specifications, huggingface-hub, httpx, flask, botocore, typer, safehttpx, s3transfer, pydantic-settings, opentelemetry-semantic-conventions, openai, ollama, langsmith, jsonschema, gradio-client, fastapi, anthropic, opentelemetry-sdk, opentelemetry-instrumentation, mcp, langchain-core, gradio, boto3, opentelemetry-instrumentation-wsgi, opentelemetry-instrumentation-urllib3, opentelemetry-instrumentation-urllib, opentelemetry-instrumentation-tornado, opentelemetry-instrumentation-requests, opentelemetry-instrumentation-httpx, opentelemetry-instrumentation-asgi, opentelemetry-instrumentation-aiohttp-client, opentelemetry-exporter-otlp-proto-http, opentelemetry-exporter-otlp-proto-grpc, openai-agents, langchain-text-splitters, opentelemetry-instrumentation-starlette, opentelemetry-instrumentation-pyramid, opentelemetry-instrumentation-flask, opentelemetry-instrumentation-fastapi, opentelemetry-instrumentation-falcon, opentelemetry-instrumentation-django, opentelemetry-exporter-otlp, langchain, openlit
+#15 87.98 
+#15 88.02 Successfully installed SQLAlchemy-2.0.43 aiofiles-24.1.0 annotated-types-0.7.0 anthropic-0.64.0 anyio-4.10.0 asgiref-3.9.1 attrs-25.3.0 blinker-1.9.0 boto3-1.40.13 botocore-1.40.13 brotli-1.1.0 certifi-2025.8.3 charset_normalizer-3.4.3 click-8.2.1 colorama-0.4.6 distro-1.9.0 fastapi-0.116.1 ffmpy-0.6.1 filelock-3.19.1 flask-3.1.2 fsspec-2025.7.0 googleapis-common-protos-1.70.0 gradio-5.43.1 gradio-client-1.12.1 greenlet-3.2.4 griffe-1.12.1 groovy-0.1.2 grpcio-1.74.0 h11-0.16.0 hf-xet-1.1.8 httpcore-1.0.9 httpx-0.27.2 httpx-sse-0.4.1 huggingface-hub-0.34.4 idna-3.10 importlib-metadata-8.7.0 itsdangerous-2.2.0 jinja2-3.1.6 jiter-0.10.0 jmespath-1.0.1 jsonpatch-1.33 jsonpointer-3.0.0 jsonschema-4.25.1 jsonschema-specifications-2025.4.1 langchain-0.3.27 langchain-core-0.3.74 langchain-text-splitters-0.3.9 langsmith-0.4.14 markdown-it-py-4.0.0 markupsafe-3.0.2 mcp-1.13.0 mdurl-0.1.2 numpy-2.3.2 ollama-0.3.3 openai-1.100.2 openai-agents-0.2.8 openlit-1.35.0 opentelemetry-api-1.36.0 opentelemetry-exporter-otlp-1.36.0 opentelemetry-exporter-otlp-proto-common-1.36.0 opentelemetry-exporter-otlp-proto-grpc-1.36.0 opentelemetry-exporter-otlp-proto-http-1.36.0 opentelemetry-instrumentation-0.57b0 opentelemetry-instrumentation-aiohttp-client-0.57b0 opentelemetry-instrumentation-asgi-0.57b0 opentelemetry-instrumentation-django-0.57b0 opentelemetry-instrumentation-falcon-0.57b0 opentelemetry-instrumentation-fastapi-0.57b0 opentelemetry-instrumentation-flask-0.57b0 opentelemetry-instrumentation-httpx-0.57b0 opentelemetry-instrumentation-pyramid-0.57b0 opentelemetry-instrumentation-requests-0.57b0 opentelemetry-instrumentation-starlette-0.57b0 opentelemetry-instrumentation-tornado-0.57b0 opentelemetry-instrumentation-urllib-0.57b0 opentelemetry-instrumentation-urllib3-0.57b0 opentelemetry-instrumentation-wsgi-0.57b0 opentelemetry-proto-1.36.0 opentelemetry-sdk-1.36.0 opentelemetry-semantic-conventions-0.57b0 opentelemetry-util-http-0.57b0 orjson-3.11.2 packaging-25.0 pandas-2.3.1 pillow-11.3.0 protobuf-6.32.0 psutil-7.0.0 pydantic-2.11.7 pydantic-core-2.33.2 pydantic-settings-2.10.1 pydub-0.25.1 pygments-2.19.2 python-dateutil-2.9.0.post0 python-dotenv-1.1.1 python-multipart-0.0.20 pytz-2025.2 pyyaml-6.0.2 referencing-0.36.2 requests-2.32.5 requests-toolbelt-1.0.0 rich-14.1.0 rpds-py-0.27.0 ruff-0.12.9 s3transfer-0.13.1 safehttpx-0.1.6 schedule-1.2.2 semantic-version-2.10.0 shellingham-1.5.4 six-1.17.0 sniffio-1.3.1 sse-starlette-3.0.2 starlette-0.47.2 tenacity-9.1.2 tomlkit-0.13.3 tqdm-4.67.1 typer-0.16.1 types-requests-2.32.4.20250809 typing-extensions-4.14.1 typing-inspection-0.4.1 tzdata-2025.2 urllib3-2.5.0 uvicorn-0.35.0 websockets-15.0.1 werkzeug-3.1.3 wrapt-1.17.3 xmltodict-0.14.2 zipp-3.23.0 zstandard-0.24.0
+#15 DONE 91.1s
+
+#16 [runtime 4/8] COPY --from=python-builder /opt/venv /opt/venv
+#16 DONE 4.2s
+
+#17 [runtime 5/8] WORKDIR /app
+#17 DONE 0.0s
+
+#18 [runtime 6/8] COPY frontend/ /app/frontend/
+#18 DONE 0.0s
+
+#19 [runtime 7/8] COPY app/python-ollama-open-webui.py /app/python-ollama-open-webui.py
+#19 DONE 0.0s
+
+#20 [runtime 8/8] RUN groupadd -r aicompare &&     useradd -r -g aicompare -s /bin/bash aicompare &&     chown -R aicompare:aicompare /app
+#20 DONE 0.6s
+
+#21 exporting to image
+#21 exporting layers
+#21 exporting layers 2.3s done
+#21 writing image sha256:f0462b0363505dccd19ca43f16b30597ea8355bb16f5f551db36c167d764d1f7 done
+#21 naming to ghcr.io/wiredquill/ai-demos-suse:675d2a82 done
+#21 DONE 2.3s
+
+#22 pushing ghcr.io/wiredquill/ai-demos-suse:675d2a82 with docker
+#22 pushing layer 8e9f287f4ab2
+#22 pushing layer a47aada288c3
+#22 pushing layer c280512fb8df
+#22 pushing layer 38bd4e04c00f
+#22 pushing layer 4fbf7f67e68c
+#22 pushing layer c2a37b621354
+#22 pushing layer 70d2040d8f4b
+#22 pushing layer 1e313b97dda4
+#22 pushing layer de3822af2e4c
+#22 pushing layer 8e9f287f4ab2 274.94kB / 259.34kB 4.6s
+#22 pushing layer a47aada288c3 191.49kB / 189.36kB 4.6s
+#22 pushing layer c280512fb8df 44.03kB / 37.13kB 4.6s
+#22 pushing layer 4fbf7f67e68c 547.33kB / 500.27MB 6.7s
+#22 pushing layer 4fbf7f67e68c 27.29MB / 500.27MB 7.7s
+#22 pushing layer 4fbf7f67e68c 53.15MB / 500.27MB 8.4s
+#22 pushing layer 4fbf7f67e68c 79.51MB / 500.27MB 9.5s
+#22 pushing layer 4fbf7f67e68c 104.97MB / 500.27MB 10.4s
+#22 pushing layer 4fbf7f67e68c 130.20MB / 500.27MB 11.3s
+#22 pushing layer 8e9f287f4ab2 12.4s done
+#22 pushing layer a47aada288c3 12.4s done
+#22 pushing layer c280512fb8df 12.4s done
+#22 pushing layer 38bd4e04c00f 12.4s done
+#22 pushing layer 4fbf7f67e68c 155.85MB / 500.27MB 12.4s
+#22 pushing layer 4fbf7f67e68c 183.65MB / 500.27MB 13.3s
+#22 pushing layer 4fbf7f67e68c 210.53MB / 500.27MB 14.3s
+#22 pushing layer 4fbf7f67e68c 235.60MB / 500.27MB 15.2s
+#22 pushing layer 4fbf7f67e68c 261.40MB / 500.27MB 16.1s
+#22 pushing layer c2a37b621354 526.34kB / 60.13MB 16.7s
+#22 pushing layer 70d2040d8f4b 190.98kB / 16.85MB 16.7s
+#22 pushing layer 70d2040d8f4b 1.31MB / 16.85MB 16.9s
+#22 pushing layer 4fbf7f67e68c 288.31MB / 500.27MB 17.0s
+#22 pushing layer c2a37b621354 3.87MB / 60.13MB 17.0s
+#22 pushing layer 70d2040d8f4b 3.67MB / 16.85MB 17.0s
+#22 pushing layer 70d2040d8f4b 6.81MB / 16.85MB 17.1s
+#22 pushing layer c2a37b621354 13.34MB / 60.13MB 17.3s
+#22 pushing layer 70d2040d8f4b 10.34MB / 16.85MB 17.2s
+#22 pushing layer c2a37b621354 17.24MB / 60.13MB 17.4s
+#22 pushing layer 70d2040d8f4b 13.08MB / 16.85MB 17.5s
+#22 pushing layer c2a37b621354 25.04MB / 60.13MB 17.6s
+#22 pushing layer 70d2040d8f4b 15.46MB / 16.85MB 18.1s
+#22 pushing layer 70d2040d8f4b 16.98MB / 16.85MB 18.2s
+#22 pushing layer 4fbf7f67e68c 317.14MB / 500.27MB 18.5s
+#22 pushing layer c2a37b621354 30.05MB / 60.13MB 19.1s
+#22 pushing layer 1e313b97dda4 526.34kB / 124.78MB 19.1s
+#22 pushing layer de3822af2e4c 540.89kB / 121.35MB 19.1s
+#22 pushing layer 4fbf7f67e68c 342.61MB / 500.27MB 19.3s
+#22 pushing layer c2a37b621354 33.95MB / 60.13MB 19.2s
+#22 pushing layer c2a37b621354 37.85MB / 60.13MB 19.3s
+#22 pushing layer c2a37b621354 48.43MB / 60.13MB 19.5s
+#22 pushing layer c2a37b621354 51.78MB / 60.13MB 19.9s
+#22 pushing layer c2a37b621354 55.67MB / 60.13MB 20.0s
+#22 pushing layer de3822af2e4c 8.22MB / 121.35MB 20.4s
+#22 pushing layer c2a37b621354 59.57MB / 60.13MB 20.6s
+#22 pushing layer 1e313b97dda4 7.13MB / 124.78MB 20.7s
+#22 pushing layer de3822af2e4c 16.44MB / 121.35MB 21.0s
+#22 pushing layer 1e313b97dda4 14.32MB / 124.78MB 21.5s
+#22 pushing layer de3822af2e4c 25.23MB / 121.35MB 21.6s
+#22 pushing layer 4fbf7f67e68c 369.27MB / 500.27MB 22.2s
+#22 pushing layer de3822af2e4c 32.23MB / 121.35MB 22.2s
+#22 pushing layer 70d2040d8f4b 22.4s done
+#22 pushing layer 1e313b97dda4 20.94MB / 124.78MB 22.5s
+#22 pushing layer de3822af2e4c 40.36MB / 121.35MB 22.8s
+#22 pushing layer 1e313b97dda4 27.45MB / 124.78MB 23.3s
+#22 pushing layer de3822af2e4c 52.32MB / 121.35MB 23.4s
+#22 pushing layer de3822af2e4c 59.53MB / 121.35MB 23.8s
+#22 pushing layer 4fbf7f67e68c 395.24MB / 500.27MB 23.8s
+#22 pushing layer 1e313b97dda4 34.40MB / 124.78MB 23.8s
+#22 pushing layer de3822af2e4c 66.12MB / 121.35MB 24.1s
+#22 pushing layer 1e313b97dda4 40.84MB / 124.78MB 24.6s
+#22 pushing layer de3822af2e4c 73.81MB / 121.35MB 24.6s
+#22 pushing layer 4fbf7f67e68c 420.47MB / 500.27MB 25.0s
+#22 pushing layer de3822af2e4c 80.30MB / 121.35MB 25.0s
+#22 pushing layer 1e313b97dda4 47.80MB / 124.78MB 25.3s
+#22 pushing layer c2a37b621354 25.4s done
+#22 pushing layer de3822af2e4c 87.34MB / 121.35MB 25.6s
+#22 pushing layer 1e313b97dda4 54.99MB / 124.78MB 26.0s
+#22 pushing layer de3822af2e4c 97.25MB / 121.35MB 26.2s
+#22 pushing layer 4fbf7f67e68c 446.96MB / 500.27MB 26.8s
+#22 pushing layer 1e313b97dda4 62.20MB / 124.78MB 26.8s
+#22 pushing layer de3822af2e4c 103.93MB / 121.35MB 26.7s
+#22 pushing layer de3822af2e4c 110.43MB / 121.35MB 27.2s
+#22 pushing layer de3822af2e4c 119.69MB / 121.35MB 27.4s
+#22 pushing layer 1e313b97dda4 68.82MB / 124.78MB 27.5s
+#22 pushing layer 1e313b97dda4 77.92MB / 124.78MB 28.2s
+#22 pushing layer 4fbf7f67e68c 476.19MB / 500.27MB 28.5s
+#22 pushing layer 1e313b97dda4 84.35MB / 124.78MB 28.8s
+#22 pushing layer 1e313b97dda4 92.36MB / 124.78MB 29.3s
+#22 pushing layer 4fbf7f67e68c 502.37MB / 500.27MB 29.5s
+#22 pushing layer 1e313b97dda4 100.58MB / 124.78MB 30.1s
+#22 pushing layer 1e313b97dda4 107.59MB / 124.78MB 30.6s
+#22 pushing layer 1e313b97dda4 114.53MB / 124.78MB 30.9s
+#22 pushing layer 1e313b97dda4 121.61MB / 124.78MB 31.2s
+#22 pushing layer 1e313b97dda4 128.14MB / 124.78MB 31.6s
+#22 pushing layer 1e313b97dda4 35.9s done
+#22 pushing layer de3822af2e4c 36.0s done
+#22 pushing layer 4fbf7f67e68c 74.3s done
+#22 DONE 97.4s

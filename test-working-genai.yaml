@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-working-genai
+  namespace: fresh
+  labels:
+    app: test-working-genai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-working-genai
+  template:
+    metadata:
+      labels:
+        app: test-working-genai
+    spec:
+      containers:
+      - name: genai-demo
+        image: ravan/genai-observability-demo-app:0.0.6
+        ports:
+        - containerPort: 8000
+        env:
+        - name: APP_NAME
+          value: "FreshTestCompareGenerator"
+        - name: OLLAMA_ENDPOINT
+          value: "http://ollama-service:11434"
+        - name: OTLP_ENDPOINT
+          value: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
+        - name: COLLECT_GPU_STATS
+          value: "false"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-working-genai-service
+  namespace: fresh
+spec:
+  selector:
+    app: test-working-genai
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP

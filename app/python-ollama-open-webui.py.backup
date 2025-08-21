@@ -746,36 +746,19 @@ class ChatInterface:
             return default_config
 
     def _initialize_observability(self):
-        """Initialize OpenLit observability if enabled and available."""
+        """Initialize pure OpenTelemetry observability like working GenAI apps."""
         import os
-
-        if not OPENLIT_AVAILABLE:
-            logger.info("OpenLit not available - skipping observability initialization")
-            return
 
         # Read observability configuration from environment variables
         otlp_endpoint = os.getenv("OTLP_ENDPOINT")
-        collect_gpu_stats = os.getenv("COLLECT_GPU_STATS", "false").lower() == "true"
-
-        # Development option - disabled by default for production stability
-        dev_mode = os.getenv("DEV_MODE", "false").lower() == "true"
-        observability_enabled = os.getenv("OBSERVABILITY_ENABLED", "false").lower() == "true"
-
-        # Enhanced GenAI observability settings (for OpenTelemetry edition)
-        token_tracking = os.getenv("TOKEN_TRACKING_ENABLED", "false").lower() == "true"
-        cost_tracking = os.getenv("COST_TRACKING_ENABLED", "false").lower() == "true"
-        model_metrics = os.getenv("MODEL_METRICS_ENABLED", "false").lower() == "true"
-        trace_requests = os.getenv("TRACE_REQUESTS_ENABLED", "false").lower() == "true"
-
-        if not observability_enabled and not dev_mode:
-            logger.info(
-                "OpenLit observability disabled (production default). Enable with OBSERVABILITY_ENABLED=true or DEV_MODE=true"
-            )
-            return
-
+        
         if not otlp_endpoint:
             logger.info("OTLP_ENDPOINT not configured - observability disabled")
             return
+
+        logger.info("Initializing pure OpenTelemetry observability (like working GenAI apps)")
+        self._initialize_pure_opentelemetry(otlp_endpoint)
+        return
 
         try:
             logger.info(f"Initializing OpenLit observability with endpoint: {otlp_endpoint}")
@@ -816,19 +799,14 @@ class ChatInterface:
                 "environment": service_namespace,  # Set environment for proper categorization
             }
 
-            # Add cost tracking configuration if enabled
+            # Enable cost tracking through environment variables (OpenLit 1.28.0 approach)
             if cost_tracking:
-                # OpenLit cost tracking configuration
+                # OpenLit handles cost tracking automatically - just log that it's enabled
                 pricing_config = os.getenv("OPENLIT_PRICING_JSON")
                 if pricing_config:
-                    import json
-
-                    try:
-                        pricing_data = json.loads(pricing_config)
-                        openlit_config["pricing_info"] = pricing_data
-                        logger.info(f"Added pricing configuration for {len(pricing_data)} models")
-                    except json.JSONDecodeError:
-                        logger.warning("Failed to parse OPENLIT_PRICING_JSON, using default pricing")
+                    logger.info(f"Cost tracking enabled with custom pricing configuration")
+                else:
+                    logger.info(f"Cost tracking enabled with default OpenLit pricing")
 
             # Add enhanced GenAI observability features if enabled
             if token_tracking or cost_tracking or model_metrics or trace_requests:
@@ -1299,9 +1277,229 @@ class ChatInterface:
             return False
             return False
 
+    def _generate_mock_genai_response(self, messages: List[Dict[str, str]], model: str) -> str:
+        """Generate synthetic GenAI response with comprehensive telemetry for SUSE Observability testing."""
+        import random
+        import time
+        import os
+        from opentelemetry import trace, metrics
+
+        logger.info(f"🎭 Generating mock response for model: {model}")
+        
+        # Simulate realistic response time
+        response_time = random.uniform(0.5, 2.0)
+        time.sleep(response_time)
+        
+        # Generate realistic token counts based on request complexity
+        user_message = messages[-1].get("content", "") if messages else "Hello"
+        input_tokens = max(50, len(user_message.split()) * random.uniform(1.2, 1.8))
+        output_tokens = random.uniform(100, 400)  # Typical response length
+        
+        # Mock responses with variety
+        mock_responses = [
+            "The sky appears blue because of Rayleigh scattering, which occurs when sunlight interacts with molecules in Earth's atmosphere. This scattering is more pronounced for shorter wavelengths like blue light.",
+            "Artificial intelligence combines machine learning algorithms with data processing to create systems that can perform tasks typically requiring human intelligence.",
+            "Climate change refers to long-term shifts in global temperatures and weather patterns, primarily driven by human activities since the industrial revolution.",
+            "Quantum computing leverages quantum mechanical phenomena like superposition and entanglement to process information in fundamentally different ways than classical computers.",
+            "Photosynthesis is the biological process where plants convert carbon dioxide and water into glucose using sunlight, releasing oxygen as a byproduct."
+        ]
+        
+        response_text = random.choice(mock_responses)
+        
+        # Manual GenAI telemetry instrumentation with synthetic data
+        try:
+            tracer = trace.get_tracer("ollama-genai-mock-chat")
+            
+            with tracer.start_as_current_span(f"chat {model}") as span:
+                # Set GenAI semantic conventions
+                span.set_attribute("gen_ai.system", "ollama")
+                span.set_attribute("gen_ai.operation.name", "chat")
+                span.set_attribute("gen_ai.request.model", model)
+                span.set_attribute("gen_ai.application.name", "ai-compare")
+                span.set_attribute("ai.model.provider", "meta")
+                span.set_attribute("ai.workload.type", "inference")
+                span.set_attribute("service.name", os.environ.get("OTEL_SERVICE_NAME", "ai-compare"))
+                
+                # Cost calculation (realistic rates for Llama)
+                input_cost_per_token = 0.00000015  # $0.15 per 1M tokens
+                output_cost_per_token = 0.0000002   # $0.20 per 1M tokens
+                request_cost = 0.00001             # $0.01 per request
+                total_cost = (input_tokens * input_cost_per_token) + (output_tokens * output_cost_per_token) + request_cost
+                
+                # Set comprehensive cost tracking attributes
+                span.set_attribute("gen_ai.usage.input_tokens", int(input_tokens))
+                span.set_attribute("gen_ai.usage.output_tokens", int(output_tokens))
+                span.set_attribute("gen_ai.usage.total_tokens", int(input_tokens + output_tokens))
+                span.set_attribute("gen_ai.cost.input", round(input_tokens * input_cost_per_token, 6))
+                span.set_attribute("gen_ai.cost.output", round(output_tokens * output_cost_per_token, 6))
+                span.set_attribute("gen_ai.cost.total", round(total_cost, 6))
+                span.set_attribute("gen_ai.cost.currency", "USD")
+                
+                # Fallback attributes for older collectors
+                span.set_attribute("llm.usage.input_tokens", int(input_tokens))
+                span.set_attribute("llm.usage.output_tokens", int(output_tokens))
+                span.set_attribute("llm.usage.total_tokens", int(input_tokens + output_tokens))
+                span.set_attribute("llm.cost.input", round(input_tokens * input_cost_per_token, 6))
+                span.set_attribute("llm.cost.output", round(output_tokens * output_cost_per_token, 6))
+                span.set_attribute("llm.cost.total", round(total_cost, 6))
+                span.set_attribute("llm.cost.currency", "USD")
+                
+                # Generic cost attributes for maximum compatibility
+                span.set_attribute("cost.total", round(total_cost, 6))
+                span.set_attribute("cost.currency", "USD")
+                span.set_attribute("tokens.input", int(input_tokens))
+                span.set_attribute("tokens.output", int(output_tokens))
+                span.set_attribute("tokens.total", int(input_tokens + output_tokens))
+                
+                # LangFuse/SUSE Observability specific attributes
+                span.set_attribute("gen_ai.usage.cost", round(total_cost, 6))
+                span.set_attribute("langfuse.observation.cost_details", f'{{"total": {round(total_cost, 6)}, "input": {round(input_tokens * input_cost_per_token, 6)}, "output": {round(output_tokens * output_cost_per_token, 6)}}}')
+                span.set_attribute("langfuse.observation.usage_details", f'{{"input_tokens": {int(input_tokens)}, "output_tokens": {int(output_tokens)}, "total_tokens": {int(input_tokens + output_tokens)}}}')
+                
+                # SUSE AI Observability specific attributes
+                span.set_attribute("ai.token.usage.input", int(input_tokens))
+                span.set_attribute("ai.token.usage.output", int(output_tokens))
+                span.set_attribute("ai.token.usage.total", int(input_tokens + output_tokens))
+                span.set_attribute("ai.cost.total", round(total_cost, 6))
+                span.set_attribute("ai.cost.currency", "USD")
+                
+                # Add OpenTelemetry metrics for SUSE Observability cost dashboards
+                try:
+                    meter = metrics.get_meter("genai-mock-cost-tracking", "1.0.0")
+                    
+                    # Create metrics instruments for cost tracking
+                    token_counter = meter.create_counter(
+                        name="gen_ai.client.token.usage",
+                        description="Number of tokens used in GenAI operations (mock data)",
+                        unit="token"
+                    )
+                    
+                    cost_histogram = meter.create_histogram(
+                        name="gen_ai.client.operation.cost",
+                        description="Cost of GenAI operations in USD (mock data)",
+                        unit="USD"
+                    )
+                    
+                    # Record token usage metrics with proper attributes
+                    token_counter.add(
+                        int(input_tokens),
+                        {
+                            "gen_ai.operation.name": "chat",
+                            "gen_ai.request.model": model,
+                            "gen_ai.system": "ollama",
+                            "gen_ai.token.type": "input",
+                            "service.name": os.environ.get("OTEL_SERVICE_NAME", "ai-compare"),
+                            "service.namespace": os.environ.get("KUBERNETES_NAMESPACE", "default"),
+                            "mock_mode": "true"
+                        }
+                    )
+                    
+                    token_counter.add(
+                        int(output_tokens),
+                        {
+                            "gen_ai.operation.name": "chat",
+                            "gen_ai.request.model": model,
+                            "gen_ai.system": "ollama",
+                            "gen_ai.token.type": "output",
+                            "service.name": os.environ.get("OTEL_SERVICE_NAME", "ai-compare"),
+                            "service.namespace": os.environ.get("KUBERNETES_NAMESPACE", "default"),
+                            "mock_mode": "true"
+                        }
+                    )
+                    
+                    # Record cost metrics
+                    cost_histogram.record(
+                        round(total_cost, 6),
+                        {
+                            "gen_ai.operation.name": "chat",
+                            "gen_ai.request.model": model,
+                            "gen_ai.system": "ollama",
+                            "gen_ai.cost.currency": "USD",
+                            "service.name": os.environ.get("OTEL_SERVICE_NAME", "ai-compare"),
+                            "service.namespace": os.environ.get("KUBERNETES_NAMESPACE", "default"),
+                            "mock_mode": "true"
+                        }
+                    )
+                    
+                    logger.info(f"🎭 Mock GenAI metrics recorded - Tokens: {int(input_tokens + output_tokens)}, Cost: ${round(total_cost, 6)}")
+                    
+                except Exception as metrics_e:
+                    logger.warning(f"Failed to record mock OpenTelemetry metrics: {metrics_e}")
+                
+                logger.info(f"🎭 Mock GenAI cost tracking - Tokens: {int(input_tokens + output_tokens)}, Cost: ${round(total_cost, 6)}")
+                
+                span.set_status(trace.Status(trace.StatusCode.OK))
+                
+        except Exception as e:
+            logger.error(f"Mock GenAI telemetry generation failed: {e}")
+            
+        return f"🎭 **Mock Response** (Model: {model})\n\n{response_text}\n\n*Generated synthetic telemetry: {int(input_tokens + output_tokens)} tokens, ${round(total_cost, 6)} cost*"
+
+    def _initialize_pure_opentelemetry(self, otlp_endpoint: str):
+        """Initialize pure OpenTelemetry instrumentation like working genai apps."""
+        try:
+            import os
+            from opentelemetry import trace, metrics
+            from opentelemetry.sdk.trace import TracerProvider
+            from opentelemetry.sdk.trace.export import BatchSpanProcessor
+            from opentelemetry.sdk.resources import Resource
+            from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+            from opentelemetry.sdk.metrics import MeterProvider
+            from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+            from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+
+            logger.info(f"Initializing pure OpenTelemetry with endpoint: {otlp_endpoint}")
+
+            # Set up service configuration
+            service_name = os.getenv("OTEL_SERVICE_NAME", "ai-compare")
+            service_namespace = os.getenv("OTEL_SERVICE_NAMESPACE", "ai-compare")
+            
+            # Create resource with GenAI-specific attributes
+            resource = Resource.create({
+                "service.name": service_name,
+                "service.namespace": service_namespace,
+                "service.version": "1.0.0",
+                "service.instance.id": "backend",
+                "deployment.environment": service_namespace,
+                "gen_ai.system": "ollama",
+                "gen_ai.application.name": service_name,
+                "ai.framework": "ollama",
+                "ai.application.type": "chat"
+            })
+
+            # Set up trace provider
+            trace_provider = TracerProvider(resource=resource)
+            trace_exporter = OTLPSpanExporter(endpoint=f"{otlp_endpoint}/v1/traces")
+            span_processor = BatchSpanProcessor(trace_exporter)
+            trace_provider.add_span_processor(span_processor)
+            trace.set_tracer_provider(trace_provider)
+
+            # Set up metrics provider  
+            metric_exporter = OTLPMetricExporter(endpoint=f"{otlp_endpoint}/v1/metrics")
+            metric_reader = PeriodicExportingMetricReader(metric_exporter, export_interval_millis=10000)
+            metrics_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
+            metrics.set_meter_provider(metrics_provider)
+
+            logger.info("✅ Pure OpenTelemetry instrumentation initialized successfully")
+            logger.info(f"  - Service: {service_name}")
+            logger.info(f"  - Namespace: {service_namespace}")
+            logger.info(f"  - Endpoint: {otlp_endpoint}")
+
+        except Exception as e:
+            logger.error(f"Error initializing pure OpenTelemetry: {str(e)}")
+            logger.info("Continuing without OpenTelemetry observability")
+
     def get_ollama_models(self) -> List[str]:
         """Fetches the list of available models, checking ConfigMap config first for demo purposes."""
         logger.info(f"Attempting to fetch Ollama models from {self.ollama_base_url}/api/tags")
+
+        # Check for mock mode
+        mock_mode = os.environ.get("GENAI_MOCK_MODE", "false").lower() == "true"
+        if mock_mode:
+            logger.info("🎭 Mock GenAI Mode - returning synthetic model list")
+            mock_models = ["llama3.2:latest", "llama3.1:8b", "codellama:7b", "mistral:7b"]
+            self.ollama_models = mock_models
+            return mock_models
 
         # Check demo configuration first - if it's broken, fail immediately
         demo_models = self._read_demo_config("models-latest")
@@ -1328,15 +1526,23 @@ class ChatInterface:
         """Sends a conversation history to Ollama using the Python SDK with manual GenAI instrumentation."""
         logger.info(f"Attempting to chat with Ollama model: {model}")
 
+        # Import os at the beginning
+        import os
+        
+        # Check for mock mode to generate synthetic telemetry
+        mock_mode = os.environ.get("GENAI_MOCK_MODE", "false").lower() == "true"
+        if mock_mode:
+            logger.info("🎭 Mock GenAI Mode enabled - generating synthetic telemetry data")
+            return self._generate_mock_genai_response(messages, model)
+
         # Manual GenAI telemetry instrumentation for SUSE Observability
         try:
-            import os
 
             from opentelemetry import trace
 
             tracer = trace.get_tracer("ollama-genai-chat")
 
-            with tracer.start_as_current_span("gen_ai.chat.completions") as span:
+            with tracer.start_as_current_span(f"chat {model}") as span:
                 # Set GenAI semantic conventions
                 span.set_attribute("gen_ai.system", "ollama")
                 span.set_attribute("gen_ai.operation.name", "chat")

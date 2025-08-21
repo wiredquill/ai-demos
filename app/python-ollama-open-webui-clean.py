@@ -26,14 +26,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 # --- End Logging Configuration ---
 
-# --- OpenLit Observability Integration ---
-try:
-    import openlit
-
-    OPENLIT_AVAILABLE = True
-except ImportError:
-    OPENLIT_AVAILABLE = False
-    logger.warning("OpenLit not available - observability disabled")
+# --- Pure OpenTelemetry Integration (No OpenLit) ---
+OPENLIT_AVAILABLE = False
+logger.info("Using pure OpenTelemetry implementation (OpenLit disabled for compatibility)")
 
 
 # --- HTTP API Server for Observable Traffic ---
@@ -746,562 +741,87 @@ class ChatInterface:
             return default_config
 
     def _initialize_observability(self):
-        """Initialize OpenLit observability if enabled and available."""
+        """Initialize pure OpenTelemetry observability like working GenAI apps."""
         import os
-
-        if not OPENLIT_AVAILABLE:
-            logger.info("OpenLit not available - skipping observability initialization")
-            return
 
         # Read observability configuration from environment variables
         otlp_endpoint = os.getenv("OTLP_ENDPOINT")
-        collect_gpu_stats = os.getenv("COLLECT_GPU_STATS", "false").lower() == "true"
-
-        # Development option - disabled by default for production stability
-        dev_mode = os.getenv("DEV_MODE", "false").lower() == "true"
-        observability_enabled = os.getenv("OBSERVABILITY_ENABLED", "false").lower() == "true"
-
-        # Enhanced GenAI observability settings (for OpenTelemetry edition)
-        token_tracking = os.getenv("TOKEN_TRACKING_ENABLED", "false").lower() == "true"
-        cost_tracking = os.getenv("COST_TRACKING_ENABLED", "false").lower() == "true"
-        model_metrics = os.getenv("MODEL_METRICS_ENABLED", "false").lower() == "true"
-        trace_requests = os.getenv("TRACE_REQUESTS_ENABLED", "false").lower() == "true"
-
-        if not observability_enabled and not dev_mode:
-            logger.info(
-                "OpenLit observability disabled (production default). Enable with OBSERVABILITY_ENABLED=true or DEV_MODE=true"
-            )
-            return
 
         if not otlp_endpoint:
             logger.info("OTLP_ENDPOINT not configured - observability disabled")
             return
 
+        logger.info("🚀 Initializing pure OpenTelemetry observability (matching working GenAI apps)")
+        self._initialize_pure_opentelemetry(otlp_endpoint)
+
+    def _initialize_pure_opentelemetry(self, otlp_endpoint: str):
+        """Initialize pure OpenTelemetry instrumentation like working genai apps."""
         try:
-            logger.info(f"Initializing OpenLit observability with endpoint: {otlp_endpoint}")
+            import os
 
-            # Test connectivity to OTLP endpoint first with a short timeout
-            import socket
-            import urllib.parse
+            from opentelemetry import metrics, trace
+            from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+            from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+            from opentelemetry.sdk.metrics import MeterProvider
+            from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+            from opentelemetry.sdk.resources import Resource
+            from opentelemetry.sdk.trace import TracerProvider
+            from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-            parsed_url = urllib.parse.urlparse(otlp_endpoint)
-            host = parsed_url.hostname
-            port = parsed_url.port or (443 if parsed_url.scheme == "https" else 80)
+            logger.info(f"Initializing pure OpenTelemetry with endpoint: {otlp_endpoint}")
 
-            # Quick connectivity test with 3 second timeout
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(3)
-            try:
-                result = sock.connect_ex((host, port))
-                if result != 0:
-                    logger.warning(f"Cannot connect to OTLP endpoint {host}:{port} - skipping OpenLit initialization")
-                    return
-            except Exception as conn_test_error:
-                logger.warning(f"OTLP endpoint connectivity test failed: {conn_test_error} - skipping OpenLit initialization")
-                return
-            finally:
-                sock.close()
-
-            # Set OpenTelemetry service name environment variable before OpenLit initialization
-            # This ensures SUSE Observability detects it as a GenAI service
-            # Use environment variable overrides if available, otherwise use defaults
+            # Set up service configuration
             service_name = os.getenv("OTEL_SERVICE_NAME", "ai-compare")
             service_namespace = os.getenv("OTEL_SERVICE_NAMESPACE", "ai-compare")
 
-            # Initialize OpenLit with enhanced GenAI configuration
-            openlit_config = {
-                "otlp_endpoint": otlp_endpoint,
-                "collect_gpu_stats": collect_gpu_stats,
-                "application_name": service_name,  # Ensure OpenLit uses correct service name
-                "environment": service_namespace,  # Set environment for proper categorization
-            }
-
-            # Add cost tracking configuration if enabled
-            if cost_tracking:
-                # OpenLit cost tracking configuration
-                pricing_config = os.getenv("OPENLIT_PRICING_JSON")
-                if pricing_config:
-                    import json
-
-                    try:
-                        pricing_data = json.loads(pricing_config)
-                        openlit_config["pricing_info"] = pricing_data
-                        logger.info(f"Added pricing configuration for {len(pricing_data)} models")
-                    except json.JSONDecodeError:
-                        logger.warning("Failed to parse OPENLIT_PRICING_JSON, using default pricing")
-
-            # Add enhanced GenAI observability features if enabled
-            if token_tracking or cost_tracking or model_metrics or trace_requests:
-                logger.info("Enhanced GenAI observability features enabled:")
-                if token_tracking:
-                    logger.info("  - Token usage tracking per model and request")
-                if cost_tracking:
-                    logger.info("  - Cost calculations and budget monitoring")
-                if model_metrics:
-                    logger.info("  - Detailed model performance metrics")
-                if trace_requests:
-                    logger.info("  - Full request tracing through the stack")
-                logger.info("GenAI Application Categorization:")
-                logger.info("  - gen_ai.system: ollama")
-                logger.info("  - gen_ai.application.name: ai-compare")
-                logger.info("  - application.type: genai")
-                logger.info("  - ai.model.provider: meta (Llama 3.2)")
-                logger.info("  - ai.workload.type: inference")
-                # Get Kubernetes pod information for SUSE Observability detection
-                import os
-
-                k8s_pod_name = os.environ.get("HOSTNAME", "unknown-pod")
-                k8s_pod_uid = os.environ.get("K8S_POD_UID", "unknown-uid")
-                k8s_node_name = os.environ.get("K8S_NODE_NAME", "unknown-node")
-
-                logger.info("SUSE Observability Kubernetes Integration:")
-                # Set OpenTelemetry service name environment variable before logging
-                service_name = os.getenv("OTEL_SERVICE_NAME", "ai-compare")
-                service_namespace = os.getenv("OTEL_SERVICE_NAMESPACE", "ai-compare")
-
-                logger.info(f"  - k8s.namespace.name: {service_namespace}")
-                logger.info(f"  - k8s.pod.name: {k8s_pod_name}")
-                logger.info(f"  - service.instance.id: {k8s_pod_uid}")
-            else:
-                # Set OpenTelemetry service name environment variable before OpenLit initialization
-                # This ensures SUSE Observability detects it as a GenAI service
-                # Use environment variable overrides if available, otherwise use defaults
-                service_name = os.getenv("OTEL_SERVICE_NAME", "ai-compare")
-                service_namespace = os.getenv("OTEL_SERVICE_NAMESPACE", "ai-compare")
-
-            logger.info("🔧 OpenTelemetry Configuration:")
-            logger.info(f"  - OTEL_SERVICE_NAME: {service_name}")
-            logger.info(f"  - OTEL_SERVICE_NAMESPACE: {service_namespace}")
-
-            os.environ["OTEL_SERVICE_NAME"] = service_name
-            os.environ["OTEL_SERVICE_NAMESPACE"] = service_namespace
-            os.environ["OTEL_SERVICE_VERSION"] = "1.0.0"
-            # Don't override OTEL_RESOURCE_ATTRIBUTES if already set by Helm
-            # Only add GenAI-specific attributes if not already configured
-            existing_resource_attrs = os.getenv("OTEL_RESOURCE_ATTRIBUTES", "")
-            if not existing_resource_attrs:
-                # Set GenAI-specific attributes for SUSE Observability detection
-                os.environ["OTEL_RESOURCE_ATTRIBUTES"] = (
-                    f"service.namespace={service_namespace},"
-                    "service.version=1.0.0,"
-                    "service.instance.id=backend,"
-                    "stackpack=open-telemetry,"
-                    "gen_ai.system=ollama,"
-                    "gen_ai.operation.name=chat,"
-                    "gen_ai.request.model=llama3.2:latest,"
-                    f"gen_ai.application.name={service_name},"
-                    f"gen.ai.environment={service_namespace},"
-                    "gen_ai_app=true,"
-                    "openlit=dev-ai,"
-                    "ai.model.provider=meta,"
-                    "ai.workload.type=inference"
-                )
-
-            # Ensure ollama library is imported before OpenLit initialization for proper detection
-            try:
-                import ollama
-
-                # Touch the module to satisfy flake8 - OpenLit needs this import for instrumentation
-                _ = ollama.__name__
-                logger.info("Pre-imported ollama library for OpenLit instrumentation")
-            except ImportError:
-                logger.warning("Could not import ollama library for OpenLit instrumentation")
-
-            openlit.init(**openlit_config)
-
-            # Enhanced GenAI telemetry for SUSE Observability detection
-            try:
-                from opentelemetry import trace
-
-                # Create dedicated GenAI tracer for manual instrumentation
-                tracer = trace.get_tracer("ollama-genai-sdk")
-
-                # Store tracer for manual use in Ollama calls
-                self.genai_tracer = tracer
-                logger.info("✅ Created dedicated GenAI tracer for Ollama operations")
-                logger.info("✅ Manual GenAI telemetry instrumentation ready for SUSE Observability")
-
-            except ImportError as e:
-                logger.warning(f"Failed to set up GenAI telemetry tracer: {e}")
-                self.genai_tracer = None
-            except Exception as e:
-                logger.warning(f"Error during GenAI telemetry setup: {e}")
-                self.genai_tracer = None
-
-            # Add OpenTelemetry GenAI semantic conventions for SUSE Observability AI section
-            try:
-                from opentelemetry.sdk.resources import Resource
-
-                # Create resource with comprehensive OpenTelemetry GenAI semantic conventions
-                genai_resource = Resource.create(
-                    {
-                        # Core GenAI semantic conventions for SUSE Observability
-                        "gen_ai.system": "ollama",
-                        "gen_ai.operation.name": "chat",
-                        "gen_ai.request.model": "llama3.2:latest",
-                        "gen_ai.application.name": "ai-compare",
-                        "gen_ai.environment": "production",
-                        "gen_ai.workload.type": "inference",
-                        # AI/ML specific attributes for enhanced categorization
-                        "ai.model.provider": "meta",
-                        "ai.model.type": "llm",
-                        "ai.model.family": "llama",
-                        "ai.model.version": "3.2",
-                        "ai.workload.type": "inference",
-                        "ai.framework": "ollama",
-                        # Service identification
-                        "service.name": service_name,
-                        "service.version": "1.0.0",
-                        "service.namespace": service_namespace,
-                        "deployment.environment": service_namespace,
-                        # Kubernetes-specific attributes for SUSE Observability detection
-                        "k8s.cluster.name": "dev-ai",
-                        "k8s.namespace.name": service_namespace,
-                        "k8s.deployment.name": "ai-compare-otel-ai-compare-opentelemetry-app",
-                        "k8s.container.name": "app",
-                        "k8s.pod.name": k8s_pod_name,
-                        "k8s.pod.uid": k8s_pod_uid,
-                        "k8s.node.name": k8s_node_name,
-                        "service.instance.id": k8s_pod_uid,
-                        # Application categorization
-                        "application.type": "genai",
-                        "application.category": "llm-inference",
-                        "telemetry.sdk.language": "python",
-                    }
-                )
-
-                # Merge with existing resource (OpenLit may have set some attributes)
-                from opentelemetry import trace
-
-                # Get current providers and merge resources
-                current_tracer_provider = trace.get_tracer_provider()
-
-                if hasattr(current_tracer_provider, "resource"):
-                    current_tracer_provider.resource.merge(genai_resource)
-                    logger.info("Merged GenAI semantic conventions with existing OpenTelemetry resource")
-                else:
-                    logger.info("Applied GenAI semantic conventions to OpenTelemetry resource")
-            except Exception as e:
-                logger.warning(f"Failed to add GenAI semantic conventions: {e} - continuing with basic OpenLit")
-
-            # Store observability settings for use in request handling
-            self.observability_settings = {
-                "token_tracking": token_tracking,
-                "cost_tracking": cost_tracking,
-                "model_metrics": model_metrics,
-                "trace_requests": trace_requests,
-                "collect_gpu_stats": collect_gpu_stats,
-            }
-
-            logger.info(
-                f"OpenLit observability initialized successfully. Endpoint: {otlp_endpoint}, GPU Stats: {collect_gpu_stats}, Enhanced GenAI: {any([token_tracking, cost_tracking, model_metrics, trace_requests])}"
-            )
-        except Exception as e:
-            logger.warning(f"Failed to initialize OpenLit observability: {e} - continuing without observability")
-
-    def _initialize_api_server(self):
-        """Initialize HTTP API server if enabled."""
-        api_enabled = os.getenv("HTTP_API_ENABLED", "true").lower() == "true"
-        api_port = int(os.getenv("HTTP_API_PORT", "8080"))
-
-        if not api_enabled:
-            logger.info("HTTP API server disabled via HTTP_API_ENABLED environment variable")
-            return
-
-        try:
-            self.api_server = ObservableAPIServer(self, port=api_port)
-            self.api_server.start_server()
-            logger.info(f"HTTP API server initialized on port {api_port} for observable traffic generation")
-
-        except Exception as e:
-            logger.error(f"Failed to initialize HTTP API server: {e}")
-            self.api_server = None
-
-    def _read_demo_config(self, key: str) -> str:
-        """Read configuration from mounted ConfigMap for demo purposes."""
-        demo_config_path = os.getenv("DEMO_CONFIG_PATH", "/app/demo-config")
-        config_file = os.path.join(demo_config_path, key)
-
-        try:
-            if os.path.exists(config_file):
-                with open(config_file, "r") as f:
-                    value = f.read().strip()
-                    logger.info(f"Read demo config '{key}': {value}")
-                    return value
-            else:
-                logger.warning(f"Demo config file not found: {config_file}")
-                return None
-        except Exception as e:
-            logger.error(f"Failed to read demo config '{key}': {e}")
-            return None
-
-    def _simulate_configmap_failure(self) -> bool:
-        """Create actual ConfigMap failure by changing the key that breaks the app."""
-        try:
-            import os
-            import subprocess
-
-            # Get namespace and ConfigMap name from environment or use defaults
-            namespace = os.getenv("KUBERNETES_NAMESPACE", "ai-compare")
-            configmap_name = os.getenv("DEMO_CONFIGMAP_NAME", "ai-compare-demo-config")
-
-            # Verify ConfigMap exists
-            try:
-                result = subprocess.run(
-                    [
-                        "kubectl",
-                        "get",
-                        "configmap",
-                        configmap_name,
-                        "-n",
-                        namespace,
-                        "-o",
-                        "name",
-                    ],
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                )
-
-                if result.returncode != 0:
-                    logger.error(f"ConfigMap {configmap_name} not found in namespace {namespace}")
-                    return False
-                else:
-                    logger.info(f"Found demo ConfigMap: {configmap_name}")
-            except Exception as e:
-                logger.error(f"Failed to verify ConfigMap: {e}")
-                return False
-
-            # Step 1: Remove the working key 'models-latest'
-            logger.info(f"Removing working ConfigMap key 'models-latest' from {configmap_name}")
-            result1 = subprocess.run(
-                [
-                    "kubectl",
-                    "patch",
-                    "configmap",
-                    configmap_name,
-                    "-n",
-                    namespace,
-                    "--type=json",
-                    '-p=[{"op": "remove", "path": "/data/models-latest"}]',
-                ],
-                capture_output=True,
-                text=True,
-                timeout=15,
+            # Create resource with GenAI-specific attributes
+            resource = Resource.create(
+                {
+                    "service.name": service_name,
+                    "service.namespace": service_namespace,
+                    "service.version": "1.0.0",
+                    "service.instance.id": "backend",
+                    "deployment.environment": service_namespace,
+                    "gen_ai.system": "ollama",
+                    "gen_ai.application.name": service_name,
+                    "ai.framework": "ollama",
+                    "ai.application.type": "chat",
+                }
             )
 
-            # Step 2: Add the broken key 'models_latest' (underscore breaks the app)
-            logger.info(f"Adding broken ConfigMap key 'models_latest' to {configmap_name}")
-            result2 = subprocess.run(
-                [
-                    "kubectl",
-                    "patch",
-                    "configmap",
-                    configmap_name,
-                    "-n",
-                    namespace,
-                    "--type=json",
-                    '-p=[{"op": "add", "path": "/data/models_latest", "value": "broken-model:invalid"}]',
-                ],
-                capture_output=True,
-                text=True,
-                timeout=15,
-            )
+            # Set up trace provider
+            trace_provider = TracerProvider(resource=resource)
+            trace_exporter = OTLPSpanExporter(endpoint=f"{otlp_endpoint}/v1/traces")
+            span_processor = BatchSpanProcessor(trace_exporter)
+            trace_provider.add_span_processor(span_processor)
+            trace.set_tracer_provider(trace_provider)
 
-            if result1.returncode == 0 and result2.returncode == 0:
-                logger.info("✅ ConfigMap manipulation successful - app should start failing!")
-                logger.info(
-                    '🔧 To fix externally: kubectl patch configmap <name> -n <namespace> --type=json -p=\'[{"op": "remove", "path": "/data/models_latest"}, {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest"}]\''
-                )
-                return True
-            else:
-                logger.error(f"ConfigMap patch failed: {result1.stderr} {result2.stderr}")
-                return False
+            # Set up metrics provider
+            metric_exporter = OTLPMetricExporter(endpoint=f"{otlp_endpoint}/v1/metrics")
+            metric_reader = PeriodicExportingMetricReader(metric_exporter, export_interval_millis=10000)
+            metrics_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
+            metrics.set_meter_provider(metrics_provider)
 
-        except subprocess.TimeoutExpired:
-            logger.error("kubectl command timed out - ConfigMap manipulation failed")
-            return False
-        except Exception as e:
-            logger.error(f"ConfigMap failure simulation error: {e}")
-            return False
-
-    def _check_configmap_demo_state(self) -> tuple:
-        """Check current ConfigMap state to determine availability demo status."""
-        try:
-            import json
-            import os
-            import subprocess
-
-            # Get namespace and ConfigMap name from environment or use defaults
-            namespace = os.getenv("KUBERNETES_NAMESPACE", "ai-compare")
-            configmap_name = os.getenv("DEMO_CONFIGMAP_NAME", "ai-compare-demo-config")
-
-            # Get ConfigMap data
-            result = subprocess.run(
-                [
-                    "kubectl",
-                    "get",
-                    "configmap",
-                    configmap_name,
-                    "-n",
-                    namespace,
-                    "-o",
-                    "json",
-                ],
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
-
-            if result.returncode != 0:
-                logger.warning(f"Could not read ConfigMap {configmap_name}: {result.stderr}")
-                return False, "unknown", "ConfigMap not accessible"
-
-            configmap_data = json.loads(result.stdout)
-            data = configmap_data.get("data", {})
-
-            # Check if demo is ON (broken key exists) or OFF (working key exists)
-            if "models_latest" in data:
-                # Demo is ON - broken configuration
-                broken_value = data["models_latest"]
-                return True, "ON", f"Broken config: {broken_value}"
-            elif "models-latest" in data:
-                # Demo is OFF - working configuration
-                working_value = data["models-latest"]
-                return False, "OFF", f"Working config: {working_value}"
-            else:
-                # Neither key exists - unknown state
-                return False, "unknown", "No demo configuration found"
+            logger.info("✅ Pure OpenTelemetry instrumentation initialized successfully")
+            logger.info(f"  - Service: {service_name}")
+            logger.info(f"  - Namespace: {service_namespace}")
+            logger.info(f"  - Endpoint: {otlp_endpoint}")
 
         except Exception as e:
-            logger.error(f"Error checking ConfigMap demo state: {e}")
-            return False, "error", f"Error: {str(e)}"
-
-    def _start_auto_off_timer(self):
-        """Start a 60-second timer to automatically turn off demo after ConfigMap is fixed."""
-
-        def auto_off_worker():
-            """Worker thread that waits 60 seconds then checks ConfigMap and turns off demo."""
-            import time
-
-            logger.info("Auto-off timer started - will check ConfigMap in 60 seconds")
-            time.sleep(60)
-
-            # Check if ConfigMap has been fixed (working key exists)
-            is_demo_on, state, config_value = self._check_configmap_demo_state()
-
-            if not is_demo_on and state == "OFF":
-                # ConfigMap has been fixed, turn off internal demo state
-                logger.info("Auto-off timer triggered - ConfigMap fixed, turning off demo")
-                self.service_health_failure = False
-                self.availability_demo_auto_off_timer = None
-            else:
-                logger.info(f"Auto-off timer expired but ConfigMap still broken ({state})")
-                self.availability_demo_auto_off_timer = None
-
-        # Cancel any existing timer
-        if (
-            hasattr(self, "availability_demo_auto_off_timer")
-            and self.availability_demo_auto_off_timer
-            and self.availability_demo_auto_off_timer.is_alive()
-        ):
-            logger.info("Canceling existing auto-off timer")
-
-        # Start new timer
-        self.availability_demo_auto_off_timer = threading.Thread(target=auto_off_worker, daemon=True)
-        self.availability_demo_auto_off_timer.start()
-
-    def _restore_configmap_health(self) -> bool:
-        """Restore ConfigMap health by fixing the broken configuration."""
-        try:
-            import os
-            import subprocess
-
-            # Get namespace and ConfigMap name from environment or use defaults
-            namespace = os.getenv("KUBERNETES_NAMESPACE", "ai-compare")
-            configmap_name = os.getenv("DEMO_CONFIGMAP_NAME", "ai-compare-demo-config")
-
-            # Verify ConfigMap exists
-            try:
-                result = subprocess.run(
-                    [
-                        "kubectl",
-                        "get",
-                        "configmap",
-                        configmap_name,
-                        "-n",
-                        namespace,
-                        "-o",
-                        "name",
-                    ],
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                )
-
-                if result.returncode != 0:
-                    logger.error(f"ConfigMap {configmap_name} not found in namespace {namespace}")
-                    return False
-                else:
-                    logger.info(f"Found demo ConfigMap: {configmap_name}")
-            except Exception as e:
-                logger.error(f"Failed to verify ConfigMap: {e}")
-                return False
-
-            # Step 1: Remove the broken key 'models_latest'
-            logger.info(f"Removing broken ConfigMap key 'models_latest' from {configmap_name}")
-            result1 = subprocess.run(
-                [
-                    "kubectl",
-                    "patch",
-                    "configmap",
-                    configmap_name,
-                    "-n",
-                    namespace,
-                    "--type=json",
-                    '-p=[{"op": "remove", "path": "/data/models_latest"}]',
-                ],
-                capture_output=True,
-                text=True,
-                timeout=15,
-            )
-
-            # Step 2: Restore the working key 'models-latest'
-            logger.info(f"Restoring working ConfigMap key 'models-latest' to {configmap_name}")
-            result2 = subprocess.run(
-                [
-                    "kubectl",
-                    "patch",
-                    "configmap",
-                    configmap_name,
-                    "-n",
-                    namespace,
-                    "--type=json",
-                    '-p=[{"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest"}]',
-                ],
-                capture_output=True,
-                text=True,
-                timeout=15,
-            )
-
-            if result1.returncode == 0 and result2.returncode == 0:
-                logger.info("✅ ConfigMap restoration successful - app should start working!")
-                return True
-            else:
-                logger.error(f"ConfigMap restoration failed: {result1.stderr} {result2.stderr}")
-                return False
-
-        except subprocess.TimeoutExpired:
-            logger.error("kubectl command timed out - ConfigMap restoration failed")
-            return False
-        except Exception as e:
-            logger.error(f"ConfigMap health restoration error: {e}")
-            return False
-            return False
+            logger.error(f"Error initializing pure OpenTelemetry: {str(e)}")
+            logger.info("Continuing without OpenTelemetry observability")
 
     def get_ollama_models(self) -> List[str]:
         """Fetches the list of available models, checking ConfigMap config first for demo purposes."""
         logger.info(f"Attempting to fetch Ollama models from {self.ollama_base_url}/api/tags")
+
+        # Check for mock mode
+        mock_mode = os.environ.get("GENAI_MOCK_MODE", "false").lower() == "true"
+        if mock_mode:
+            logger.info("🎭 Mock GenAI Mode - returning synthetic model list")
+            mock_models = ["llama3.2:latest", "llama3.1:8b", "codellama:7b", "mistral:7b"]
+            self.ollama_models = mock_models
+            return mock_models
 
         # Check demo configuration first - if it's broken, fail immediately
         demo_models = self._read_demo_config("models-latest")
@@ -1328,15 +848,22 @@ class ChatInterface:
         """Sends a conversation history to Ollama using the Python SDK with manual GenAI instrumentation."""
         logger.info(f"Attempting to chat with Ollama model: {model}")
 
+        # Import os at the beginning
+        import os
+
+        # Check for mock mode to generate synthetic telemetry
+        mock_mode = os.environ.get("GENAI_MOCK_MODE", "false").lower() == "true"
+        if mock_mode:
+            logger.info("🎭 Mock GenAI Mode enabled - generating synthetic telemetry data")
+            return self._generate_mock_genai_response(messages, model)
+
         # Manual GenAI telemetry instrumentation for SUSE Observability
         try:
-            import os
-
             from opentelemetry import trace
 
             tracer = trace.get_tracer("ollama-genai-chat")
 
-            with tracer.start_as_current_span("gen_ai.chat.completions") as span:
+            with tracer.start_as_current_span(f"chat {model}") as span:
                 # Set GenAI semantic conventions
                 span.set_attribute("gen_ai.system", "ollama")
                 span.set_attribute("gen_ai.operation.name", "chat")

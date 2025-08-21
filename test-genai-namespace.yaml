@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-compare-genai-test
+  namespace: genai
+  labels:
+    app: ai-compare-genai-test
+    genai.observability/enabled: "true"
+    genai.observability/type: "chat-application"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-compare-genai-test
+  template:
+    metadata:
+      labels:
+        app: ai-compare-genai-test
+    spec:
+      containers:
+      - name: ai-compare
+        image: ghcr.io/wiredquill/ai-demos-suse:openlit-fix
+        ports:
+        - containerPort: 7860
+        - containerPort: 8080
+        env:
+        - name: OLLAMA_BASE_URL
+          value: "http://ollama-service:11434"
+        - name: OPEN_WEBUI_BASE_URL
+          value: "http://open-webui-service:8080"
+        - name: AUTOMATION_ENABLED
+          value: "true"
+        - name: AUTOMATION_INTERVAL
+          value: "30"
+        - name: OBSERVABILITY_ENABLED
+          value: "true"
+        - name: OTLP_ENDPOINT
+          value: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
+        - name: DEV_MODE
+          value: "true"
+        - name: OTEL_SERVICE_NAME
+          value: "ai-compare-genai-test"
+        - name: APP_NAME
+          value: "AICompareGenaiTest"
+        - name: OTEL_SERVICE_NAMESPACE
+          value: "genai"
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.namespace=genai,service.version=1.0.0,service.instance.id=backend,component=backend,deployment.environment=genai,gen_ai.system=ollama,gen_ai.application.name=ai-compare,gen_ai.operation.name=chat,application.type=genai,ai.model.provider=meta,ai.workload.type=inference,ai.framework=gradio-ollama"
+        - name: OPENLIT_APPLICATION_NAME
+          value: "ai-compare-genai-test"
+        - name: OPENLIT_SERVICE_NAME
+          value: "ai-compare-genai-test"
+        - name: OPENLIT_ENVIRONMENT
+          value: "genai"
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-compare-genai-test-service
+  namespace: genai
+spec:
+  selector:
+    app: ai-compare-genai-test
+  ports:
+  - name: gradio
+    port: 7860
+    targetPort: 7860
+  - name: http-api
+    port: 8080
+    targetPort: 8080
+  type: ClusterIP

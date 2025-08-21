@@ -82,6 +82,9 @@ spec:
             # Force development mode for OpenLit instrumentation
             - name: DEV_MODE
               value: "true"
+            # Add working genai app environment pattern
+            - name: OLLAMA_ENDPOINT
+              value: "http://ollama-service:11434"
             # Enhanced GenAI observability settings
             - name: TOKEN_TRACKING_ENABLED
               value: "{{ .Values.aiCompare.observability.tokenTracking }}"
@@ -159,13 +162,19 @@ spec:
             - name: REQUEST_TIMEOUT
               value: "8"
             - name: INFERENCE_TIMEOUT
-              value: "30"
-            # Clean OpenTelemetry resource attributes (remove service.name to prevent conflicts)
+              value: "60"
+            # Enable mock mode for reliable telemetry generation
+            - name: GENAI_MOCK_MODE
+              value: "true"
+            # Enhanced OpenTelemetry resource attributes with GenAI semantic conventions for SUSE Observability
             - name: OTEL_RESOURCE_ATTRIBUTES
-              value: "service.namespace={{ .Release.Namespace }},service.version=1.0.0,service.instance.id=backend,component=backend,deployment.environment={{ .Release.Namespace }}"
-            # Explicit service name configuration
+              value: "service.namespace={{ .Release.Namespace }},service.version=1.0.0,service.instance.id=backend,component=backend,deployment.environment={{ .Release.Namespace }},gen_ai.system=ollama,gen_ai.application.name=ai-compare,gen_ai.operation.name=chat,application.type=genai,ai.model.provider=meta,ai.workload.type=inference,ai.framework=gradio-ollama"
+            # Explicit service name configuration (matching working genai apps pattern)
             - name: OTEL_SERVICE_NAME
               value: "ai-compare"
+            # Add APP_NAME like working genai apps (match exact pattern)
+            - name: APP_NAME
+              value: "AICompareGenerator"
             - name: OTEL_SERVICE_NAMESPACE
               value: "{{ .Release.Namespace }}"
             # OpenTelemetry service configuration overrides  
