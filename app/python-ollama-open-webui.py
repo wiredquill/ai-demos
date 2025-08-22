@@ -747,25 +747,13 @@ class ChatInterface:
 
     def _initialize_observability(self):
         """Initialize OpenLit observability if enabled and available."""
-        import os
-
         if not OPENLIT_AVAILABLE:
             logger.info("OpenLit not available - skipping observability initialization")
             return
 
-        # Read observability configuration from environment variables
-        otlp_endpoint = os.getenv("OTLP_ENDPOINT")
-        collect_gpu_stats = os.getenv("COLLECT_GPU_STATS", "false").lower() == "true"
-
-        # Development option - disabled by default for production stability
+        # Check if observability is enabled
         dev_mode = os.getenv("DEV_MODE", "false").lower() == "true"
         observability_enabled = os.getenv("OBSERVABILITY_ENABLED", "false").lower() == "true"
-
-        # Enhanced GenAI observability settings (for OpenTelemetry edition)
-        token_tracking = os.getenv("TOKEN_TRACKING_ENABLED", "false").lower() == "true"
-        cost_tracking = os.getenv("COST_TRACKING_ENABLED", "false").lower() == "true"
-        model_metrics = os.getenv("MODEL_METRICS_ENABLED", "false").lower() == "true"
-        trace_requests = os.getenv("TRACE_REQUESTS_ENABLED", "false").lower() == "true"
 
         if not observability_enabled and not dev_mode:
             logger.info(
@@ -773,225 +761,37 @@ class ChatInterface:
             )
             return
 
-        if not otlp_endpoint:
-            logger.info("OTLP_ENDPOINT not configured - observability disabled")
-            return
-
         try:
-            logger.info(f"Initializing OpenLit observability with endpoint: {otlp_endpoint}")
+            # Import and use clean OpenLit initialization
+            from openlit_init import initialize_openlit, patch_openlit
 
-            # Test connectivity to OTLP endpoint first with a short timeout
-            import socket
-            import urllib.parse
+            if initialize_openlit():
+                # Apply any custom patches
+                patch_openlit()
 
-            parsed_url = urllib.parse.urlparse(otlp_endpoint)
-            host = parsed_url.hostname
-            port = parsed_url.port or (443 if parsed_url.scheme == "https" else 80)
+                # Store enhanced observability settings for use in chat methods
+                self.enhanced_observability = {
+                    "token_tracking": os.getenv("TOKEN_TRACKING_ENABLED", "true").lower() == "true",
+                    "cost_tracking": os.getenv("COST_TRACKING_ENABLED", "true").lower() == "true",
+                    "model_metrics": os.getenv("MODEL_METRICS_ENABLED", "true").lower() == "true",
+                    "trace_requests": os.getenv("TRACE_REQUESTS_ENABLED", "true").lower() == "true",
+                    "collect_gpu_stats": os.getenv("COLLECT_GPU_STATS", "false").lower() == "true",
+                }
 
-            # Quick connectivity test with 3 second timeout
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(3)
-            try:
-                result = sock.connect_ex((host, port))
-                if result != 0:
-                    logger.warning(f"Cannot connect to OTLP endpoint {host}:{port} - skipping OpenLit initialization")
-                    return
-            except Exception as conn_test_error:
-                logger.warning(f"OTLP endpoint connectivity test failed: {conn_test_error} - skipping OpenLit initialization")
-                return
-            finally:
-                sock.close()
+                # Initialize GenAI tracer for manual instrumentation
+                try:
+                    from opentelemetry import trace
 
-            # Set OpenTelemetry service name environment variable before OpenLit initialization
-            # This ensures SUSE Observability detects it as a GenAI service
-            # Use environment variable overrides if available, otherwise use defaults
-            service_name = os.getenv("OTEL_SERVICE_NAME", "ai-compare")
-            service_namespace = os.getenv("OTEL_SERVICE_NAMESPACE", "ai-compare")
-
-            # Initialize OpenLit with enhanced GenAI configuration
-            openlit_config = {
-                "otlp_endpoint": otlp_endpoint,
-                "collect_gpu_stats": collect_gpu_stats,
-                "application_name": service_name,  # Ensure OpenLit uses correct service name
-                "environment": service_namespace,  # Set environment for proper categorization
-            }
-
-            # Add cost tracking configuration if enabled
-            if cost_tracking:
-                # NOTE: OpenLit pricing_info parameter is not supported in current version
-                # Using manual cost tracking attributes instead (see chat_with_ollama method)
-                pricing_config = os.getenv("OPENLIT_PRICING_JSON")
-                if pricing_config:
-                    logger.info(f"Cost tracking enabled with custom pricing configuration (manual mode)")
-                else:
-                    logger.info(f"Cost tracking enabled with default pricing (manual mode)")
-
-            # Add enhanced GenAI observability features if enabled
-            if token_tracking or cost_tracking or model_metrics or trace_requests:
-                logger.info("Enhanced GenAI observability features enabled:")
-                if token_tracking:
-                    logger.info("  - Token usage tracking per model and request")
-                if cost_tracking:
-                    logger.info("  - Cost calculations and budget monitoring")
-                if model_metrics:
-                    logger.info("  - Detailed model performance metrics")
-                if trace_requests:
-                    logger.info("  - Full request tracing through the stack")
-                logger.info("GenAI Application Categorization:")
-                logger.info("  - gen_ai.system: ollama")
-                logger.info("  - gen_ai.application.name: ai-compare")
-                logger.info("  - application.type: genai")
-                logger.info("  - ai.model.provider: meta (Llama 3.2)")
-                logger.info("  - ai.workload.type: inference")
-                # Get Kubernetes pod information for SUSE Observability detection
-                import os
-
-                k8s_pod_name = os.environ.get("HOSTNAME", "unknown-pod")
-                k8s_pod_uid = os.environ.get("K8S_POD_UID", "unknown-uid")
-                k8s_node_name = os.environ.get("K8S_NODE_NAME", "unknown-node")
-
-                logger.info("SUSE Observability Kubernetes Integration:")
-                # Set OpenTelemetry service name environment variable before logging
-                service_name = os.getenv("OTEL_SERVICE_NAME", "ai-compare")
-                service_namespace = os.getenv("OTEL_SERVICE_NAMESPACE", "ai-compare")
-
-                logger.info(f"  - k8s.namespace.name: {service_namespace}")
-                logger.info(f"  - k8s.pod.name: {k8s_pod_name}")
-                logger.info(f"  - service.instance.id: {k8s_pod_uid}")
+                    self.genai_tracer = trace.get_tracer("ollama-genai-sdk")
+                    logger.info("✅ Enhanced GenAI telemetry tracer initialized")
+                except Exception as tracer_error:
+                    logger.warning(f"Could not initialize enhanced GenAI tracer: {tracer_error}")
+                    self.genai_tracer = None
             else:
-                # Set OpenTelemetry service name environment variable before OpenLit initialization
-                # This ensures SUSE Observability detects it as a GenAI service
-                # Use environment variable overrides if available, otherwise use defaults
-                service_name = os.getenv("OTEL_SERVICE_NAME", "ai-compare")
-                service_namespace = os.getenv("OTEL_SERVICE_NAMESPACE", "ai-compare")
+                logger.warning("OpenLit initialization failed - continuing without observability")
 
-            logger.info("🔧 OpenTelemetry Configuration:")
-            logger.info(f"  - OTEL_SERVICE_NAME: {service_name}")
-            logger.info(f"  - OTEL_SERVICE_NAMESPACE: {service_namespace}")
-
-            os.environ["OTEL_SERVICE_NAME"] = service_name
-            os.environ["OTEL_SERVICE_NAMESPACE"] = service_namespace
-            os.environ["OTEL_SERVICE_VERSION"] = "1.0.0"
-            # Don't override OTEL_RESOURCE_ATTRIBUTES if already set by Helm
-            # Only add GenAI-specific attributes if not already configured
-            existing_resource_attrs = os.getenv("OTEL_RESOURCE_ATTRIBUTES", "")
-            if not existing_resource_attrs:
-                # Set GenAI-specific attributes for SUSE Observability detection
-                os.environ["OTEL_RESOURCE_ATTRIBUTES"] = (
-                    f"service.namespace={service_namespace},"
-                    "service.version=1.0.0,"
-                    "service.instance.id=backend,"
-                    "stackpack=open-telemetry,"
-                    "gen_ai.system=ollama,"
-                    "gen_ai.operation.name=chat,"
-                    "gen_ai.request.model=llama3.2:latest,"
-                    f"gen_ai.application.name={service_name},"
-                    f"gen.ai.environment={service_namespace},"
-                    "gen_ai_app=true,"
-                    "openlit=dev-ai,"
-                    "ai.model.provider=meta,"
-                    "ai.workload.type=inference"
-                )
-
-            # Ensure ollama library is imported before OpenLit initialization for proper detection
-            try:
-                import ollama
-
-                # Touch the module to satisfy flake8 - OpenLit needs this import for instrumentation
-                _ = ollama.__name__
-                logger.info("Pre-imported ollama library for OpenLit instrumentation")
-            except ImportError:
-                logger.warning("Could not import ollama library for OpenLit instrumentation")
-
-            openlit.init(**openlit_config)
-
-            # Enhanced GenAI telemetry for SUSE Observability detection
-            try:
-                from opentelemetry import trace
-
-                # Create dedicated GenAI tracer for manual instrumentation
-                tracer = trace.get_tracer("ollama-genai-sdk")
-
-                # Store tracer for manual use in Ollama calls
-                self.genai_tracer = tracer
-                logger.info("✅ Created dedicated GenAI tracer for Ollama operations")
-                logger.info("✅ Manual GenAI telemetry instrumentation ready for SUSE Observability")
-
-            except ImportError as e:
-                logger.warning(f"Failed to set up GenAI telemetry tracer: {e}")
-                self.genai_tracer = None
-            except Exception as e:
-                logger.warning(f"Error during GenAI telemetry setup: {e}")
-                self.genai_tracer = None
-
-            # Add OpenTelemetry GenAI semantic conventions for SUSE Observability AI section
-            try:
-                from opentelemetry.sdk.resources import Resource
-
-                # Create resource with comprehensive OpenTelemetry GenAI semantic conventions
-                genai_resource = Resource.create(
-                    {
-                        # Core GenAI semantic conventions for SUSE Observability
-                        "gen_ai.system": "ollama",
-                        "gen_ai.operation.name": "chat",
-                        "gen_ai.request.model": "llama3.2:latest",
-                        "gen_ai.application.name": "ai-compare",
-                        "gen_ai.environment": "production",
-                        "gen_ai.workload.type": "inference",
-                        # AI/ML specific attributes for enhanced categorization
-                        "ai.model.provider": "meta",
-                        "ai.model.type": "llm",
-                        "ai.model.family": "llama",
-                        "ai.model.version": "3.2",
-                        "ai.workload.type": "inference",
-                        "ai.framework": "ollama",
-                        # Service identification
-                        "service.name": service_name,
-                        "service.version": "1.0.0",
-                        "service.namespace": service_namespace,
-                        "deployment.environment": service_namespace,
-                        # Kubernetes-specific attributes for SUSE Observability detection
-                        "k8s.cluster.name": "dev-ai",
-                        "k8s.namespace.name": service_namespace,
-                        "k8s.deployment.name": "ai-compare-otel-ai-compare-opentelemetry-app",
-                        "k8s.container.name": "app",
-                        "k8s.pod.name": k8s_pod_name,
-                        "k8s.pod.uid": k8s_pod_uid,
-                        "k8s.node.name": k8s_node_name,
-                        "service.instance.id": k8s_pod_uid,
-                        # Application categorization
-                        "application.type": "genai",
-                        "application.category": "llm-inference",
-                        "telemetry.sdk.language": "python",
-                    }
-                )
-
-                # Merge with existing resource (OpenLit may have set some attributes)
-                from opentelemetry import trace
-
-                # Get current providers and merge resources
-                current_tracer_provider = trace.get_tracer_provider()
-
-                if hasattr(current_tracer_provider, "resource"):
-                    current_tracer_provider.resource.merge(genai_resource)
-                    logger.info("Merged GenAI semantic conventions with existing OpenTelemetry resource")
-                else:
-                    logger.info("Applied GenAI semantic conventions to OpenTelemetry resource")
-            except Exception as e:
-                logger.warning(f"Failed to add GenAI semantic conventions: {e} - continuing with basic OpenLit")
-
-            # Store observability settings for use in request handling
-            self.observability_settings = {
-                "token_tracking": token_tracking,
-                "cost_tracking": cost_tracking,
-                "model_metrics": model_metrics,
-                "trace_requests": trace_requests,
-                "collect_gpu_stats": collect_gpu_stats,
-            }
-
-            logger.info(
-                f"OpenLit observability initialized successfully. Endpoint: {otlp_endpoint}, GPU Stats: {collect_gpu_stats}, Enhanced GenAI: {any([token_tracking, cost_tracking, model_metrics, trace_requests])}"
-            )
+        except ImportError:
+            logger.error("Failed to import openlit_init module - check implementation")
         except Exception as e:
             logger.warning(f"Failed to initialize OpenLit observability: {e} - continuing without observability")
 
@@ -1397,10 +1197,19 @@ class ChatInterface:
                             input_tokens = max(1, len(input_text.split()) * 1.3)  # Rough token estimate
                             output_tokens = max(1, len(content.split()) * 1.3)  # Rough token estimate
 
-                            # Get pricing from environment
-                            input_cost_per_token = float(os.environ.get("GENAI_TOKEN_COST_INPUT", "0.0001"))
-                            output_cost_per_token = float(os.environ.get("GENAI_TOKEN_COST_OUTPUT", "0.0002"))
-                            request_cost = float(os.environ.get("GENAI_REQUEST_COST", "0.001"))
+                            # Get pricing from pricing.json using the clean approach
+                            try:
+                                from openlit_init import get_model_pricing
+
+                                pricing = get_model_pricing(model)
+                                input_cost_per_token = pricing["input_cost_per_token"]
+                                output_cost_per_token = pricing["output_cost_per_token"]
+                                request_cost = pricing["cost_per_request"]
+                            except ImportError:
+                                # Fallback to environment variables if openlit_init not available
+                                input_cost_per_token = float(os.environ.get("GENAI_TOKEN_COST_INPUT", "0.00005"))
+                                output_cost_per_token = float(os.environ.get("GENAI_TOKEN_COST_OUTPUT", "0.0001"))
+                                request_cost = float(os.environ.get("GENAI_REQUEST_COST", "0.001"))
 
                             # Calculate costs
                             total_cost = (

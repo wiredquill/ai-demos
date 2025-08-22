@@ -394,6 +394,26 @@
         "llama3.1": {
             "promptPrice": 0.00005,
             "completionPrice": 0.0001
+        },
+        "llama3.2:latest": {
+            "promptPrice": 0.00005,
+            "completionPrice": 0.0001
+        },
+        "llama3.2:1b": {
+            "promptPrice": 0.00003,
+            "completionPrice": 0.00008
+        },
+        "llama3.2:3b": {
+            "promptPrice": 0.00004,
+            "completionPrice": 0.00009
+        },
+        "tinyllama": {
+            "promptPrice": 0.00001,
+            "completionPrice": 0.00002
+        },
+        "tinyllama:latest": {
+            "promptPrice": 0.00001,
+            "completionPrice": 0.00002
         }
     }
 }

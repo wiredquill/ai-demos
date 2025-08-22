@@ -94,38 +94,13 @@ spec:
               value: "{{ .Values.aiCompare.observability.modelMetrics }}"
             - name: TRACE_REQUESTS_ENABLED
               value: "{{ .Values.aiCompare.observability.traceRequests }}"
-            # Cost calculation configuration
-            - name: GENAI_MODEL_COST_PER_TOKEN
-              value: "0.0001"
-            - name: GENAI_COST_CURRENCY
-              value: "USD"
-            - name: GENAI_USAGE_TRACKING
-              value: "true"
-            # OpenLit cost tracking configuration
-            - name: OPENLIT_PRICING_JSON
-              value: '{"llama3.2:latest": {"input_cost_per_token": 0.0001, "output_cost_per_token": 0.0002, "cost_per_request": 0.001}, "llama3.2": {"input_cost_per_token": 0.0001, "output_cost_per_token": 0.0002, "cost_per_request": 0.001}}'
-            - name: OPENLIT_COLLECT_GPU_STATS
+            # Clean OpenLit configuration (following ravan/llm-experiments pattern)
+            - name: APP_NAME
+              value: "ai-compare"
+            - name: COLLECT_GPU_STATS
               value: "{{ .Values.aiCompare.observability.collectGpuStats }}"
-            - name: OPENLIT_ENVIRONMENT
-              value: "{{ .Release.Namespace }}"
-            - name: OPENLIT_APPLICATION_NAME
-              value: "ai-compare"
-            - name: OPENLIT_SERVICE_NAME
-              value: "ai-compare"
-            # Force OpenLit to instrument all HTTP and LLM calls
-            - name: OPENLIT_AUTO_TRACE
-              value: "true"
-            - name: OPENLIT_TRACE_CONTENT
-              value: "true"
-            # Enhanced cost tracking for SUSE Observability
-            - name: GENAI_COST_TRACKING_ENABLED
-              value: "true"
-            - name: GENAI_TOKEN_COST_INPUT
-              value: "0.0001"
-            - name: GENAI_TOKEN_COST_OUTPUT
-              value: "0.0002"
-            - name: GENAI_REQUEST_COST
-              value: "0.001"
+            - name: OLLAMA_ENDPOINT
+              value: "http://ollama-service:11434"
             # Model configuration for demo
             - name: MODEL_CONFIG
               valueFrom:
@@ -224,6 +199,9 @@ spec:
             - name: config-volume
               mountPath: /app/config.json
               subPath: config.json
+            - name: config-volume
+              mountPath: /app/pricing.json
+              subPath: pricing.json
             - name: demo-config-volume
               mountPath: /app/demo-config
               readOnly: true
