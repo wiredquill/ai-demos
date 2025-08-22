@@ -91,6 +91,9 @@ COPY app/pricing.json ./pricing.json
 # Frontend assets (change less frequently)
 COPY frontend/ /app/frontend/
 
+# OpenLit module (essential for observability)
+COPY app/openlit_init.py /app/openlit_init.py
+
 # Main application code (changes most frequently - keep last)
 COPY app/python-ollama-open-webui.py /app/python-ollama-open-webui.py
 
