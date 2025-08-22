@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y bash git curl --no-install-recommends \
 WORKDIR /app
 
 # Copy pricing info
-COPY pricing.json ./pricing.json
+COPY app/pricing.json ./pricing.json
 
 # CORRECTED: The path to the source file now includes the 'app/' prefix
 # to match the location within the build context (the repository root).
