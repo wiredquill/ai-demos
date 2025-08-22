@@ -85,7 +85,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 WORKDIR /app
 
 # Copy pricing info
-COPY pricing.json ./pricing.json
+COPY app/pricing.json ./pricing.json
 
 # Copy application code in optimal order (least to most frequently changed)
 # Frontend assets (change less frequently)
