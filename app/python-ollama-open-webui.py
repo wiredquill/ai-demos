@@ -11,9 +11,12 @@ from typing import Dict, List
 
 import gradio as gr
 import ollama  # Import at top level for OpenLit instrumentation
+import openlit  # Import for @openlit.trace decorators
 import requests
 from flask import Flask, jsonify, request, send_from_directory
 from werkzeug.serving import make_server
+
+from ollama_openai_client import OllamaOpenAIClient  # New OpenAI-pattern client
 
 # Build trigger comment - pipeline model fix deployment
 
@@ -187,9 +190,8 @@ class ObservableAPIServer:
                 # Use a simple test prompt to generate telemetry
                 test_prompt = "Hello, this is a SUSE Observability GenAI detection test."
 
-                # Generate telemetry through Ollama with proper format
-                messages = [{"role": "user", "content": test_prompt}]
-                response = self.chat_interface.chat_with_ollama(messages, "llama3.2:latest")
+                # Generate telemetry through Ollama with OpenAI client pattern
+                response = self.chat_interface.ollama_openai_client.ask_endpoint_handler(test_prompt, "llama3.2:latest")
 
                 return jsonify(
                     {
@@ -607,6 +609,9 @@ class ChatInterface:
         self.open_webui_base_url = os.getenv("OPEN_WEBUI_BASE_URL")
         self.pipelines_base_url = os.getenv("PIPELINES_BASE_URL")
         self.pipeline_api_key = os.getenv("PIPELINE_API_KEY")
+
+        # Initialize new OpenAI-pattern client for better OpenLit integration
+        self.ollama_openai_client = OllamaOpenAIClient(self.ollama_base_url)
 
         # Configurable timeout settings optimized for SUSE security policies
         self.connection_timeout = int(os.getenv("CONNECTION_TIMEOUT", "5"))  # Increased for container networking stability
@@ -2247,7 +2252,7 @@ class ChatInterface:
                 # 1. Send to Ollama with timeout protection
                 logger.info("About to call Ollama...")
                 try:
-                    ollama_reply = self.chat_with_ollama([{"role": "user", "content": current_prompt}], model)
+                    ollama_reply = self.ollama_openai_client.single_prompt(current_prompt, model)
                     logger.info(f"Ollama replied: {ollama_reply[:100]}...")
                 except Exception as e:
                     logger.warning(f"Ollama automation call failed: {e}")
