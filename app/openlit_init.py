@@ -46,7 +46,7 @@ def initialize_openlit():
         logger.info(f"OTLP Endpoint: {otlp_endpoint}")
         logger.info(f"GPU Stats: {collect_gpu_stats}")
 
-        # Initialize OpenLit with pricing.json file (following reference pattern)
+        # Initialize OpenLit with pricing.json file and metrics enabled
         openlit.init(
             otlp_endpoint=otlp_endpoint,
             disable_batch=True,
@@ -54,6 +54,7 @@ def initialize_openlit():
             application_name=app_name,
             pricing_json="./pricing.json",  # Key change: use file path like reference
             collect_gpu_stats=collect_gpu_stats,
+            disable_metrics=False,  # Ensure metrics are enabled for GenAI Apps dashboard
         )
 
         logger.info("✅ OpenLit initialized successfully with pricing.json")
