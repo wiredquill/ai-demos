@@ -1243,6 +1243,19 @@ class ChatInterface:
                     # Add pipeline level header to the response - this IS the pipeline working
                     formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']} (via Pipelines Service)\n\n{content}"
                     logger.info(f"Pipelines service response successful with level: {current_level['name']}")
+                    
+                    # Generate telemetry for successful Open WebUI request using OpenLit client
+                    try:
+                        logger.info("Generating telemetry for successful Open WebUI request")
+                        # Use the instrumented client to generate proper telemetry
+                        self.ollama_openai_client.ask_endpoint_handler(
+                            messages[-1]["content"] if messages else "Pipeline request",
+                            model
+                        )
+                        logger.info("✅ Telemetry generated for successful request")
+                    except Exception as telemetry_error:
+                        logger.warning(f"Failed to generate telemetry: {telemetry_error}")
+                    
                     return formatted_response
                 else:
                     logger.warning(
