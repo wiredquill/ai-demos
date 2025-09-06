@@ -6,7 +6,7 @@ entries:
       licenses: MIT
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-08-19T11:53:59.420156-07:00"
+    created: "2025-09-05T18:20:11.94794-07:00"
     description: AI Compare - Side-by-side AI response comparison platform. Features
       Ollama, Open WebUI, pipelines, and custom chat interface. Built on upstream
       open-source components with GPU support, observability integration, and security
@@ -31,7 +31,7 @@ entries:
     - https://github.com/wiredquill/ai-demos
     type: application
     urls:
-    - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ai-compare-0.1.306.tgz
+    - https://wiredquill.github.io/ai-demos/ai-compare-0.1.306.tgz
     version: 0.1.306
   ai-compare-opentelemetry:
   - annotations:
@@ -41,7 +41,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-08-19T11:53:59.431702-07:00"
+    created: "2025-09-05T18:20:11.957048-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -69,7 +69,7 @@ entries:
     - https://github.com/wiredquill/ai-demos
     type: application
     urls:
-    - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ai-compare-opentelemetry-0.1.314.tgz
+    - https://wiredquill.github.io/ai-demos/ai-compare-opentelemetry-0.1.314.tgz
     version: 0.1.314
   - annotations:
       category: AI/ML
@@ -78,7 +78,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-08-19T11:53:59.429677-07:00"
+    created: "2025-09-05T18:20:11.956201-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -106,7 +106,7 @@ entries:
     - https://github.com/wiredquill/ai-demos
     type: application
     urls:
-    - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ai-compare-opentelemetry-0.1.313.tgz
+    - https://wiredquill.github.io/ai-demos/ai-compare-opentelemetry-0.1.313.tgz
     version: 0.1.313
   - annotations:
       category: AI/ML
@@ -115,7 +115,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-08-19T11:53:59.428598-07:00"
+    created: "2025-09-05T18:20:11.955058-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -143,7 +143,7 @@ entries:
     - https://github.com/wiredquill/ai-demos
     type: application
     urls:
-    - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ai-compare-opentelemetry-0.1.312.tgz
+    - https://wiredquill.github.io/ai-demos/ai-compare-opentelemetry-0.1.312.tgz
     version: 0.1.312
   - annotations:
       category: AI/ML
@@ -152,7 +152,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-08-19T11:53:59.427302-07:00"
+    created: "2025-09-05T18:20:11.95245-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -180,7 +180,7 @@ entries:
     - https://github.com/wiredquill/ai-demos
     type: application
     urls:
-    - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ai-compare-opentelemetry-0.1.311.tgz
+    - https://wiredquill.github.io/ai-demos/ai-compare-opentelemetry-0.1.311.tgz
     version: 0.1.311
   - annotations:
       category: AI/ML
@@ -189,7 +189,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-08-19T11:53:59.425814-07:00"
+    created: "2025-09-05T18:20:11.95128-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -217,7 +217,7 @@ entries:
     - https://github.com/wiredquill/ai-demos
     type: application
     urls:
-    - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ai-compare-opentelemetry-0.1.310.tgz
+    - https://wiredquill.github.io/ai-demos/ai-compare-opentelemetry-0.1.310.tgz
     version: 0.1.310
   - annotations:
       category: AI/ML
@@ -226,7 +226,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-08-19T11:53:59.424653-07:00"
+    created: "2025-09-05T18:20:11.950357-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -254,7 +254,7 @@ entries:
     - https://github.com/wiredquill/ai-demos
     type: application
     urls:
-    - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ai-compare-opentelemetry-0.1.309.tgz
+    - https://wiredquill.github.io/ai-demos/ai-compare-opentelemetry-0.1.309.tgz
     version: 0.1.309
   - annotations:
       category: AI/ML
@@ -263,7 +263,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-08-19T11:53:59.421504-07:00"
+    created: "2025-09-05T18:20:11.949217-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -291,7 +291,7 @@ entries:
     - https://github.com/wiredquill/ai-demos
     type: application
     urls:
-    - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ai-compare-opentelemetry-0.1.304.tgz
+    - https://wiredquill.github.io/ai-demos/ai-compare-opentelemetry-0.1.304.tgz
     version: 0.1.304
   ai-compare-suse:
   - annotations:
@@ -301,7 +301,7 @@ entries:
       suse.com/certified: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-08-19T11:53:59.433507-07:00"
+    created: "2025-09-05T18:20:11.958048-07:00"
     description: AI Compare SUSE Edition - Enterprise AI response comparison platform
       optimized for SUSE environments. Features SUSE BCI images, native SUSE Observability
       integration, NeuVector security demos, and full SUSE cloud-native stack compatibility.
@@ -327,16 +327,106 @@ entries:
     - https://github.com/wiredquill/ai-demos
     type: application
     urls:
-    - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ai-compare-suse-0.1.306.tgz
+    - https://wiredquill.github.io/ai-demos/ai-compare-suse-0.1.306.tgz
     version: 0.1.306
+  ollama:
+  - annotations:
+      helm.sh/images: |
+        - image: dp.apps.rancher.io/containers/ollama:0.11.4
+          name: ollama
+        - image: dp.apps.rancher.io/containers/bci-busybox:15.5
+          name: bci-busybox
+    apiVersion: v2
+    appVersion: 0.11.4
+    created: "2025-09-05T18:20:11.95906-07:00"
+    description: Get up and running with Llama 3.2, Mistral, Gemma 2, and other large
+      language models.
+    digest: 35d0eb96d2de03c99452fa8b1cf3cfaa4b42df620d44ff0eb94e9e61a2e81036
+    home: https://apps.rancher.io/applications/ollama
+    icon: https://apps.rancher.io/logos/ollama.png
+    keywords:
+    - ai
+    - llm
+    - llama
+    - mistral
+    kubeVersion: ^1.16.0-0
+    maintainers:
+    - name: SUSE LLC
+      url: https://www.suse.com
+    name: ollama
+    sources:
+    - https://github.com/ollama/ollama
+    type: application
+    urls:
+    - https://wiredquill.github.io/ai-demos/ollama-1.26.0.tgz
+    version: 1.26.0
+  - annotations:
+      helm.sh/images: |
+        - image: dp.apps.rancher.io/containers/ollama:0.11.4
+          name: ollama
+        - image: dp.apps.rancher.io/containers/bci-busybox:15.5
+          name: bci-busybox
+    apiVersion: v2
+    appVersion: 0.11.4
+    created: "2025-09-05T18:20:11.965962-07:00"
+    description: Get up and running with Llama 3.2, Mistral, Gemma 2, and other large
+      language models.
+    digest: 35d0eb96d2de03c99452fa8b1cf3cfaa4b42df620d44ff0eb94e9e61a2e81036
+    home: https://apps.rancher.io/applications/ollama
+    icon: https://apps.rancher.io/logos/ollama.png
+    keywords:
+    - ai
+    - llm
+    - llama
+    - mistral
+    kubeVersion: ^1.16.0-0
+    maintainers:
+    - name: SUSE LLC
+      url: https://www.suse.com
+    name: ollama
+    sources:
+    - https://github.com/ollama/ollama
+    type: application
+    urls:
+    - https://wiredquill.github.io/ai-demos/ollama-suse-direct-1.26.0.tgz
+    version: 1.26.0
   ollama-suse:
   - annotations:
       category: MachineLearning
       suse.com/enterprise: "true"
       suse.com/registry: SUSE Application Collection
     apiVersion: v2
+    appVersion: 0.11.4
+    created: "2025-09-05T18:20:11.964579-07:00"
+    dependencies:
+    - name: ollama
+      repository: oci://dp.apps.rancher.io/charts
+      version: ^1.26.0
+    description: Wrapper chart for SUSE Application Collection Ollama with custom
+      questions.yaml
+    digest: 8cdf246e6dc5181d5d05411401ecc946a8d123416e6ce0ce58c8e4a8ea345c13
+    keywords:
+    - ollama
+    - llm
+    - ai
+    - machine-learning
+    - suse
+    - enterprise
+    maintainers:
+    - email: ai-demos@example.com
+      name: AI Demos Team
+    name: ollama-suse
+    type: application
+    urls:
+    - https://wiredquill.github.io/ai-demos/ollama-suse-0.1.1.tgz
+    version: 0.1.1
+  - annotations:
+      category: MachineLearning
+      suse.com/enterprise: "true"
+      suse.com/registry: SUSE Application Collection
+    apiVersion: v2
     appVersion: "1.0"
-    created: "2025-08-19T11:53:59.435455-07:00"
+    created: "2025-09-05T18:20:11.961578-07:00"
     dependencies:
     - name: ollama
       repository: oci://dp.apps.rancher.io/charts
@@ -357,14 +447,39 @@ entries:
     name: ollama-suse
     type: application
     urls:
-    - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ollama-suse-0.1.0.tgz
+    - https://wiredquill.github.io/ai-demos/ollama-suse-0.1.0.tgz
     version: 0.1.0
   ollama-upstream:
   - annotations:
       category: MachineLearning
     apiVersion: v2
+    appVersion: 0.11.4
+    created: "2025-09-05T18:20:11.968342-07:00"
+    dependencies:
+    - name: ollama
+      repository: https://helm.otwld.com/
+      version: ^1.27.0
+    description: Wrapper chart for upstream Ollama with custom questions.yaml
+    digest: efc11eb39ce6506f792fc3eb61949f9a7f6a57801ce7097e673ae42eb22f63a7
+    keywords:
+    - ollama
+    - llm
+    - ai
+    - machine-learning
+    - upstream
+    maintainers:
+    - email: ai-demos@example.com
+      name: AI Demos Team
+    name: ollama-upstream
+    type: application
+    urls:
+    - https://wiredquill.github.io/ai-demos/ollama-upstream-0.1.1.tgz
+    version: 0.1.1
+  - annotations:
+      category: MachineLearning
+    apiVersion: v2
     appVersion: "1.0"
-    created: "2025-08-19T11:53:59.436256-07:00"
+    created: "2025-09-05T18:20:11.9672-07:00"
     dependencies:
     - name: ollama
       repository: https://helm.otwld.com/
@@ -383,6 +498,6 @@ entries:
     name: ollama-upstream
     type: application
     urls:
-    - https://raw.githubusercontent.com/wiredquill/ai-demos/main/ollama-upstream-0.1.0.tgz
+    - https://wiredquill.github.io/ai-demos/ollama-upstream-0.1.0.tgz
     version: 0.1.0
-generated: "2025-08-19T11:53:59.418308-07:00"
+generated: "2025-09-05T18:20:11.946237-07:00"
