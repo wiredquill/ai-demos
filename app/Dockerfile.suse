@@ -94,6 +94,9 @@ COPY frontend/ /app/frontend/
 # OpenLit module (essential for observability)
 COPY app/openlit_init.py /app/openlit_init.py
 
+# Ollama OpenAI client module (essential for OpenAI pattern client)
+COPY app/ollama_openai_client.py /app/ollama_openai_client.py
+
 # Main application code (changes most frequently - keep last)
 COPY app/python-ollama-open-webui.py /app/python-ollama-open-webui.py
 

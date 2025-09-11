@@ -23,6 +23,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # CORRECTED: The path to the source file now includes the 'app/' prefix.
 # The destination is '.', which corresponds to the WORKDIR '/app'.
 COPY app/python-ollama-open-webui.py .
+COPY app/ollama_openai_client.py .
+COPY app/openlit_init.py .
 COPY frontend ./frontend
 # Expose the ports for Gradio and HTTP API
 EXPOSE 7860 8080
