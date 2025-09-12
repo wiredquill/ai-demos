@@ -14,14 +14,15 @@ ollama:
     port: 11434
     type: ClusterIP
   gpu:
-    enabled: false
+    enabled: true
   # -- Hardware Configuration for Ollama
   hardware:
     type: "nvidia" # Options: "nvidia", "apple"
-  # -- OpenTelemetry observability for Ollama (disabled - using direct app instrumentation instead)
+  # -- OpenTelemetry observability for Ollama (enabled for GPU stats collection)
   observability:
-    enabled: false # Disabled to avoid sidecar collector conflicts, using AI Compare app instrumentation
+    enabled: true # Enable for GPU statistics collection from actual GPU user
     otlpEndpoint: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
+    collectGpuStats: true # Collect GPU stats from Ollama (the actual GPU user)
   # -- Resource allocation for the main Ollama container
   resources:
     requests:
@@ -113,7 +114,7 @@ aiCompare:
   observability:
     enabled: true # Enabled by default for comprehensive GenAI telemetry and cost tracking
     otlpEndpoint: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
-    collectGpuStats: true # Enable GPU stats for complete hardware monitoring
+    collectGpuStats: false # Disable GPU stats for AI Compare app (no GPU access) - Ollama handles GPU stats
     schedule: "*/5 * * * *"
     # Enhanced GenAI observability settings
     tokenTracking: true # Track token usage per model and request
