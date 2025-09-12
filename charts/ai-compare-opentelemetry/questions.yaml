@@ -1,13 +1,4 @@
 questions:
-# Deployment Configuration - Essential Settings
-- variable: deploymentNamespace
-  group: "Deployment Configuration"
-  label: "Target Namespace"
-  description: "Kubernetes namespace for the AI Compare deployment. Will be created if it doesn't exist."
-  type: "string"
-  default: "ai-compare"
-  required: true
-
 # Main Configuration - Front Page Options
 - variable: advancedConfig
   group: "Main Configuration"
@@ -43,7 +34,7 @@ questions:
   label: "Enable Load Simulator"
   description: "Deploy HTTP load simulator for traffic generation and observability monitoring. Shows detailed settings when enabled."
   type: "boolean"
-  default: false
+  default: true
 
 # Observability - Main front page option
 - variable: aiCompare.observability.enabled
@@ -134,8 +125,8 @@ questions:
 # Load Simulator Settings Sub-Panel - Appears when Load Simulator is enabled
 - variable: frontend.loadSimulator.intervalSeconds
   group: "Load Simulator Settings"
-  label: "Request Interval (Seconds)"
-  description: "Time between HTTP requests to the AI Compare API (default: 30 seconds)"
+  label: "HTTP Request Interval (Seconds)"
+  description: "Time between external HTTP requests to the AI Compare API for observability traffic generation (default: 30 seconds). This is different from internal automation."
   type: "int"
   default: 30
   show_if: "frontend.enabled=true"
@@ -253,7 +244,7 @@ questions:
   label: "Open WebUI Pipelines Image Tag (SUSE BCI)"
   description: "The container image tag for Open WebUI Pipelines from SUSE Application Collection. Built on SUSE BCI with enterprise support and security hardening."
   type: "string"
-  default: "0.5.0"
+  default: "0.20250329.151219-5.16"
   show_if: "advancedConfig=true"
 
 - variable: aiCompare.image.tag
@@ -264,11 +255,11 @@ questions:
   default: "latest"
   show_if: "advancedConfig=true"
 
-# Automation Settings Group - Settings for the automated test runner
+# Automation Settings Group - Internal application automation (separate from Load Simulator)
 - variable: aiCompare.automation.enabled
   group: "Automation Settings"
-  label: "Enable Automated Runner"
-  description: "If true, the application will automatically run a test on a timer to monitor provider status and test AI responses."
+  label: "Enable Internal Automation"
+  description: "Internal application automation for provider testing and status monitoring. This is separate from the HTTP Load Simulator which generates external traffic for observability."
   type: "boolean"
   default: false
   show_if: "advancedConfig=true"
@@ -305,14 +296,16 @@ questions:
   default: "Why is the sky blue? Be concise."
   show_if: "advancedConfig=true&&aiCompare.automation.sendMessages=true"
 
-# Observability Settings Sub-Panel - Appears when Observability is enabled
+# OTLP Endpoint - Front page configuration
 - variable: aiCompare.observability.otlpEndpoint
-  group: "Observability Settings"
+  group: "Main Configuration"
   label: "OpenTelemetry Collector Endpoint"
-  description: "OTLP endpoint URL for sending telemetry data (e.g., http://opentelemetry-collector.suse-observability.svc.cluster.local:4318)"
+  description: "OTLP endpoint URL for sending telemetry data to SUSE Observability"
   type: "string"
   default: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
   show_if: "aiCompare.observability.enabled=true"
+
+# Observability Settings Sub-Panel - Appears when Observability is enabled
 
 - variable: aiCompare.observability.collectGpuStats
   group: "Observability Settings"
@@ -366,9 +359,9 @@ questions:
 - variable: openWebui.observability.otlpEndpoint
   group: "Observability Settings"
   label: "Open WebUI OTLP Endpoint"
-  description: "OpenTelemetry GRPC endpoint for Open WebUI telemetry (typically port 4317 for GRPC)"
+  description: "OpenTelemetry HTTP endpoint for Open WebUI telemetry (standardized on port 4318)"
   type: "string"
-  default: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4317"
+  default: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
   show_if: "openWebui.observability.enabled=true"
 
 - variable: openWebui.observability.tracing

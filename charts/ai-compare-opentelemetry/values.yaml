@@ -43,8 +43,8 @@ ollama:
       path: "/data/ai-models" # NFS share path for caching models
 openWebui:
   image:
-    repository: ghcr.io/open-webui/open-webui
-    tag: "v0.6.22" # Latest official version with OpenTelemetry support
+    repository: dp.apps.rancher.io/containers/open-webui
+    tag: "0.6.9-10.31" # SUSE Application Collection version with enterprise hardening
   service:
     port: 8080
     type: NodePort
@@ -55,7 +55,7 @@ openWebui:
   # OpenTelemetry observability settings
   observability:
     enabled: true # Enable OpenTelemetry integration
-    otlpEndpoint: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4317" # GRPC endpoint (Open WebUI default)
+    otlpEndpoint: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318" # HTTP endpoint (standardized)
     serviceName: "open-webui"
     serviceNamespace: "" # Will be set to deployment namespace
     # Enhanced telemetry features
@@ -67,7 +67,7 @@ pipelines:
   enabled: true
   image:
     repository: dp.apps.rancher.io/containers/open-webui-pipelines
-    tag: "0.20250329.151219-5.16"
+    tag: "0.20250329.151219-5.16" # Current SUSE Application Collection version
   service:
     port: 9099
     type: ClusterIP
@@ -103,9 +103,9 @@ aiCompare:
     sshPort: 22
     gitRepo: "https://github.com/wiredquill/ai-demos.git"
     gitBranch: "main"
-  # Automation settings for the recurring test runner
+  # Automation settings for the recurring test runner (disabled by default to avoid overlap with Load Simulator)
   automation:
-    enabled: true
+    enabled: false # Disabled to avoid overlap with frontend Load Simulator
     defaultPrompt: "Why is the sky blue? Be concise."
     intervalSeconds: 30
     sendMessages: true # Enable/disable sending test messages to models
@@ -136,8 +136,9 @@ aiCompare:
     limits:
       cpu: "1000m"
       memory: "2Gi"
-# Frontend Configuration
+# Frontend Configuration (Load Simulator enabled by default for OpenTelemetry edition)
 frontend:
+  enabled: true # Enable Load Simulator by default for observability traffic generation
   # Modern React-based dashboard (recommended)
   react:
     enabled: false # Set to true to enable React frontend
@@ -160,9 +161,9 @@ frontend:
     nodeSelector: {}
     tolerations: []
     affinity: {}
-  # HTTP Load Simulator (Optional - HTTP traffic generation for observability)
+  # HTTP Load Simulator (enabled by default for OpenTelemetry edition)
   loadSimulator:
-    enabled: false # Disabled by default - enable for HTTP traffic generation
+    enabled: true # Enabled by default for comprehensive observability traffic generation
     image:
       repository: ghcr.io/wiredquill/ai-demos-load-simulator
       tag: "latest"
