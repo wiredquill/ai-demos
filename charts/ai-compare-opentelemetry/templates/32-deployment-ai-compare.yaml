@@ -95,8 +95,6 @@ spec:
             - name: TRACE_REQUESTS_ENABLED
               value: "{{ .Values.aiCompare.observability.traceRequests }}"
             # Clean OpenLit configuration (following ravan/llm-experiments pattern)
-            - name: APP_NAME
-              value: "ai-compare"
             - name: COLLECT_GPU_STATS
               value: "{{ .Values.aiCompare.observability.collectGpuStats }}"
             - name: OLLAMA_ENDPOINT
@@ -156,10 +154,10 @@ spec:
                   fieldPath: spec.nodeName
             # Enhanced OpenTelemetry resource attributes with GenAI semantic conventions for SUSE Observability
             - name: OTEL_RESOURCE_ATTRIBUTES
-              value: "service.namespace={{ .Release.Namespace }},service.version=1.0.0,service.instance.id=${K8S_POD_UID},deployment.environment={{ .Release.Namespace }},gen_ai.system=ollama,gen_ai.application.name=ai-compare,gen_ai.operation.name=chat,application.type=genai,ai.model.provider=meta,ai.workload.type=inference,ai.framework=gradio-ollama,k8s.namespace.name={{ .Release.Namespace }},k8s.pod.name=${K8S_POD_NAME},k8s.pod.uid=${K8S_POD_UID},k8s.node.name=${K8S_NODE_NAME}"
+              value: "service.namespace={{ .Release.Namespace }},service.version=1.0.0,service.instance.id=${K8S_POD_UID},deployment.environment={{ .Release.Namespace }},gen_ai.system=ollama,gen_ai.application.name=AICompareGenerator,gen_ai.operation.name=chat,application.type=genai,ai.model.provider=meta,ai.workload.type=inference,ai.framework=gradio-ollama,k8s.namespace.name={{ .Release.Namespace }},k8s.pod.name=${K8S_POD_NAME},k8s.pod.uid=${K8S_POD_UID},k8s.node.name=${K8S_NODE_NAME}"
             # Explicit service name configuration (matching working genai apps pattern)
             - name: OTEL_SERVICE_NAME
-              value: "ai-compare"
+              value: "AICompareGenerator"
             # Add APP_NAME like working genai apps (match exact pattern)
             - name: APP_NAME
               value: "AICompareGenerator"
