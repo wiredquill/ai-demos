@@ -302,7 +302,7 @@ questions:
   label: "OpenTelemetry Collector Endpoint"
   description: "OTLP endpoint URL for sending telemetry data to SUSE Observability"
   type: "string"
-  default: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
+  default: "http://opentelemetry-collector.observability.svc.cluster.local:4318"
   show_if: "aiCompare.observability.enabled=true"
 
 # Observability Settings Sub-Panel - Appears when Observability is enabled
@@ -361,7 +361,7 @@ questions:
   label: "Open WebUI OTLP Endpoint"
   description: "OpenTelemetry HTTP endpoint for Open WebUI telemetry (standardized on port 4318)"
   type: "string"
-  default: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
+  default: "http://opentelemetry-collector.observability.svc.cluster.local:4318"
   show_if: "openWebui.observability.enabled=true"
 
 - variable: openWebui.observability.tracing
