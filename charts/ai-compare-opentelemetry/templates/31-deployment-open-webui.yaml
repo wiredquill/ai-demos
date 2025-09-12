@@ -57,11 +57,9 @@ spec:
           value: {{ .Values.openWebui.observability.otlpEndpoint | quote }}
         - name: OTEL_LOGS_EXPORTER_OTLP_ENDPOINT
           value: {{ .Values.openWebui.observability.otlpEndpoint | quote }}
-        # Security and protocol settings
+        # Security and protocol settings  
         - name: OTEL_EXPORTER_OTLP_INSECURE
           value: "true"
-        - name: OTEL_EXPORTER_OTLP_PROTOCOL
-          value: "http/protobuf"
         - name: OTEL_SERVICE_NAME
           value: "ai-compare"
         - name: OTEL_SERVICE_NAMESPACE

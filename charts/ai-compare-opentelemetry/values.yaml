@@ -56,7 +56,7 @@ openWebui:
   # OpenTelemetry observability settings
   observability:
     enabled: true # Enable OpenTelemetry integration
-    otlpEndpoint: "http://opentelemetry-collector.observability.svc.cluster.local:4318" # HTTP endpoint (standardized)
+    otlpEndpoint: "http://opentelemetry-collector.observability.svc.cluster.local:4317" # gRPC endpoint for Open WebUI
     serviceName: "open-webui"
     serviceNamespace: "" # Will be set to deployment namespace
     # Enhanced telemetry features
