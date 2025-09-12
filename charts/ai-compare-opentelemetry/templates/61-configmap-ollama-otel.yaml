@@ -15,7 +15,7 @@ data:
           - endpoint: http://localhost:{{ .Values.ollama.service.port }}
             method: GET
         collection_interval: 30s
-      
+
       # Prometheus receiver for standard metrics
       prometheus:
         config:
@@ -25,7 +25,7 @@ data:
               static_configs:
                 - targets: ['localhost:{{ .Values.ollama.service.port }}']
               metrics_path: '/metrics'
-              
+
       # OTLP receiver for any traces sent directly
       otlp:
         protocols:
@@ -75,7 +75,7 @@ data:
           - key: ai.application.category
             value: "model-inference"
             action: upsert
-            
+
       # Batch processor for efficiency
       batch:
         timeout: 10s
@@ -88,11 +88,11 @@ data:
         headers:
           "Content-Type": "application/x-protobuf"
         compression: gzip
-        
+
       # Debug logging (optional)
       logging:
         loglevel: info
-        
+
     extensions:
       health_check:
         endpoint: 0.0.0.0:13133
@@ -105,7 +105,7 @@ data:
       extensions: [health_check, pprof, zpages]
       pipelines:
         traces:
-          receivers: [otlp, httpcheck]
+          receivers: [otlp]
           processors: [resource, batch]
           exporters: [otlphttp, logging]
         metrics:
