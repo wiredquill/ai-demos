@@ -9,6 +9,7 @@ metadata:
     app.kubernetes.io/part-of: genai-stack
     ai.framework: "gradio-ollama"
     genai.application: "true"
+    genai.app: "true"
   annotations:
     genai.observability/enabled: "true"
     genai.observability/type: "chat-application"

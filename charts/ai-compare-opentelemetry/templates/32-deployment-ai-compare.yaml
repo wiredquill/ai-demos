@@ -22,6 +22,7 @@ metadata:
     app.kubernetes.io/part-of: genai-stack
     ai.framework: "gradio-ollama"
     genai.application: "true"
+    genai.app: "true"
 spec:
   replicas: 1
   selector:
