@@ -16,7 +16,7 @@ questions:
   type: "boolean"
   default: false
 
-- variable: ollama.gpu.enabled  
+- variable: ollama.gpu.enabled
   group: "Main Configuration"
   label: "Enable GPU"
   description: "Enable GPU acceleration for Ollama. Requires a node with GPU drivers and the k8s device plugin installed."
@@ -43,15 +43,15 @@ questions:
   label: "Enable Load Simulator"
   description: "Deploy HTTP load simulator for traffic generation and observability monitoring. Shows detailed settings when enabled."
   type: "boolean"
-  default: false
+  default: true
 
-# Observability - Main front page option  
+# Observability - Main front page option
 - variable: aiCompare.observability.enabled
   group: "Main Configuration"
   label: "Enable Observability"
   description: "Enable OpenTelemetry observability for GenAI monitoring, cost tracking, and performance metrics. Shows detailed settings when enabled."
-  type: "boolean" 
-  default: false
+  type: "boolean"
+  default: true
 
 - variable: ollama.resources.requests.cpu
   group: "Ollama Settings"

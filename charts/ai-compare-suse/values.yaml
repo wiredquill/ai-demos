@@ -9,7 +9,7 @@ imagePullSecrets:
 ollama:
   image:
     repository: dp.apps.rancher.io/containers/ollama
-    tag: "0.6.8"
+    tag: "0.11.4"
   service:
     port: 11434
     type: ClusterIP
@@ -44,7 +44,7 @@ ollama:
 openWebui:
   image:
     repository: dp.apps.rancher.io/containers/open-webui
-    tag: "0.6.9-10.31" # Pipeline-enabled version
+    tag: "0.6.18" # Pipeline-enabled version
   service:
     port: 8080
     type: NodePort
@@ -57,7 +57,7 @@ pipelines:
   enabled: true
   image:
     repository: dp.apps.rancher.io/containers/open-webui-pipelines
-    tag: "0.20250329.151219-5.16"
+    tag: "0.20250329.151219"
   service:
     port: 9099
     type: ClusterIP

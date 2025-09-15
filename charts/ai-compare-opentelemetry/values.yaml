@@ -9,7 +9,7 @@ imagePullSecrets:
 ollama:
   image:
     repository: dp.apps.rancher.io/containers/ollama
-    tag: "0.6.8"
+    tag: "0.11.4"
   service:
     port: 11434
     type: ClusterIP
@@ -45,7 +45,7 @@ ollama:
 openWebui:
   image:
     repository: dp.apps.rancher.io/containers/open-webui
-    tag: "0.6.9-10.31" # SUSE Application Collection version with enterprise hardening
+    tag: "0.6.18" # SUSE Application Collection version with enterprise hardening
   service:
     port: 8080
     type: NodePort
@@ -68,7 +68,7 @@ pipelines:
   enabled: true
   image:
     repository: dp.apps.rancher.io/containers/open-webui-pipelines
-    tag: "0.20250329.151219-5.16" # Current SUSE Application Collection version
+    tag: "0.20250329.151219" # Current SUSE Application Collection version
   service:
     port: 9099
     type: ClusterIP

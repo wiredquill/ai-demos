@@ -1,4 +1,13 @@
 questions:
+# Deployment Configuration - Essential Settings
+- variable: deploymentNamespace
+  group: "Deployment Configuration"
+  label: "Target Namespace"
+  description: "Kubernetes namespace for the AI Compare deployment. Will be created if it doesn't exist."
+  type: "string"
+  default: "ai-compare"
+  required: true
+
 # Main Configuration - Front Page Options
 - variable: advancedConfig
   group: "Main Configuration"
