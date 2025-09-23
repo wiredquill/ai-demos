@@ -1,0 +1,45 @@
+diff --git a/packages/open-webui-pipelines/0/templates/deployment.yaml b/packages/open-webui-pipelines/0/templates/deployment.yaml
+index 4bb2d78..8cc510a 100644
+--- a/packages/open-webui-pipelines/0/templates/deployment.yaml
++++ b/packages/open-webui-pipelines/0/templates/deployment.yaml
+@@ -30,10 +30,7 @@ spec:
+         {{- toYaml . | nindent 8 }}
+       {{- end }}
+     spec:
+-      {{- with .Values.imagePullSecrets }}
+-      imagePullSecrets:
+-        {{- toYaml . | nindent 8 }}
+-      {{- end }}
++      {{- include "pipelines.imagePullSecrets" . | nindent 6 }}
+       {{- with .Values.extraInitContainers }}
+       initContainers:
+         {{- toYaml . | nindent 8 }}
+@@ -45,10 +42,8 @@ spec:
+       {{- end }}
+       containers:
+       - name: {{ .Chart.Name }}
+-        {{- with .Values.image }}
+-        image: {{ .repository }}:{{ .tag | default $.Chart.AppVersion }}
+-        imagePullPolicy: {{ .pullPolicy }}
+-        {{- end }}
++        image: "{{ with (coalesce .Values.global.imageRegistry .Values.image.registry) }}{{ . }}/{{ end }}{{ .Values.image.repository }}:{{ .Values.image.tag | default $.Chart.AppVersion }}"
++        imagePullPolicy: {{ .Values.image.pullPolicy }}
+         ports:
+         - name: http
+           containerPort: {{ .Values.service.containerPort }}
+diff --git a/packages/open-webui-pipelines/0/values.yaml b/packages/open-webui-pipelines/0/values.yaml
+index 5ee4459..40f2171 100644
+--- a/packages/open-webui-pipelines/0/values.yaml
++++ b/packages/open-webui-pipelines/0/values.yaml
+@@ -11,8 +11,9 @@ replicaCount: 1
+ # -- Strategy for updating the deployment
+ strategy: {}
+ image:
+-  repository: ghcr.io/open-webui/pipelines
+-  tag: main
++  registry: dp.apps.rancher.io
++  repository: containers/open-webui-pipelines
++  tag: 0.20250329.151219
+   pullPolicy: Always
+
+ # -- Configure imagePullSecrets to use private registry

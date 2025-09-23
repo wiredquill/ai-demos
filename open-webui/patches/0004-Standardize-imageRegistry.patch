@@ -1,0 +1,67 @@
+diff --git a/packages/open-webui/0.6/templates/workload-manager.yaml b/packages/open-webui/0.6/templates/workload-manager.yaml
+index c28ebdd..8bfb4e3 100644
+--- a/packages/open-webui/0.6/templates/workload-manager.yaml
++++ b/packages/open-webui/0.6/templates/workload-manager.yaml
+@@ -45,19 +45,14 @@ spec:
+         {{- toYaml . | nindent 8 }}
+       {{- end }}
+     spec:
+-      {{- with .Values.imagePullSecrets }}
+-      imagePullSecrets:
+-        {{- toYaml . | nindent 8 }}
+-      {{- end }}
++      {{- include "open-webui.imagePullSecrets" . | nindent 6 }}
+       {{- with .Values.priorityClassName }}
+       priorityClassName: {{ . }}
+       {{- end }}
+       initContainers:
+       - name: copy-app-data
+-        {{- with .Values.image }}
+-        image: {{ .repository }}:{{ .tag | default $.Chart.AppVersion }}
+-        imagePullPolicy: {{ .pullPolicy }}
+-        {{- end }}
++        image: "{{ with (coalesce .Values.global.imageRegistry .Values.image.registry) }}{{ . }}/{{ end }}{{ .Values.image.repository }}:{{ .Values.image.tag |  default $.Chart.AppVersion }}"
++        imagePullPolicy: {{ .Values.image.pullPolicy }}
+         command:
+           {{- toYaml (.Values.copyAppData.command | default (list "sh" "-c" "cp -R -n /app/backend/data/* /tmp/app-data/")) | nindent 10 }}
+         {{- with .Values.copyAppData.args }}
+@@ -97,10 +92,8 @@ spec:
+       {{- end }}
+       containers:
+       - name: {{ .Chart.Name }}
+-        {{- with .Values.image }}
+-        image: {{ .repository }}:{{ .tag | default $.Chart.AppVersion }}
+-        imagePullPolicy: {{ .pullPolicy }}
+-        {{- end }}
++        image: "{{ with (coalesce .Values.global.imageRegistry .Values.image.registry) }}{{ . }}/{{ end }}{{ .Values.image.repository }}:{{ .Values.image.tag |  default $.Chart.AppVersion }}"
++        imagePullPolicy: {{ .Values.image.pullPolicy }}
+         {{- with .Values.command }}
+         command:
+           {{- toYaml . | nindent 10 }}
+diff --git a/packages/open-webui/0.6/values.yaml b/packages/open-webui/0.6/values.yaml
+index 54bdd02..deca648 100644
+--- a/packages/open-webui/0.6/values.yaml
++++ b/packages/open-webui/0.6/values.yaml
+@@ -114,11 +119,15 @@ revisionHistoryLimit: 10
+ priorityClassName: ""
+ # -- Strategy for updating the workload manager: deployment or statefulset
+ strategy: {}
+-# -- Open WebUI image tags can be found here: https://github.com/open-webui/open-webui
+ image:
+-  repository: ghcr.io/open-webui/open-webui
+-  tag: ""
+-  pullPolicy: "IfNotPresent"
++  # -- Image registry to use for the open-webui container
++  registry: dp.apps.rancher.io
++  # -- Image repository to use for the open-webui container
++  repository: containers/open-webui
++  # -- Image tag to use for the open-webui container
++  tag: "0.6.9"
++  # -- Image pull policy to use for the open-webui container
++  pullPolicy: IfNotPresent
+
+ # -- Open WebUI container command (overrides default entrypoint)
+ command: []
+--
+2.43.0
+

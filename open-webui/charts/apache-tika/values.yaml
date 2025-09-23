@@ -1,0 +1,138 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Default values for tika-helm.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+global:
+  # -- Global override for container image registry
+  imageRegistry: ""
+  # -- Global override for container image registry pull secrets
+  imagePullSecrets: []
+replicaCount: 1
+image:
+  repository: containers/apache-tika
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "3.2.2-7.8"
+  registry: dp.apps.rancher.io
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+# Environment variables to set in the container
+# For example:
+# env:
+#   - name: SOME_VAR
+#     value: "some value"
+# env: []
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+podAnnotations: {}
+podSecurityContext: {}
+# fsGroup: 2000
+
+securityContext:
+  allowPrivilegeEscalation: true
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 35002
+  runAsGroup: 35002
+service:
+  type: ClusterIP
+  port: 9998
+ingress:
+  enabled: false
+  annotations: {}
+  # kubernetes.io/ingress.class: nginx
+  # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths: []
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+livenessProbe:
+  initialDelaySeconds: 15
+  timeoutSeconds: 30
+  failureThreshold: 20
+  periodSeconds: 5
+  scheme: HTTP
+readinessProbe:
+  initialDelaySeconds: 15
+  timeoutSeconds: 30
+  failureThreshold: 20
+  periodSeconds: 5
+  scheme: HTTP
+resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  limits:
+    cpu: "2"
+    memory: 2000Mi
+  requests:
+    cpu: "1"
+    memory: 1500Mi
+autoscaling:
+  apiVersion: autoscaling/v2
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+nodeSelector: {}
+tolerations: []
+affinity: {}
+topologySpreadConstraints: []
+networkPolicy:
+  # networkPolicy.enabled -- Create a network policy to restrict traffic to pods
+  # within the same namespace that include the label `<release>-client: true`.
+  enabled: false
+  # networkPolicy.allowExternal -- Don't require a "-client" label for connections.
+  allowExternal: false
+config:
+  base_url: "http://localhost/"
+# Use the below block to use custom tika-config.xml.
+# Refer https://tika.apache.org/2.9.1/configuring.html to know more about configuring apache-tika
+# tikaConfig: |
+#   <?xml version="1.0" encoding="UTF-8"?>
+#   <properties>
+#     <parsers>
+#       <!-- Default Parser for most things, except for 2 mime types, and never
+#           use the Executable Parser -->
+#       <parser class="org.apache.tika.parser.DefaultParser">
+#         <mime-exclude>image/jpeg</mime-exclude>
+#         <mime-exclude>application/pdf</mime-exclude>
+#         <parser-exclude class="org.apache.tika.parser.executable.ExecutableParser"/>
+#       </parser>
+#       <!-- Use a different parser for PDF -->
+#       <parser class="org.apache.tika.parser.EmptyParser">
+#         <mime>application/pdf</mime>
+#       </parser>
+#     </parsers>
+#   </properties>

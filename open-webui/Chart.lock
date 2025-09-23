@@ -1,0 +1,12 @@
+dependencies:
+- name: ollama
+  repository: oci://dp.apps.rancher.io/charts
+  version: 1.26.0
+- name: open-webui-pipelines
+  repository: oci://dp.apps.rancher.io/charts
+  version: 0.5.0
+- name: apache-tika
+  repository: oci://dp.apps.rancher.io/charts
+  version: 3.2.2
+digest: sha256:e5297f9b68228b7b30cc3cf9b76706dd58790bd01da1e9bd7e74f78f846c0f45
+generated: "2025-08-19T09:50:18.393146381-07:00"

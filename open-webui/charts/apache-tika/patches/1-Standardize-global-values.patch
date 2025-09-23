@@ -1,0 +1,17 @@
+diff --git a/packages/apache-tika/3/values.yaml b/packages/apache-tika/3/values.yaml
+index a8da1e0..4944ff3 100644
+--- a/packages/apache-tika/3/values.yaml
++++ b/packages/apache-tika/3/values.yaml
+@@ -17,6 +17,12 @@
+ # This is a YAML-formatted file.
+ # Declare variables to be passed into your templates.
+
++global:
++  # -- Global override for container image registry
++  imageRegistry: ""
++  # -- Global override for container image registry pull secrets
++  imagePullSecrets: []
++
+ replicaCount: 1
+
+ image:

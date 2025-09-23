@@ -1,0 +1,140 @@
+# SUSE Application Collection Synchronization Configuration
+# This file defines how to synchronize container versions between SUSE Application Collection
+# charts and local application Helm charts.
+
+# Global configuration
+global:
+  # Temporary directory for chart operations (optional, will use system temp if not specified)
+  temp_dir: null
+
+  # Default registry transformations
+  registry_transforms:
+    suse_to_upstream:
+      "dp.apps.rancher.io/containers/ollama": "ollama/ollama"
+      "dp.apps.rancher.io/containers/open-webui": "ghcr.io/open-webui/open-webui"
+      "dp.apps.rancher.io/containers/open-webui-pipelines": "ghcr.io/open-webui/pipelines"
+
+    upstream_to_suse:
+      "ollama/ollama": "dp.apps.rancher.io/containers/ollama"
+      "ghcr.io/open-webui/open-webui": "dp.apps.rancher.io/containers/open-webui"
+      "ghcr.io/open-webui/pipelines": "dp.apps.rancher.io/containers/open-webui-pipelines"
+
+# Chart synchronization configurations
+chart_syncs:
+  # Ollama synchronization from SUSE Application Collection
+  - name: "ollama"
+    source_chart: "oci://dp.apps.rancher.io/charts/ollama"
+    target_charts:
+      - "charts/ai-compare-suse"
+      - "charts/ai-compare-opentelemetry"
+      - "charts/ai-compare"  # Update upstream chart to match SUSE version
+    image_mappings:
+      - source_path: "image"  # Ollama chart uses "image" directly
+        target_path: "ollama.image"
+        registry_transform: null  # Keep SUSE registry for SUSE charts, transform for upstream
+      - source_path: "image"
+        target_path: "ollama.image"
+        registry_transform: "suse_to_upstream"  # For upstream chart
+
+  # Open WebUI synchronization from SUSE Application Collection
+  - name: "open-webui"
+    source_chart: "oci://dp.apps.rancher.io/charts/open-webui"
+    target_charts:
+      - "charts/ai-compare-suse"
+      - "charts/ai-compare-opentelemetry"
+      - "charts/ai-compare"  # Update upstream chart to match SUSE version
+    image_mappings:
+      - source_path: "image"  # Open WebUI chart uses "image" directly
+        target_path: "openWebui.image"
+        registry_transform: null  # Keep SUSE registry for SUSE charts
+      - source_path: "image"
+        target_path: "openWebui.image"
+        registry_transform: "suse_to_upstream"  # For upstream chart
+
+  # Open WebUI Pipelines synchronization (if available as separate chart)
+  - name: "open-webui-pipelines"
+    source_chart: "oci://dp.apps.rancher.io/charts/open-webui-pipelines"
+    target_charts:
+      - "charts/ai-compare-suse"
+      - "charts/ai-compare-opentelemetry"
+      - "charts/ai-compare"
+    image_mappings:
+      - source_path: "image"
+        target_path: "pipelines.image"
+        registry_transform: null  # Keep SUSE registry for SUSE charts
+      - source_path: "image"
+        target_path: "pipelines.image"
+        registry_transform: "suse_to_upstream"  # For upstream chart
+
+# Chart-specific overrides
+chart_overrides:
+  # AI Compare SUSE chart specific settings
+  "charts/ai-compare-suse":
+    preserve_suse_registry: true
+    additional_updates:
+      # Update chart version when images are updated
+      - path: "version"
+        increment: "patch"  # Increment patch version
+
+  # AI Compare OpenTelemetry chart specific settings
+  "charts/ai-compare-opentelemetry":
+    preserve_suse_registry: true
+    additional_updates:
+      - path: "version"
+        increment: "patch"
+
+  # AI Compare upstream chart specific settings
+  "charts/ai-compare":
+    force_upstream_registry: true
+    additional_updates:
+      - path: "version"
+        increment: "patch"
+
+# Notification settings
+notifications:
+  enabled: false
+  methods:
+    slack:
+      enabled: false
+      webhook_url: null
+      channel: "#ai-ops"
+
+    email:
+      enabled: false
+      smtp_server: null
+      recipients: []
+
+    webhook:
+      enabled: false
+      url: null
+
+# Backup settings
+backup:
+  enabled: true
+  retention_days: 30
+  backup_dir: "backups/"
+
+# Validation settings
+validation:
+  # Validate that updated charts can be rendered without errors
+  helm_template_check: true
+
+  # Validate that image repositories are accessible
+  image_accessibility_check: false  # Disabled by default (requires network access)
+
+  # Validate chart versions follow semantic versioning
+  semver_validation: true
+
+# Reporting settings
+reporting:
+  # Generate detailed reports
+  detailed_reports: true
+
+  # Report formats to generate
+  formats:
+    - "console"  # Print to console
+    - "file"     # Save to file
+    - "json"     # Generate JSON report for automation
+
+  # Report output directory
+  output_dir: "reports/"

@@ -1,0 +1,234 @@
+# AI Demos Project - SUSE Application Collection Synchronization Configuration
+# This configuration is specifically tailored for the ai-demos project structure
+# and synchronizes SUSE Application Collection versions with ai-compare charts.
+
+# Global configuration
+global:
+  # Base directory for the project (relative to where the script is run)
+  project_root: "."
+
+  # Registry transformations for converting between SUSE and upstream registries
+  registry_transforms:
+    suse_to_upstream:
+      "dp.apps.rancher.io/containers/ollama": "ollama/ollama"
+      "dp.apps.rancher.io/containers/open-webui": "ghcr.io/open-webui/open-webui"
+      "dp.apps.rancher.io/containers/open-webui-pipelines": "ghcr.io/open-webui/pipelines"
+
+    upstream_to_suse:
+      "ollama/ollama": "dp.apps.rancher.io/containers/ollama"
+      "ghcr.io/open-webui/open-webui": "dp.apps.rancher.io/containers/open-webui"
+      "ghcr.io/open-webui/pipelines": "dp.apps.rancher.io/containers/open-webui-pipelines"
+
+# Chart synchronization configurations for ai-demos project
+chart_syncs:
+  # Ollama synchronization
+  - name: "ollama"
+    source_chart: "oci://dp.apps.rancher.io/charts/ollama"
+    target_charts:
+      - "charts/ai-compare-suse"
+      - "charts/ai-compare-opentelemetry"
+      - "charts/ai-compare"
+    image_mappings:
+      # For SUSE charts - keep SUSE registry
+      - source_path: "image"
+        target_path: "ollama.image"
+        registry_transform: null
+        apply_to_charts:
+          - "charts/ai-compare-suse"
+          - "charts/ai-compare-opentelemetry"
+      # For upstream chart - transform to upstream registry
+      - source_path: "image"
+        target_path: "ollama.image"
+        registry_transform: "suse_to_upstream"
+        apply_to_charts:
+          - "charts/ai-compare"
+
+  # Open WebUI synchronization
+  - name: "open-webui"
+    source_chart: "oci://dp.apps.rancher.io/charts/open-webui"
+    target_charts:
+      - "charts/ai-compare-suse"
+      - "charts/ai-compare-opentelemetry"
+      - "charts/ai-compare"
+    image_mappings:
+      # For SUSE charts - keep SUSE registry
+      - source_path: "image"
+        target_path: "openWebui.image"
+        registry_transform: null
+        apply_to_charts:
+          - "charts/ai-compare-suse"
+          - "charts/ai-compare-opentelemetry"
+      # For upstream chart - transform to upstream registry
+      - source_path: "image"
+        target_path: "openWebui.image"
+        registry_transform: "suse_to_upstream"
+        apply_to_charts:
+          - "charts/ai-compare"
+
+# Chart-specific configurations
+chart_configurations:
+  # AI Compare SUSE Edition
+  "charts/ai-compare-suse":
+    description: "SUSE Edition with BCI images and enterprise features"
+    preserve_suse_registry: true
+    update_chart_version: true
+    version_increment: "patch"
+    additional_annotations:
+      "suse.com/last-sync": "${timestamp}"
+      "suse.com/sync-source": "SUSE Application Collection"
+
+  # AI Compare OpenTelemetry Edition
+  "charts/ai-compare-opentelemetry":
+    description: "OpenTelemetry Edition with advanced observability"
+    preserve_suse_registry: true
+    update_chart_version: true
+    version_increment: "patch"
+    special_configurations:
+      # Enable observability by default for this chart
+      - path: "aiCompare.observability.enabled"
+        value: true
+      - path: "ollama.observability.enabled"
+        value: true
+
+  # AI Compare Upstream Edition
+  "charts/ai-compare":
+    description: "Upstream Edition with community images"
+    force_upstream_registry: true
+    update_chart_version: true
+    version_increment: "patch"
+    registry_overrides:
+      # Ensure upstream registries are used
+      "ollama.image.repository": "ollama/ollama"
+      "openWebui.image.repository": "ghcr.io/open-webui/open-webui"
+      "pipelines.image.repository": "ghcr.io/open-webui/pipelines"
+
+# Version synchronization rules
+version_sync:
+  # Keep all charts using the same base versions for consistency
+  strategy: "uniform"
+
+  # Version compatibility matrix
+  compatibility:
+    ollama:
+      "0.11.4": ["latest", "main"]
+      "0.11.3": ["0.6.18", "0.6.17"]
+
+    open-webui:
+      "0.6.18": ["latest", "main"]
+      "0.6.17": ["0.11.4", "0.11.3"]
+
+# Validation settings specific to ai-demos
+validation:
+  # Validate Helm templates can be rendered
+  helm_template_check: true
+
+  # Check that required values are present
+  required_values:
+    - "ollama.image.repository"
+    - "ollama.image.tag"
+    - "openWebui.image.repository"
+    - "openWebui.image.tag"
+    - "aiCompare.image.repository"
+    - "aiCompare.image.tag"
+
+  # Validate Chart.yaml structure
+  chart_metadata_validation:
+    required_fields:
+      - "apiVersion"
+      - "name"
+      - "description"
+      - "version"
+      - "appVersion"
+
+# Backup configuration
+backup:
+  enabled: true
+  backup_dir: "backups/helm-charts"
+  retention_days: 30
+  include_timestamp: true
+
+# Reporting configuration
+reporting:
+  detailed_reports: true
+  formats:
+    - "console"
+    - "file"
+    - "json"
+  output_dir: "reports/sync-reports"
+
+  # Generate charts showing version progression
+  generate_version_history: true
+
+# Integration settings
+integrations:
+  # Git integration
+  git:
+    auto_commit: false  # Set to true to auto-commit changes
+    commit_message_template: "chore: sync SUSE Application Collection versions\n\n{summary}"
+    create_branch: false
+    branch_name_template: "sync/suse-versions-{timestamp}"
+
+  # CI/CD integration
+  ci_cd:
+    # Generate GitHub Actions workflow dispatch
+    github_actions:
+      enabled: false
+      workflow_file: ".github/workflows/update-dependencies.yml"
+
+    # Generate GitLab CI pipeline trigger
+    gitlab_ci:
+      enabled: false
+      pipeline_trigger: "SYNC_SUSE_VERSIONS"
+
+# Notification settings for ai-demos team
+notifications:
+  enabled: false
+
+  slack:
+    enabled: false
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    channel: "#ai-ops"
+    mention_on_failure: true
+    users_to_mention: ["@channel"]
+
+  email:
+    enabled: false
+    smtp_server: "${SMTP_SERVER}"
+    smtp_port: 587
+    username: "${SMTP_USERNAME}"
+    password: "${SMTP_PASSWORD}"
+    recipients:
+      - "ai-team@example.com"
+
+# Security settings
+security:
+  # Verify image signatures (if available)
+  verify_signatures: false
+
+  # Check for known vulnerabilities
+  vulnerability_scan: false
+
+  # Validate registry access
+  validate_registry_access: true
+
+# Performance settings
+performance:
+  # Parallel operations
+  parallel_chart_updates: true
+  max_concurrent_operations: 3
+
+  # Caching
+  cache_pulled_charts: true
+  cache_duration_hours: 24
+  cache_directory: ".cache/suse-sync"
+
+# Debug and development settings
+debug:
+  # Keep temporary directories for inspection
+  keep_temp_dirs: false
+
+  # Verbose Helm operations
+  helm_debug: false
+
+  # Save intermediate files
+  save_intermediate_files: false

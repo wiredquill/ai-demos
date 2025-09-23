@@ -1,0 +1,18 @@
+apiVersion: v0
+kind: ImagesLock
+metadata:
+  generatedAt: "2025-08-18T19:13:59.247673867Z"
+  generatedBy: SUSE LLC
+chart:
+  name: apache-tika
+  version: 3.2.2
+  appVersion: 3.2.2
+images:
+  - name: apache-tika
+    image: dp.apps.rancher.io/containers/apache-tika:3.2.2-7.8
+    chart: apache-tika
+    digests:
+      - digest: sha256:be6ee075719be9916a410f36f29589b0539843a22f5b06247ca393c3ef31d272
+        arch: linux/amd64
+      - digest: sha256:c07beef975d0d58611427ed25cc5b6e5a4c0318f9016a2f88eb60e2a8c7b9bfe
+        arch: linux/arm64

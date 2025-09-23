@@ -1,0 +1,24 @@
+annotations:
+  helm.sh/images: |
+    - image: dp.apps.rancher.io/containers/open-webui-pipelines:0.20250329.151219
+      name: open-webui-pipelines
+  licenses: MIT
+apiVersion: v2
+appVersion: 0.20250329.151219
+description: Pipelines bring modular, customizable workflows to any UI client supporting
+  OpenAI API specs and much more! Easily extend functionalities, integrate unique
+  logic, and create dynamic workflows with just a few lines of code.
+home: https://apps.rancher.io/applications/open-webui-pipelines
+icon: https://apps.rancher.io/logos/open-webui-pipelines.png
+keywords:
+- ai
+- llm
+- chat
+- web-ui
+maintainers:
+- name: SUSE LLC
+  url: https://www.suse.com/
+name: open-webui-pipelines
+sources:
+- https://github.com/open-webui/pipelines
+version: 0.5.0

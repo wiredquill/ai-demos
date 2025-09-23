@@ -1,0 +1,132 @@
+diff --git a/packages/open-webui/0.6/templates/ingress.yaml b/packages/open-webui/0.6/templates/ingress.yaml
+index a94f17c..f547608 100644
+--- a/packages/open-webui/0.6/templates/ingress.yaml
++++ b/packages/open-webui/0.6/templates/ingress.yaml
+@@ -9,10 +9,14 @@ metadata:
+     {{- with .Values.ingress.extraLabels }}
+     {{- toYaml . | nindent 4 }}
+     {{- end }}
+-  {{- if .Values.ingress.annotations }}
+   annotations:
+-    {{- tpl (toYaml .Values.ingress.annotations | nindent 4) . }}
+-  {{- end }}
++    {{- if .Values.ingress.annotations }}
++    {{- tpl (toYaml .Values.ingress.annotations | nindent 4) . }}
++    {{- end }}
++    {{- if and (.Values.ingress.tls) (ne .Values.global.tls.source "secret") }}
++    cert-manager.io/issuer: {{ .Values.global.tls.issuerName }}
++    cert-manager.io/issuer-kind: Issuer
++    {{- end }}
+ spec:
+   {{- with .Values.ingress.class }}
+   ingressClassName: {{ . }}
+diff --git a/packages/open-webui/0.6/templates/tls-letsencrypt.yaml b/packages/open-webui/0.6/templates/tls-letsencrypt.yaml
+new file mode 100644
+index 0000000..e8e888f
+--- /dev/null
++++ b/packages/open-webui/0.6/templates/tls-letsencrypt.yaml
+@@ -0,0 +1,20 @@
++{{- if and (.Values.ingress.enabled) (.Values.ingress.tls) (eq .Values.global.tls.source "letsEncrypt") -}}
++apiVersion: cert-manager.io/v1
++kind: Issuer
++metadata:
++  name: "{{ .Values.global.tls.issuerName }}"
++spec:
++  acme:
++    {{- if eq .Values.global.tls.letsEncrypt.environment "production" }}
++    server: https://acme-v02.api.letsencrypt.org/directory
++    {{- else }}
++    server: https://acme-staging-v02.api.letsencrypt.org/directory
++    {{- end }}
++    email: {{ .Values.global.tls.letsEncrypt.email }}
++    privateKeySecretRef:
++      name: "{{ .Values.global.tls.issuerName }}-ca-issuer"
++    solvers:
++    - http01:
++        ingress:
++          class: {{ .Values.global.tls.letsEncrypt.ingress.class }}
++{{- end }}
+diff --git a/packages/open-webui/0.6/templates/tls-selfsigned.yaml b/packages/open-webui/0.6/templates/tls-selfsigned.yaml
+new file mode 100644
+index 0000000..c671fbd
+--- /dev/null
++++ b/packages/open-webui/0.6/templates/tls-selfsigned.yaml
+@@ -0,0 +1,45 @@
++{{- if and (.Values.ingress.enabled) (.Values.ingress.tls) (eq .Values.global.tls.source "suse-private-ai") -}}
++apiVersion: cert-manager.io/v1
++kind: Issuer
++metadata:
++  name: {{ .Values.global.tls.issuerName }}-selfsigned
++spec:
++  selfSigned: {}
++
++---
++apiVersion: cert-manager.io/v1
++kind: Certificate
++metadata:
++  name: {{ .Values.global.tls.issuerName }}-selfsigned-ca
++spec:
++  isCA: true
++  commonName: {{ .Values.global.tls.issuerName }}-selfsigned-ca
++  secretName: {{ .Values.global.tls.issuerName }}-root-secret
++  duration: 2160h # 90d
++  renewBefore: 360h
++  subject:
++    organizations:
++    - Suse
++    countries:
++    - US
++    organizationalUnits:
++    - DEV
++  privateKey:
++    algorithm: ECDSA
++    size: 256
++  issuerRef:
++    name: {{ .Values.global.tls.issuerName }}-selfsigned
++    kind: Issuer
++    group: cert-manager.io
++  dnsNames:
++    - "{{ index .Values "open-webui.ingress.host" }}"
++
++---
++apiVersion: cert-manager.io/v1
++kind: Issuer
++metadata:
++  name: {{ .Values.global.tls.issuerName }}
++spec:
++  ca:
++    secretName: {{ .Values.global.tls.issuerName }}-root-secret
++{{- end -}}
+diff --git a/packages/open-webui/0.6/templates/workload-manager.yaml b/packages/open-webui/0.6/templates/workload-manager.yaml
+index f296222..1485d10 100644
+--- a/packages/open-webui/0.6/templates/workload-manager.yaml
++++ b/packages/open-webui/0.6/templates/workload-manager.yaml
+@@ -109,6 +109,12 @@ spec:
+           {{- if .Values.persistence.subPath }}
+           subPath: {{ .Values.persistence.subPath }}
+           {{- end }}
++        {{- if .Values.global.tls.additionalTrustedCAs }}
++        - mountPath: /etc/pki/trust/anchors/ca-additional.pem
++          name: tls-ca-additional-volume
++          subPath: ca-additional.pem
++          readOnly: true
++        {{- end }}
+         {{- with .Values.volumeMounts.container }}
+         {{- toYaml . | nindent 8 }}
+         {{- end }}
+@@ -185,6 +191,12 @@ spec:
+         persistentVolumeClaim:
+           claimName: {{ include "open-webui.name" . }}
+       {{- end }}
++      {{- if .Values.global.tls.additionalTrustedCAs }}
++      - name: tls-ca-additional-volume
++        secret:
++          defaultMode: 0400
++          secretName: tls-ca-additional
++      {{- end }}
+       {{- with .Values.volumes }}
+       {{- toYaml . | nindent 6 }}
+       {{- end }}
+--
+2.43.0
+

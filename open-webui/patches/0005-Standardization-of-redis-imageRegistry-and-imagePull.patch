@@ -1,0 +1,80 @@
+diff --git a/packages/open-webui/0.6/templates/_helpers.tpl b/packages/open-webui/0.6/templates/_helpers.tpl
+index 674ebf2..82b3ac4 100644
+--- a/packages/open-webui/0.6/templates/_helpers.tpl
++++ b/packages/open-webui/0.6/templates/_helpers.tpl
+@@ -265,3 +265,34 @@ imagePullSecrets:
+ {{- end -}}
+ {{- end -}}
+
++{{/*
++Return the proper Docker Image Registry Secret Names
++*/}}
++{{- define "open-webui-redis.imagePullSecrets" -}}
++{{/*
++Helm 2.11 supports the assignment of a value to a variable defined in a different scope,
++but Helm 2.9 and 2.10 does not support it, so we need to implement this if-else logic.
++Also, we can not use a single if because lazy evaluation is not an option
++*/}}
++{{- if .Values.global }}
++{{- if .Values.global.imagePullSecrets }}
++imagePullSecrets:
++{{- range .Values.global.imagePullSecrets }}
++  {{- $imagePullSecrets := list }}
++  {{- if kindIs "string" . }}
++    {{- $imagePullSecrets = append $imagePullSecrets (dict "name" .) }}
++  {{- else }}
++    {{- $imagePullSecrets = append $imagePullSecrets . }}
++  {{- end }}
++  {{- toYaml $imagePullSecrets | nindent 2 }}
++{{- end }}
++{{- else if .Values.websocket.redis.imagePullSecrets }}
++imagePullSecrets:
++    {{ toYaml .Values.websocket.redis.imagePullSecrets }}
++{{- end -}}
++{{- else if .Values.websocket.redis.imagePullSecrets }}
++imagePullSecrets:
++    {{ toYaml .Values.websocket.redis.imagePullSecrets }}
++{{- end -}}
++{{- end -}}
++
+diff --git a/packages/open-webui/0.6/templates/websocket-redis.yaml b/packages/open-webui/0.6/templates/websocket-redis.yaml
+index 8b652f5..697f938 100644
+--- a/packages/open-webui/0.6/templates/websocket-redis.yaml
++++ b/packages/open-webui/0.6/templates/websocket-redis.yaml
+@@ -26,13 +26,10 @@ spec:
+         {{- toYaml . | nindent 8 }}
+         {{- end }}
+     spec:
+-      {{- if .Values.websocket.redis.image.pullSecretName }}
+-      imagePullSecrets:
+-        - name: {{ .Values.websocket.redis.image.pullSecretName }}
+-      {{- end }}
++      {{- include "open-webui-redis.imagePullSecrets" . | nindent 6 }}
+       containers:
+       - name: {{ .Values.websocket.redis.name }}
+-        image: "{{ .Values.websocket.redis.image.repository }}:{{ .Values.websocket.redis.image.tag }}"
++        image: "{{ with (coalesce .Values.global.imageRegistry .Values.websocket.redis.image.registry) }}{{ . }}/{{ end }}{{ .Values.websocket.redis.image.repository }}:{{ .Values.websocket.redis.image.tag }}"
+         imagePullPolicy: {{ .Values.websocket.redis.image.pullPolicy }}
+         {{- with .Values.websocket.redis.command }}
+         command:
+diff --git a/packages/open-webui/0.6/values.yaml b/packages/open-webui/0.6/values.yaml
+index 82b3e6e..9b8d4e8 100644
+--- a/packages/open-webui/0.6/values.yaml
++++ b/packages/open-webui/0.6/values.yaml
+@@ -67,8 +67,13 @@ websocket:
+       annotations: {}
+     # -- Redis image
+     image:
+-      repository: redis
+-      tag: 7.4.2-alpine3.21
++      # -- Image registry to use for the redis container
++      registry: dp.apps.rancher.io
++      # -- Image repository to use for the redis container
++      repository: containers/redis
++      # -- Image tag to use for the redis container
++      tag: "7.4.2"
++      # -- Image pull policy to use for the redis container
+       pullPolicy: IfNotPresent
+     # -- Redis command (overrides default)
+     command: []
+

@@ -65,16 +65,16 @@ spec:
             echo "NFS Path: {{ .Values.ollama.modelCache.nfs.path }}"
             echo "Cache Path: /mnt/nfs-cache"
             echo "Target Model: llama3.2:latest (large model for cost tracking)"
-            
+
             MODEL_NAME="llama3.2"
             MODEL_TAG="latest"
             CACHE_PATH="/mnt/nfs-cache/${MODEL_NAME}_${MODEL_TAG}"
-            
+
             echo "=== Starting Ollama service for model operations ==="
             ollama serve &
             OLLAMA_PID=$!
             sleep 10
-            
+
             # Function to cleanup Ollama on exit
             cleanup() {
               echo "=== Cleaning up Ollama process ==="
@@ -82,15 +82,15 @@ spec:
               wait $OLLAMA_PID 2>/dev/null || true
             }
             trap cleanup EXIT
-            
+
             echo "=== Checking NFS cache for model ==="
             if [ -d "${CACHE_PATH}" ] && [ "$(ls -A ${CACHE_PATH})" ]; then
               echo "✅ Model found in NFS cache at ${CACHE_PATH}"
               echo "✅ Copying cached model to local storage - this will be fast!"
-              
+
               # Copy from NFS cache to local Ollama directory
               cp -r "${CACHE_PATH}"/* /root/.ollama/models/ 2>/dev/null || true
-              
+
               # Verify model is available
               if ollama list | grep -q "${MODEL_NAME}:${MODEL_TAG}"; then
                 echo "✅ SUCCESS: Model loaded from NFS cache"
@@ -99,21 +99,21 @@ spec:
                 rm -rf "${CACHE_PATH}" 2>/dev/null || true
               fi
             fi
-            
+
             # Download model if not in cache or cache was corrupted
             if ! ollama list | grep -q "${MODEL_NAME}:${MODEL_TAG}"; then
               echo "⚠️  Model not found in NFS cache, downloading from internet..."
               echo "⚠️  This will be slow but only happens once per model version"
-              
+
               # Download model from internet
               echo "=== Downloading ${MODEL_NAME}:${MODEL_TAG} from Ollama registry ==="
               if ollama pull "${MODEL_NAME}:${MODEL_TAG}"; then
                 echo "✅ Model downloaded successfully"
-                
+
                 # Cache model on NFS for future use
                 echo "=== Caching model on NFS for future deployments ==="
                 mkdir -p "${CACHE_PATH}"
-                
+
                 # Copy model files to NFS cache
                 if [ -d "/root/.ollama/models" ]; then
                   echo "Copying model files to NFS cache..."
@@ -128,7 +128,7 @@ spec:
                 exit 1
               fi
             fi
-            
+
             echo "=== Model caching complete ==="
             echo "Model ${MODEL_NAME}:${MODEL_TAG} is ready for use"
         volumeMounts:
@@ -152,7 +152,7 @@ spec:
       - name: ollama-pull-model
         image: "{{ .Values.ollama.image.repository }}:{{ .Values.ollama.image.tag }}"
         imagePullPolicy: {{ .Values.imagePullPolicy }}
-        command: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull bge-large:latest && ollama pull llama3.2:latest"]
+        command: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull bge-large:latest && ollama pull llama3.2:latest && ollama pull tinyllama:latest"]
         volumeMounts:
         - name: ollama-models
           mountPath: /root/.ollama
@@ -201,7 +201,7 @@ spec:
         ports:
         - containerPort: 4317
           name: otlp-grpc
-        - containerPort: 4318  
+        - containerPort: 4318
           name: otlp-http
         - containerPort: 8888
           name: metrics
