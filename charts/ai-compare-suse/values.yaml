@@ -14,7 +14,7 @@ ollama:
     port: 11434
     type: ClusterIP
   gpu:
-    enabled: false
+    enabled: true
   # -- Hardware Configuration for Ollama
   hardware:
     type: "nvidia" # Options: "nvidia", "apple"
@@ -182,6 +182,3 @@ demo:
 # NeuVector Security Configuration
 neuvector:
   enabled: false
-  controllerUrl: "https://neuvector-svc-controller.neuvector.svc.cluster.local:10443"
-  username: "admin"
-  password: "admin"
