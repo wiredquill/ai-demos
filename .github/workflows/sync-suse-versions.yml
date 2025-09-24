@@ -69,7 +69,7 @@ jobs:
           git config --global user.email 'noreply@github.com'
 
       - name: Login to SUSE Application Collection Registry (if credentials available)
-        if: ${{ secrets.SUSE_REGISTRY_USERNAME != '' }}
+        if: ${{ secrets.SUSE_REGISTRY_USERNAME }}
         run: |
           echo "${{ secrets.SUSE_REGISTRY_PASSWORD }}" | helm registry login dp.apps.rancher.io --username "${{ secrets.SUSE_REGISTRY_USERNAME }}" --password-stdin
         continue-on-error: true
