@@ -278,29 +278,6 @@ questions:
   default: "Why is the sky blue? Be concise."
   show_if: "advancedConfig=true&&aiCompare.automation.sendMessages=true"
 
-# Observability Settings Group - OpenTelemetry and monitoring configuration
-- variable: aiCompare.observability.enabled
-  group: "Observability Settings"
-  label: "Enable OpenTelemetry Observability"
-  description: "Enable OpenLIT observability for LLM request tracing, token usage monitoring, and performance metrics."
-  type: "boolean"
-  default: false
-
-- variable: aiCompare.observability.otlpEndpoint
-  group: "Observability Settings"
-  label: "OpenTelemetry Collector Endpoint"
-  description: "OTLP endpoint URL for sending telemetry data (e.g., http://opentelemetry-collector.suse-observability.svc.cluster.local:4318)"
-  type: "string"
-  default: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
-  show_if: "aiCompare.observability.enabled=true"
-
-- variable: aiCompare.observability.collectGpuStats
-  group: "Observability Settings"
-  label: "Enable GPU Statistics Collection"
-  description: "Collect GPU utilization and memory usage statistics. Requires GPU nodes and proper scheduling."
-  type: "boolean"
-  default: false
-  show_if: "aiCompare.observability.enabled=true"
 
 # Security Settings Group - NeuVector integration and DLP configuration
 - variable: neuvector.enabled

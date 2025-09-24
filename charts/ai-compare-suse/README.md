@@ -1,6 +1,6 @@
 # AI Compare - SUSE Edition
 
-![SUSE Logo](https://raw.githubusercontent.com/SUSE/awesome-suse/main/assets/SUSE-logo.png) ![AI Compare Logo](https://raw.githubusercontent.com/wiredquill/ai-demos/main/assets/ai-compare-logo.png)
+![SUSE Logo](https://raw.githubusercontent.com/SUSE/awesome-suse/main/assets/SUSE-logo.png)
 
 ## Overview
 
@@ -16,7 +16,7 @@ This chart deploys a complete AI comparison stack optimized for SUSE environment
 - **Enterprise Features**: Enhanced security, SUSE support lifecycle
 - **Models**: TinyLlama, Llama2, optimized for SUSE infrastructure
 
-### 🌐 Open WebUI - SUSE-Optimized Web Interface  
+### 🌐 Open WebUI - SUSE-Optimized Web Interface
 - **Purpose**: Modern web interface for LLM interactions
 - **Base Image**: SUSE Application Collection
 - **Enterprise Features**: SUSE registry integration, vulnerability scanning
@@ -38,7 +38,7 @@ This chart deploys a complete AI comparison stack optimized for SUSE environment
 
 ### 🔒 **SUSE Security Integration**
 - **Enhanced NeuVector DLP**: Automated data loss prevention with dual-pattern detection
-- **Advanced Security Demos**: 
+- **Advanced Security Demos**:
   - Credit Card pattern: `3412-1234-1234-2222`
   - Social Security Number: `123-45-6789`
   - Single-button multi-data type transmission testing
@@ -177,7 +177,7 @@ persistence:
 Perfect integration with the complete SUSE cloud-native portfolio:
 
 - **🚢 SUSE Rancher**: Container management platform
-- **📊 SUSE Observability**: Full-stack observability  
+- **📊 SUSE Observability**: Full-stack observability
 - **🛡️ NeuVector**: Container security platform
 - **💾 Longhorn**: Cloud-native distributed storage
 - **🚀 Fleet**: GitOps continuous delivery
@@ -195,7 +195,7 @@ Perfect integration with the complete SUSE cloud-native portfolio:
 ## 🏷️ SUSE Version Information
 
 - **Chart Version**: 0.1.144
-- **App Version**: 1.0.0  
+- **App Version**: 1.0.0
 - **SUSE BCI Version**: Latest LTS
 - **Rancher Compatibility**: 2.6+
 - **Kubernetes Compatibility**: SUSE-supported versions

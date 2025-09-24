@@ -1,7 +1,5 @@
 # AI Compare - Upstream Edition
 
-![AI Compare Logo](https://raw.githubusercontent.com/wiredquill/ai-demos/main/assets/ai-compare-logo.png)
-
 ## Overview
 
 **AI Compare** is a comprehensive AI response comparison tool that demonstrates differences between direct model access and pipeline-enhanced responses. Built on upstream open-source components, it provides an ideal platform for AI/ML demonstrations, education, and development while showcasing the security differences between upstream images and enterprise-hardened alternatives.
@@ -16,7 +14,7 @@ This chart deploys a complete AI comparison stack with four main components:
 - **Models**: TinyLlama, Llama2, and custom models
 - **Features**: GPU acceleration, model caching, API access
 
-### 🌐 Open WebUI - Web Interface  
+### 🌐 Open WebUI - Web Interface
 - **Purpose**: Modern web interface for LLM interactions
 - **Technology**: FastAPI + Vue.js frontend
 - **Features**: Chat interface, model management, user authentication
@@ -41,7 +39,7 @@ This chart deploys a complete AI comparison stack with four main components:
 - Real-time response analysis and metrics
 - Educational demonstrations with different complexity levels
 
-### 🚀 **Easy Deployment**  
+### 🚀 **Easy Deployment**
 - One-click installation via Rancher Apps & Marketplace
 - Automatic service discovery and configuration
 - GPU acceleration support with NVIDIA runtime
@@ -65,7 +63,7 @@ This chart deploys a complete AI comparison stack with four main components:
 
 1. **Install from Rancher Apps & Marketplace**
    - Navigate to Apps & Marketplace
-   - Search for "AI Compare" 
+   - Search for "AI Compare"
    - Click Install
 
 2. **Basic Configuration**
@@ -80,7 +78,7 @@ This chart deploys a complete AI comparison stack with four main components:
 
 ## 📋 Prerequisites
 
-- **Kubernetes Cluster**: v1.24+ 
+- **Kubernetes Cluster**: v1.24+
 - **Storage**: Persistent volumes for model caching (recommended)
 - **GPU Support**: NVIDIA GPU Operator (optional but recommended)
 - **Memory**: 4GB+ available for model loading
@@ -96,7 +94,7 @@ This chart deploys a complete AI comparison stack with four main components:
 
 ### Advanced Settings (Optional)
 - **GPU Acceleration**: Enable NVIDIA GPU support
-- **Persistent Storage**: Model caching and data persistence  
+- **Persistent Storage**: Model caching and data persistence
 - **Observability**: OpenTelemetry and SUSE Observability integration
 - **Security**: NeuVector DLP policy automation
 - **Automation**: Background testing and monitoring
@@ -123,7 +121,7 @@ aiCompare:
     enabled: true
     otlpEndpoint: "http://your-collector:4318"
 
-# Security integration  
+# Security integration
 neuvector:
   enabled: true
   controllerUrl: "https://your-neuvector:10443"
@@ -138,7 +136,7 @@ neuvector:
 
 ## 🛡️ Security Features
 
-- **Enhanced DLP Demonstrations**: 
+- **Enhanced DLP Demonstrations**:
   - Dual sensitive data transmission (Credit Card: `3412-1234-1234-2222`, SSN: `123-45-6789`)
   - Single-button multi-pattern detection testing
   - Clean popup interface for security demos
