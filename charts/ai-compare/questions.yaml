@@ -14,31 +14,12 @@ questions:
   type: "boolean"
   default: false
 
-- variable: ollama.hardware.type
-  group: "Main Configuration"
-  label: "Ollama GPU Type"
-  description: "Select the target GPU hardware architecture for the Ollama deployment."
-  type: "enum"
-  required: true
-  default: "nvidia"
-  show_if: "ollama.gpu.enabled=true"
-  options:
-    - label: "NVIDIA GPU (amd64)"
-      value: "nvidia"
 
 # Load Simulator - Main front page option
 - variable: frontend.enabled
   group: "Main Configuration"
   label: "Enable Load Simulator"
   description: "Deploy HTTP load simulator for traffic generation and observability monitoring. Shows detailed settings when enabled."
-  type: "boolean"
-  default: true
-
-# Observability - Main front page option
-- variable: aiCompare.observability.enabled
-  group: "Main Configuration"
-  label: "Enable Observability"
-  description: "Enable OpenTelemetry observability for GenAI monitoring, cost tracking, and performance metrics. Shows detailed settings when enabled."
   type: "boolean"
   default: true
 

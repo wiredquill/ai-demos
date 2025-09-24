@@ -14,17 +14,6 @@ questions:
   type: "boolean"
   default: false
 
-- variable: ollama.hardware.type
-  group: "Main Configuration"
-  label: "Ollama GPU Type"
-  description: "Select the target GPU hardware architecture for the Ollama deployment."
-  type: "enum"
-  required: true
-  default: "nvidia"
-  show_if: "ollama.gpu.enabled=true"
-  options:
-    - label: "NVIDIA GPU (amd64)"
-      value: "nvidia"
 
 # Load Simulator - Main front page option
 - variable: frontend.enabled
@@ -35,13 +24,6 @@ questions:
   default: true
 
 # Observability - Main front page option
-- variable: aiCompare.observability.enabled
-  group: "Main Configuration"
-  label: "Enable Observability"
-  description: "Enable OpenTelemetry observability for GenAI monitoring, cost tracking, and performance metrics. Shows detailed settings when enabled."
-  type: "boolean"
-  default: true
-
 # Networking - Main front page option
 - variable: aiCompare.service.type
   group: "Main Configuration"
