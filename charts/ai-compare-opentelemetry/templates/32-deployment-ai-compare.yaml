@@ -165,8 +165,6 @@ spec:
             # Add APP_NAME like working genai apps (match exact pattern)
             - name: APP_NAME
               value: "AICompareGenerator"
-            - name: OTEL_SERVICE_NAMESPACE
-              value: "{{ .Release.Namespace }}"
             # OpenTelemetry service configuration overrides
             {{- if .Values.aiCompare.env }}
             {{- range $key, $value := .Values.aiCompare.env }}
