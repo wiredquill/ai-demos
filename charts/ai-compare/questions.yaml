@@ -1,31 +1,38 @@
 questions:
-# Main Configuration - Front Page Options
-- variable: advancedConfig
-  group: "Main Configuration"
-  label: "Enable Advanced"
-  description: "Show advanced settings like Images, Pipeline Integration, and Automation. Keep disabled for simplified deployment."
-  type: "boolean"
-  default: false
+# General Configuration
+- variable: ollamaEndpoint
+  label: "Ollama Endpoint"
+  type: string
+  description: "The URL for the Ollama service - Include http:// and port."
+  required: true
+  default: "http://ollama:11434"
+  group: General
 
 - variable: ollama.gpu.enabled
-  group: "Main Configuration"
-  label: "Enable GPU"
-  description: "Enable GPU acceleration for Ollama. Requires a node with GPU drivers and the k8s device plugin installed."
-  type: "boolean"
-  default: false
-
-
-# Load Simulator - Main front page option
-- variable: frontend.enabled
-  group: "Main Configuration"
-  label: "Enable Load Simulator"
-  description: "Deploy HTTP load simulator for traffic generation and observability monitoring. Shows detailed settings when enabled."
+  group: General
+  label: "Enable NVIDIA GPU Acceleration"
+  description: "Requires a node with NVIDIA drivers and the k8s device plugin installed."
   type: "boolean"
   default: true
 
-# Networking - Main front page option
+- variable: frontend.enabled
+  group: General
+  label: "Enable Load Simulator"
+  description: "Deploy HTTP load simulator for traffic generation and observability monitoring."
+  type: "boolean"
+  default: false
+
+- variable: schedule
+  label: "Schedule"
+  type: string
+  default: "*/5 * * * *"
+  description: "Cron schedule for user simulation request to apps"
+  required: true
+  group: General
+  show_if: "frontend.enabled=true"
+
 - variable: aiCompare.service.type
-  group: "Main Configuration"
+  group: General
   label: "AI Compare Service Type"
   description: "Method to expose the AI Compare service."
   type: "enum"
@@ -36,254 +43,95 @@ questions:
     - "NodePort"
     - "LoadBalancer"
 
-- variable: ollama.resources.requests.cpu
-  group: "Ollama Settings"
-  label: "Ollama CPU Request"
-  description: "The amount of CPU to reserve for the main Ollama container (e.g., '500m', '1')."
-  type: "string"
-  default: "2"
-  show_if: "advancedConfig=true"
-
-- variable: ollama.resources.requests.memory
-  group: "Ollama Settings"
-  label: "Ollama Memory Request"
-  description: "The amount of memory to reserve for the main Ollama container (e.g., '1Gi', '2048Mi')."
-  type: "string"
-  default: "2Gi"
-  show_if: "advancedConfig=true"
-
-- variable: ollama.resources.limits.cpu
-  group: "Ollama Settings"
-  label: "Ollama CPU Limit"
-  description: "The maximum amount of CPU the main Ollama container can use."
-  type: "string"
-  default: "4"
-  show_if: "advancedConfig=true"
-
-- variable: ollama.resources.limits.memory
-  group: "Ollama Settings"
-  label: "Ollama Memory Limit"
-  description: "The maximum amount of memory the main Ollama container can use."
-  type: "string"
-  default: "16Gi"
-  show_if: "advancedConfig=true"
-
-- variable: ollama.persistence.enabled
-  group: "Ollama Settings"
-  label: "Enable Ollama Model Persistence"
-  description: "If true, a PersistentVolumeClaim will be created to store Ollama models."
+# Ollama Deployment Configuration
+- variable: ollama.enabled
+  group: "Ollama Deployment"
+  label: "Enable Ollama Deployment"
+  description: "If true, Ollama will be deployed as part of this chart."
   type: "boolean"
-  default: false
+  default: true
 
-- variable: ollama.persistence.size
-  group: "Ollama Settings"
-  label: "Ollama Model Storage Size"
-  description: "The size of the PersistentVolumeClaim for Ollama models (e.g., '10Gi', '50Gi')."
+- variable: ollama.models[0]
+  group: "Ollama Deployment"
+  label: "Primary Ollama Model"
+  description: "The primary Ollama model to pull (e.g., 'llama3.2:latest', 'tinyllama:latest')."
   type: "string"
-  default: "10Gi"
-  show_if: "ollama.persistence.enabled=true"
+  default: "tinyllama:latest"
+  show_if: "ollama.enabled=true"
 
-- variable: ollama.persistence.storageClassName
-  group: "Ollama Settings"
-  label: "Ollama Model Storage Class Name"
-  description: "The storage class name for the Ollama models PVC. Leave empty to use the default storage class."
+- variable: ollama.models[1]
+  group: "Ollama Deployment"
+  label: "Secondary Ollama Model (Costing Model)"
+  description: "Additional model for embeddings (optional)."
   type: "string"
-  default: ""
-  show_if: "ollama.persistence.enabled=true"
-
-- variable: ollama.modelCache.nfs.enabled
-  group: "Ollama Settings"
-  label: "Enable NFS Model Caching"
-  description: "Use NFS share to cache AI models across deployments for faster startup times. Models are downloaded once and shared across all pods."
-  type: "boolean"
-  default: false
-
-- variable: ollama.modelCache.nfs.server
-  group: "Ollama Settings"
-  label: "NFS Server IP/Hostname"
-  description: "NFS server hostname or IP address (e.g., 10.0.9.10)"
-  type: "string"
-  default: "10.0.9.10"
-  show_if: "ollama.modelCache.nfs.enabled=true"
-
-- variable: ollama.modelCache.nfs.path
-  group: "Ollama Settings"
-  label: "NFS Share Path"
-  description: "Path to the NFS share directory for caching models (e.g., /data/ai-models)"
-  type: "string"
-  default: "/data/ai-models"
-  show_if: "ollama.modelCache.nfs.enabled=true"
-
-# Load Simulator Settings Sub-Panel - Appears when Load Simulator is enabled
-- variable: frontend.loadSimulator.intervalSeconds
-  group: "Load Simulator Settings"
-  label: "Request Interval (Seconds)"
-  description: "Time between HTTP requests to the AI Compare API (default: 30 seconds)"
-  type: "int"
-  default: 30
-  show_if: "frontend.enabled=true"
-
-- variable: frontend.loadSimulator.requestTimeout
-  group: "Load Simulator Settings"
-  label: "Request Timeout (Seconds)"
-  description: "HTTP request timeout for API calls (default: 30 seconds)"
-  type: "int"
-  default: 30
-  show_if: "frontend.enabled=true"
-
-# Networking Group - Advanced networking configuration
-- variable: openWebui.service.type
-  group: "Networking"
-  label: "Open WebUI Service Type"
-  description: "Method to expose the Open WebUI service."
-  type: "enum"
-  required: true
-  default: "NodePort"
-  show_if: "advancedConfig=true"
-  options:
-    - "ClusterIP"
-    - "NodePort"
-    - "LoadBalancer"
+  default: "bge-large:latest"
+  show_if: "ollama.enabled=true"
 
 - variable: ollama.service.type
-  group: "Networking"
+  group: "Ollama Deployment"
   label: "Ollama Service Type"
   description: "Method to expose the Ollama service. 'ClusterIP' is recommended."
   type: "enum"
   required: true
   default: "ClusterIP"
-  show_if: "advancedConfig=true"
+  show_if: "ollama.enabled=true"
   options:
     - "ClusterIP"
     - "NodePort"
     - "LoadBalancer"
 
-# Pipeline Integration Group
-- variable: pipelines.enabled
-  group: "Pipeline Integration"
-  label: "Enable Open WebUI Pipelines"
-  description: "Enable pipeline processing for response modification and enhanced AI capabilities."
-  type: "boolean"
-  default: true
-  show_if: "advancedConfig=true"
-
-- variable: pipelines.config.pipelineMode
-  group: "Pipeline Integration"
-  label: "Pipeline Mode"
-  description: "How the response level pipeline operates"
-  type: "enum"
-  default: "auto-cycle"
-  options:
-    - label: "Auto-Cycle (cycles through all levels automatically)"
-      value: "auto-cycle"
-    - label: "Manual (stays on selected level)"
-      value: "manual"
-  show_if: "advancedConfig=true&&pipelines.enabled=true"
-
-- variable: pipelines.git.enabled
-  group: "Pipeline Integration"
-  label: "Auto-Deploy Pipelines from Git"
-  description: "Automatically download and deploy pipelines from the git repository"
-  type: "boolean"
-  default: true
-  show_if: "advancedConfig=true&&pipelines.enabled=true"
-
-- variable: pipelines.autoConfig.enabled
-  group: "Pipeline Integration"
-  label: "Auto-Configure Open WebUI Connection"
-  description: "Automatically set up pipeline connection in Open WebUI during deployment"
-  type: "boolean"
-  default: true
-  show_if: "advancedConfig=true&&pipelines.enabled=true"
-
-- variable: pipelines.autoConfig.apiKey
-  group: "Pipeline Integration"
-  label: "Pipeline API Key"
-  description: "API key for Open WebUI to connect to the pipeline service"
+- variable: ollama.resources.requests.cpu
+  group: "Ollama Deployment"
+  label: "Ollama CPU Request"
+  description: "The amount of CPU to reserve for the main Ollama container (e.g., '500m', '1')."
   type: "string"
-  default: "0p3n-w3bu!"
-  show_if: "advancedConfig=true&&pipelines.autoConfig.enabled=true"
+  default: "2"
+  show_if: "ollama.enabled=true"
 
-# Images Group
-- variable: ollama.image.tag
-  group: "Images"
-  label: "Ollama Image Tag"
-  description: "The container image tag for Ollama."
+- variable: ollama.resources.requests.memory
+  group: "Ollama Deployment"
+  label: "Ollama Memory Request"
+  description: "The amount of memory to reserve for the main Ollama container (e.g., '1Gi', '2048Mi')."
   type: "string"
-  default: "0.6.8"
-  show_if: "advancedConfig=true"
+  default: "2Gi"
+  show_if: "ollama.enabled=true"
 
-- variable: openWebui.image.tag
-  group: "Images"
-  label: "Open WebUI Image Tag"
-  description: "The container image tag for Open WebUI."
+- variable: ollama.resources.limits.cpu
+  group: "Ollama Deployment"
+  label: "Ollama CPU Limit"
+  description: "The maximum amount of CPU the main Ollama container can use."
   type: "string"
-  default: "0.6.9"
-  show_if: "advancedConfig=true"
+  default: "4"
+  show_if: "ollama.enabled=true"
 
-- variable: pipelines.image.tag
-  group: "Images"
-  label: "Open WebUI Pipelines Image Tag"
-  description: "The container image tag for Open WebUI Pipelines."
+- variable: ollama.resources.limits.memory
+  group: "Ollama Deployment"
+  label: "Ollama Memory Limit"
+  description: "The maximum amount of memory the main Ollama container can use."
   type: "string"
-  default: "main"
-  show_if: "advancedConfig=true"
+  default: "16Gi"
+  show_if: "ollama.enabled=true"
 
-- variable: aiCompare.image.tag
-  group: "Images"
-  label: "AI Compare Image Tag"
-  description: "The container image tag for the AI Compare App."
-  type: "string"
-  default: "latest"
-  show_if: "advancedConfig=true"
-
-# Automation Settings Group - Settings for the automated test runner
-- variable: aiCompare.automation.enabled
-  group: "Automation Settings"
-  label: "Enable Automated Runner"
-  description: "If true, the application will automatically run a test on a timer to monitor provider status and test AI responses."
+- variable: ollama.persistence.enabled
+  group: "Ollama Deployment"
+  label: "Enable Ollama Model Persistence"
+  description: "If true, a PersistentVolumeClaim will be created to store Ollama models."
   type: "boolean"
   default: false
-  show_if: "advancedConfig=true"
+  show_if: "ollama.enabled=true"
 
-- variable: aiCompare.automation.sendMessages
-  group: "Automation Settings"
-  label: "Send Test Messages to AI Models"
-  description: "When enabled, automation will send test questions to both Ollama and Open WebUI."
-  type: "boolean"
-  default: true
-  show_if: "advancedConfig=true&&aiCompare.automation.enabled=true"
-
-- variable: aiCompare.automation.providerTest
-  group: "Automation Settings"
-  label: "Enable Model Provider Status Test"
-  description: "When enabled, regularly tests connectivity to model providers and updates status."
-  type: "boolean"
-  default: false
-  show_if: "advancedConfig=true&&aiCompare.automation.enabled=true"
-
-- variable: aiCompare.automation.intervalSeconds
-  group: "Automation Settings"
-  label: "Automation Interval (Seconds)"
-  description: "The time in seconds between each automated test run."
-  type: "int"
-  default: 30
-  show_if: "advancedConfig=true&&aiCompare.automation.enabled=true"
-
-- variable: aiCompare.automation.defaultPrompt
-  group: "Automation Settings"
-  label: "Automation Test Prompt"
-  description: "The recurring prompt to send to AI models during automated testing."
+- variable: ollama.persistence.size
+  group: "Ollama Deployment"
+  label: "Ollama Model Storage Size"
+  description: "The size of the PersistentVolumeClaim for Ollama models (e.g., '10Gi', '50Gi')."
   type: "string"
-  default: "Why is the sky blue? Be concise."
-  show_if: "advancedConfig=true&&aiCompare.automation.sendMessages=true"
+  default: "10Gi"
+  show_if: "ollama.enabled=true && ollama.persistence.enabled=true"
 
-
-# Security Settings Group - NeuVector integration and DLP configuration
-- variable: neuvector.enabled
-  group: "Security Settings"
-  label: "Enable NeuVector DLP Demo"
-  description: "Deploy NeuVector DLP sensors for credit card and SSN detection demos. Uses declarative YAML configuration (no API credentials needed)."
-  type: "boolean"
-  default: false
-  show_if: "advancedConfig=true"
+- variable: ollama.persistence.storageClassName
+  group: "Ollama Deployment"
+  label: "Ollama Model Storage Class Name"
+  description: "The storage class name for the Ollama models PVC. Leave empty to use the default storage class."
+  type: "string"
+  default: ""
+  show_if: "ollama.enabled=true && ollama.persistence.enabled=true"
