@@ -1,13 +1,4 @@
 questions:
-# Deployment Configuration - Essential Settings
-- variable: deploymentNamespace
-  group: "Deployment Configuration"
-  label: "Target Namespace"
-  description: "Kubernetes namespace for the AI Compare deployment. Will be created if it doesn't exist."
-  type: "string"
-  default: "ai-compare"
-  required: true
-
 # Main Configuration - Front Page Options
 - variable: advancedConfig
   group: "Main Configuration"
@@ -34,8 +25,6 @@ questions:
   options:
     - label: "NVIDIA GPU (amd64)"
       value: "nvidia"
-    - label: "Apple Silicon / CPU (arm64)"
-      value: "apple"
 
 # Load Simulator - Main front page option
 - variable: frontend.enabled
@@ -52,6 +41,19 @@ questions:
   description: "Enable OpenTelemetry observability for GenAI monitoring, cost tracking, and performance metrics. Shows detailed settings when enabled."
   type: "boolean"
   default: true
+
+# Networking - Main front page option
+- variable: aiCompare.service.type
+  group: "Main Configuration"
+  label: "AI Compare Service Type"
+  description: "Method to expose the AI Compare service."
+  type: "enum"
+  required: true
+  default: "NodePort"
+  options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"
 
 - variable: ollama.resources.requests.cpu
   group: "Ollama Settings"
@@ -155,19 +157,7 @@ questions:
   default: 30
   show_if: "frontend.enabled=true"
 
-# Networking Group - For configuring how services are exposed
-- variable: aiCompare.service.type
-  group: "Networking"
-  label: "AI Compare Service Type"
-  description: "Method to expose the AI Compare service."
-  type: "enum"
-  required: true
-  default: "NodePort"
-  options:
-    - "ClusterIP"
-    - "NodePort"
-    - "LoadBalancer"
-
+# Networking Group - Advanced networking configuration
 - variable: openWebui.service.type
   group: "Networking"
   label: "Open WebUI Service Type"
@@ -175,6 +165,7 @@ questions:
   type: "enum"
   required: true
   default: "NodePort"
+  show_if: "advancedConfig=true"
   options:
     - "ClusterIP"
     - "NodePort"
@@ -187,6 +178,7 @@ questions:
   type: "enum"
   required: true
   default: "ClusterIP"
+  show_if: "advancedConfig=true"
   options:
     - "ClusterIP"
     - "NodePort"
