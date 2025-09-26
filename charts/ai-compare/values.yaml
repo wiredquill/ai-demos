@@ -171,3 +171,4 @@ demo:
 # NeuVector Security Configuration
 neuvector:
   enabled: false
+  controllerUrl: "https://neuvector-svc-controller.neuvector:8443"
