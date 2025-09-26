@@ -45,3 +45,4 @@ jobs:
           echo "=== Success! ==="
           echo "✅ Basic content generation works"
           echo "✅ Ready to apply to greendocs"
+          echo "🎯 Test triggered manually"
