@@ -15,7 +15,7 @@ spec:
     metadata:
       labels:
         {{- include "ai-compare-opentelemetry.selectorLabels" . | nindent 8 }}
-        job-name: neuvector-setup
+        job-name: {{ include "ai-compare.fullname" . }}-neuvector-setup
     spec:
       restartPolicy: OnFailure
       containers:
