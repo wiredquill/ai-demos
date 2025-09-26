@@ -58,6 +58,30 @@ questions:
   type: "boolean"
   default: false
 
+- variable: neuvector.controllerUrl
+  group: General
+  label: "NeuVector Controller URL"
+  description: "NeuVector management controller API endpoint (including https:// and port)."
+  type: "string"
+  default: "https://neuvector-svc-controller.neuvector:8443"
+  show_if: "neuvector.enabled=true"
+
+- variable: neuvector.username
+  group: General
+  label: "NeuVector Admin Username"
+  description: "Username for NeuVector controller authentication."
+  type: "string"
+  default: "admin"
+  show_if: "neuvector.enabled=true"
+
+- variable: neuvector.password
+  group: General
+  label: "NeuVector Admin Password"
+  description: "Password for NeuVector controller authentication."
+  type: "password"
+  default: "admin"
+  show_if: "neuvector.enabled=true"
+
 # Ollama Deployment Configuration
 - variable: ollama.models[0]
   group: "Ollama Deployment"

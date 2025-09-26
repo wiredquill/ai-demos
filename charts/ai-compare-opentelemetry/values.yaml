@@ -204,3 +204,5 @@ demo:
 neuvector:
   enabled: false
   controllerUrl: "https://neuvector-svc-controller.neuvector:8443"
+  username: "admin"
+  password: "admin"
