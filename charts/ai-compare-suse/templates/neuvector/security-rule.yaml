@@ -16,29 +16,21 @@ spec:
     name: allow-ai-chat-traffic
     selector:
       name: external
-    ports:
-    - port: 7860
-      protocol: tcp
+    ports: "7860/tcp"
   - action: allow
     name: allow-health-checks
     selector:
       name: nodes
-    ports:
-    - port: 8080
-      protocol: tcp
+    ports: "8080/tcp"
   egress:
   - action: allow
     name: allow-ollama-access
     selector:
       name: ollama
-    ports:
-    - port: 11434
-      protocol: tcp
+    ports: "11434/tcp"
   - action: allow
     name: allow-webui-access
     selector:
       name: open-webui
-    ports:
-    - port: 8080
-      protocol: tcp
+    ports: "8080/tcp"
 {{- end }}
