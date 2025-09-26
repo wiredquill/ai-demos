@@ -2,6 +2,9 @@ name: Test GitHub Pages Deployment
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - test-pages-deployment
 
 permissions:
   contents: read
