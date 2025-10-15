@@ -1243,19 +1243,18 @@ class ChatInterface:
                     # Add pipeline level header to the response - this IS the pipeline working
                     formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']} (via Pipelines Service)\n\n{content}"
                     logger.info(f"Pipelines service response successful with level: {current_level['name']}")
-                    
+
                     # Generate telemetry for successful Open WebUI request using OpenLit client
                     try:
                         logger.info("Generating telemetry for successful Open WebUI request")
                         # Use the instrumented client to generate proper telemetry
                         self.ollama_openai_client.ask_endpoint_handler(
-                            messages[-1]["content"] if messages else "Pipeline request",
-                            model
+                            messages[-1]["content"] if messages else "Pipeline request", model
                         )
                         logger.info("✅ Telemetry generated for successful request")
                     except Exception as telemetry_error:
                         logger.warning(f"Failed to generate telemetry: {telemetry_error}")
-                    
+
                     return formatted_response
                 else:
                     logger.warning(
@@ -2453,7 +2452,7 @@ def create_interface():
         background: linear-gradient(135deg, #e04f5e 0%, #e8606f 100%);
     }
     .gr-textbox {
-        background: #ffffff;
+        background: #e8e8e8;
         border: 2px solid #73ba25;
         border-radius: 8px;
         color: #000000;
@@ -2462,10 +2461,10 @@ def create_interface():
     .gr-textbox:focus {
         border-color: #73ba25;
         box-shadow: 0 0 12px rgba(115, 186, 37, 0.4);
-        background: #ffffff;
+        background: #e8e8e8;
     }
     .gr-textbox textarea, .gr-textbox input {
-        background: #ffffff !important;
+        background: #e8e8e8 !important;
         color: #000000 !important;
         font-size: 14px;
         line-height: 1.5;

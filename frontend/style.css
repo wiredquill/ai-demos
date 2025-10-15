@@ -189,6 +189,7 @@ body {
     min-height: 300px;
     max-height: 500px;
     overflow-y: auto;
+    background: #e8e8e8;
 }
 
 .response-content .placeholder {
