@@ -2672,6 +2672,9 @@ def create_interface():
         min-height: 100vh;
         height: 100vh;
         overflow-y: auto;
+        --input-background-fill: #e8e8e8;
+        --input-background-fill-focus: #e8e8e8;
+        --input-background-fill-hover: #e8e8e8;
     }
     .main-header {
         background: linear-gradient(135deg, #30ba78 0%, #28a745 100%);
