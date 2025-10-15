@@ -16,14 +16,18 @@ logger = logging.getLogger(__name__)
 class OllamaOpenAIClient:
     def __init__(self, ollama_url: str = None):
         """Initialize OpenAI client for Ollama."""
-        self.ollama_url = ollama_url or os.getenv("OLLAMA_ENDPOINT", "http://ollama-service:11434")
+        self.ollama_url = ollama_url or os.getenv(
+            "OLLAMA_ENDPOINT", "http://ollama-service:11434"
+        )
         self.client = OpenAI(
             base_url=f"{self.ollama_url}/v1",
             api_key="ollama",  # required, but unused
         )
 
     @openlit.trace
-    def chat_with_ollama(self, messages: List[Dict[str, str]], model: str = "llama3.2:latest") -> str:
+    def chat_with_ollama(
+        self, messages: List[Dict[str, str]], model: str = "llama3.2:latest"
+    ) -> str:
         """Chat with Ollama using OpenAI client pattern with OpenLit tracing."""
         try:
             logger.info(f"Chatting with Ollama model: {model}")
@@ -54,7 +58,9 @@ class OllamaOpenAIClient:
             return f"Error: {str(e)}"
 
     @openlit.trace
-    def ask_endpoint_handler(self, prompt: str = "Why is the sky blue?", model: str = "llama3.2:latest") -> str:
+    def ask_endpoint_handler(
+        self, prompt: str = "Why is the sky blue?", model: str = "llama3.2:latest"
+    ) -> str:
         """Handle /ask endpoint requests with OpenLit tracing."""
         try:
             logger.info("GenAI /ask endpoint called for SUSE Observability detection")

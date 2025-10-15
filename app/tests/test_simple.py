@@ -29,7 +29,9 @@ sys.modules["openlit"] = MagicMock()
 import importlib.util
 
 try:
-    spec = importlib.util.spec_from_file_location("main_app", Path(__file__).parent.parent / "python-ollama-open-webui.py")
+    spec = importlib.util.spec_from_file_location(
+        "main_app", Path(__file__).parent.parent / "python-ollama-open-webui.py"
+    )
     main_app = importlib.util.module_from_spec(spec)
     sys.modules["main_app"] = main_app
     spec.loader.exec_module(main_app)
@@ -102,9 +104,9 @@ class TestChatInterface(unittest.TestCase):
 
     def test_provider_status_check(self):
         """Test provider status checking."""
-        with patch("builtins.open", mock_open('{"providers": {"Test": "https://test.com"}}')), patch.object(
-            main_app.ChatInterface, "_initialize_api_server"
-        ):
+        with patch(
+            "builtins.open", mock_open('{"providers": {"Test": "https://test.com"}}')
+        ), patch.object(main_app.ChatInterface, "_initialize_api_server"):
             interface = main_app.ChatInterface()
 
             # This should not crash

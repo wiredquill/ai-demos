@@ -124,11 +124,17 @@ Examples:
         help="Test pattern to run (initialization, instrumentation, error_handling)",
     )
 
-    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose test output")
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Verbose test output"
+    )
 
-    parser.add_argument("-c", "--coverage", action="store_true", help="Generate coverage report")
+    parser.add_argument(
+        "-c", "--coverage", action="store_true", help="Generate coverage report"
+    )
 
-    parser.add_argument("--html", action="store_true", help="Generate HTML test and coverage reports")
+    parser.add_argument(
+        "--html", action="store_true", help="Generate HTML test and coverage reports"
+    )
 
     parser.add_argument(
         "--check-deps",

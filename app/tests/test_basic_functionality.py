@@ -28,7 +28,9 @@ def test_opentelemetry_environment_detection():
     """Test OpenTelemetry environment detection logic."""
     # Test observability enabled
     with patch.dict(os.environ, {"OBSERVABILITY_ENABLED": "true"}):
-        observability_enabled = os.environ.get("OBSERVABILITY_ENABLED", "false").lower() == "true"
+        observability_enabled = (
+            os.environ.get("OBSERVABILITY_ENABLED", "false").lower() == "true"
+        )
         assert observability_enabled is True
 
     # Test dev mode enabled
@@ -83,7 +85,11 @@ def test_timeout_configuration():
 
 def test_url_validation():
     """Test URL validation logic."""
-    valid_urls = ["http://localhost:4318", "https://collector.example.com:4318", "http://collector.svc.cluster.local:4318"]
+    valid_urls = [
+        "http://localhost:4318",
+        "https://collector.example.com:4318",
+        "http://collector.svc.cluster.local:4318",
+    ]
 
     for url in valid_urls:
         # Basic URL validation
@@ -95,12 +101,16 @@ def test_gpu_stats_configuration():
     """Test GPU statistics configuration."""
     # Test GPU stats enabled
     with patch.dict(os.environ, {"COLLECT_GPU_STATS": "true"}):
-        gpu_stats_enabled = os.environ.get("COLLECT_GPU_STATS", "false").lower() == "true"
+        gpu_stats_enabled = (
+            os.environ.get("COLLECT_GPU_STATS", "false").lower() == "true"
+        )
         assert gpu_stats_enabled is True
 
     # Test GPU stats disabled (default)
     with patch.dict(os.environ, {}, clear=True):
-        gpu_stats_enabled = os.environ.get("COLLECT_GPU_STATS", "false").lower() == "true"
+        gpu_stats_enabled = (
+            os.environ.get("COLLECT_GPU_STATS", "false").lower() == "true"
+        )
         assert gpu_stats_enabled is False
 
 
@@ -133,7 +143,9 @@ def test_automation_configuration():
     """Test automation configuration parsing."""
     # Test automation enabled
     with patch.dict(os.environ, {"AUTOMATION_ENABLED": "true"}):
-        automation_enabled = os.environ.get("AUTOMATION_ENABLED", "false").lower() == "true"
+        automation_enabled = (
+            os.environ.get("AUTOMATION_ENABLED", "false").lower() == "true"
+        )
         assert automation_enabled is True
 
     # Test automation interval
@@ -161,5 +173,7 @@ def test_configmap_configuration():
 
     # Test service health failure
     with patch.dict(os.environ, {"SERVICE_HEALTH_FAILURE": "true"}):
-        health_failure = os.environ.get("SERVICE_HEALTH_FAILURE", "false").lower() == "true"
+        health_failure = (
+            os.environ.get("SERVICE_HEALTH_FAILURE", "false").lower() == "true"
+        )
         assert health_failure is True

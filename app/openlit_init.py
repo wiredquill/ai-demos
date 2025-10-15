@@ -13,7 +13,9 @@ logger = logging.getLogger(__name__)
 
 def setup_ollama_environment():
     """Setup Ollama environment variables before OpenLit init."""
-    ollama_url = os.getenv("OLLAMA_BASE_URL", os.getenv("OLLAMA_ENDPOINT", "http://ollama-service:11434"))
+    ollama_url = os.getenv(
+        "OLLAMA_BASE_URL", os.getenv("OLLAMA_ENDPOINT", "http://ollama-service:11434")
+    )
 
     # Set standard Ollama environment variables
     os.environ["OLLAMA_SERVER_URL"] = ollama_url
@@ -39,7 +41,9 @@ def initialize_openlit():
         collect_gpu_stats = os.getenv("COLLECT_GPU_STATS", "false").lower() == "true"
 
         if not otlp_endpoint:
-            logger.warning("No OTLP_ENDPOINT configured, skipping OpenLit initialization")
+            logger.warning(
+                "No OTLP_ENDPOINT configured, skipping OpenLit initialization"
+            )
             return False
 
         logger.info(f"Initializing OpenLit for {app_name}")
@@ -94,8 +98,12 @@ def get_model_pricing(model_name):
                 if variation in chat_pricing:
                     model_pricing = chat_pricing[variation]
                     return {
-                        "input_cost_per_token": model_pricing.get("promptPrice", 0.00005),
-                        "output_cost_per_token": model_pricing.get("completionPrice", 0.0001),
+                        "input_cost_per_token": model_pricing.get(
+                            "promptPrice", 0.00005
+                        ),
+                        "output_cost_per_token": model_pricing.get(
+                            "completionPrice", 0.0001
+                        ),
                         "cost_per_request": 0.001,  # Standard request cost
                     }
 
@@ -109,7 +117,11 @@ def get_model_pricing(model_name):
 
     except Exception as e:
         logger.error(f"Error reading pricing data: {e}")
-        return {"input_cost_per_token": 0.00005, "output_cost_per_token": 0.0001, "cost_per_request": 0.001}
+        return {
+            "input_cost_per_token": 0.00005,
+            "output_cost_per_token": 0.0001,
+            "cost_per_request": 0.001,
+        }
 
 
 def patch_openlit():
