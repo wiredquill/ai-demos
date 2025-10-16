@@ -2673,10 +2673,17 @@ def create_interface():
         height: 100vh;
         overflow-y: auto;
     }
-    /* Target ONLY the response textboxes */
+    /* Target the container/wrapper around response textboxes, not the textbox itself */
+    .ollama-response,
+    .webui-response {
+        background: #e8e8e8 !important;
+        border-radius: 8px;
+        padding: 4px;
+    }
+    /* Keep the actual textarea white */
     .ollama-response textarea,
     .webui-response textarea {
-        background: #e8e8e8 !important;
+        background: #ffffff !important;
     }
     .main-header {
         background: linear-gradient(135deg, #30ba78 0%, #28a745 100%);
