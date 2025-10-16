@@ -33,7 +33,6 @@ jobs:
       - name: Create charts directory
         run: |
           mkdir -p .cr-release-packages
-          mkdir -p .cr-index
 
       - name: Package charts
         run: |
@@ -47,16 +46,13 @@ jobs:
       - name: Generate index
         run: |
           helm repo index .cr-release-packages --url https://wiredquill.github.io/ai-demos/
-          cp .cr-release-packages/index.yaml .cr-index/
 
       - name: List generated files
         run: |
           echo "Generated packages:"
           ls -la .cr-release-packages/
-          echo "Generated index:"
-          ls -la .cr-index/
           echo "Index content:"
-          cat .cr-index/index.yaml
+          cat .cr-release-packages/index.yaml
 
       - name: Publish to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

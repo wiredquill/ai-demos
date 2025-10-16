@@ -2,6 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## CRITICAL REPOSITORY RULES
+
+**NEVER commit directly to main branch on suse-ai-greendocs repository:**
+- suse-ai-greendocs is a deployment repository with strict branch protection
+- All changes must go through testing branch (charts-for-ai-demo-apps) first
+- User controls when changes are promoted to main via manual merge/PR
+- Use workflow targeting charts-for-ai-demo-apps branch for testing
+
+**NEVER attribute code or commits to Claude or AI assistance:**
+- All commits must be attributed to wiredquill <wiredquill@users.noreply.github.com>
+- All commit messages must use professional software development language
+- Never include references to external assistance in commit messages or code
+- Always include "Signed-off-by: wiredquill" in commit messages
+
 ## Project Overview
 
 This is AI Compare - a comprehensive demonstration of AI response comparison that shows differences between direct model access and pipeline-enhanced responses. The project demonstrates building, deploying, and managing AI applications on SUSE's cloud-native platform, with configuration change detection capabilities for SUSE Observability demonstrations.
@@ -47,7 +61,7 @@ cd app && python python-ollama-open-webui.py
 # Install SUSE variant
 helm install my-release charts/ai-compare-suse
 
-# Install upstream variant  
+# Install upstream variant
 helm install my-release charts/ai-compare
 
 # Install with GPU support
@@ -107,7 +121,7 @@ kubectl label cluster my-cluster needs-llm=true        # For upstream variant
 
 **Environment Variables (AI Compare App):**
 - `OLLAMA_BASE_URL`: Ollama service endpoint
-- `OPEN_WEBUI_BASE_URL`: Open WebUI service endpoint  
+- `OPEN_WEBUI_BASE_URL`: Open WebUI service endpoint
 - `AUTOMATION_ENABLED`: Enable automated testing loop
 - `AUTOMATION_PROMPT`: Default prompt for automation
 - `AUTOMATION_INTERVAL`: Automation interval in seconds
@@ -196,7 +210,7 @@ kubectl patch configmap <release-name>-demo-config -n <namespace> --type=json -p
   {"op": "add", "path": "/data/models_latest", "value": "broken-model:invalid"}
 ]'
 
-# Fix the app (turn availability demo OFF) - Restores HTTP 200 responses immediately  
+# Fix the app (turn availability demo OFF) - Restores HTTP 200 responses immediately
 kubectl patch configmap <release-name>-demo-config -n <namespace> --type=json -p='[
   {"op": "remove", "path": "/data/models_latest"},
   {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest"}
@@ -280,7 +294,7 @@ GitHub Actions workflow (`.github/workflows/ci-cd.yaml`) automatically:
 **ConfigMap Manipulation Methods:**
 - `_simulate_configmap_failure()`: Uses kubectl to break ConfigMap
 - `_restore_configmap_health()`: Uses kubectl to fix ConfigMap
-- `_check_configmap_demo_state()`: Automatically monitors ConfigMap state 
+- `_check_configmap_demo_state()`: Automatically monitors ConfigMap state
 - **Health Check Integration**: Automatically fails when ConfigMap broken (no manual activation needed)
 - Requires proper RBAC permissions for ConfigMap manipulation
 - Environment variables provide namespace and ConfigMap names
@@ -293,7 +307,7 @@ GitHub Actions workflow (`.github/workflows/ci-cd.yaml`) automatically:
 
 **Network Timeout Optimizations:**
 - CONNECTION_TIMEOUT: 5s (down from 30s)
-- REQUEST_TIMEOUT: 8s (down from 30s) 
+- REQUEST_TIMEOUT: 8s (down from 30s)
 - INFERENCE_TIMEOUT: 30s (down from 120s)
 - Optimized for SUSE security network policies
 
