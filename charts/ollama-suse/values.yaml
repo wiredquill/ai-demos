@@ -33,7 +33,7 @@ ollama:
 
   # GPU configuration with SUSE support
   gpu:
-    enabled: false
+    enabled: true
     vendor: "nvidia"
     driver:
       version: "latest"

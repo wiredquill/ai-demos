@@ -1,0 +1,91 @@
+{{- if .Values.ollama.gpu.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "ollama-suse.fullname" . }}-gpu-patch
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ollama-suse.labels" . | nindent 4 }}
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      serviceAccountName: {{ include "ollama-suse.fullname" . }}-patch
+      containers:
+      - name: patcher
+        image: bitnami/kubectl:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          # Wait for deployment to be ready
+          kubectl rollout status deployment/{{ include "ollama-suse.fullname" . }} -n {{ .Release.Namespace }} --timeout=5m || true
+
+          # Patch the deployment to add GPU resources
+          kubectl patch deployment {{ include "ollama-suse.fullname" . }} -n {{ .Release.Namespace }} --type='json' -p='[
+            {
+              "op": "add",
+              "path": "/spec/template/spec/containers/0/resources/limits/nvidia.com~1gpu",
+              "value": {{ .Values.ollama.gpu.resources.limits | quote }}
+            },
+            {
+              "op": "add",
+              "path": "/spec/template/spec/containers/0/resources/requests/nvidia.com~1gpu",
+              "value": {{ .Values.ollama.gpu.resources.limits | quote }}
+            }
+          ]' || echo "Patch may already exist or deployment not ready"
+
+          # Force rollout to apply the patch
+          kubectl rollout restart deployment/{{ include "ollama-suse.fullname" . }} -n {{ .Release.Namespace }}
+      restartPolicy: Never
+  ttlSecondsAfterFinished: 86400
+{{- end }}
+---
+{{- if .Values.ollama.gpu.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "ollama-suse.fullname" . }}-patch
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ollama-suse.labels" . | nindent 4 }}
+{{- end }}
+---
+{{- if .Values.ollama.gpu.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "ollama-suse.fullname" . }}-patch
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ollama-suse.labels" . | nindent 4 }}
+rules:
+- apiGroups: ["apps"]
+  resources: ["deployments", "deployments/rollback"]
+  resourceNames: ["{{ include "ollama-suse.fullname" . }}"]
+  verbs: ["get", "patch", "update"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+{{- end }}
+---
+{{- if .Values.ollama.gpu.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "ollama-suse.fullname" . }}-patch
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ollama-suse.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "ollama-suse.fullname" . }}-patch
+subjects:
+- kind: ServiceAccount
+  name: {{ include "ollama-suse.fullname" . }}-patch
+  namespace: {{ .Release.Namespace }}
+{{- end }}
