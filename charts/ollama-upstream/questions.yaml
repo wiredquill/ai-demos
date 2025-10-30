@@ -40,28 +40,28 @@ questions:
   show_if: "ollama.gpu.enabled=true"
 
 # === RESOURCE CONFIGURATION ===
-- variable: resources.requests.memory
+- variable: ollama.resources.requests.memory
   default: "2Gi"
   description: "Memory request for Ollama pod"
   type: string
   label: Memory Request
   group: "Resource Configuration"
 
-- variable: resources.requests.cpu
+- variable: ollama.resources.requests.cpu
   default: "1000m"
   description: "CPU request for Ollama pod"
   type: string
   label: CPU Request
   group: "Resource Configuration"
 
-- variable: resources.limits.memory
+- variable: ollama.resources.limits.memory
   default: "8Gi"
   description: "Memory limit for Ollama pod"
   type: string
   label: Memory Limit
   group: "Resource Configuration"
 
-- variable: resources.limits.cpu
+- variable: ollama.resources.limits.cpu
   default: "4000m"
   description: "CPU limit for Ollama pod"
   type: string

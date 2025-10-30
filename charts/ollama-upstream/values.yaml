@@ -11,15 +11,6 @@ image:
   pullPolicy: IfNotPresent
   tag: ""  # defaults to chart appVersion
 
-# Root-level resource configuration (required by upstream chart)
-resources:
-  requests:
-    memory: "2Gi"
-    cpu: "1000m"
-  limits:
-    memory: "8Gi"
-    cpu: "4000m"
-
 # Ollama-specific configuration
 ollama:
   # Port configuration
@@ -28,6 +19,15 @@ ollama:
   # Service configuration
   service:
     type: ClusterIP
+
+  # Resource configuration (MUST be under ollama for dependency chart)
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "1000m"
+    limits:
+      memory: "8Gi"
+      cpu: "4000m"
 
   # GPU configuration - automatically applies to deployment resources
   # When enabled: true, GPU resources are added to pod spec
