@@ -1,64 +1,73 @@
 # Default values for ollama-upstream wrapper chart
 # This passes through to the upstream ollama chart
+# For more options, see: https://github.com/otwld/ollama-helm
 
+# Replica count
+replicaCount: 1
+
+# Docker image configuration
+image:
+  repository: ollama/ollama
+  pullPolicy: IfNotPresent
+  tag: ""  # defaults to chart appVersion
+
+# Root-level resource configuration (required by upstream chart)
+resources:
+  requests:
+    memory: "2Gi"
+    cpu: "1000m"
+  limits:
+    memory: "8Gi"
+    cpu: "4000m"
+
+# Ollama-specific configuration
 ollama:
-  # Service configuration
-  service:
-    type: ClusterIP
-    port: 11434
+  # Port configuration
+  port: 11434
 
-  # Resource configuration
-  resources:
-    requests:
-      memory: "2Gi"
-      cpu: "1000m"
-    limits:
-      memory: "8Gi"
-      cpu: "4000m"
-
-  # GPU configuration
+  # GPU configuration - automatically applies to deployment resources
+  # When enabled: true, GPU resources are added to pod spec
   gpu:
     enabled: true
     draEnabled: false
     type: "nvidia"
     number: 1
     nvidiaResource: "nvidia.com/gpu"
+    mig:
+      enabled: false
+      devices: {}
 
-  # Storage configuration
+  # Persistent storage for models
   persistence:
     enabled: true
     size: "50Gi"
     storageClass: ""
 
-  # Model configuration
+  # Models to pull/run at startup
   models:
-    autoDownload: []
-    pullPolicy: "IfNotPresent"
+    pull: []
+    run: []
+    create: []
+    clean: false
 
-  # Networking
-  ingress:
-    enabled: false
-    className: "nginx"
-    host: "ollama.local"
-    tls:
-      enabled: false
+  # Mount path for ollama data
+  mountPath: ""
 
-  # Security
-  security:
-    runAsNonRoot: true
-    readOnlyRootFilesystem: false
+  # Add insecure flag
+  insecure: false
 
-  # Observability
-  monitoring:
-    enabled: false
-    serviceMonitor:
-      enabled: false
+# Service account
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
 
-  logging:
-    level: "info"
+# Pod security context
+podSecurityContext: {}
 
-  # Image configuration (upstream defaults)
-  image:
-    repository: ollama/ollama
-    tag: latest
-    pullPolicy: IfNotPresent
+# Pod annotations
+podAnnotations: {}
+
+# Pod labels
+podLabels: {}

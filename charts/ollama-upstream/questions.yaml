@@ -1,58 +1,46 @@
 questions:
-- variable: ollama.service.type
-  default: "ClusterIP"
-  description: "Service type for Ollama"
-  type: enum
-  options:
-    - "ClusterIP"
-    - "NodePort"
-    - "LoadBalancer"
-  label: Service Type
-  group: "Service Configuration"
-
-- variable: ollama.resources.requests.memory
+- variable: resources.requests.memory
   default: "2Gi"
-  description: "Memory request for Ollama"
+  description: "Memory request for Ollama pod"
   type: string
   label: Memory Request
   group: "Resource Configuration"
 
-- variable: ollama.resources.requests.cpu
+- variable: resources.requests.cpu
   default: "1000m"
-  description: "CPU request for Ollama"
+  description: "CPU request for Ollama pod"
   type: string
   label: CPU Request
   group: "Resource Configuration"
 
-- variable: ollama.resources.limits.memory
+- variable: resources.limits.memory
   default: "8Gi"
-  description: "Memory limit for Ollama"
+  description: "Memory limit for Ollama pod"
   type: string
   label: Memory Limit
   group: "Resource Configuration"
 
-- variable: ollama.resources.limits.cpu
+- variable: resources.limits.cpu
   default: "4000m"
-  description: "CPU limit for Ollama"
+  description: "CPU limit for Ollama pod"
   type: string
   label: CPU Limit
   group: "Resource Configuration"
 
 - variable: ollama.gpu.enabled
   default: true
-  description: "Enable GPU support for Ollama"
+  description: "Enable GPU support for Ollama (NVIDIA GPU required)"
   type: boolean
   label: Enable GPU
   group: "GPU Configuration"
 
 - variable: ollama.gpu.type
   default: "nvidia"
-  description: "GPU type (nvidia, amd, intel)"
+  description: "GPU type (nvidia or amd)"
   type: enum
   options:
     - "nvidia"
     - "amd"
-    - "intel"
   label: GPU Type
   group: "GPU Configuration"
   show_if: "ollama.gpu.enabled=true"
@@ -85,97 +73,16 @@ questions:
 - variable: ollama.persistence.storageClass
   default: ""
   description: "Storage class for persistent volume (empty for default)"
-  type: storageclass
+  type: string
   label: Storage Class
   group: "Storage Configuration"
   show_if: "ollama.persistence.enabled=true"
 
-- variable: ollama.models.autoDownload
-  default: []
-  description: "List of models to automatically download on startup"
-  type: multiline
-  label: Auto-download Models
-  group: "Model Configuration"
-
-- variable: ollama.models.pullPolicy
-  default: "IfNotPresent"
-  description: "Model pull policy"
-  type: enum
-  options:
-    - "Always"
-    - "IfNotPresent"
-    - "Never"
-  label: Model Pull Policy
-  group: "Model Configuration"
-
-- variable: ollama.ingress.enabled
-  default: false
-  description: "Enable ingress for external access"
-  type: boolean
-  label: Enable Ingress
-  group: "Networking"
-
-- variable: ollama.ingress.className
-  default: "nginx"
-  description: "Ingress class name"
-  type: string
-  label: Ingress Class
-  group: "Networking"
-  show_if: "ollama.ingress.enabled=true"
-
-- variable: ollama.ingress.host
-  default: "ollama.local"
-  description: "Hostname for ingress"
-  type: hostname
-  label: Ingress Hostname
-  group: "Networking"
-  show_if: "ollama.ingress.enabled=true"
-
-- variable: ollama.ingress.tls.enabled
-  default: false
-  description: "Enable TLS for ingress"
-  type: boolean
-  label: Enable TLS
-  group: "Networking"
-  show_if: "ollama.ingress.enabled=true"
-
-- variable: ollama.security.runAsNonRoot
-  default: true
-  description: "Run container as non-root user"
-  type: boolean
-  label: Run as Non-Root
-  group: "Security"
-
-- variable: ollama.security.readOnlyRootFilesystem
-  default: false
-  description: "Mount root filesystem as read-only"
-  type: boolean
-  label: Read-Only Root FS
-  group: "Security"
-
-- variable: ollama.monitoring.enabled
-  default: false
-  description: "Enable Prometheus monitoring"
-  type: boolean
-  label: Enable Monitoring
-  group: "Observability"
-
-- variable: ollama.monitoring.serviceMonitor.enabled
-  default: false
-  description: "Create ServiceMonitor for Prometheus"
-  type: boolean
-  label: Create ServiceMonitor
-  group: "Observability"
-  show_if: "ollama.monitoring.enabled=true"
-
-- variable: ollama.logging.level
-  default: "info"
-  description: "Log level for Ollama"
-  type: enum
-  options:
-    - "debug"
-    - "info"
-    - "warn"
-    - "error"
-  label: Log Level
-  group: "Observability"
+- variable: replicaCount
+  default: 1
+  description: "Number of Ollama replicas"
+  type: int
+  min: 1
+  max: 5
+  label: Replica Count
+  group: "Deployment Configuration"
