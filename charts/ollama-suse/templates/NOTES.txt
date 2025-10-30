@@ -1,13 +1,13 @@
 1. Get the application URL by running these commands:
-{{- if and .Values.ollama.service (contains "NodePort" .Values.ollama.service.type) }}
+{{- if and .Values.ollama.ollama.service (contains "NodePort" .Values.ollama.ollama.service.type) }}
   export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "ollama-suse.fullname" . }})
   export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
   echo http://$NODE_IP:$NODE_PORT
-{{- else if and .Values.ollama.service (contains "LoadBalancer" .Values.ollama.service.type) }}
+{{- else if and .Values.ollama.ollama.service (contains "LoadBalancer" .Values.ollama.ollama.service.type) }}
      NOTE: It may take a few minutes for the LoadBalancer IP to be available.
            You can watch the status of by running 'kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "ollama-suse.fullname" . }}'
   export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "ollama-suse.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
-  echo http://$SERVICE_IP:{{ .Values.ollama.port }}
+  echo http://$SERVICE_IP:{{ .Values.ollama.ollama.port }}
 {{- else }}
   export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "ollama-suse.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
   export CONTAINER_PORT=$(kubectl get pod --namespace {{ .Release.Namespace }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
@@ -32,14 +32,14 @@ SUSE Application Collection Ollama has been deployed successfully!
 
 🏢 Enterprise Features:
 
-{{- if .Values.ollama.gpu.enabled }}
-GPU Support: ✅ Enabled ({{ .Values.ollama.gpu.type }}, {{ .Values.ollama.gpu.number }} GPU(s))
+{{- if .Values.ollama.ollama.gpu.enabled }}
+GPU Support: ✅ Enabled ({{ .Values.ollama.ollama.gpu.type }}, {{ .Values.ollama.ollama.gpu.number }} GPU(s))
 {{- else }}
 GPU Support: ❌ Disabled
 {{- end }}
 
-{{- if .Values.persistentVolume.enabled }}
-Persistent Storage: ✅ Enabled ({{ .Values.persistentVolume.size }}, {{ .Values.persistentVolume.storageClass }})
+{{- if .Values.ollama.persistentVolume.enabled }}
+Persistent Storage: ✅ Enabled ({{ .Values.ollama.persistentVolume.size }}, {{ .Values.ollama.persistentVolume.storageClass }})
 {{- else }}
 Persistent Storage: ❌ Disabled
 {{- end }}
