@@ -1,6 +1,6 @@
 questions:
 # === FRONT PAGE - MOST IMPORTANT OPTIONS ===
-- variable: ollama.ollama.service.type
+- variable: ollama.service.type
   default: "ClusterIP"
   description: "Service type for accessing Ollama"
   type: enum

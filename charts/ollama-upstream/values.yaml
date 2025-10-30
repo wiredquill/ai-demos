@@ -14,6 +14,10 @@ ollama:
     pullPolicy: IfNotPresent
     tag: ""  # defaults to chart appVersion
 
+  # Service configuration - at root of dependency values
+  service:
+    type: ClusterIP
+
   # Resource configuration - CPU and memory allocations
   # These are merged with GPU resources when gpu.enabled=true
   resources:
@@ -46,14 +50,10 @@ ollama:
   # Pod labels
   podLabels: {}
 
-  # Ollama-specific configuration (upstream chart section)
+  # Ollama-specific configuration (nested under ollama section of upstream chart)
   ollama:
     # Port configuration
     port: 11434
-
-    # Service configuration
-    service:
-      type: ClusterIP
 
     # GPU configuration - automatically applies to deployment resources
     # When enabled: true, GPU resources are added to pod spec

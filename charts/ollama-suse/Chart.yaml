@@ -2,7 +2,7 @@ apiVersion: v2
 name: ollama-suse
 description: Wrapper chart for SUSE Application Collection Ollama with custom questions.yaml
 type: application
-version: 0.1.7
+version: 0.1.8
 appVersion: "1.0"
 
 dependencies:

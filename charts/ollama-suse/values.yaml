@@ -9,6 +9,16 @@ global:
 # All values for the SUSE ollama dependency are nested under the 'ollama' key
 # This is required for Helm dependency value passing
 ollama:
+  # Docker image configuration (SUSE Application Collection)
+  image:
+    repository: registry.suse.com/bci/ollama
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  # Service configuration - at root of dependency values
+  service:
+    type: ClusterIP
+
   # Enterprise resource configuration - CPU and memory allocations
   # These are merged with GPU resources when gpu.enabled=true
   resources:
@@ -25,20 +35,10 @@ ollama:
     size: "100Gi"
     storageClass: "suse-csi"
 
-  # Docker image configuration (SUSE Application Collection)
-  image:
-    repository: registry.suse.com/bci/ollama
-    tag: latest
-    pullPolicy: IfNotPresent
-
-  # Ollama-specific configuration (SUSE variant)
+  # Ollama-specific configuration (nested under ollama section of upstream chart)
   ollama:
     # Port configuration
     port: 11434
-
-    # Service configuration
-    service:
-      type: ClusterIP
 
     # GPU configuration - automatically applies to deployment resources
     gpu:
