@@ -19,8 +19,10 @@ ollama:
   # GPU configuration
   gpu:
     enabled: true
+    draEnabled: false
     type: "nvidia"
     number: 1
+    nvidiaResource: "nvidia.com/gpu"
 
   # Storage configuration
   persistence:
