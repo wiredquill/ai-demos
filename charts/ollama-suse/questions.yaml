@@ -73,7 +73,7 @@ questions:
 - variable: ollama.persistence.storageClass
   default: "suse-csi"
   description: "Storage class for persistent volume"
-  type: string
+  type: storageclass
   label: Storage Class
   group: "Storage Configuration"
   show_if: "ollama.persistence.enabled=true"
