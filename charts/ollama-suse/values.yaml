@@ -6,19 +6,26 @@ global:
   cattle:
     systemDefaultRegistry: ""
 
+# Enterprise resource configuration - CPU and memory allocations
+# These are merged with GPU resources when gpu.enabled=true
+resources:
+  requests:
+    memory: "4Gi"
+    cpu: "2000m"
+  limits:
+    memory: "16Gi"
+    cpu: "8000m"
+
+# Persistent volume configuration for Ollama data
+persistentVolume:
+  enabled: true
+  size: "100Gi"
+  storageClass: "suse-csi"
+
 # Ollama configuration for SUSE Application Collection
 ollama:
   # Port configuration
   port: 11434
-
-  # Enterprise resource configuration
-  resources:
-    requests:
-      memory: "4Gi"
-      cpu: "2000m"
-    limits:
-      memory: "16Gi"
-      cpu: "8000m"
 
   # GPU configuration - automatically applies to deployment resources
   gpu:
@@ -26,12 +33,6 @@ ollama:
     type: "nvidia"
     number: 1
     nvidiaResource: "nvidia.com/gpu"
-
-  # Persistent storage for models
-  persistence:
-    enabled: true
-    size: "100Gi"
-    storageClass: "suse-csi"
 
   # Models to pull/run at startup
   models:

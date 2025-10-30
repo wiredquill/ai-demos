@@ -11,6 +11,22 @@ image:
   pullPolicy: IfNotPresent
   tag: ""  # defaults to chart appVersion
 
+# Resource configuration - CPU and memory allocations
+# These are merged with GPU resources when gpu.enabled=true
+resources:
+  requests:
+    memory: "2Gi"
+    cpu: "1000m"
+  limits:
+    memory: "8Gi"
+    cpu: "4000m"
+
+# Persistent volume configuration for Ollama data
+persistentVolume:
+  enabled: true
+  size: "50Gi"
+  storageClass: ""
+
 # Ollama-specific configuration
 ollama:
   # Port configuration
@@ -19,15 +35,6 @@ ollama:
   # Service configuration
   service:
     type: ClusterIP
-
-  # Resource configuration (MUST be under ollama for dependency chart)
-  resources:
-    requests:
-      memory: "2Gi"
-      cpu: "1000m"
-    limits:
-      memory: "8Gi"
-      cpu: "4000m"
 
   # GPU configuration - automatically applies to deployment resources
   # When enabled: true, GPU resources are added to pod spec
@@ -40,12 +47,6 @@ ollama:
     mig:
       enabled: false
       devices: {}
-
-  # Persistent storage for models
-  persistence:
-    enabled: true
-    size: "50Gi"
-    storageClass: ""
 
   # Models to pull/run at startup
   models:

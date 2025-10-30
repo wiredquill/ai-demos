@@ -40,28 +40,28 @@ questions:
   show_if: "ollama.gpu.enabled=true"
 
 # === RESOURCE CONFIGURATION ===
-- variable: ollama.resources.requests.memory
+- variable: resources.requests.memory
   default: "2Gi"
   description: "Memory request for Ollama pod"
   type: string
   label: Memory Request
   group: "Resource Configuration"
 
-- variable: ollama.resources.requests.cpu
+- variable: resources.requests.cpu
   default: "1000m"
   description: "CPU request for Ollama pod"
   type: string
   label: CPU Request
   group: "Resource Configuration"
 
-- variable: ollama.resources.limits.memory
+- variable: resources.limits.memory
   default: "8Gi"
   description: "Memory limit for Ollama pod"
   type: string
   label: Memory Limit
   group: "Resource Configuration"
 
-- variable: ollama.resources.limits.cpu
+- variable: resources.limits.cpu
   default: "4000m"
   description: "CPU limit for Ollama pod"
   type: string
@@ -69,28 +69,28 @@ questions:
   group: "Resource Configuration"
 
 # === STORAGE CONFIGURATION ===
-- variable: ollama.persistence.enabled
+- variable: persistentVolume.enabled
   default: true
   description: "Enable persistent storage for models"
   type: boolean
   label: Enable Persistence
   group: "Storage Configuration"
 
-- variable: ollama.persistence.size
+- variable: persistentVolume.size
   default: "50Gi"
   description: "Size of persistent volume for models"
   type: string
   label: Storage Size
   group: "Storage Configuration"
-  show_if: "ollama.persistence.enabled=true"
+  show_if: "persistentVolume.enabled=true"
 
-- variable: ollama.persistence.storageClass
+- variable: persistentVolume.storageClass
   default: ""
   description: "Storage class for persistent volume (empty for default)"
   type: storageclass
   label: Storage Class
   group: "Storage Configuration"
-  show_if: "ollama.persistence.enabled=true"
+  show_if: "persistentVolume.enabled=true"
 
 # === DEPLOYMENT CONFIGURATION ===
 - variable: replicaCount
