@@ -6,41 +6,48 @@ global:
   cattle:
     systemDefaultRegistry: ""
 
-# Enterprise resource configuration - CPU and memory allocations
-# These are merged with GPU resources when gpu.enabled=true
-resources:
-  requests:
-    memory: "4Gi"
-    cpu: "2000m"
-  limits:
-    memory: "16Gi"
-    cpu: "8000m"
-
-# Persistent volume configuration for Ollama data
-persistentVolume:
-  enabled: true
-  size: "100Gi"
-  storageClass: "suse-csi"
-
-# Ollama configuration for SUSE Application Collection
+# All values for the SUSE ollama dependency are nested under the 'ollama' key
+# This is required for Helm dependency value passing
 ollama:
-  # Port configuration
-  port: 11434
+  # Enterprise resource configuration - CPU and memory allocations
+  # These are merged with GPU resources when gpu.enabled=true
+  resources:
+    requests:
+      memory: "4Gi"
+      cpu: "2000m"
+    limits:
+      memory: "16Gi"
+      cpu: "8000m"
 
-  # GPU configuration - automatically applies to deployment resources
-  gpu:
+  # Persistent volume configuration for Ollama data
+  persistentVolume:
     enabled: true
-    type: "nvidia"
-    number: 1
-    nvidiaResource: "nvidia.com/gpu"
+    size: "100Gi"
+    storageClass: "suse-csi"
 
-  # Models to pull/run at startup
-  models:
-    pull: []
-    run: []
-
-  # Image configuration (SUSE Application Collection)
+  # Docker image configuration (SUSE Application Collection)
   image:
     repository: registry.suse.com/bci/ollama
     tag: latest
     pullPolicy: IfNotPresent
+
+  # Ollama-specific configuration (SUSE variant)
+  ollama:
+    # Port configuration
+    port: 11434
+
+    # Service configuration
+    service:
+      type: ClusterIP
+
+    # GPU configuration - automatically applies to deployment resources
+    gpu:
+      enabled: true
+      type: "nvidia"
+      number: 1
+      nvidiaResource: "nvidia.com/gpu"
+
+    # Models to pull/run at startup
+    models:
+      pull: []
+      run: []
