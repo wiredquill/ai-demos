@@ -1,20 +1,14 @@
 1. Get the application URL by running these commands:
-{{- if .Values.ollama.ingress.enabled }}
-{{- range $host := .Values.ollama.ingress.hosts }}
-  {{- range .paths }}
-  http{{ if $.Values.ollama.ingress.tls.enabled }}s{{ end }}://{{ $host.host }}{{ .path }}
-  {{- end }}
-{{- end }}
-{{- else if contains "NodePort" .Values.ollama.service.type }}
+{{- if and .Values.ollama.service (contains "NodePort" .Values.ollama.service.type) }}
   export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "ollama-suse.fullname" . }})
   export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
   echo http://$NODE_IP:$NODE_PORT
-{{- else if contains "LoadBalancer" .Values.ollama.service.type }}
+{{- else if and .Values.ollama.service (contains "LoadBalancer" .Values.ollama.service.type) }}
      NOTE: It may take a few minutes for the LoadBalancer IP to be available.
            You can watch the status of by running 'kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "ollama-suse.fullname" . }}'
   export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "ollama-suse.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
-  echo http://$SERVICE_IP:{{ .Values.ollama.service.port }}
-{{- else if contains "ClusterIP" .Values.ollama.service.type }}
+  echo http://$SERVICE_IP:{{ .Values.ollama.port }}
+{{- else }}
   export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "ollama-suse.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
   export CONTAINER_PORT=$(kubectl get pod --namespace {{ .Release.Namespace }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
   echo "Visit http://127.0.0.1:11434 to use your application"
@@ -37,55 +31,17 @@
 SUSE Application Collection Ollama has been deployed successfully!
 
 🏢 Enterprise Features:
-{{- if .Values.ollama.compliance.enabled }}
-Compliance: ✅ Enabled
-{{- else }}
-Compliance: ❌ Disabled
-{{- end }}
-
-{{- if .Values.ollama.security.selinux.enabled }}
-SELinux: ✅ Enabled
-{{- else }}
-SELinux: ❌ Disabled
-{{- end }}
-
-{{- if .Values.ollama.networkPolicy.enabled }}
-Network Policies: ✅ Enabled
-{{- else }}
-Network Policies: ❌ Disabled
-{{- end }}
 
 {{- if .Values.ollama.gpu.enabled }}
-GPU Support: ✅ Enabled ({{ .Values.ollama.gpu.vendor }}, {{ .Values.ollama.gpu.resources.limits }} GPU(s))
+GPU Support: ✅ Enabled ({{ .Values.ollama.gpu.type }}, {{ .Values.ollama.gpu.number }} GPU(s))
 {{- else }}
 GPU Support: ❌ Disabled
 {{- end }}
 
-{{- if .Values.ollama.persistence.enabled }}
-Persistent Storage: ✅ Enabled ({{ .Values.ollama.persistence.size }}, {{ .Values.ollama.persistence.storageClass }})
+{{- if .Values.persistentVolume.enabled }}
+Persistent Storage: ✅ Enabled ({{ .Values.persistentVolume.size }}, {{ .Values.persistentVolume.storageClass }})
 {{- else }}
 Persistent Storage: ❌ Disabled
 {{- end }}
-
-{{- if .Values.ollama.monitoring.enabled }}
-SUSE Observability: ✅ Enabled
-{{- else }}
-SUSE Observability: ❌ Disabled
-{{- end }}
-
-{{- if .Values.ollama.backup.enabled }}
-Automated Backup: ✅ Enabled ({{ .Values.ollama.backup.schedule }})
-{{- else }}
-Automated Backup: ❌ Disabled
-{{- end }}
-
-{{- if .Values.ollama.logging.audit.enabled }}
-Audit Logging: ✅ Enabled
-{{- else }}
-Audit Logging: ❌ Disabled
-{{- end }}
-
-Support Level: {{ .Values.ollama.support.level }}
-Pod Security: {{ .Values.ollama.podSecurityStandards.enforce }}
 
 For enterprise support, contact your SUSE representative.
