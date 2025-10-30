@@ -18,7 +18,7 @@ ollama:
 
   # GPU configuration
   gpu:
-    enabled: false
+    enabled: true
     type: "nvidia"
     number: 1
 

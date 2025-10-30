@@ -39,7 +39,7 @@ questions:
   group: "Resource Configuration"
 
 - variable: ollama.gpu.enabled
-  default: false
+  default: true
   description: "Enable GPU support for Ollama"
   type: boolean
   label: Enable GPU
