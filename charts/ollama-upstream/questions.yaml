@@ -1,31 +1,15 @@
 questions:
-- variable: resources.requests.memory
-  default: "2Gi"
-  description: "Memory request for Ollama pod"
-  type: string
-  label: Memory Request
-  group: "Resource Configuration"
-
-- variable: resources.requests.cpu
-  default: "1000m"
-  description: "CPU request for Ollama pod"
-  type: string
-  label: CPU Request
-  group: "Resource Configuration"
-
-- variable: resources.limits.memory
-  default: "8Gi"
-  description: "Memory limit for Ollama pod"
-  type: string
-  label: Memory Limit
-  group: "Resource Configuration"
-
-- variable: resources.limits.cpu
-  default: "4000m"
-  description: "CPU limit for Ollama pod"
-  type: string
-  label: CPU Limit
-  group: "Resource Configuration"
+# === FRONT PAGE - MOST IMPORTANT OPTIONS ===
+- variable: ollama.service.type
+  default: "ClusterIP"
+  description: "Service type for accessing Ollama"
+  type: enum
+  options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"
+  label: Service Type
+  group: "Service Configuration"
 
 - variable: ollama.gpu.enabled
   default: true
@@ -55,6 +39,36 @@ questions:
   group: "GPU Configuration"
   show_if: "ollama.gpu.enabled=true"
 
+# === RESOURCE CONFIGURATION ===
+- variable: resources.requests.memory
+  default: "2Gi"
+  description: "Memory request for Ollama pod"
+  type: string
+  label: Memory Request
+  group: "Resource Configuration"
+
+- variable: resources.requests.cpu
+  default: "1000m"
+  description: "CPU request for Ollama pod"
+  type: string
+  label: CPU Request
+  group: "Resource Configuration"
+
+- variable: resources.limits.memory
+  default: "8Gi"
+  description: "Memory limit for Ollama pod"
+  type: string
+  label: Memory Limit
+  group: "Resource Configuration"
+
+- variable: resources.limits.cpu
+  default: "4000m"
+  description: "CPU limit for Ollama pod"
+  type: string
+  label: CPU Limit
+  group: "Resource Configuration"
+
+# === STORAGE CONFIGURATION ===
 - variable: ollama.persistence.enabled
   default: true
   description: "Enable persistent storage for models"
@@ -78,6 +92,7 @@ questions:
   group: "Storage Configuration"
   show_if: "ollama.persistence.enabled=true"
 
+# === DEPLOYMENT CONFIGURATION ===
 - variable: replicaCount
   default: 1
   description: "Number of Ollama replicas"

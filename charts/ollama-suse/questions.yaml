@@ -1,31 +1,15 @@
 questions:
-- variable: ollama.resources.requests.memory
-  default: "4Gi"
-  description: "Memory request for Ollama (enterprise sizing)"
-  type: string
-  label: Memory Request
-  group: "Resource Configuration"
-
-- variable: ollama.resources.requests.cpu
-  default: "2000m"
-  description: "CPU request for Ollama (enterprise sizing)"
-  type: string
-  label: CPU Request
-  group: "Resource Configuration"
-
-- variable: ollama.resources.limits.memory
-  default: "16Gi"
-  description: "Memory limit for Ollama (enterprise sizing)"
-  type: string
-  label: Memory Limit
-  group: "Resource Configuration"
-
-- variable: ollama.resources.limits.cpu
-  default: "8000m"
-  description: "CPU limit for Ollama (enterprise sizing)"
-  type: string
-  label: CPU Limit
-  group: "Resource Configuration"
+# === FRONT PAGE - MOST IMPORTANT OPTIONS ===
+- variable: ollama.service.type
+  default: "ClusterIP"
+  description: "Service type for accessing Ollama"
+  type: enum
+  options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"
+  label: Service Type
+  group: "Service Configuration"
 
 - variable: ollama.gpu.enabled
   default: true
@@ -55,6 +39,36 @@ questions:
   group: "GPU Configuration"
   show_if: "ollama.gpu.enabled=true"
 
+# === RESOURCE CONFIGURATION (SUSE Enterprise Sizing) ===
+- variable: ollama.resources.requests.memory
+  default: "4Gi"
+  description: "Memory request for Ollama (enterprise sizing)"
+  type: string
+  label: Memory Request
+  group: "Resource Configuration"
+
+- variable: ollama.resources.requests.cpu
+  default: "2000m"
+  description: "CPU request for Ollama (enterprise sizing)"
+  type: string
+  label: CPU Request
+  group: "Resource Configuration"
+
+- variable: ollama.resources.limits.memory
+  default: "16Gi"
+  description: "Memory limit for Ollama (enterprise sizing)"
+  type: string
+  label: Memory Limit
+  group: "Resource Configuration"
+
+- variable: ollama.resources.limits.cpu
+  default: "8000m"
+  description: "CPU limit for Ollama (enterprise sizing)"
+  type: string
+  label: CPU Limit
+  group: "Resource Configuration"
+
+# === STORAGE CONFIGURATION (SUSE Defaults) ===
 - variable: ollama.persistence.enabled
   default: true
   description: "Enable persistent storage for models"
