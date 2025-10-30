@@ -6,23 +6,12 @@ global:
   cattle:
     systemDefaultRegistry: ""
 
+# Ollama configuration for SUSE Application Collection
 ollama:
-  # SUSE-specific configuration
-  auth:
-    required: false
+  # Port configuration
+  port: 11434
 
-  compliance:
-    enabled: true
-
-  support:
-    level: "enterprise"
-
-  # Service configuration
-  service:
-    type: ClusterIP
-    port: 11434
-
-  # Enterprise resource configuration (larger defaults)
+  # Enterprise resource configuration
   resources:
     requests:
       memory: "4Gi"
@@ -31,81 +20,23 @@ ollama:
       memory: "16Gi"
       cpu: "8000m"
 
-  # GPU configuration with SUSE support
+  # GPU configuration - automatically applies to deployment resources
   gpu:
     enabled: true
-    vendor: "nvidia"
-    driver:
-      version: "latest"
-    resources:
-      limits: 1
+    type: "nvidia"
+    number: 1
+    nvidiaResource: "nvidia.com/gpu"
 
-  # Storage configuration with enterprise defaults
+  # Persistent storage for models
   persistence:
     enabled: true
     size: "100Gi"
     storageClass: "suse-csi"
-    backup:
-      enabled: false
 
-  # Model configuration with SUSE registry
+  # Models to pull/run at startup
   models:
-    registry:
-      url: "registry.suse.com"
-      auth:
-        enabled: false
-    autoDownload: []
-    validation:
-      enabled: true
-
-  # Networking with enterprise defaults
-  ingress:
-    enabled: false
-    className: "nginx"
-    host: "ollama.enterprise.local"
-    tls:
-      enabled: true
-      certificateManager: "cert-manager"
-
-  # Enhanced security (SUSE hardened)
-  security:
-    runAsNonRoot: true
-    readOnlyRootFilesystem: true
-    seccompProfile: "RuntimeDefault"
-    selinux:
-      enabled: true
-
-  # Network policies for isolation
-  networkPolicy:
-    enabled: true
-
-  # Pod Security Standards
-  podSecurityStandards:
-    enforce: "restricted"
-
-  # SUSE Observability integration
-  monitoring:
-    enabled: true
-    prometheus:
-      enabled: true
-    grafana:
-      dashboard: true
-    alerts:
-      enabled: true
-
-  # Structured logging
-  logging:
-    level: "info"
-    format: "json"
-    audit:
-      enabled: true
-
-  # Data protection
-  backup:
-    enabled: false
-    schedule: "0 2 * * *"
-    retention:
-      days: 30
+    pull: []
+    run: []
 
   # Image configuration (SUSE Application Collection)
   image:

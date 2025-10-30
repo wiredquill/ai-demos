@@ -1,47 +1,4 @@
 questions:
-- variable: global.cattle.systemDefaultRegistry
-  default: ""
-  description: "System default registry for air-gapped environments"
-  type: string
-  label: System Registry
-  group: "SUSE Configuration"
-
-- variable: ollama.auth.required
-  default: false
-  description: "Enable authentication for enterprise deployment"
-  type: boolean
-  label: Enable Authentication
-  group: "SUSE Configuration"
-
-- variable: ollama.compliance.enabled
-  default: true
-  description: "Enable SUSE compliance features"
-  type: boolean
-  label: Enable Compliance
-  group: "SUSE Configuration"
-
-- variable: ollama.support.level
-  default: "enterprise"
-  description: "SUSE support level"
-  type: enum
-  options:
-    - "community"
-    - "enterprise"
-    - "premium"
-  label: Support Level
-  group: "SUSE Configuration"
-
-- variable: ollama.service.type
-  default: "ClusterIP"
-  description: "Service type for Ollama"
-  type: enum
-  options:
-    - "ClusterIP"
-    - "NodePort"
-    - "LoadBalancer"
-  label: Service Type
-  group: "Service Configuration"
-
 - variable: ollama.resources.requests.memory
   default: "4Gi"
   description: "Memory request for Ollama (enterprise sizing)"
@@ -72,36 +29,28 @@ questions:
 
 - variable: ollama.gpu.enabled
   default: true
-  description: "Enable GPU support for Ollama"
+  description: "Enable GPU support for Ollama (NVIDIA GPU required)"
   type: boolean
   label: Enable GPU
   group: "GPU Configuration"
 
-- variable: ollama.gpu.vendor
+- variable: ollama.gpu.type
   default: "nvidia"
-  description: "GPU vendor (SUSE certified)"
+  description: "GPU type (nvidia or amd)"
   type: enum
   options:
     - "nvidia"
     - "amd"
-  label: GPU Vendor
+  label: GPU Type
   group: "GPU Configuration"
   show_if: "ollama.gpu.enabled=true"
 
-- variable: ollama.gpu.driver.version
-  default: "latest"
-  description: "GPU driver version (SUSE supported)"
-  type: string
-  label: Driver Version
-  group: "GPU Configuration"
-  show_if: "ollama.gpu.enabled=true"
-
-- variable: ollama.gpu.resources.limits
+- variable: ollama.gpu.number
   default: 1
   description: "Number of GPUs to allocate"
   type: int
   min: 1
-  max: 16
+  max: 8
   label: GPU Count
   group: "GPU Configuration"
   show_if: "ollama.gpu.enabled=true"
@@ -115,7 +64,7 @@ questions:
 
 - variable: ollama.persistence.size
   default: "100Gi"
-  description: "Size of persistent volume for models (enterprise default)"
+  description: "Size of persistent volume for models"
   type: string
   label: Storage Size
   group: "Storage Configuration"
@@ -123,222 +72,8 @@ questions:
 
 - variable: ollama.persistence.storageClass
   default: "suse-csi"
-  description: "Storage class for persistent volume (SUSE CSI recommended)"
-  type: storageclass
+  description: "Storage class for persistent volume"
+  type: string
   label: Storage Class
   group: "Storage Configuration"
   show_if: "ollama.persistence.enabled=true"
-
-- variable: ollama.persistence.backup.enabled
-  default: false
-  description: "Enable automated backup of model storage"
-  type: boolean
-  label: Enable Backup
-  group: "Storage Configuration"
-  show_if: "ollama.persistence.enabled=true"
-
-- variable: ollama.models.registry.url
-  default: "registry.suse.com"
-  description: "Model registry URL for enterprise models"
-  type: string
-  label: Model Registry
-  group: "Model Configuration"
-
-- variable: ollama.models.registry.auth.enabled
-  default: false
-  description: "Enable authentication for model registry"
-  type: boolean
-  label: Registry Auth
-  group: "Model Configuration"
-
-- variable: ollama.models.autoDownload
-  default: []
-  description: "List of enterprise models to automatically download"
-  type: multiline
-  label: Auto-download Models
-  group: "Model Configuration"
-
-- variable: ollama.models.validation.enabled
-  default: true
-  description: "Enable model signature validation"
-  type: boolean
-  label: Model Validation
-  group: "Model Configuration"
-
-- variable: ollama.ingress.enabled
-  default: false
-  description: "Enable ingress for external access"
-  type: boolean
-  label: Enable Ingress
-  group: "Networking"
-
-- variable: ollama.ingress.className
-  default: "nginx"
-  description: "Ingress class name"
-  type: string
-  label: Ingress Class
-  group: "Networking"
-  show_if: "ollama.ingress.enabled=true"
-
-- variable: ollama.ingress.host
-  default: "ollama.enterprise.local"
-  description: "Hostname for ingress"
-  type: hostname
-  label: Ingress Hostname
-  group: "Networking"
-  show_if: "ollama.ingress.enabled=true"
-
-- variable: ollama.ingress.tls.enabled
-  default: true
-  description: "Enable TLS for ingress (enterprise default)"
-  type: boolean
-  label: Enable TLS
-  group: "Networking"
-  show_if: "ollama.ingress.enabled=true"
-
-- variable: ollama.ingress.tls.certificateManager
-  default: "cert-manager"
-  description: "TLS certificate manager"
-  type: enum
-  options:
-    - "cert-manager"
-    - "manual"
-    - "suse-ca"
-  label: Certificate Manager
-  group: "Networking"
-  show_if: "ollama.ingress.tls.enabled=true"
-
-- variable: ollama.security.runAsNonRoot
-  default: true
-  description: "Run container as non-root user"
-  type: boolean
-  label: Run as Non-Root
-  group: "Security"
-
-- variable: ollama.security.readOnlyRootFilesystem
-  default: true
-  description: "Mount root filesystem as read-only (SUSE hardened)"
-  type: boolean
-  label: Read-Only Root FS
-  group: "Security"
-
-- variable: ollama.security.seccompProfile
-  default: "RuntimeDefault"
-  description: "Seccomp profile for enhanced security"
-  type: enum
-  options:
-    - "RuntimeDefault"
-    - "Localhost"
-    - "Unconfined"
-  label: Seccomp Profile
-  group: "Security"
-
-- variable: ollama.security.selinux.enabled
-  default: true
-  description: "Enable SELinux enforcement (SUSE security)"
-  type: boolean
-  label: Enable SELinux
-  group: "Security"
-
-- variable: ollama.networkPolicy.enabled
-  default: true
-  description: "Enable network policies for traffic isolation"
-  type: boolean
-  label: Enable Network Policy
-  group: "Security"
-
-- variable: ollama.podSecurityStandards.enforce
-  default: "restricted"
-  description: "Pod Security Standards enforcement level"
-  type: enum
-  options:
-    - "privileged"
-    - "baseline"
-    - "restricted"
-  label: Pod Security Level
-  group: "Security"
-
-- variable: ollama.monitoring.enabled
-  default: true
-  description: "Enable SUSE Observability monitoring"
-  type: boolean
-  label: Enable Monitoring
-  group: "Observability"
-
-- variable: ollama.monitoring.prometheus.enabled
-  default: true
-  description: "Enable Prometheus metrics"
-  type: boolean
-  label: Prometheus Metrics
-  group: "Observability"
-  show_if: "ollama.monitoring.enabled=true"
-
-- variable: ollama.monitoring.grafana.dashboard
-  default: true
-  description: "Install SUSE Grafana dashboard"
-  type: boolean
-  label: Grafana Dashboard
-  group: "Observability"
-  show_if: "ollama.monitoring.enabled=true"
-
-- variable: ollama.monitoring.alerts.enabled
-  default: true
-  description: "Enable SUSE alerting rules"
-  type: boolean
-  label: Enable Alerts
-  group: "Observability"
-  show_if: "ollama.monitoring.enabled=true"
-
-- variable: ollama.logging.level
-  default: "info"
-  description: "Log level for Ollama"
-  type: enum
-  options:
-    - "debug"
-    - "info"
-    - "warn"
-    - "error"
-  label: Log Level
-  group: "Observability"
-
-- variable: ollama.logging.format
-  default: "json"
-  description: "Log format for structured logging"
-  type: enum
-  options:
-    - "json"
-    - "text"
-  label: Log Format
-  group: "Observability"
-
-- variable: ollama.logging.audit.enabled
-  default: true
-  description: "Enable audit logging for compliance"
-  type: boolean
-  label: Audit Logging
-  group: "Observability"
-
-- variable: ollama.backup.enabled
-  default: false
-  description: "Enable automated backup with SUSE tools"
-  type: boolean
-  label: Enable Backup
-  group: "Data Protection"
-
-- variable: ollama.backup.schedule
-  default: "0 2 * * *"
-  description: "Backup schedule (cron format)"
-  type: string
-  label: Backup Schedule
-  group: "Data Protection"
-  show_if: "ollama.backup.enabled=true"
-
-- variable: ollama.backup.retention.days
-  default: 30
-  description: "Backup retention period in days"
-  type: int
-  min: 1
-  max: 365
-  label: Retention Days
-  group: "Data Protection"
-  show_if: "ollama.backup.enabled=true"
