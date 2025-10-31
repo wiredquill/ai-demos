@@ -12,7 +12,7 @@ ollama:
   # Docker image configuration (SUSE Application Collection)
   image:
     repository: registry.suse.com/bci/ollama
-    tag: latest
+    tag: "0.12.7"
     pullPolicy: IfNotPresent
 
   # Service configuration - at root of dependency values

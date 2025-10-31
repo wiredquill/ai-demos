@@ -12,7 +12,7 @@ ollama:
   image:
     repository: ollama/ollama
     pullPolicy: IfNotPresent
-    tag: ""  # defaults to chart appVersion
+    tag: "0.12.7"
 
   # Service configuration - at root of dependency values
   service:
