@@ -1358,7 +1358,7 @@ class ChatInterface:
         ]
         blocked_domains = [
             "deepseek.com",
-            "anthropic.com",
+            "claude.ai",
             "openai.com",
             "cohere.com",
             "mistral.ai",
