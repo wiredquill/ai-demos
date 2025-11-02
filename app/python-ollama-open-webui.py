@@ -1534,9 +1534,9 @@ class ChatInterface:
                     "error": "Status check failed",
                 }
 
-        # Final guarantee - if we still don't have exactly 10, force them
-        if len(updated_status) != 10:
-            logger.warning(f"Provider count mismatch: expected 10, got {len(updated_status)}. Forcing all 10 providers.")
+        # Final guarantee - if we still don't have exactly 9, force them
+        if len(updated_status) != 9:
+            logger.warning(f"Provider count mismatch: expected 9, got {len(updated_status)}. Forcing all 9 providers.")
             for name, info in default_providers.items():
                 updated_status[name] = {
                     "status": "🔴",
