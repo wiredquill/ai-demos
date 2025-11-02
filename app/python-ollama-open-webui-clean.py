@@ -680,7 +680,7 @@ class ChatInterface:
                     "flag": "🇺🇸",
                 },
                 "Claude (Anthropic)": {
-                    "url": "https://claude.ai",
+                    "url": "https://www.anthropic.com",
                     "country": "🇺🇸 USA",
                     "flag": "🇺🇸",
                 },
@@ -1358,7 +1358,7 @@ class ChatInterface:
         ]
         blocked_domains = [
             "deepseek.com",
-            "claude.ai",
+            "anthropic.com",
             "openai.com",
             "cohere.com",
             "mistral.ai",
