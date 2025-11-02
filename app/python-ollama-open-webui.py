@@ -1467,7 +1467,6 @@ class ChatInterface:
             # Ensure all 10 providers are always present - if any are missing, add them
             default_providers = {
                 "OpenAI": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
-                "Claude (Anthropic)": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
                 "DeepSeek": {"country": "🇨🇳 China", "flag": "🇨🇳"},
                 "Google Gemini": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
                 "Cohere": {"country": "🇨🇦 Canada", "flag": "🇨🇦"},
@@ -1497,7 +1496,6 @@ class ChatInterface:
         # CRITICAL: Always ensure all 10 providers are present regardless of any errors
         default_providers = {
             "OpenAI": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
-            "Claude (Anthropic)": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
             "DeepSeek": {"country": "🇨🇳 China", "flag": "🇨🇳"},
             "Google Gemini": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
             "Cohere": {"country": "🇨🇦 Canada", "flag": "🇨🇦"},
