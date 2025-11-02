@@ -62,7 +62,11 @@ class ObservableAPIServer:
 
             # Check if availability demo is active via ConfigMap state
             try:
-                is_demo_active, demo_state, config_value = self.chat_interface._check_configmap_demo_state()
+                (
+                    is_demo_active,
+                    demo_state,
+                    config_value,
+                ) = self.chat_interface._check_configmap_demo_state()
                 if is_demo_active and demo_state == "ON":
                     logger.warning(
                         f"Kubernetes liveness check FAILED - Availability demo ACTIVE (ConfigMap broken: {config_value})"
@@ -124,7 +128,11 @@ class ObservableAPIServer:
 
                 # Automatically check ConfigMap state for availability demo
                 try:
-                    is_demo_active, demo_state, config_value = self.chat_interface._check_configmap_demo_state()
+                    (
+                        is_demo_active,
+                        demo_state,
+                        config_value,
+                    ) = self.chat_interface._check_configmap_demo_state()
                     if is_demo_active and demo_state == "ON":
                         logger.error(f"Health check failed - Availability demo ACTIVE (ConfigMap broken: {config_value})")
 
@@ -247,7 +255,11 @@ class ObservableAPIServer:
             logger.info("Demo status endpoint accessed")
             try:
                 # Get real-time ConfigMap state for availability demo
-                is_active, state, config_value = self.chat_interface._check_configmap_demo_state()
+                (
+                    is_active,
+                    state,
+                    config_value,
+                ) = self.chat_interface._check_configmap_demo_state()
 
                 return (
                     jsonify(
@@ -302,7 +314,11 @@ class ObservableAPIServer:
 
                 # Check ConfigMap-based availability demo state
                 try:
-                    is_demo_active, demo_state, config_value = self.chat_interface._check_configmap_demo_state()
+                    (
+                        is_demo_active,
+                        demo_state,
+                        config_value,
+                    ) = self.chat_interface._check_configmap_demo_state()
                     if is_demo_active and demo_state == "ON":
                         logger.error(f"Chat API failed - Availability demo ACTIVE (ConfigMap broken: {config_value})")
 
@@ -1320,6 +1336,7 @@ class ChatInterface:
     def check_provider_status(self, provider_name: str, provider_info) -> dict:
         """Checks the status of a single provider and returns detailed info."""
         import time
+
         start_time = time.time()
 
         # Handle both old string format and new dict format
@@ -1328,12 +1345,12 @@ class ChatInterface:
             country = "🌍 Unknown"
             flag = "🌍"
         else:
-            url = provider_info.get('url', provider_info)
-            country = provider_info.get('country', '🌍 Unknown')
-            flag = provider_info.get('flag', '🌍')
+            url = provider_info.get("url", provider_info)
+            country = provider_info.get("country", "🌍 Unknown")
+            flag = provider_info.get("flag", "🌍")
 
         try:
-            headers = {'User-Agent': 'Mozilla/5.0'}
+            headers = {"User-Agent": "Mozilla/5.0"}
             response = requests.get(url, timeout=5, headers=headers)
             response_time = int((time.time() - start_time) * 1000)
             # Show as online if we get ANY response (even 403, 404, etc.)
@@ -1345,7 +1362,7 @@ class ChatInterface:
                 "response_time": f"{response_time}ms",
                 "country": country,
                 "flag": flag,
-                "status_code": response.status_code
+                "status_code": response.status_code,
             }
         except Exception as e:
             response_time = int((time.time() - start_time) * 1000)
@@ -1356,7 +1373,7 @@ class ChatInterface:
                 "country": country,
                 "flag": flag,
                 "status_code": "Error",
-                "error": str(e)
+                "error": str(e),
             }
 
     def update_all_provider_status(self) -> Dict:
@@ -2859,7 +2876,11 @@ def create_interface():
             _, message, status = chat_instance.run_availability_demo()
 
             # Check current ConfigMap state to get accurate status and config value
-            is_demo_on, state, config_value = chat_instance._check_configmap_demo_state()
+            (
+                is_demo_on,
+                state,
+                config_value,
+            ) = chat_instance._check_configmap_demo_state()
 
             # Create enhanced status message with ConfigMap value when demo is ON
             if is_demo_on:
