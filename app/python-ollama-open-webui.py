@@ -1345,7 +1345,6 @@ class ChatInterface:
         # Fast timeout for commonly blocked providers
         blocked_providers = [
             "DeepSeek",
-            "Claude",
             "OpenAI",
             "Cohere",
             "Mistral",
@@ -1372,6 +1371,10 @@ class ChatInterface:
         if provider_name == "Google Gemini" or "google" in url.lower() or "gemini" in url.lower():
             provider_timeout = self.connection_timeout  # Normal timeout for Google
             logger.info(f"Using normal timeout ({self.connection_timeout}s) for allowed provider: {provider_name}")
+        # Anthropic (Claude) uses www.anthropic.com which is reliable, use normal timeout
+        elif provider_name == "Claude (Anthropic)" or "anthropic.com" in url.lower():
+            provider_timeout = self.connection_timeout  # Normal timeout for Anthropic
+            logger.info(f"Using normal timeout ({self.connection_timeout}s) for reliable provider: {provider_name}")
         # Fast timeout for commonly blocked providers to prevent delays
         elif provider_name in blocked_providers or any(domain in url.lower() for domain in blocked_domains):
             provider_timeout = 1  # 1 second timeout for potentially blocked providers
