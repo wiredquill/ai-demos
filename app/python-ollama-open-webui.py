@@ -690,7 +690,7 @@ class ChatInterface:
                     "flag": "🇺🇸",
                 },
                 "Claude (Anthropic)": {
-                    "url": "https://anthropic.com",
+                    "url": "https://claude.ai",
                     "country": "🇺🇸 USA",
                     "flag": "🇺🇸",
                 },

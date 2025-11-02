@@ -28,9 +28,7 @@ logger = logging.getLogger(__name__)
 
 # --- Pure OpenTelemetry Integration (No OpenLit) ---
 OPENLIT_AVAILABLE = False
-logger.info(
-    "Using pure OpenTelemetry implementation (OpenLit disabled for compatibility)"
-)
+logger.info("Using pure OpenTelemetry implementation (OpenLit disabled for compatibility)")
 
 
 # --- HTTP API Server for Observable Traffic ---
@@ -55,9 +53,7 @@ class ObservableAPIServer:
 
             # Check if availability demo is active via ConfigMap state
             try:
-                is_demo_active, demo_state, config_value = (
-                    self.chat_interface._check_configmap_demo_state()
-                )
+                is_demo_active, demo_state, config_value = self.chat_interface._check_configmap_demo_state()
                 if is_demo_active and demo_state == "ON":
                     logger.warning(
                         f"Kubernetes liveness check FAILED - Availability demo ACTIVE (ConfigMap broken: {config_value})"
@@ -80,9 +76,7 @@ class ObservableAPIServer:
                         503,
                     )
             except Exception as configmap_error:
-                logger.debug(
-                    f"ConfigMap check failed (liveness continues): {configmap_error}"
-                )
+                logger.debug(f"ConfigMap check failed (liveness continues): {configmap_error}")
 
             # Normal healthy response when demo is OFF
             logger.debug("Kubernetes liveness check - healthy")
@@ -107,9 +101,7 @@ class ObservableAPIServer:
                 import os
 
                 if os.getenv("SERVICE_HEALTH_FAILURE", "false").lower() == "true":
-                    logger.error(
-                        "Health check failed - SERVICE_HEALTH_FAILURE=true (manual override)"
-                    )
+                    logger.error("Health check failed - SERVICE_HEALTH_FAILURE=true (manual override)")
                     return (
                         jsonify(
                             {
@@ -123,18 +115,12 @@ class ObservableAPIServer:
 
                 # Automatically check ConfigMap state for availability demo
                 try:
-                    is_demo_active, demo_state, config_value = (
-                        self.chat_interface._check_configmap_demo_state()
-                    )
+                    is_demo_active, demo_state, config_value = self.chat_interface._check_configmap_demo_state()
                     if is_demo_active and demo_state == "ON":
-                        logger.error(
-                            f"Health check failed - Availability demo ACTIVE (ConfigMap broken: {config_value})"
-                        )
+                        logger.error(f"Health check failed - Availability demo ACTIVE (ConfigMap broken: {config_value})")
 
                         # Pure service down mode - always hang connection to simulate complete service failure
-                        logger.warning(
-                            "Availability demo ACTIVE - simulating complete service down (hanging connection)"
-                        )
+                        logger.warning("Availability demo ACTIVE - simulating complete service down (hanging connection)")
 
                         # Hang connection indefinitely to simulate service completely down
                         # This will cause monitoring systems to see connection timeouts/refused
@@ -154,9 +140,7 @@ class ObservableAPIServer:
                         )
                 except Exception as configmap_error:
                     # If ConfigMap check fails, log but don't fail health check
-                    logger.debug(
-                        f"ConfigMap check failed (health check continues): {configmap_error}"
-                    )
+                    logger.debug(f"ConfigMap check failed (health check continues): {configmap_error}")
 
                 logger.info("Health check successful - service operational")
                 return (
@@ -183,9 +167,7 @@ class ObservableAPIServer:
                     {
                         "message": "API routing is working!",
                         "timestamp": time.time(),
-                        "service_health_failure": getattr(
-                            self.chat_interface, "service_health_failure", False
-                        ),
+                        "service_health_failure": getattr(self.chat_interface, "service_health_failure", False),
                     }
                 ),
                 200,
@@ -198,24 +180,18 @@ class ObservableAPIServer:
 
             try:
                 # Use a simple test prompt to generate telemetry
-                test_prompt = (
-                    "Hello, this is a SUSE Observability GenAI detection test."
-                )
+                test_prompt = "Hello, this is a SUSE Observability GenAI detection test."
 
                 # Generate telemetry through Ollama with proper format
                 messages = [{"role": "user", "content": test_prompt}]
-                response = self.chat_interface.chat_with_ollama(
-                    messages, "llama3.2:latest"
-                )
+                response = self.chat_interface.chat_with_ollama(messages, "llama3.2:latest")
 
                 return jsonify(
                     {
                         "status": "success",
                         "genai_system": "ollama",
                         "model": "llama3.2:latest",
-                        "response": (
-                            response[:100] + "..." if len(response) > 100 else response
-                        ),
+                        "response": (response[:100] + "..." if len(response) > 100 else response),
                         "application": "ai-compare-genai-app",
                         "framework": "gradio-ollama-openlit",
                         "observability": "suse-observability-enabled",
@@ -253,9 +229,7 @@ class ObservableAPIServer:
             except Exception as e:
                 logger.error(f"Provider status endpoint error: {e}")
                 return (
-                    jsonify(
-                        {"error": str(e), "providers": {}, "timestamp": time.time()}
-                    ),
+                    jsonify({"error": str(e), "providers": {}, "timestamp": time.time()}),
                     500,
                 )
 
@@ -265,9 +239,7 @@ class ObservableAPIServer:
             logger.info("Demo status endpoint accessed")
             try:
                 # Get real-time ConfigMap state for availability demo
-                is_active, state, config_value = (
-                    self.chat_interface._check_configmap_demo_state()
-                )
+                is_active, state, config_value = self.chat_interface._check_configmap_demo_state()
 
                 return (
                     jsonify(
@@ -308,9 +280,7 @@ class ObservableAPIServer:
                 import os
 
                 if os.getenv("SERVICE_HEALTH_FAILURE", "false").lower() == "true":
-                    logger.error(
-                        "Chat API failed - SERVICE_HEALTH_FAILURE=true (SUSE Observability pattern)"
-                    )
+                    logger.error("Chat API failed - SERVICE_HEALTH_FAILURE=true (SUSE Observability pattern)")
                     return (
                         jsonify(
                             {
@@ -324,13 +294,9 @@ class ObservableAPIServer:
 
                 # Check ConfigMap-based availability demo state
                 try:
-                    is_demo_active, demo_state, config_value = (
-                        self.chat_interface._check_configmap_demo_state()
-                    )
+                    is_demo_active, demo_state, config_value = self.chat_interface._check_configmap_demo_state()
                     if is_demo_active and demo_state == "ON":
-                        logger.error(
-                            f"Chat API failed - Availability demo ACTIVE (ConfigMap broken: {config_value})"
-                        )
+                        logger.error(f"Chat API failed - Availability demo ACTIVE (ConfigMap broken: {config_value})")
 
                         # Pure service down mode - always hang connection to simulate complete service failure
                         logger.warning(
@@ -354,9 +320,7 @@ class ObservableAPIServer:
                             503,  # Service Unavailable
                         )
                 except Exception as configmap_error:
-                    logger.debug(
-                        f"ConfigMap check failed (chat API continues): {configmap_error}"
-                    )
+                    logger.debug(f"ConfigMap check failed (chat API continues): {configmap_error}")
 
                 data = request.get_json()
                 if not data or "message" not in data:
@@ -366,37 +330,25 @@ class ObservableAPIServer:
                 message = data["message"]
                 model = data.get("model", "tinyllama:latest")
 
-                logger.info(
-                    f"Chat API request - message: '{message[:50]}...', model: {model}"
-                )
+                logger.info(f"Chat API request - message: '{message[:50]}...', model: {model}")
 
                 # Get responses from both services
                 messages = [{"role": "user", "content": message}]
 
                 # Ollama response
-                logger.info(
-                    f"Requesting Ollama response from {self.chat_interface.ollama_base_url}"
-                )
+                logger.info(f"Requesting Ollama response from {self.chat_interface.ollama_base_url}")
                 try:
-                    ollama_response = self.chat_interface.chat_with_ollama(
-                        messages, model
-                    )
+                    ollama_response = self.chat_interface.chat_with_ollama(messages, model)
                     logger.info(f"Ollama response received: {ollama_response[:100]}...")
                 except Exception as e:
                     logger.error(f"Ollama request failed: {e}")
                     ollama_response = f"Ollama Error: {str(e)}"
 
                 # Open WebUI response
-                logger.info(
-                    f"Requesting Open WebUI response from {self.chat_interface.open_webui_base_url}"
-                )
+                logger.info(f"Requesting Open WebUI response from {self.chat_interface.open_webui_base_url}")
                 try:
-                    webui_response = self.chat_interface.chat_with_open_webui(
-                        messages, model
-                    )
-                    logger.info(
-                        f"Open WebUI response received: {webui_response[:100]}..."
-                    )
+                    webui_response = self.chat_interface.chat_with_open_webui(messages, model)
+                    logger.info(f"Open WebUI response received: {webui_response[:100]}...")
                 except Exception as e:
                     logger.error(f"Open WebUI request failed: {e}")
                     webui_response = f"Open WebUI Error: {str(e)}"
@@ -442,9 +394,7 @@ class ObservableAPIServer:
                     "timestamp": time.time(),
                 }
 
-                logger.info(
-                    f"Availability demo toggled - failure active: {self.chat_interface.service_health_failure}"
-                )
+                logger.info(f"Availability demo toggled - failure active: {self.chat_interface.service_health_failure}")
                 return jsonify(result), 200
 
             except Exception as e:
@@ -482,12 +432,8 @@ class ObservableAPIServer:
                         {
                             "status": "running" if is_running else "stopped",
                             "is_running": is_running,
-                            "request_count": getattr(
-                                self.chat_interface, "load_simulator_request_count", 0
-                            ),
-                            "last_request": getattr(
-                                self.chat_interface, "load_simulator_last_request", None
-                            ),
+                            "request_count": getattr(self.chat_interface, "load_simulator_request_count", 0),
+                            "last_request": getattr(self.chat_interface, "load_simulator_last_request", None),
                             "timestamp": time.time(),
                         }
                     ),
@@ -545,9 +491,7 @@ class ObservableAPIServer:
                 metrics = {
                     "cpu_percent": psutil.cpu_percent(),
                     "memory_percent": psutil.virtual_memory().percent,
-                    "service_health_failure": getattr(
-                        self.chat_interface, "service_health_failure", False
-                    ),
+                    "service_health_failure": getattr(self.chat_interface, "service_health_failure", False),
                     "timestamp": time.time(),
                     "uptime": time.time(),
                 }
@@ -585,21 +529,15 @@ class ObservableAPIServer:
         @self.app.after_request
         def after_request(response):
             response.headers.add("Access-Control-Allow-Origin", "*")
-            response.headers.add(
-                "Access-Control-Allow-Headers", "Content-Type,Authorization"
-            )
-            response.headers.add(
-                "Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS"
-            )
+            response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+            response.headers.add("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
             return response
 
     def start_server(self):
         """Start the HTTP API server in background thread."""
         try:
             self.server = make_server("0.0.0.0", self.port, self.app)
-            self.server_thread = threading.Thread(
-                target=self.server.serve_forever, daemon=True
-            )
+            self.server_thread = threading.Thread(target=self.server.serve_forever, daemon=True)
             self.server_thread.start()
             logger.info(f"Observable HTTP API server started on port {self.port}")
 
@@ -656,12 +594,8 @@ class ChatInterface:
         for name, provider_info in self.config.get("providers", {}).items():
             if name in self.provider_status:  # Only update if it's one of our 10
                 if isinstance(provider_info, dict):
-                    self.provider_status[name]["country"] = provider_info.get(
-                        "country", self.provider_status[name]["country"]
-                    )
-                    self.provider_status[name]["flag"] = provider_info.get(
-                        "flag", self.provider_status[name]["flag"]
-                    )
+                    self.provider_status[name]["country"] = provider_info.get("country", self.provider_status[name]["country"])
+                    self.provider_status[name]["flag"] = provider_info.get("flag", self.provider_status[name]["flag"])
 
         # --- MODIFIED: Load URLs from environment variables for K8s ---
         self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
@@ -670,15 +604,9 @@ class ChatInterface:
         self.pipeline_api_key = os.getenv("PIPELINE_API_KEY")
 
         # Configurable timeout settings optimized for SUSE security policies
-        self.connection_timeout = int(
-            os.getenv("CONNECTION_TIMEOUT", "5")
-        )  # Increased for container networking stability
-        self.request_timeout = int(
-            os.getenv("REQUEST_TIMEOUT", "15")
-        )  # Increased for model inference operations
-        self.inference_timeout = int(
-            os.getenv("INFERENCE_TIMEOUT", "45")
-        )  # Increased for large model inference
+        self.connection_timeout = int(os.getenv("CONNECTION_TIMEOUT", "5"))  # Increased for container networking stability
+        self.request_timeout = int(os.getenv("REQUEST_TIMEOUT", "15"))  # Increased for model inference operations
+        self.inference_timeout = int(os.getenv("INFERENCE_TIMEOUT", "45"))  # Increased for large model inference
 
         # Don't add Open WebUI to the provider status list - keep it separate for functionality
 
@@ -697,21 +625,15 @@ class ChatInterface:
         self.config_map_namespace = os.getenv("CONFIG_MAP_NAMESPACE", "default")
 
         # --- NEW: Service Health Failure Simulation State ---
-        self.service_health_failure = (
-            os.getenv("SERVICE_HEALTH_FAILURE", "false").lower() == "true"
-        )
+        self.service_health_failure = os.getenv("SERVICE_HEALTH_FAILURE", "false").lower() == "true"
         self.deployment_name = os.getenv("DEPLOYMENT_NAME", "ollama-chat-app")
         self.failure_env_var = "SERVICE_HEALTH_FAILURE"
 
         # --- NEW: Automation Runner State ---
         # Read automation settings from environment variables
-        self.automation_enabled = (
-            os.getenv("AUTOMATION_ENABLED", "false").lower() == "true"
-        )
+        self.automation_enabled = os.getenv("AUTOMATION_ENABLED", "false").lower() == "true"
         self.automation_interval = int(os.getenv("AUTOMATION_INTERVAL", "30"))
-        self.automation_send_messages = (
-            os.getenv("AUTOMATION_SEND_MESSAGES", "true").lower() == "true"
-        )
+        self.automation_send_messages = os.getenv("AUTOMATION_SEND_MESSAGES", "true").lower() == "true"
 
         # Built-in rotating prompts for automation
         self.automation_prompts = [
@@ -758,7 +680,7 @@ class ChatInterface:
                     "flag": "🇺🇸",
                 },
                 "Claude (Anthropic)": {
-                    "url": "https://anthropic.com",
+                    "url": "https://claude.ai",
                     "country": "🇺🇸 USA",
                     "flag": "🇺🇸",
                 },
@@ -829,9 +751,7 @@ class ChatInterface:
             logger.info("OTLP_ENDPOINT not configured - observability disabled")
             return
 
-        logger.info(
-            "🚀 Initializing pure OpenTelemetry observability (matching working GenAI apps)"
-        )
+        logger.info("🚀 Initializing pure OpenTelemetry observability (matching working GenAI apps)")
         self._initialize_pure_opentelemetry(otlp_endpoint)
 
     def _initialize_pure_opentelemetry(self, otlp_endpoint: str):
@@ -840,21 +760,15 @@ class ChatInterface:
             import os
 
             from opentelemetry import metrics, trace
-            from opentelemetry.exporter.otlp.proto.http.metric_exporter import (
-                OTLPMetricExporter,
-            )
-            from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
-                OTLPSpanExporter,
-            )
+            from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+            from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
             from opentelemetry.sdk.metrics import MeterProvider
             from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
             from opentelemetry.sdk.resources import Resource
             from opentelemetry.sdk.trace import TracerProvider
             from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-            logger.info(
-                f"Initializing pure OpenTelemetry with endpoint: {otlp_endpoint}"
-            )
+            logger.info(f"Initializing pure OpenTelemetry with endpoint: {otlp_endpoint}")
 
             # Set up service configuration
             service_name = os.getenv("OTEL_SERVICE_NAME", "ai-compare")
@@ -884,17 +798,11 @@ class ChatInterface:
 
             # Set up metrics provider
             metric_exporter = OTLPMetricExporter(endpoint=f"{otlp_endpoint}/v1/metrics")
-            metric_reader = PeriodicExportingMetricReader(
-                metric_exporter, export_interval_millis=10000
-            )
-            metrics_provider = MeterProvider(
-                resource=resource, metric_readers=[metric_reader]
-            )
+            metric_reader = PeriodicExportingMetricReader(metric_exporter, export_interval_millis=10000)
+            metrics_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
             metrics.set_meter_provider(metrics_provider)
 
-            logger.info(
-                "✅ Pure OpenTelemetry instrumentation initialized successfully"
-            )
+            logger.info("✅ Pure OpenTelemetry instrumentation initialized successfully")
             logger.info(f"  - Service: {service_name}")
             logger.info(f"  - Namespace: {service_namespace}")
             logger.info(f"  - Endpoint: {otlp_endpoint}")
@@ -905,9 +813,7 @@ class ChatInterface:
 
     def get_ollama_models(self) -> List[str]:
         """Fetches the list of available models, checking ConfigMap config first for demo purposes."""
-        logger.info(
-            f"Attempting to fetch Ollama models from {self.ollama_base_url}/api/tags"
-        )
+        logger.info(f"Attempting to fetch Ollama models from {self.ollama_base_url}/api/tags")
 
         # Check for mock mode
         mock_mode = os.environ.get("GENAI_MOCK_MODE", "false").lower() == "true"
@@ -925,17 +831,11 @@ class ChatInterface:
         # Check demo configuration first - if it's broken, fail immediately
         demo_models = self._read_demo_config("models-latest")
         if demo_models and ("broken-model" in demo_models or "invalid" in demo_models):
-            logger.error(
-                f"ConfigMap contains invalid model configuration: {demo_models}"
-            )
-            raise Exception(
-                "ConfigMap model configuration is invalid - service failure simulation"
-            )
+            logger.error(f"ConfigMap contains invalid model configuration: {demo_models}")
+            raise Exception("ConfigMap model configuration is invalid - service failure simulation")
 
         try:
-            response = requests.get(
-                f"{self.ollama_base_url}/api/tags", timeout=self.connection_timeout
-            )
+            response = requests.get(f"{self.ollama_base_url}/api/tags", timeout=self.connection_timeout)
             response.raise_for_status()
             data = response.json()
             models = [model["name"] for model in data.get("models", [])]
@@ -959,9 +859,7 @@ class ChatInterface:
         # Check for mock mode to generate synthetic telemetry
         mock_mode = os.environ.get("GENAI_MOCK_MODE", "false").lower() == "true"
         if mock_mode:
-            logger.info(
-                "🎭 Mock GenAI Mode enabled - generating synthetic telemetry data"
-            )
+            logger.info("🎭 Mock GenAI Mode enabled - generating synthetic telemetry data")
             return self._generate_mock_genai_response(messages, model)
 
         # Manual GenAI telemetry instrumentation for SUSE Observability
@@ -978,9 +876,7 @@ class ChatInterface:
                 span.set_attribute("gen_ai.application.name", "ai-compare")
                 span.set_attribute("ai.model.provider", "meta")
                 span.set_attribute("ai.workload.type", "inference")
-                span.set_attribute(
-                    "service.name", os.environ.get("OTEL_SERVICE_NAME", "ai-compare")
-                )
+                span.set_attribute("service.name", os.environ.get("OTEL_SERVICE_NAME", "ai-compare"))
 
                 try:
                     # Use ollama Python SDK
@@ -997,9 +893,7 @@ class ChatInterface:
 
                     def ollama_call():
                         try:
-                            response = ollama_client.chat(
-                                model=model, messages=messages, stream=False
-                            )
+                            response = ollama_client.chat(model=model, messages=messages, stream=False)
                             result_queue.put(response)
                         except Exception as e:
                             exception_queue.put(e)
@@ -1014,9 +908,7 @@ class ChatInterface:
 
                     if call_thread.is_alive():
                         # Thread is still running - timeout occurred
-                        raise TimeoutError(
-                            f"Ollama chat request timed out after {self.inference_timeout}s"
-                        )
+                        raise TimeoutError(f"Ollama chat request timed out after {self.inference_timeout}s")
 
                     # Check for exceptions
                     if not exception_queue.empty():
@@ -1037,41 +929,23 @@ class ChatInterface:
                         # Add cost tracking attributes for SUSE Observability
                         try:
                             # Calculate input tokens (approximate)
-                            input_text = " ".join(
-                                [msg.get("content", "") for msg in messages]
-                            )
-                            input_tokens = max(
-                                1, len(input_text.split()) * 1.3
-                            )  # Rough token estimate
-                            output_tokens = max(
-                                1, len(content.split()) * 1.3
-                            )  # Rough token estimate
+                            input_text = " ".join([msg.get("content", "") for msg in messages])
+                            input_tokens = max(1, len(input_text.split()) * 1.3)  # Rough token estimate
+                            output_tokens = max(1, len(content.split()) * 1.3)  # Rough token estimate
 
                             # Get pricing from environment
-                            input_cost_per_token = float(
-                                os.environ.get("GENAI_TOKEN_COST_INPUT", "0.0001")
-                            )
-                            output_cost_per_token = float(
-                                os.environ.get("GENAI_TOKEN_COST_OUTPUT", "0.0002")
-                            )
-                            request_cost = float(
-                                os.environ.get("GENAI_REQUEST_COST", "0.001")
-                            )
+                            input_cost_per_token = float(os.environ.get("GENAI_TOKEN_COST_INPUT", "0.0001"))
+                            output_cost_per_token = float(os.environ.get("GENAI_TOKEN_COST_OUTPUT", "0.0002"))
+                            request_cost = float(os.environ.get("GENAI_REQUEST_COST", "0.001"))
 
                             # Calculate costs
                             total_cost = (
-                                (input_tokens * input_cost_per_token)
-                                + (output_tokens * output_cost_per_token)
-                                + request_cost
+                                (input_tokens * input_cost_per_token) + (output_tokens * output_cost_per_token) + request_cost
                             )
 
                             # Set cost tracking attributes (both experimental GenAI and fallback)
-                            span.set_attribute(
-                                "gen_ai.usage.input_tokens", int(input_tokens)
-                            )
-                            span.set_attribute(
-                                "gen_ai.usage.output_tokens", int(output_tokens)
-                            )
+                            span.set_attribute("gen_ai.usage.input_tokens", int(input_tokens))
+                            span.set_attribute("gen_ai.usage.output_tokens", int(output_tokens))
                             span.set_attribute(
                                 "gen_ai.usage.total_tokens",
                                 int(input_tokens + output_tokens),
@@ -1084,18 +958,12 @@ class ChatInterface:
                                 "gen_ai.cost.output",
                                 round(output_tokens * output_cost_per_token, 6),
                             )
-                            span.set_attribute(
-                                "gen_ai.cost.total", round(total_cost, 6)
-                            )
+                            span.set_attribute("gen_ai.cost.total", round(total_cost, 6))
                             span.set_attribute("gen_ai.cost.currency", "USD")
 
                             # Fallback attributes for older collectors
-                            span.set_attribute(
-                                "llm.usage.input_tokens", int(input_tokens)
-                            )
-                            span.set_attribute(
-                                "llm.usage.output_tokens", int(output_tokens)
-                            )
+                            span.set_attribute("llm.usage.input_tokens", int(input_tokens))
+                            span.set_attribute("llm.usage.output_tokens", int(output_tokens))
                             span.set_attribute(
                                 "llm.usage.total_tokens",
                                 int(input_tokens + output_tokens),
@@ -1116,14 +984,10 @@ class ChatInterface:
                             span.set_attribute("cost.currency", "USD")
                             span.set_attribute("tokens.input", int(input_tokens))
                             span.set_attribute("tokens.output", int(output_tokens))
-                            span.set_attribute(
-                                "tokens.total", int(input_tokens + output_tokens)
-                            )
+                            span.set_attribute("tokens.total", int(input_tokens + output_tokens))
 
                             # LangFuse/SUSE Observability specific attributes
-                            span.set_attribute(
-                                "gen_ai.usage.cost", round(total_cost, 6)
-                            )
+                            span.set_attribute("gen_ai.usage.cost", round(total_cost, 6))
                             span.set_attribute(
                                 "langfuse.observation.cost_details",
                                 f'{{"total": {round(total_cost, 6)}, "input": {round(input_tokens * input_cost_per_token, 6)}, "output": {round(output_tokens * output_cost_per_token, 6)}}}',
@@ -1134,12 +998,8 @@ class ChatInterface:
                             )
 
                             # SUSE AI Observability specific attributes
-                            span.set_attribute(
-                                "ai.token.usage.input", int(input_tokens)
-                            )
-                            span.set_attribute(
-                                "ai.token.usage.output", int(output_tokens)
-                            )
+                            span.set_attribute("ai.token.usage.input", int(input_tokens))
+                            span.set_attribute("ai.token.usage.output", int(output_tokens))
                             span.set_attribute(
                                 "ai.token.usage.total",
                                 int(input_tokens + output_tokens),
@@ -1151,9 +1011,7 @@ class ChatInterface:
                             try:
                                 from opentelemetry import metrics
 
-                                meter = metrics.get_meter(
-                                    "genai-cost-tracking", "1.0.0"
-                                )
+                                meter = metrics.get_meter("genai-cost-tracking", "1.0.0")
 
                                 # Create metrics instruments for cost tracking
                                 token_counter = meter.create_counter(
@@ -1176,12 +1034,8 @@ class ChatInterface:
                                         "gen_ai.request.model": model,
                                         "gen_ai.system": "ollama",
                                         "gen_ai.token.type": "input",
-                                        "service.name": os.environ.get(
-                                            "OTEL_SERVICE_NAME", "ai-compare"
-                                        ),
-                                        "service.namespace": os.environ.get(
-                                            "KUBERNETES_NAMESPACE", "default"
-                                        ),
+                                        "service.name": os.environ.get("OTEL_SERVICE_NAME", "ai-compare"),
+                                        "service.namespace": os.environ.get("KUBERNETES_NAMESPACE", "default"),
                                     },
                                 )
 
@@ -1192,12 +1046,8 @@ class ChatInterface:
                                         "gen_ai.request.model": model,
                                         "gen_ai.system": "ollama",
                                         "gen_ai.token.type": "output",
-                                        "service.name": os.environ.get(
-                                            "OTEL_SERVICE_NAME", "ai-compare"
-                                        ),
-                                        "service.namespace": os.environ.get(
-                                            "KUBERNETES_NAMESPACE", "default"
-                                        ),
+                                        "service.name": os.environ.get("OTEL_SERVICE_NAME", "ai-compare"),
+                                        "service.namespace": os.environ.get("KUBERNETES_NAMESPACE", "default"),
                                     },
                                 )
 
@@ -1209,12 +1059,8 @@ class ChatInterface:
                                         "gen_ai.request.model": model,
                                         "gen_ai.system": "ollama",
                                         "gen_ai.cost.currency": "USD",
-                                        "service.name": os.environ.get(
-                                            "OTEL_SERVICE_NAME", "ai-compare"
-                                        ),
-                                        "service.namespace": os.environ.get(
-                                            "KUBERNETES_NAMESPACE", "default"
-                                        ),
+                                        "service.name": os.environ.get("OTEL_SERVICE_NAME", "ai-compare"),
+                                        "service.namespace": os.environ.get("KUBERNETES_NAMESPACE", "default"),
                                     },
                                 )
 
@@ -1223,18 +1069,14 @@ class ChatInterface:
                                 )
 
                             except Exception as metrics_e:
-                                logger.warning(
-                                    f"Failed to record OpenTelemetry metrics: {metrics_e}"
-                                )
+                                logger.warning(f"Failed to record OpenTelemetry metrics: {metrics_e}")
 
                             logger.info(
                                 f"GenAI cost tracking - Tokens: {int(input_tokens + output_tokens)}, Cost: ${round(total_cost, 6)}"
                             )
 
                         except Exception as cost_e:
-                            logger.warning(
-                                f"Failed to add cost tracking attributes: {cost_e}"
-                            )
+                            logger.warning(f"Failed to add cost tracking attributes: {cost_e}")
 
                     span.set_status(trace.Status(trace.StatusCode.OK))
 
@@ -1242,9 +1084,7 @@ class ChatInterface:
                     span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
                     raise
         except ImportError:
-            logger.warning(
-                "OpenTelemetry not available for manual GenAI instrumentation"
-            )
+            logger.warning("OpenTelemetry not available for manual GenAI instrumentation")
             # Fallback to original implementation
             try:
                 ollama_client = ollama.Client(host=self.ollama_base_url)
@@ -1259,9 +1099,7 @@ class ChatInterface:
 
                 def ollama_fallback_call():
                     try:
-                        response = ollama_client.chat(
-                            model=model, messages=messages, stream=False
-                        )
+                        response = ollama_client.chat(model=model, messages=messages, stream=False)
                         result_queue.put(response)
                     except Exception as e:
                         exception_queue.put(e)
@@ -1276,9 +1114,7 @@ class ChatInterface:
 
                 if call_thread.is_alive():
                     # Thread is still running - timeout occurred
-                    raise TimeoutError(
-                        f"Ollama fallback chat request timed out after {self.inference_timeout}s"
-                    )
+                    raise TimeoutError(f"Ollama fallback chat request timed out after {self.inference_timeout}s")
 
                 # Check for exceptions
                 if not exception_queue.empty():
@@ -1288,16 +1124,10 @@ class ChatInterface:
                 if not result_queue.empty():
                     response = result_queue.get()
                 else:
-                    raise Exception(
-                        "Ollama fallback call completed but no result received"
-                    )
+                    raise Exception("Ollama fallback call completed but no result received")
 
                 # Extract message content from response
-                if (
-                    response
-                    and "message" in response
-                    and "content" in response["message"]
-                ):
+                if response and "message" in response and "content" in response["message"]:
                     return response["message"]["content"]
                 else:
                     return "Error: Unexpected response format from Ollama."
@@ -1324,9 +1154,7 @@ class ChatInterface:
                 )
                 response.raise_for_status()
                 response_data = response.json()
-                return response_data.get("message", {}).get(
-                    "content", "Error: Unexpected response format from Ollama."
-                )
+                return response_data.get("message", {}).get("content", "Error: Unexpected response format from Ollama.")
             except Exception as fallback_error:
                 return f"Error communicating with Ollama: {str(fallback_error)}"
 
@@ -1371,15 +1199,11 @@ class ChatInterface:
 
         # Check if service is in failure state (like co-worker's approach)
         if self.service_health_failure:
-            logger.warning(
-                "Service health failure detected: SERVICE_HEALTH_FAILURE=true"
-            )
+            logger.warning("Service health failure detected: SERVICE_HEALTH_FAILURE=true")
             broken_response = "🔴 **SERVICE DEGRADED**: Health failure detected!\n\n"
             broken_response += "❌ Service Status: DEVIATING\n"
             broken_response += "🔧 Cause: SERVICE_HEALTH_FAILURE=true\n\n"
-            broken_response += (
-                "💡 Service cannot process requests while in degraded state.\n"
-            )
+            broken_response += "💡 Service cannot process requests while in degraded state.\n"
             broken_response += "⚠️ This demonstrates SUSE Observability's ability to detect configuration changes and service health degradation.\n\n"
             broken_response += "🔄 To fix: Use 'Restore Service Health' in the Service Health Simulation modal."
             return broken_response
@@ -1401,12 +1225,8 @@ class ChatInterface:
             if self.pipeline_api_key:
                 headers["Authorization"] = f"Bearer {self.pipeline_api_key}"
 
-            logger.info(
-                f"Attempting Pipelines service with pipeline level: {current_level['name']}"
-            )
-            logger.info(
-                f"Using pipeline API key: {'***' if self.pipeline_api_key else 'None'}"
-            )
+            logger.info(f"Attempting Pipelines service with pipeline level: {current_level['name']}")
+            logger.info(f"Using pipeline API key: {'***' if self.pipeline_api_key else 'None'}")
             logger.info(f"Request URL: {api_url}")
             logger.info(f"Headers: {dict(headers)}")
             try:
@@ -1438,18 +1258,14 @@ class ChatInterface:
 
                     # Add pipeline level header to the response - this IS the pipeline working
                     formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']} (via Pipelines Service)\n\n{content}"
-                    logger.info(
-                        f"Pipelines service response successful with level: {current_level['name']}"
-                    )
+                    logger.info(f"Pipelines service response successful with level: {current_level['name']}")
                     return formatted_response
                 else:
                     logger.warning(
                         f"Pipelines service failed ({response.status_code}), response: {response.text[:200]}, falling back to Open WebUI or direct Ollama"
                     )
             except Exception as e:
-                logger.warning(
-                    f"Pipelines service failed: {str(e)}, falling back to direct Ollama"
-                )
+                logger.warning(f"Pipelines service failed: {str(e)}, falling back to direct Ollama")
         elif self.open_webui_base_url:
             # Try Open WebUI as secondary option
             api_url = f"{self.open_webui_base_url}/api/v1/chat/completions"
@@ -1464,9 +1280,7 @@ class ChatInterface:
             if self.open_webui_token:
                 headers["Authorization"] = f"Bearer {self.open_webui_token}"
 
-            logger.info(
-                f"Attempting Open WebUI fallback with pipeline level: {current_level['name']}"
-            )
+            logger.info(f"Attempting Open WebUI fallback with pipeline level: {current_level['name']}")
             try:
                 response = requests.post(
                     api_url,
@@ -1492,22 +1306,14 @@ class ChatInterface:
                         )
 
                     formatted_response = f"🔄 **Pipeline Mode**: {current_level['name']} (via Open WebUI Fallback)\n\n{content}"
-                    logger.info(
-                        f"Open WebUI fallback response successful with level: {current_level['name']}"
-                    )
+                    logger.info(f"Open WebUI fallback response successful with level: {current_level['name']}")
                     return formatted_response
                 else:
-                    logger.warning(
-                        f"Open WebUI fallback failed ({response.status_code}), falling back to direct Ollama"
-                    )
+                    logger.warning(f"Open WebUI fallback failed ({response.status_code}), falling back to direct Ollama")
             except Exception as e:
-                logger.warning(
-                    f"Open WebUI fallback failed: {str(e)}, falling back to direct Ollama"
-                )
+                logger.warning(f"Open WebUI fallback failed: {str(e)}, falling back to direct Ollama")
         else:
-            logger.info(
-                "No Pipelines or Open WebUI URL configured, using direct Ollama"
-            )
+            logger.info("No Pipelines or Open WebUI URL configured, using direct Ollama")
 
         # Fallback to direct Ollama with pipeline-modified prompt - this is STILL pipeline working!
         logger.info(f"Using direct Ollama with pipeline level: {current_level['name']}")
@@ -1564,37 +1370,23 @@ class ChatInterface:
         ]
 
         # Google Gemini gets normal timeout (it's usually allowed)
-        if (
-            provider_name == "Google Gemini"
-            or "google" in url.lower()
-            or "gemini" in url.lower()
-        ):
+        if provider_name == "Google Gemini" or "google" in url.lower() or "gemini" in url.lower():
             provider_timeout = self.connection_timeout  # Normal timeout for Google
-            logger.info(
-                f"Using normal timeout ({self.connection_timeout}s) for allowed provider: {provider_name}"
-            )
+            logger.info(f"Using normal timeout ({self.connection_timeout}s) for allowed provider: {provider_name}")
         # Fast timeout for commonly blocked providers to prevent delays
-        elif provider_name in blocked_providers or any(
-            domain in url.lower() for domain in blocked_domains
-        ):
+        elif provider_name in blocked_providers or any(domain in url.lower() for domain in blocked_domains):
             provider_timeout = 1  # 1 second timeout for potentially blocked providers
-            logger.info(
-                f"Using fast timeout (1s) for potentially blocked provider: {provider_name}"
-            )
+            logger.info(f"Using fast timeout (1s) for potentially blocked provider: {provider_name}")
         else:
             provider_timeout = self.connection_timeout
 
         try:
             headers = {"User-Agent": "Mozilla/5.0"}
-            response = requests.get(
-                url, timeout=provider_timeout, headers=headers
-            )  # Provider-specific timeout
+            response = requests.get(url, timeout=provider_timeout, headers=headers)  # Provider-specific timeout
             response_time = int((time.time() - start_time) * 1000)
             # Show as online if we get ANY response (even 403, 404, etc.)
             status = "🟢"
-            logger.info(
-                f"Provider {provider_name}: {response.status_code} -> {status} ({response_time}ms)"
-            )
+            logger.info(f"Provider {provider_name}: {response.status_code} -> {status} ({response_time}ms)")
 
             return {
                 "status": status,
@@ -1609,9 +1401,7 @@ class ChatInterface:
             timeout_ms = provider_timeout * 1000
             if response_time > timeout_ms:
                 response_time = timeout_ms
-            logger.warning(
-                f"Provider {provider_name} failed: {str(e)} ({response_time}ms)"
-            )
+            logger.warning(f"Provider {provider_name} failed: {str(e)} ({response_time}ms)")
             return {
                 "status": "🔴",
                 "response_time": f"{response_time}ms",
@@ -1662,9 +1452,7 @@ class ChatInterface:
             with ThreadPoolExecutor(max_workers=10) as executor:
                 # Submit all provider checks
                 future_to_name = {
-                    executor.submit(
-                        self.check_provider_status, name, provider_info
-                    ): name
+                    executor.submit(self.check_provider_status, name, provider_info): name
                     for name, provider_info in providers.items()
                 }
 
@@ -1673,9 +1461,7 @@ class ChatInterface:
                     name = future_to_name[future]
                     try:
                         result = future.result()
-                        updated_status[name] = (
-                            result  # This will overwrite the default failed status
-                        )
+                        updated_status[name] = result  # This will overwrite the default failed status
                     except Exception as e:
                         logger.warning(f"Provider {name} check failed: {e}")
                         # Keep the default failed status but update error details
@@ -1745,9 +1531,7 @@ class ChatInterface:
 
         # Final guarantee - if we still don't have exactly 10, force them
         if len(updated_status) != 10:
-            logger.warning(
-                f"Provider count mismatch: expected 10, got {len(updated_status)}. Forcing all 10 providers."
-            )
+            logger.warning(f"Provider count mismatch: expected 10, got {len(updated_status)}. Forcing all 10 providers.")
             for name, info in default_providers.items():
                 updated_status[name] = {
                     "status": "🔴",
@@ -1760,9 +1544,7 @@ class ChatInterface:
 
         self.provider_status = updated_status
         total_time = time.time() - start_time
-        logger.info(
-            f"Provider status check completed in {total_time:.1f}s - {len(updated_status)} providers (guaranteed 10)"
-        )
+        logger.info(f"Provider status check completed in {total_time:.1f}s - {len(updated_status)} providers (guaranteed 10)")
         return updated_status
 
     def _authenticate_open_webui(self):
@@ -1774,9 +1556,7 @@ class ChatInterface:
 
             logger.info(f"Attempting authentication at: {auth_url}")
             logger.info(f"Auth payload: {auth_payload}")
-            response = requests.post(
-                auth_url, json=auth_payload, timeout=self.request_timeout
-            )
+            response = requests.post(auth_url, json=auth_payload, timeout=self.request_timeout)
             logger.info(f"Auth response status: {response.status_code}")
             logger.info(f"Auth response content: {response.text[:500]}")
 
@@ -1788,9 +1568,7 @@ class ChatInterface:
                 )
                 return True
             else:
-                logger.warning(
-                    f"Failed to authenticate with Open WebUI: {response.status_code}, response: {response.text}"
-                )
+                logger.warning(f"Failed to authenticate with Open WebUI: {response.status_code}, response: {response.text}")
                 return False
         except Exception as e:
             logger.warning(f"Open WebUI authentication failed: {str(e)}")
@@ -1821,9 +1599,7 @@ class ChatInterface:
             try:
                 import requests
 
-                response = requests.get(
-                    f"{self.ollama_base_url}/api/tags", timeout=self.connection_timeout
-                )
+                response = requests.get(f"{self.ollama_base_url}/api/tags", timeout=self.connection_timeout)
                 if response.status_code == 200:
                     return {
                         "status": "HEALTHY",
@@ -1858,11 +1634,7 @@ class ChatInterface:
 
         # Calculate statistics
         total_providers = len(self.provider_status)
-        online_count = sum(
-            1
-            for info in self.provider_status.values()
-            if isinstance(info, dict) and info.get("status") == "🟢"
-        )
+        online_count = sum(1 for info in self.provider_status.values() if isinstance(info, dict) and info.get("status") == "🟢")
         offline_count = total_providers - online_count
 
         # Calculate average response time
@@ -1942,31 +1714,21 @@ class ChatInterface:
     def simulate_service_failure(self) -> tuple:
         """Simulates service failure using ConfigMap key manipulation for observable failures."""
         try:
-            logger.info(
-                "🔴 ACTIVATING Availability Demo - Manipulating ConfigMap to break app"
-            )
+            logger.info("🔴 ACTIVATING Availability Demo - Manipulating ConfigMap to break app")
 
             # Try to manipulate ConfigMap to create real observable failure
             configmap_success = self._simulate_configmap_failure()
 
             if configmap_success:
-                logger.info(
-                    "✅ ConfigMap manipulation successful - App should start failing!"
-                )
+                logger.info("✅ ConfigMap manipulation successful - App should start failing!")
                 # Update local state and start auto-off timer
                 self.service_health_failure = True
                 self._start_auto_off_timer()
 
                 # Generate immediate observable failures for SUSE Observability
-                logger.error(
-                    "🚨 SERVICE_HEALTH_FAILURE=true - Service entering degraded state for SUSE Observability demo"
-                )
-                logger.error(
-                    "💥 ConfigMap key 'models-latest' removed - Application configuration broken"
-                )
-                logger.error(
-                    "📊 Expected observability patterns: HTTP 500 errors, health check failures, config errors"
-                )
+                logger.error("🚨 SERVICE_HEALTH_FAILURE=true - Service entering degraded state for SUSE Observability demo")
+                logger.error("💥 ConfigMap key 'models-latest' removed - Application configuration broken")
+                logger.error("📊 Expected observability patterns: HTTP 500 errors, health check failures, config errors")
 
                 return (
                     gr.Column(visible=False),
@@ -1985,9 +1747,7 @@ class ChatInterface:
                     "warning",
                 )
             else:
-                logger.warning(
-                    "⚠️ ConfigMap manipulation failed, using fallback environment variable"
-                )
+                logger.warning("⚠️ ConfigMap manipulation failed, using fallback environment variable")
                 # Fallback to environment variable for demos without K8s access
                 import os
 
@@ -2013,30 +1773,20 @@ class ChatInterface:
     def restore_service_health(self) -> tuple:
         """Restores service health using ConfigMap configuration restoration."""
         try:
-            logger.info(
-                "🔵 DEACTIVATING Availability Demo - Restoring ConfigMap to fix app"
-            )
+            logger.info("🔵 DEACTIVATING Availability Demo - Restoring ConfigMap to fix app")
 
             # Try to restore ConfigMap-based configuration
             configmap_success = self._restore_configmap_health()
 
             if configmap_success:
-                logger.info(
-                    "✅ ConfigMap restoration successful - App should start working!"
-                )
+                logger.info("✅ ConfigMap restoration successful - App should start working!")
                 # Update local state
                 self.service_health_failure = False
 
                 # Generate recovery signals for observability
-                logger.info(
-                    "✅ SERVICE_HEALTH_FAILURE=false - Service health restored successfully"
-                )
-                logger.info(
-                    "📊 ConfigMap key 'models-latest' restored - Application configuration fixed"
-                )
-                logger.info(
-                    "📊 Expected observability patterns: HTTP 200 success, health check recovery"
-                )
+                logger.info("✅ SERVICE_HEALTH_FAILURE=false - Service health restored successfully")
+                logger.info("📊 ConfigMap key 'models-latest' restored - Application configuration fixed")
+                logger.info("📊 Expected observability patterns: HTTP 200 success, health check recovery")
 
                 return (
                     gr.Column(visible=False),
@@ -2055,9 +1805,7 @@ class ChatInterface:
                     "success",
                 )
             else:
-                logger.warning(
-                    "⚠️ ConfigMap restoration failed, using fallback environment variable"
-                )
+                logger.warning("⚠️ ConfigMap restoration failed, using fallback environment variable")
                 # Fallback to environment variable for demos without K8s access
                 import os
 
@@ -2077,9 +1825,7 @@ class ChatInterface:
     def run_availability_demo(self) -> tuple:
         """Runs availability demo by simulating service failure for SUSE Observability monitoring."""
         try:
-            logger.info(
-                "Running availability demo - simulating service failure for SUSE Observability"
-            )
+            logger.info("Running availability demo - simulating service failure for SUSE Observability")
 
             # Check current ConfigMap state to determine action
             is_demo_on, state, config_value = self._check_configmap_demo_state()
@@ -2102,9 +1848,7 @@ class ChatInterface:
     def run_data_leak_demo(self) -> tuple:
         """Runs data leak demo by sending credit card data (SUSE security demo pattern)."""
         try:
-            logger.info(
-                "Running data leak demo - simulating sensitive data transmission"
-            )
+            logger.info("Running data leak demo - simulating sensitive data transmission")
 
             # Use requests library with both credit card and SSN data
             credit_card_pattern = "3412-1234-1234-2222"
@@ -2117,19 +1861,13 @@ class ChatInterface:
             # For demo responsiveness, use very short timeout and single endpoint
             try:
                 requests.post("http://httpbin.org/post", data=data, timeout=1)
-                logger.warning(
-                    "Data leak demo executed - credit card and SSN data sent to httpbin.org for DLP testing"
-                )
+                logger.warning("Data leak demo executed - credit card and SSN data sent to httpbin.org for DLP testing")
             except Exception as endpoint_error:
-                logger.debug(
-                    f"Network request failed (expected for demo): {endpoint_error}"
-                )
+                logger.debug(f"Network request failed (expected for demo): {endpoint_error}")
                 # This is fine - the sensitive data patterns were still processed locally
 
             # Always show success for demo purposes - NeuVector monitors the patterns
-            logger.warning(
-                "Data leak demo executed - sensitive data patterns processed for NeuVector DLP testing"
-            )
+            logger.warning("Data leak demo executed - sensitive data patterns processed for NeuVector DLP testing")
 
             # Detailed message showing what data was "leaked" for NeuVector DLP detection
             message = f"""🔒 **Data Leak Demo: EXECUTED**
@@ -2225,11 +1963,7 @@ class ChatInterface:
         current_value = (
             self.selected_model
             if self.selected_model in self.ollama_models
-            else (
-                self.ollama_models[0]
-                if self.ollama_models and "Error" not in self.ollama_models[0]
-                else ""
-            )
+            else (self.ollama_models[0] if self.ollama_models and "Error" not in self.ollama_models[0] else "")
         )
         self.selected_model = current_value
         return gr.Dropdown(
@@ -2246,9 +1980,7 @@ class ChatInterface:
         while not self.stop_event.is_set():
             # Get the current prompt and rotate to next
             current_prompt = self.automation_prompts[self.current_prompt_index]
-            self.current_prompt_index = (self.current_prompt_index + 1) % len(
-                self.automation_prompts
-            )
+            self.current_prompt_index = (self.current_prompt_index + 1) % len(self.automation_prompts)
 
             logger.info(
                 f"Running automated task with prompt: '{current_prompt}' (send_messages: {self.automation_send_messages})"
@@ -2263,9 +1995,7 @@ class ChatInterface:
                 # 1. Send to Ollama with timeout protection
                 logger.info("About to call Ollama...")
                 try:
-                    ollama_reply = self.chat_with_ollama(
-                        [{"role": "user", "content": current_prompt}], model
-                    )
+                    ollama_reply = self.chat_with_ollama([{"role": "user", "content": current_prompt}], model)
                     logger.info(f"Ollama replied: {ollama_reply[:100]}...")
                 except Exception as e:
                     logger.warning(f"Ollama automation call failed: {e}")
@@ -2274,17 +2004,13 @@ class ChatInterface:
                 # 2. Send to Open WebUI with timeout protection
                 logger.info("About to call Open WebUI...")
                 try:
-                    webui_reply = self.chat_with_open_webui(
-                        [{"role": "user", "content": current_prompt}], model
-                    )
+                    webui_reply = self.chat_with_open_webui([{"role": "user", "content": current_prompt}], model)
                     logger.info(f"Open WebUI replied: {webui_reply[:100]}...")
                 except Exception as e:
                     logger.warning(f"Open WebUI automation call failed: {e}")
                     webui_reply = f"Automation Error: Open WebUI timeout/failure - {e}"
             else:
-                logger.info(
-                    "Skipping message sending - automation_send_messages is disabled"
-                )
+                logger.info("Skipping message sending - automation_send_messages is disabled")
 
             # 3. Always check providers (this is the ping/monitoring functionality)
             logger.info("About to check provider statuses...")
@@ -2295,11 +2021,7 @@ class ChatInterface:
             logger.info("Creating automation result package...")
             result = {
                 "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-                "prompt": (
-                    current_prompt
-                    if self.automation_send_messages
-                    else "Monitoring only"
-                ),
+                "prompt": (current_prompt if self.automation_send_messages else "Monitoring only"),
                 "ollama_response": ollama_reply,
                 "open_webui_response": webui_reply,
                 "provider_status": provider_statuses,
@@ -2340,13 +2062,9 @@ class ChatInterface:
             logger.info(f"Automation send messages setting updated to: {send_messages}")
 
         self.stop_event.clear()
-        self.automation_thread = threading.Thread(
-            target=self._automation_loop, args=(model, interval), daemon=True
-        )
+        self.automation_thread = threading.Thread(target=self._automation_loop, args=(model, interval), daemon=True)
         self.automation_thread.start()
-        logger.info(
-            f"Automation started with interval {interval}s, send_messages: {self.automation_send_messages}"
-        )
+        logger.info(f"Automation started with interval {interval}s, send_messages: {self.automation_send_messages}")
         # UI update to show it's running
         running_status = "<div style='text-align: center; color: #4CAF50; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 8px; margin: 10px 0;'>▶️ Automation is running - Automated testing in progress</div>"
         return (
@@ -2472,9 +2190,7 @@ class ChatInterface:
                 return (
                     gr.Button(interactive=False),
                     gr.Button(interactive=True),
-                    gr.HTML(
-                        value="<div style='color: #4CAF50;'>🚀 Load Simulator is already running</div>"
-                    ),
+                    gr.HTML(value="<div style='color: #4CAF50;'>🚀 Load Simulator is already running</div>"),
                 )
 
             # Create deployment YAML
@@ -2503,9 +2219,7 @@ class ChatInterface:
                 return (
                     gr.Button(interactive=True),
                     gr.Button(interactive=False),
-                    gr.HTML(
-                        value=f"<div style='color: #f44336;'>❌ Failed to start load simulator: {result.stderr}</div>"
-                    ),
+                    gr.HTML(value=f"<div style='color: #f44336;'>❌ Failed to start load simulator: {result.stderr}</div>"),
                 )
 
         except Exception as e:
@@ -2513,9 +2227,7 @@ class ChatInterface:
             return (
                 gr.Button(interactive=True),
                 gr.Button(interactive=False),
-                gr.HTML(
-                    value=f"<div style='color: #f44336;'>❌ Error starting load simulator: {str(e)}</div>"
-                ),
+                gr.HTML(value=f"<div style='color: #f44336;'>❌ Error starting load simulator: {str(e)}</div>"),
             )
 
     def stop_load_simulator(self) -> tuple:
@@ -2540,9 +2252,7 @@ class ChatInterface:
                 return (
                     gr.Button(interactive=True),
                     gr.Button(interactive=False),
-                    gr.HTML(
-                        value="<div style='color: #ffa726;'>⏹️ Load Simulator stopped</div>"
-                    ),
+                    gr.HTML(value="<div style='color: #ffa726;'>⏹️ Load Simulator stopped</div>"),
                 )
             else:
                 logger.warning(f"Failed to delete load simulator: {result.stderr}")
@@ -2559,9 +2269,7 @@ class ChatInterface:
             return (
                 gr.Button(interactive=True),
                 gr.Button(interactive=False),
-                gr.HTML(
-                    value=f"<div style='color: #f44336;'>❌ Error stopping load simulator: {str(e)}</div>"
-                ),
+                gr.HTML(value=f"<div style='color: #f44336;'>❌ Error stopping load simulator: {str(e)}</div>"),
             )
 
     def _generate_load_simulator_yaml(self) -> str:
@@ -2618,9 +2326,7 @@ spec:
 """
         return yaml_content
 
-    def start_load_simulator_ui(
-        self, model: str, interval: int, send_messages: bool = None
-    ):
+    def start_load_simulator_ui(self, model: str, interval: int, send_messages: bool = None):
         """Start load simulator from UI - replacement for start_automation."""
         try:
             # Check current status
@@ -2952,34 +2658,22 @@ def create_interface():
                 # Initialize with pre-drawn provider status boxes
                 initial_status_html = chat_instance.get_provider_status_html()
                 provider_status_html = gr.HTML(value=initial_status_html)
-                refresh_providers_btn = gr.Button(
-                    "🔄 Refresh", elem_classes="refresh-btn", size="sm"
-                )
+                refresh_providers_btn = gr.Button("🔄 Refresh", elem_classes="refresh-btn", size="sm")
                 # SUSE Security Demo buttons (direct action)
                 # Determine initial availability demo state
-                initial_availability_state = getattr(
-                    chat_instance, "service_health_failure", False
-                )
+                initial_availability_state = getattr(chat_instance, "service_health_failure", False)
                 initial_availability_text = (
-                    "🔴 Availability Demo: ON"
-                    if initial_availability_state
-                    else "🟢 Availability Demo: OFF"
+                    "🔴 Availability Demo: ON" if initial_availability_state else "🟢 Availability Demo: OFF"
                 )
-                initial_availability_variant = (
-                    "stop" if initial_availability_state else "secondary"
-                )
+                initial_availability_variant = "stop" if initial_availability_state else "secondary"
 
                 availability_demo_btn = gr.Button(
                     initial_availability_text,
                     variant=initial_availability_variant,
                     size="sm",
                 )
-                data_leak_demo_btn = gr.Button(
-                    "🔒 Data Leak Demo", variant="secondary", size="sm"
-                )
-                demo_help_btn = gr.Button(
-                    "❓ Demo Help", variant="secondary", size="sm"
-                )
+                data_leak_demo_btn = gr.Button("🔒 Data Leak Demo", variant="secondary", size="sm")
+                demo_help_btn = gr.Button("❓ Demo Help", variant="secondary", size="sm")
 
                 # Demo status message display moved to top for better visibility
 
@@ -3095,12 +2789,8 @@ def create_interface():
         # Configuration Modal (initially hidden)
         with gr.Column(visible=False) as config_panel:
             with gr.Row():
-                gr.HTML(
-                    "<h3 style='color: #73ba25; text-align: center;'>⚙️ Configuration</h3>"
-                )
-                close_config_btn = gr.Button(
-                    "✕", variant="secondary", size="sm", elem_classes="close-btn"
-                )
+                gr.HTML("<h3 style='color: #73ba25; text-align: center;'>⚙️ Configuration</h3>")
+                close_config_btn = gr.Button("✕", variant="secondary", size="sm", elem_classes="close-btn")
 
             # Model selection
             model_dropdown = gr.Dropdown(
@@ -3111,9 +2801,7 @@ def create_interface():
             )
 
             # Automation settings - always available for button handlers
-            gr.HTML(
-                "<h4 style='color: #73ba25; margin: 15px 0 10px 0;'>🤖 Automation Settings</h4>"
-            )
+            gr.HTML("<h4 style='color: #73ba25; margin: 15px 0 10px 0;'>🤖 Automation Settings</h4>")
 
             with gr.Row():
                 automation_interval_input = gr.Number(
@@ -3141,12 +2829,8 @@ def create_interface():
         # Demo Help Modal (initially hidden)
         with gr.Column(visible=False) as demo_help_modal:
             with gr.Row():
-                gr.HTML(
-                    "<h3 style='color: #73ba25; text-align: center;'>🔒 SUSE Security Demos</h3>"
-                )
-                close_demo_help_btn = gr.Button(
-                    "✕", variant="secondary", size="sm", elem_classes="close-btn"
-                )
+                gr.HTML("<h3 style='color: #73ba25; text-align: center;'>🔒 SUSE Security Demos</h3>")
+                close_demo_help_btn = gr.Button("✕", variant="secondary", size="sm", elem_classes="close-btn")
 
             gr.HTML(
                 """
@@ -3190,9 +2874,7 @@ def create_interface():
             messages_for_api = [{"role": "user", "content": message}]
 
             ollama_reply = chat_instance.chat_with_ollama(messages_for_api, model)
-            open_webui_reply = chat_instance.chat_with_open_webui(
-                messages_for_api, model
-            )
+            open_webui_reply = chat_instance.chat_with_open_webui(messages_for_api, model)
 
             yield ollama_reply, open_webui_reply, ""
 
@@ -3217,9 +2899,7 @@ def create_interface():
             _, message, status = chat_instance.run_availability_demo()
 
             # Check current ConfigMap state to get accurate status and config value
-            is_demo_on, state, config_value = (
-                chat_instance._check_configmap_demo_state()
-            )
+            is_demo_on, state, config_value = chat_instance._check_configmap_demo_state()
 
             # Create enhanced status message with ConfigMap value when demo is ON
             if is_demo_on:
@@ -3236,9 +2916,7 @@ def create_interface():
                 status_html = f"<div style='color: #c62828; background: rgba(244, 67, 54, 0.15); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #f44336; font-weight: 500;'>{enhanced_message}</div>"
 
             # Update button text and style based on ConfigMap state (not internal state)
-            logger.info(
-                f"Button update - ConfigMap Demo state: {is_demo_on} ({state}), Status: {status}"
-            )
+            logger.info(f"Button update - ConfigMap Demo state: {is_demo_on} ({state}), Status: {status}")
 
             if is_demo_on:
                 button_text = f"🔴 Availability Demo: {state}"
@@ -3257,9 +2935,7 @@ def create_interface():
             logger.info("Gradio data leak demo button clicked - executing function")
             try:
                 _, message, status = chat_instance.run_data_leak_demo()
-                logger.info(
-                    f"Data leak demo executed successfully. Status: {status}, Message: {message[:100]}..."
-                )
+                logger.info(f"Data leak demo executed successfully. Status: {status}, Message: {message[:100]}...")
             except Exception as e:
                 logger.error(f"Data leak demo Gradio function error: {e}")
                 message = f"Error executing data leak demo: {str(e)}"
@@ -3296,23 +2972,15 @@ def create_interface():
             inputs=[msg_input, model_dropdown],
             outputs=[ollama_output, webui_output, msg_input],
         )
-        clear_btn.click(
-            lambda: ("", "", ""), outputs=[ollama_output, webui_output, msg_input]
-        )
+        clear_btn.click(lambda: ("", "", ""), outputs=[ollama_output, webui_output, msg_input])
 
-        refresh_providers_btn.click(
-            chat_instance.refresh_providers, outputs=[provider_status_html]
-        )
+        refresh_providers_btn.click(chat_instance.refresh_providers, outputs=[provider_status_html])
         config_btn.click(show_config_panel, outputs=[config_panel])
         close_config_btn.click(hide_config_panel, outputs=[config_panel])
 
         # Security demo modal handlers
-        availability_demo_btn.click(
-            chat_instance.run_availability_demo_simple, outputs=[demo_status_msg]
-        )
-        data_leak_demo_btn.click(
-            chat_instance.run_data_leak_demo_simple, outputs=[demo_status_msg]
-        )
+        availability_demo_btn.click(chat_instance.run_availability_demo_simple, outputs=[demo_status_msg])
+        data_leak_demo_btn.click(chat_instance.run_data_leak_demo_simple, outputs=[demo_status_msg])
         demo_help_btn.click(show_demo_help_modal, outputs=[demo_help_modal])
         close_demo_help_btn.click(hide_demo_help_modal, outputs=[demo_help_modal])
 
@@ -3324,10 +2992,7 @@ def create_interface():
 
             # Check if automation is already running and update button states
             if chat_instance.automation_enabled:
-                if (
-                    chat_instance.automation_thread
-                    and chat_instance.automation_thread.is_alive()
-                ):
+                if chat_instance.automation_thread and chat_instance.automation_thread.is_alive():
                     # Automation is running - update UI to reflect this
                     running_status = "<div style='text-align: center; color: #4CAF50; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 8px; margin: 10px 0;'>▶️ Automation is running - Automated testing in progress</div>"
                     return (
@@ -3371,9 +3036,7 @@ def create_interface():
             return gr.HTML(value=chat_instance.get_provider_status_html())
 
         # Only set up UI refresh mechanism - no background pinging unless automation is running
-        logger.info(
-            "UI refresh mechanism ready - background processes controlled by automation state"
-        )
+        logger.info("UI refresh mechanism ready - background processes controlled by automation state")
 
         # --- Load Simulator Event Handlers - Dynamic pod launch ---
         start_auto_btn.click(
@@ -3395,15 +3058,11 @@ def create_interface():
             """Updates main UI elements with automation test questions and responses."""
             logger.info("🔄 UI update_ui_from_queue called - checking results queue")
             logger.info(f"Queue size: {chat_instance.results_queue.qsize()}")
-            logger.info(
-                f"Latest result available: {chat_instance.latest_automation_result is not None}"
-            )
+            logger.info(f"Latest result available: {chat_instance.latest_automation_result is not None}")
 
             try:
                 latest_result = chat_instance.results_queue.get_nowait()
-                logger.info(
-                    f"✅ Found new automation result: {latest_result.get('timestamp', 'unknown time')}"
-                )
+                logger.info(f"✅ Found new automation result: {latest_result.get('timestamp', 'unknown time')}")
 
                 # Extract data from automation result
                 question = latest_result.get("prompt", "")
@@ -3412,9 +3071,7 @@ def create_interface():
                 timestamp = latest_result.get("timestamp", "")
 
                 # Update the main UI elements
-                question_with_timestamp = (
-                    f"🤖 Automation Test [{timestamp}]: {question}"
-                )
+                question_with_timestamp = f"🤖 Automation Test [{timestamp}]: {question}"
                 status_html = chat_instance.get_provider_status_html()
 
                 logger.info("🎨 Updating main UI with automation data")
@@ -3452,10 +3109,7 @@ def create_interface():
         # Add a Python-based auto-refresh as fallback
         def auto_refresh_fallback():
             """Fallback Python-based auto-refresh when automation is running."""
-            if (
-                chat_instance.automation_thread
-                and chat_instance.automation_thread.is_alive()
-            ):
+            if chat_instance.automation_thread and chat_instance.automation_thread.is_alive():
                 logger.info("🔄 Python auto-refresh fallback triggered")
                 return update_ui_from_queue()
             else:
@@ -3485,9 +3139,7 @@ def create_interface():
         )
 
         # Create hidden button for Python auto-refresh
-        python_auto_refresh_btn = gr.Button(
-            "", elem_id="python-auto-refresh-trigger", visible=False
-        )
+        python_auto_refresh_btn = gr.Button("", elem_id="python-auto-refresh-trigger", visible=False)
         python_auto_refresh_btn.click(
             auto_refresh_fallback,
             outputs=[msg_input, ollama_output, webui_output, provider_status_html],
@@ -3618,9 +3270,7 @@ def create_interface():
                 </script>
                 """
         )
-        logger.info(
-            "Auto-refresh setup - using ultra-simple JavaScript with full debugging"
-        )
+        logger.info("Auto-refresh setup - using ultra-simple JavaScript with full debugging")
 
         # Auto-refresh every 5 seconds when automation is running
         # Removed periodic refresh - provider status updates are handled by automation loop
@@ -3640,30 +3290,22 @@ def create_interface():
 
                 for attempt in range(max_retries):
                     try:
-                        logger.info(
-                            f"Auto-start attempt {attempt + 1}/{max_retries} - checking for Ollama models..."
-                        )
+                        logger.info(f"Auto-start attempt {attempt + 1}/{max_retries} - checking for Ollama models...")
                         models = chat_instance.get_ollama_models()
                         if models and len(models) > 0 and "Error" not in models[0]:
                             model = models[0]
                             logger.info(f"Auto-starting automation with model: {model}")
-                            chat_instance.start_automation(
-                                model, chat_instance.automation_interval
-                            )
+                            chat_instance.start_automation(model, chat_instance.automation_interval)
                             return
                         else:
-                            logger.info(
-                                f"No valid models found on attempt {attempt + 1}, retrying in {retry_delay}s..."
-                            )
+                            logger.info(f"No valid models found on attempt {attempt + 1}, retrying in {retry_delay}s...")
                     except Exception as e:
                         logger.warning(f"Auto-start attempt {attempt + 1} failed: {e}")
 
                     if attempt < max_retries - 1:
                         time.sleep(retry_delay)
 
-                logger.warning(
-                    "Auto-start failed after all retries - Ollama may not be ready or no models available"
-                )
+                logger.warning("Auto-start failed after all retries - Ollama may not be ready or no models available")
 
             # Start auto-start in background thread
             import threading
@@ -3679,14 +3321,10 @@ if __name__ == "__main__":
 
     # Check for service health failure simulation (like gravitational-accelerator pattern)
     if os.getenv("SERVICE_HEALTH_FAILURE", "false").lower() == "true":
-        logger.error(
-            "SERVICE_HEALTH_FAILURE=true detected - simulating service failure for SUSE Observability"
-        )
+        logger.error("SERVICE_HEALTH_FAILURE=true detected - simulating service failure for SUSE Observability")
         logger.error("Service will crash to demonstrate configuration change detection")
         # Crash the service like gravitational-accelerator pattern
-        raise SystemExit(
-            "💥 Service failure simulated for SUSE Observability monitoring (SERVICE_HEALTH_FAILURE=true)"
-        )
+        raise SystemExit("💥 Service failure simulated for SUSE Observability monitoring (SERVICE_HEALTH_FAILURE=true)")
 
     app_interface = create_interface()
     # In K8s, we bind to 0.0.0.0 to be accessible from outside the container
