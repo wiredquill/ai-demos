@@ -1320,7 +1320,6 @@ class ChatInterface:
     def check_provider_status(self, provider_name: str, provider_info) -> dict:
         """Checks the status of a single provider and returns detailed info."""
         import time
-
         start_time = time.time()
 
         # Handle both old string format and new dict format
@@ -1329,21 +1328,13 @@ class ChatInterface:
             country = "🌍 Unknown"
             flag = "🌍"
         else:
-            url = provider_info.get("url", provider_info)
-            country = provider_info.get("country", "🌍 Unknown")
-            flag = provider_info.get("flag", "🌍")
-
-        # FIXED: Special timeout handling for problematic providers
-        # DeepSeek and other Chinese services are often blocked, use very short timeout
-        # ⚠️ IMPORTANT: DO NOT CHANGE THIS LOGIC - DeepSeek consistently causes 20s delays when blocked
-
-        # Use connection timeout for all providers (default is 5 seconds)
-        provider_timeout = self.connection_timeout
-        logger.info(f"Using timeout ({self.connection_timeout}s) for provider: {provider_name}")
+            url = provider_info.get('url', provider_info)
+            country = provider_info.get('country', '🌍 Unknown')
+            flag = provider_info.get('flag', '🌍')
 
         try:
-            headers = {"User-Agent": "Mozilla/5.0"}
-            response = requests.get(url, timeout=provider_timeout, headers=headers)  # Provider-specific timeout
+            headers = {'User-Agent': 'Mozilla/5.0'}
+            response = requests.get(url, timeout=5, headers=headers)
             response_time = int((time.time() - start_time) * 1000)
             # Show as online if we get ANY response (even 403, 404, etc.)
             status = "🟢"
@@ -1354,14 +1345,10 @@ class ChatInterface:
                 "response_time": f"{response_time}ms",
                 "country": country,
                 "flag": flag,
-                "status_code": response.status_code,
+                "status_code": response.status_code
             }
         except Exception as e:
             response_time = int((time.time() - start_time) * 1000)
-            # Cap response time at provider-specific timeout for timeout cases
-            timeout_ms = provider_timeout * 1000
-            if response_time > timeout_ms:
-                response_time = timeout_ms
             logger.warning(f"Provider {provider_name} failed: {str(e)} ({response_time}ms)")
             return {
                 "status": "🔴",
@@ -1369,7 +1356,7 @@ class ChatInterface:
                 "country": country,
                 "flag": flag,
                 "status_code": "Error",
-                "error": str(e),
+                "error": str(e)
             }
 
     def update_all_provider_status(self) -> Dict:
