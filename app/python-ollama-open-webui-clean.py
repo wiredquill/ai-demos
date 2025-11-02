@@ -565,10 +565,9 @@ class ChatInterface:
         self.availability_demo_auto_off_timer = None
 
         # Initialize provider status with pre-drawn boxes (default offline)
-        # CRITICAL: Always guarantee all 10 providers are present from startup
+        # CRITICAL: Always guarantee all providers are present from startup
         default_providers = {
             "OpenAI": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
-            "Claude (Anthropic)": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
             "DeepSeek": {"country": "🇨🇳 China", "flag": "🇨🇳"},
             "Google Gemini": {"country": "🇺🇸 USA", "flag": "🇺🇸"},
             "Cohere": {"country": "🇨🇦 Canada", "flag": "🇨🇦"},
@@ -676,11 +675,6 @@ class ChatInterface:
             "providers": {
                 "OpenAI": {
                     "url": "https://help.openai.com",
-                    "country": "🇺🇸 USA",
-                    "flag": "🇺🇸",
-                },
-                "Claude (Anthropic)": {
-                    "url": "https://www.anthropic.com",
                     "country": "🇺🇸 USA",
                     "flag": "🇺🇸",
                 },
@@ -1357,7 +1351,6 @@ class ChatInterface:
         ]
         blocked_domains = [
             "deepseek.com",
-            "anthropic.com",
             "openai.com",
             "cohere.com",
             "mistral.ai",
@@ -1372,10 +1365,6 @@ class ChatInterface:
         if provider_name == "Google Gemini" or "google" in url.lower() or "gemini" in url.lower():
             provider_timeout = self.connection_timeout  # Normal timeout for Google
             logger.info(f"Using normal timeout ({self.connection_timeout}s) for allowed provider: {provider_name}")
-        # Anthropic (Claude) uses www.anthropic.com which is reliable, use normal timeout
-        elif provider_name == "Claude (Anthropic)" or "anthropic.com" in url.lower():
-            provider_timeout = self.connection_timeout  # Normal timeout for Anthropic
-            logger.info(f"Using normal timeout ({self.connection_timeout}s) for reliable provider: {provider_name}")
         # Fast timeout for commonly blocked providers to prevent delays
         elif provider_name in blocked_providers or any(domain in url.lower() for domain in blocked_domains):
             provider_timeout = 1  # 1 second timeout for potentially blocked providers
