@@ -13,7 +13,7 @@ repos:
         args: [--line-length=127]
         files: ^app/.*\.py$
 
-  # Import Sorting (CRITICAL - prevents CI failures)  
+  # Import Sorting (CRITICAL - prevents CI failures)
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
@@ -72,7 +72,7 @@ repos:
           - "cd app && python -m pytest tests/test_simple.py -v --tb=short"
         files: ^app/.*\.py$
         pass_filenames: false
-        
+
       - id: pytest-import-validation
         name: "Validate Python imports"
         entry: bash
@@ -94,6 +94,8 @@ repos:
       - id: check-yaml
         name: "Validate YAML syntax"
         files: \.(yaml|yml)$
+        exclude: ^charts/.*/templates/.*\.yaml$
+        args: [--unsafe]
       - id: check-json
         name: "Validate JSON syntax"
         files: \.json$
@@ -142,7 +144,7 @@ exclude: |
 ci:
   autofix_commit_msg: |
     [pre-commit.ci] auto fixes from pre-commit.com hooks
-    
+
     for more information, see https://pre-commit.ci
   autofix_prs: true
   autoupdate_branch: ''
