@@ -41,7 +41,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r test-requirements.txt
-        pip install flake8 black isort mypy
+        pip install flake8 black==23.7.0 isort==5.12.0 mypy
 
     - name: Run Black (code formatting)
       run: |
