@@ -6,7 +6,39 @@ entries:
       licenses: MIT
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.635433-08:00"
+    created: "2025-11-02T10:54:26.025467-08:00"
+    description: AI Compare - Side-by-side AI response comparison platform. Features
+      Ollama, Open WebUI, pipelines, and custom chat interface. Built on upstream
+      open-source components with GPU support, observability integration, and security
+      demonstrations. Showcases security differences between upstream and enterprise-hardened
+      container images.
+    digest: 0b36421ca67c686a7eb9edb107fca72730708b8cf338800627d061931fa3c4a8
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - ollama
+    - machine-learning
+    - opentelemetry
+    - observability
+    - demo
+    - comparison
+    maintainers:
+    - email: noreply@example.com
+      name: AI Compare Team
+    name: ai-compare
+    sources:
+    - https://github.com/wiredquill/ai-demos
+    type: application
+    urls:
+    - https://wiredquill.github.io/ai-demos/charts/ai-compare-0.1.382.tgz
+    version: 0.1.382
+  - annotations:
+      category: AI/ML
+      licenses: MIT
+    apiVersion: v2
+    appVersion: 1.0.0
+    created: "2025-11-02T10:54:26.024799-08:00"
     description: AI Compare - Side-by-side AI response comparison platform. Features
       Ollama, Open WebUI, pipelines, and custom chat interface. Built on upstream
       open-source components with GPU support, observability integration, and security
@@ -38,7 +70,7 @@ entries:
       licenses: MIT
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.634755-08:00"
+    created: "2025-11-02T10:54:26.023388-08:00"
     description: AI Compare - Side-by-side AI response comparison platform. Features
       Ollama, Open WebUI, pipelines, and custom chat interface. Built on upstream
       open-source components with GPU support, observability integration, and security
@@ -70,7 +102,7 @@ entries:
       licenses: MIT
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.633786-08:00"
+    created: "2025-11-02T10:54:26.02244-08:00"
     description: AI Compare - Side-by-side AI response comparison platform. Features
       Ollama, Open WebUI, pipelines, and custom chat interface. Built on upstream
       open-source components with GPU support, observability integration, and security
@@ -102,7 +134,7 @@ entries:
       licenses: MIT
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.632558-08:00"
+    created: "2025-11-02T10:54:26.021493-08:00"
     description: AI Compare - Side-by-side AI response comparison platform. Features
       Ollama, Open WebUI, pipelines, and custom chat interface. Built on upstream
       open-source components with GPU support, observability integration, and security
@@ -134,7 +166,7 @@ entries:
       licenses: MIT
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.631458-08:00"
+    created: "2025-11-02T10:54:26.020568-08:00"
     description: AI Compare - Side-by-side AI response comparison platform. Features
       Ollama, Open WebUI, pipelines, and custom chat interface. Built on upstream
       open-source components with GPU support, observability integration, and security
@@ -166,7 +198,7 @@ entries:
       licenses: MIT
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.630388-08:00"
+    created: "2025-11-02T10:54:26.019676-08:00"
     description: AI Compare - Side-by-side AI response comparison platform. Features
       Ollama, Open WebUI, pipelines, and custom chat interface. Built on upstream
       open-source components with GPU support, observability integration, and security
@@ -198,7 +230,7 @@ entries:
       licenses: MIT
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.628736-08:00"
+    created: "2025-11-02T10:54:26.018711-08:00"
     description: AI Compare - Side-by-side AI response comparison platform. Features
       Ollama, Open WebUI, pipelines, and custom chat interface. Built on upstream
       open-source components with GPU support, observability integration, and security
@@ -230,7 +262,7 @@ entries:
       licenses: MIT
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.627611-08:00"
+    created: "2025-11-02T10:54:26.017322-08:00"
     description: AI Compare - Side-by-side AI response comparison platform. Features
       Ollama, Open WebUI, pipelines, and custom chat interface. Built on upstream
       open-source components with GPU support, observability integration, and security
@@ -262,7 +294,7 @@ entries:
       licenses: MIT
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.626435-08:00"
+    created: "2025-11-02T10:54:26.016307-08:00"
     description: AI Compare - Side-by-side AI response comparison platform. Features
       Ollama, Open WebUI, pipelines, and custom chat interface. Built on upstream
       open-source components with GPU support, observability integration, and security
@@ -294,7 +326,7 @@ entries:
       licenses: MIT
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.625266-08:00"
+    created: "2025-11-02T10:54:26.015341-08:00"
     description: AI Compare - Side-by-side AI response comparison platform. Features
       Ollama, Open WebUI, pipelines, and custom chat interface. Built on upstream
       open-source components with GPU support, observability integration, and security
@@ -326,7 +358,7 @@ entries:
       licenses: MIT
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.624107-08:00"
+    created: "2025-11-02T10:54:26.01438-08:00"
     description: AI Compare - Side-by-side AI response comparison platform. Features
       Ollama, Open WebUI, pipelines, and custom chat interface. Built on upstream
       open-source components with GPU support, observability integration, and security
@@ -358,7 +390,7 @@ entries:
       licenses: MIT
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.600566-08:00"
+    created: "2025-11-02T10:54:25.990396-08:00"
     description: AI Compare - Side-by-side AI response comparison platform. Features
       Ollama, Open WebUI, pipelines, and custom chat interface. Built on upstream
       open-source components with GPU support, observability integration, and security
@@ -393,7 +425,44 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.6484-08:00"
+    created: "2025-11-02T10:54:26.039016-08:00"
+    description: AI Compare OpenTelemetry Edition - Advanced observability-focused
+      AI response comparison platform. Features comprehensive GenAI telemetry, token-level
+      cost tracking, model performance monitoring, and deep integration with SUSE
+      Observability.
+    digest: 644bc88a6cd62c93aceee9bc658c3b80a1062aa0aac0fafc0ceb1219d2467f4d
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - ollama
+    - machine-learning
+    - opentelemetry
+    - observability
+    - telemetry
+    - monitoring
+    - genai
+    - tokens
+    - cost-tracking
+    - demo
+    maintainers:
+    - email: noreply@anthropic.com
+      name: AI Compare OpenTelemetry Team
+    name: ai-compare-opentelemetry
+    sources:
+    - https://github.com/wiredquill/ai-demos
+    type: application
+    urls:
+    - https://wiredquill.github.io/ai-demos/charts/ai-compare-opentelemetry-0.1.382.tgz
+    version: 0.1.382
+  - annotations:
+      category: AI/ML
+      licenses: MIT
+      observability.suse.com/compatible: "true"
+      opentelemetry.io/instrumented: "true"
+    apiVersion: v2
+    appVersion: 1.0.0
+    created: "2025-11-02T10:54:26.038263-08:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -430,7 +499,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.647621-08:00"
+    created: "2025-11-02T10:54:26.036989-08:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -467,7 +536,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.646471-08:00"
+    created: "2025-11-02T10:54:26.035675-08:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -504,7 +573,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.645353-08:00"
+    created: "2025-11-02T10:54:26.034615-08:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -541,7 +610,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.644202-08:00"
+    created: "2025-11-02T10:54:26.033531-08:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -578,7 +647,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.642585-08:00"
+    created: "2025-11-02T10:54:26.032468-08:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -615,7 +684,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.641437-08:00"
+    created: "2025-11-02T10:54:26.031347-08:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -652,7 +721,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.640221-08:00"
+    created: "2025-11-02T10:54:26.02998-08:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -689,7 +758,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.639055-08:00"
+    created: "2025-11-02T10:54:26.028858-08:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -726,7 +795,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.637996-08:00"
+    created: "2025-11-02T10:54:26.027783-08:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -763,7 +832,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.636623-08:00"
+    created: "2025-11-02T10:54:26.02655-08:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -800,7 +869,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.608174-08:00"
+    created: "2025-11-02T10:54:25.998235-08:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -837,7 +906,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.607386-08:00"
+    created: "2025-11-02T10:54:25.99741-08:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -874,7 +943,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.606259-08:00"
+    created: "2025-11-02T10:54:25.996267-08:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -911,7 +980,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.605425-08:00"
+    created: "2025-11-02T10:54:25.995399-08:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -948,7 +1017,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.604286-08:00"
+    created: "2025-11-02T10:54:25.994247-08:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -985,7 +1054,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.602798-08:00"
+    created: "2025-11-02T10:54:25.992885-08:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -1022,7 +1091,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.601665-08:00"
+    created: "2025-11-02T10:54:25.991611-08:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -1060,7 +1129,42 @@ entries:
       suse.com/certified: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.660371-08:00"
+    created: "2025-11-02T10:54:26.051395-08:00"
+    description: AI Compare SUSE Edition - Enterprise AI response comparison platform
+      optimized for SUSE environments. Features SUSE BCI images, native SUSE Observability
+      integration, NeuVector security demos, and full SUSE cloud-native stack compatibility.
+    digest: c5b84793db05dda59d29a89771bd1d8f9cee0ef9860249ea1df4a036eb89cbc3
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - ollama
+    - machine-learning
+    - suse
+    - enterprise
+    - observability
+    - neuvector
+    - security
+    - demo
+    - bci
+    maintainers:
+    - email: noreply@suse.com
+      name: AI Compare SUSE Team
+    name: ai-compare-suse
+    sources:
+    - https://github.com/wiredquill/ai-demos
+    type: application
+    urls:
+    - https://wiredquill.github.io/ai-demos/charts/ai-compare-suse-0.1.382.tgz
+    version: 0.1.382
+  - annotations:
+      category: AI/ML
+      licenses: MIT
+      suse.com/bci-images: "true"
+      suse.com/certified: "true"
+    apiVersion: v2
+    appVersion: 1.0.0
+    created: "2025-11-02T10:54:26.050272-08:00"
     description: AI Compare SUSE Edition - Enterprise AI response comparison platform
       optimized for SUSE environments. Features SUSE BCI images, native SUSE Observability
       integration, NeuVector security demos, and full SUSE cloud-native stack compatibility.
@@ -1095,7 +1199,7 @@ entries:
       suse.com/certified: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.659675-08:00"
+    created: "2025-11-02T10:54:26.049231-08:00"
     description: AI Compare SUSE Edition - Enterprise AI response comparison platform
       optimized for SUSE environments. Features SUSE BCI images, native SUSE Observability
       integration, NeuVector security demos, and full SUSE cloud-native stack compatibility.
@@ -1130,7 +1234,7 @@ entries:
       suse.com/certified: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.658608-08:00"
+    created: "2025-11-02T10:54:26.048215-08:00"
     description: AI Compare SUSE Edition - Enterprise AI response comparison platform
       optimized for SUSE environments. Features SUSE BCI images, native SUSE Observability
       integration, NeuVector security demos, and full SUSE cloud-native stack compatibility.
@@ -1165,7 +1269,7 @@ entries:
       suse.com/certified: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.657576-08:00"
+    created: "2025-11-02T10:54:26.047215-08:00"
     description: AI Compare SUSE Edition - Enterprise AI response comparison platform
       optimized for SUSE environments. Features SUSE BCI images, native SUSE Observability
       integration, NeuVector security demos, and full SUSE cloud-native stack compatibility.
@@ -1200,7 +1304,7 @@ entries:
       suse.com/certified: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.655952-08:00"
+    created: "2025-11-02T10:54:26.046202-08:00"
     description: AI Compare SUSE Edition - Enterprise AI response comparison platform
       optimized for SUSE environments. Features SUSE BCI images, native SUSE Observability
       integration, NeuVector security demos, and full SUSE cloud-native stack compatibility.
@@ -1235,7 +1339,7 @@ entries:
       suse.com/certified: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.654861-08:00"
+    created: "2025-11-02T10:54:26.045203-08:00"
     description: AI Compare SUSE Edition - Enterprise AI response comparison platform
       optimized for SUSE environments. Features SUSE BCI images, native SUSE Observability
       integration, NeuVector security demos, and full SUSE cloud-native stack compatibility.
@@ -1270,7 +1374,7 @@ entries:
       suse.com/certified: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.653923-08:00"
+    created: "2025-11-02T10:54:26.044272-08:00"
     description: AI Compare SUSE Edition - Enterprise AI response comparison platform
       optimized for SUSE environments. Features SUSE BCI images, native SUSE Observability
       integration, NeuVector security demos, and full SUSE cloud-native stack compatibility.
@@ -1305,7 +1409,7 @@ entries:
       suse.com/certified: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.652912-08:00"
+    created: "2025-11-02T10:54:26.043121-08:00"
     description: AI Compare SUSE Edition - Enterprise AI response comparison platform
       optimized for SUSE environments. Features SUSE BCI images, native SUSE Observability
       integration, NeuVector security demos, and full SUSE cloud-native stack compatibility.
@@ -1340,7 +1444,7 @@ entries:
       suse.com/certified: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.651895-08:00"
+    created: "2025-11-02T10:54:26.042024-08:00"
     description: AI Compare SUSE Edition - Enterprise AI response comparison platform
       optimized for SUSE environments. Features SUSE BCI images, native SUSE Observability
       integration, NeuVector security demos, and full SUSE cloud-native stack compatibility.
@@ -1375,7 +1479,7 @@ entries:
       suse.com/certified: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.650906-08:00"
+    created: "2025-11-02T10:54:26.041088-08:00"
     description: AI Compare SUSE Edition - Enterprise AI response comparison platform
       optimized for SUSE environments. Features SUSE BCI images, native SUSE Observability
       integration, NeuVector security demos, and full SUSE cloud-native stack compatibility.
@@ -1410,7 +1514,7 @@ entries:
       suse.com/certified: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.649453-08:00"
+    created: "2025-11-02T10:54:26.040057-08:00"
     description: AI Compare SUSE Edition - Enterprise AI response comparison platform
       optimized for SUSE environments. Features SUSE BCI images, native SUSE Observability
       integration, NeuVector security demos, and full SUSE cloud-native stack compatibility.
@@ -1445,7 +1549,7 @@ entries:
       suse.com/certified: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-11-02T10:33:38.609151-08:00"
+    created: "2025-11-02T10:54:25.99925-08:00"
     description: AI Compare SUSE Edition - Enterprise AI response comparison platform
       optimized for SUSE environments. Features SUSE BCI images, native SUSE Observability
       integration, NeuVector security demos, and full SUSE cloud-native stack compatibility.
@@ -1476,7 +1580,7 @@ entries:
   genai-observability-demo:
   - apiVersion: v2
     appVersion: latest
-    created: "2025-11-02T10:33:38.663465-08:00"
+    created: "2025-11-02T10:54:26.054249-08:00"
     description: GenAI Observability Demo - Employee Question Generator and RAG Applications
     digest: 9f97ca3e3f67dc4e20898ac5a9f33c456532b4782ed178377b092f28cc21d605
     name: genai-observability-demo
@@ -1493,7 +1597,7 @@ entries:
           name: bci-busybox
     apiVersion: v2
     appVersion: 0.11.4
-    created: "2025-11-02T10:33:38.610883-08:00"
+    created: "2025-11-02T10:54:26.000899-08:00"
     description: Get up and running with Llama 3.2, Mistral, Gemma 2, and other large
       language models.
     digest: 35d0eb96d2de03c99452fa8b1cf3cfaa4b42df620d44ff0eb94e9e61a2e81036
@@ -1523,7 +1627,7 @@ entries:
           name: bci-busybox
     apiVersion: v2
     appVersion: 0.11.4
-    created: "2025-11-02T10:33:38.616834-08:00"
+    created: "2025-11-02T10:54:26.007373-08:00"
     description: Get up and running with Llama 3.2, Mistral, Gemma 2, and other large
       language models.
     digest: 35d0eb96d2de03c99452fa8b1cf3cfaa4b42df620d44ff0eb94e9e61a2e81036
@@ -1552,7 +1656,7 @@ entries:
       suse.com/registry: SUSE Application Collection
     apiVersion: v2
     appVersion: 0.11.4
-    created: "2025-11-02T10:33:38.615679-08:00"
+    created: "2025-11-02T10:54:26.005956-08:00"
     dependencies:
     - name: ollama
       repository: oci://dp.apps.rancher.io/charts
@@ -1581,7 +1685,7 @@ entries:
       suse.com/registry: SUSE Application Collection
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-11-02T10:33:38.612677-08:00"
+    created: "2025-11-02T10:54:26.002906-08:00"
     dependencies:
     - name: ollama
       repository: oci://dp.apps.rancher.io/charts
@@ -1609,7 +1713,7 @@ entries:
       category: MachineLearning
     apiVersion: v2
     appVersion: 0.11.4
-    created: "2025-11-02T10:33:38.619018-08:00"
+    created: "2025-11-02T10:54:26.009662-08:00"
     dependencies:
     - name: ollama
       repository: https://helm.otwld.com/
@@ -1634,7 +1738,7 @@ entries:
       category: MachineLearning
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-11-02T10:33:38.617585-08:00"
+    created: "2025-11-02T10:54:26.00813-08:00"
     dependencies:
     - name: ollama
       repository: https://helm.otwld.com/
@@ -1663,7 +1767,7 @@ entries:
       licenses: MIT
     apiVersion: v2
     appVersion: 0.6.18
-    created: "2025-11-02T10:33:38.622746-08:00"
+    created: "2025-11-02T10:54:26.013333-08:00"
     dependencies:
     - condition: ollama.enabled
       import-values:
@@ -1702,4 +1806,4 @@ entries:
     urls:
     - https://wiredquill.github.io/ai-demos/open-webui-7.2.0.tgz
     version: 7.2.0
-generated: "2025-11-02T10:33:38.598379-08:00"
+generated: "2025-11-02T10:54:25.988586-08:00"
