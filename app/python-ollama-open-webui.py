@@ -1337,40 +1337,9 @@ class ChatInterface:
         # DeepSeek and other Chinese services are often blocked, use very short timeout
         # ⚠️ IMPORTANT: DO NOT CHANGE THIS LOGIC - DeepSeek consistently causes 20s delays when blocked
 
-        # Fast timeout for commonly blocked providers
-        blocked_providers = [
-            "DeepSeek",
-            "OpenAI",
-            "Cohere",
-            "Mistral",
-            "Perplexity",
-            "Together",
-            "Together AI",
-            "Groq",
-            "Hugging Face",
-        ]
-        blocked_domains = [
-            "deepseek.com",
-            "openai.com",
-            "cohere.com",
-            "mistral.ai",
-            "perplexity.ai",
-            "together.ai",
-            "together.xyz",
-            "groq.com",
-            "huggingface.co",
-        ]
-
-        # Google Gemini gets normal timeout (it's usually allowed)
-        if provider_name == "Google Gemini" or "google" in url.lower() or "gemini" in url.lower():
-            provider_timeout = self.connection_timeout  # Normal timeout for Google
-            logger.info(f"Using normal timeout ({self.connection_timeout}s) for allowed provider: {provider_name}")
-        # Fast timeout for commonly blocked providers to prevent delays
-        elif provider_name in blocked_providers or any(domain in url.lower() for domain in blocked_domains):
-            provider_timeout = 1  # 1 second timeout for potentially blocked providers
-            logger.info(f"Using fast timeout (1s) for potentially blocked provider: {provider_name}")
-        else:
-            provider_timeout = self.connection_timeout
+        # Use connection timeout for all providers (default is 5 seconds)
+        provider_timeout = self.connection_timeout
+        logger.info(f"Using timeout ({self.connection_timeout}s) for provider: {provider_name}")
 
         try:
             headers = {"User-Agent": "Mozilla/5.0"}
