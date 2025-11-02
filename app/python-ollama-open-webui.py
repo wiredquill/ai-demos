@@ -1,3 +1,4 @@
+# AI Compare Chat Interface - Claude provider removed
 import json
 import logging
 import os
