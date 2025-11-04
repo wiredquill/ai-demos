@@ -4,7 +4,7 @@ metadata:
   name: {{ include "hr-assistant.fullname" . }}-hr-policy-db
   labels:
     {{- include "hr-assistant.labels" . | nindent 4 }}
-    app.component: hr-policy-db
+    genai: hr-policy-db
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -14,4 +14,4 @@ spec:
       name: http
   selector:
     {{- include "hr-assistant.selectorLabels" . | nindent 4 }}
-    app.component: hr-policy-db
+    genai: hr-policy-db
