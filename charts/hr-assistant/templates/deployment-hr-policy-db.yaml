@@ -23,6 +23,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
         app.component: hr-policy-db
+        genai: hr-policy-db
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
