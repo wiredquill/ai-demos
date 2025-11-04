@@ -29,9 +29,11 @@ ollama:
     requests:
       cpu: "500m"
       memory: "2Gi"
+      nvidia.com/gpu: "1"
     limits:
       cpu: "4"
       memory: "16Gi"
+      nvidia.com/gpu: "1"
   persistence:
     enabled: false
     size: 10Gi
