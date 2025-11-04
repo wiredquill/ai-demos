@@ -1,8 +1,8 @@
 questions:
 - variable: otlpEndpoint
-  label: "OTLP Endpoint"
+  label: "⚠️ OTLP Endpoint"
   type: string
-  description: "Open Telemetry Endpoint  - Include http:// and port."
+  description: "Open Telemetry Endpoint - Include http:// and port. IMPORTANT: This setting is critical for error logging and observability. If pods are generating errors, verify this endpoint is correctly configured and accessible."
   required: true
   default: "http://opentelemetry-collector.observability.svc.cluster.local:4318"
   group: General
@@ -33,7 +33,7 @@ questions:
 - variable: ollama.image.tag
   group: General
   label: "SUSE AI Engine Image Version"
-  description: "The Docker image tag for the SUSE AI Engine (e.g., '0.11.4-10.88', '0.12.0-10.90')."
+  description: "The Docker image tag for the version of Ollama that will be installed from SUSE Application Collection (e.g., '0.11.4-10.88', '0.12.0-10.90')."
   type: "string"
   default: "0.11.4-10.88"
   show_if: "ollama.enabled=true"
