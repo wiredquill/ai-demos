@@ -64,6 +64,6 @@ Create the name of the service account to use
 {{/*
 Create the ollama endpoint URL based on release name
 */}}
-{{- define "hr-assistant.ollamaEndpoint" -}}
+{{- define "hr-assistant.ollamaEndpoint" }}
 http://{{ .Release.Name }}-ollama:11434
 {{- end }}
