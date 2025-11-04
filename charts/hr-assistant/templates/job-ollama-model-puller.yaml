@@ -1,0 +1,91 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "hr-assistant.fullname" . }}-ollama-model-puller
+  labels:
+    {{- include "hr-assistant.labels" . | nindent 4 }}
+    app.component: ollama-model-puller
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        {{- include "hr-assistant.labels" . | nindent 8 }}
+        app.component: ollama-model-puller
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "hr-assistant.serviceAccountName" . }}
+      restartPolicy: Never
+      containers:
+      - name: ollama-model-puller
+        image: "{{ .Values.ollama.image.repository }}:{{ .Values.ollama.image.tag }}"
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - |
+            set -e
+            echo "=== Ollama Model Puller Job Starting ==="
+            echo "Waiting for Ollama service to be ready..."
+
+            # Wait for Ollama service to be ready
+            OLLAMA_URL="http://{{ include "hr-assistant.fullname" . }}-ollama:11434"
+            max_retries=30
+            retry_count=0
+
+            while [ $retry_count -lt $max_retries ]; do
+              if wget -q --spider "$OLLAMA_URL" 2>/dev/null; then
+                echo "✅ Ollama service is ready at $OLLAMA_URL"
+                break
+              fi
+              echo "⏳ Waiting for Ollama service... (attempt $((retry_count + 1))/$max_retries)"
+              sleep 5
+              retry_count=$((retry_count + 1))
+            done
+
+            if [ $retry_count -eq $max_retries ]; then
+              echo "❌ FAILED: Ollama service did not become ready in time"
+              exit 1
+            fi
+
+            # Export OLLAMA_HOST for the pull commands
+            export OLLAMA_HOST="$OLLAMA_URL"
+
+            # Pull configured models
+            {{- if .Values.ollama.models.pull }}
+            echo "=== Pulling configured models ==="
+            {{- range .Values.ollama.models.pull }}
+            echo "📥 Pulling model: {{ . }}"
+            if ! ollama pull {{ . }} 2>&1; then
+              echo "⚠️  WARNING: Failed to pull {{ . }}, but continuing with other models"
+            else
+              echo "✅ Successfully pulled {{ . }}"
+            fi
+            {{- end }}
+            {{- else }}
+            echo "⚠️  No models configured in ollama.models.pull"
+            {{- end }}
+
+            # Verify models are available
+            echo "=== Verifying available models ==="
+            ollama list || echo "⚠️  Could not list models"
+
+            echo "=== Ollama Model Puller Job Complete ==="
+        env:
+        - name: OLLAMA_HOST
+          value: ""
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "2Gi"
+          limits:
+            cpu: "2"
+            memory: "8Gi"
