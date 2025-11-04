@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "suse-ai-hr-assistant.fullname" . }}-employee-handbook
+  name: {{ include "hr-assistant.fullname" . }}-employee-handbook
   labels:
-    {{- include "suse-ai-hr-assistant.labels" . | nindent 4 }}
+    {{- include "hr-assistant.labels" . | nindent 4 }}
     genai: employee-handbook
 spec:
   type: {{ .Values.service.type }}
@@ -13,5 +13,5 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "suse-ai-hr-assistant.selectorLabels" . | nindent 4 }}
+    {{- include "hr-assistant.selectorLabels" . | nindent 4 }}
     genai: employee-handbook

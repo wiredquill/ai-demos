@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "suse-ai-hr-assistant.fullname" . }}-employee-handbook
+  name: {{ include "hr-assistant.fullname" . }}-hr-assistant
   labels:
-    {{- include "suse-ai-hr-assistant.labels" . | nindent 4 }}
-    genai: employee-handbook
+    {{- include "hr-assistant.labels" . | nindent 4 }}
+    genai: hr-assistant
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "suse-ai-hr-assistant.selectorLabels" . | nindent 6 }}
-      genai: employee-handbook
+      {{- include "hr-assistant.selectorLabels" . | nindent 6 }}
+      genai: hr-assistant
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -18,24 +18,24 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "suse-ai-hr-assistant.labels" . | nindent 8 }}
+        {{- include "hr-assistant.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        genai: employee-handbook
+        genai: hr-assistant
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "suse-ai-hr-assistant.serviceAccountName" . }}
+      serviceAccountName: {{ include "hr-assistant.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
           env:
           - name: APP_NAME
-            value: EmployeeHandbook
+            value: HRAssistant
           - name: OLLAMA_ENDPOINT
             value: {{.Values.ollamaEndpoint}}
           - name: OTLP_ENDPOINT

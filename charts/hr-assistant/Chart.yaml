@@ -1,5 +1,5 @@
 apiVersion: v2
-name: suse-ai-hr-assistant
+name: hr-assistant
 description: SUSE AI HR Assistant - Intelligent Employee Support and Policy Management
 
 # A chart can be either an 'application' or a 'library' chart.

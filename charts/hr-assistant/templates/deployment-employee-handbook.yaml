@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "genai-observability-demo.fullname" . }}-hr-policy-db
+  name: {{ include "genai-observability-demo.fullname" . }}-employee-handbook
   labels:
     {{- include "genai-observability-demo.labels" . | nindent 4 }}
-    app.component: hr-policy-db
+    app.component: employee-handbook
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       {{- include "genai-observability-demo.selectorLabels" . | nindent 6 }}
-      app.component: hr-policy-db
+      app.component: employee-handbook
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -22,7 +22,7 @@ spec:
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        app.component: hr-policy-db
+        app.component: employee-handbook
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -35,9 +35,9 @@ spec:
         - name: {{ .Chart.Name }}
           env:
           - name: APP_NAME
-            value: HRPolicyDatabase
+            value: EmployeeHandbook
           - name: OLLAMA_ENDPOINT
-            value: {{ include "suse-ai-hr-assistant.ollamaEndpoint" . }}
+            value: {{ include "hr-assistant.ollamaEndpoint" . }}
           - name: OTLP_ENDPOINT
             value: {{ .Values.otlpEndpoint }}
           - name: COLLECT_GPU_STATS

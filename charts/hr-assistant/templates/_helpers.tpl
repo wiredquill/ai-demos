@@ -1,7 +1,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "suse-ai-hr-assistant.name" -}}
+{{- define "hr-assistant.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
@@ -10,7 +10,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "suse-ai-hr-assistant.fullname" -}}
+{{- define "hr-assistant.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -26,16 +26,16 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "suse-ai-hr-assistant.chart" -}}
+{{- define "hr-assistant.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "suse-ai-hr-assistant.labels" -}}
-helm.sh/chart: {{ include "suse-ai-hr-assistant.chart" . }}
-{{ include "suse-ai-hr-assistant.selectorLabels" . }}
+{{- define "hr-assistant.labels" -}}
+helm.sh/chart: {{ include "hr-assistant.chart" . }}
+{{ include "hr-assistant.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -45,17 +45,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "suse-ai-hr-assistant.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "suse-ai-hr-assistant.name" . }}
+{{- define "hr-assistant.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "hr-assistant.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "suse-ai-hr-assistant.serviceAccountName" -}}
+{{- define "hr-assistant.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "suse-ai-hr-assistant.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "hr-assistant.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
@@ -64,6 +64,6 @@ Create the name of the service account to use
 {{/*
 Create the ollama endpoint URL based on release name
 */}}
-{{- define "suse-ai-hr-assistant.ollamaEndpoint" -}}
+{{- define "hr-assistant.ollamaEndpoint" -}}
 http://{{ .Release.Name }}-ollama:11434
 {{- end }}

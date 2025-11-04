@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "suse-ai-hr-assistant.fullname" . }}-hr-policy-db
+  name: {{ include "genai-observability-demo.fullname" . }}-hr-policy-db
   labels:
-    {{- include "suse-ai-hr-assistant.labels" . | nindent 4 }}
-    genai: hr-policy-db
+    {{- include "genai-observability-demo.labels" . | nindent 4 }}
+    app.component: hr-policy-db
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "suse-ai-hr-assistant.selectorLabels" . | nindent 6 }}
-      genai: hr-policy-db
+      {{- include "genai-observability-demo.selectorLabels" . | nindent 6 }}
+      app.component: hr-policy-db
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -18,17 +18,17 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "suse-ai-hr-assistant.labels" . | nindent 8 }}
+        {{- include "genai-observability-demo.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        genai: hr-policy-db
+        app.component: hr-policy-db
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "suse-ai-hr-assistant.serviceAccountName" . }}
+      serviceAccountName: {{ include "genai-observability-demo.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -37,11 +37,11 @@ spec:
           - name: APP_NAME
             value: HRPolicyDatabase
           - name: OLLAMA_ENDPOINT
-            value: {{.Values.ollamaEndpoint}}
+            value: {{ include "hr-assistant.ollamaEndpoint" . }}
           - name: OTLP_ENDPOINT
-            value: {{.Values.otlpEndpoint}}
+            value: {{ .Values.otlpEndpoint }}
           - name: COLLECT_GPU_STATS
-            value: "{{.Values.collectGpuStats}}"
+            value: "{{ .Values.collectGpuStats }}"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

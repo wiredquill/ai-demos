@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "genai-observability-demo.fullname" . }}-employee-handbook
+  name: {{ include "hr-assistant.fullname" . }}-hr-policy-db
   labels:
-    {{- include "genai-observability-demo.labels" . | nindent 4 }}
-    app.component: employee-handbook
+    {{- include "hr-assistant.labels" . | nindent 4 }}
+    genai: hr-policy-db
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "genai-observability-demo.selectorLabels" . | nindent 6 }}
-      app.component: employee-handbook
+      {{- include "hr-assistant.selectorLabels" . | nindent 6 }}
+      genai: hr-policy-db
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -18,30 +18,30 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "genai-observability-demo.labels" . | nindent 8 }}
+        {{- include "hr-assistant.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        app.component: employee-handbook
+        genai: hr-policy-db
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "genai-observability-demo.serviceAccountName" . }}
+      serviceAccountName: {{ include "hr-assistant.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
           env:
           - name: APP_NAME
-            value: EmployeeHandbook
+            value: HRPolicyDatabase
           - name: OLLAMA_ENDPOINT
-            value: {{ include "suse-ai-hr-assistant.ollamaEndpoint" . }}
+            value: {{.Values.ollamaEndpoint}}
           - name: OTLP_ENDPOINT
-            value: {{ .Values.otlpEndpoint }}
+            value: {{.Values.otlpEndpoint}}
           - name: COLLECT_GPU_STATS
-            value: "{{ .Values.collectGpuStats }}"
+            value: "{{.Values.collectGpuStats}}"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
