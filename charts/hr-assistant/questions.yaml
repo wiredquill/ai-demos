@@ -30,6 +30,13 @@ questions:
     - label: "Apple Silicon / CPU (arm64)"
       value: "apple"
 
+- variable: ollama.image.tag
+  group: General
+  label: "SUSE AI Engine Image Version"
+  description: "The Docker image tag for the SUSE AI Engine (e.g., '0.11.4-10.88', '0.12.0-10.90')."
+  type: "string"
+  default: "0.11.4-10.88"
+  show_if: "ollama.enabled=true"
 
 - variable: ollama.enabled
   group: "Ollama Deployment"
