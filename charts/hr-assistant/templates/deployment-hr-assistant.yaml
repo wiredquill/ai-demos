@@ -37,9 +37,9 @@ spec:
           - name: APP_NAME
             value: HRAssistant
           - name: OLLAMA_ENDPOINT
-            value: {{ include "hr-assistant.ollamaEndpoint" . }}
+            value: "{{ include "hr-assistant.ollamaEndpoint" . }}"
           - name: OTLP_ENDPOINT
-            value: {{ .Values.otlpEndpoint }}
+            value: "{{ .Values.otlpEndpoint }}"
           - name: COLLECT_GPU_STATS
             value: "{{ .Values.collectGpuStats }}"
           securityContext:
