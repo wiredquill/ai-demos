@@ -14,6 +14,14 @@ questions:
   type: "boolean"
   default: true
 
+- variable: ollama.gpu.enabled
+  group: "Ollama Deployment"
+  label: "Enable NVIDIA GPU Acceleration"
+  description: "Requires a node with NVIDIA drivers and the k8s device plugin installed."
+  type: "boolean"
+  default: false
+  show_if: "ollama.enabled=true"
+
 - variable: ollamaEndpoint
   label: "Ollama Server URL"
   type: string
@@ -22,14 +30,6 @@ questions:
   default: "http://ollama.example.com:11434"
   group: "Ollama Deployment"
   show_if: "ollama.enabled=false"
-
-- variable: ollama.gpu.enabled
-  group: "Ollama Deployment"
-  label: "Enable NVIDIA GPU Acceleration"
-  description: "Requires a node with NVIDIA drivers and the k8s device plugin installed."
-  type: "boolean"
-  default: false
-  show_if: "ollama.enabled=true"
 
 - variable: collectGpuStats
   label: "Collect GPU Stats"

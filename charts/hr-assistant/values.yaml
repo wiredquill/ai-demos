@@ -13,6 +13,11 @@ collectGpuStats: 'true'  # Enable GPU metrics for demo
 # CronJob schedule for automated requests (demo traffic generation)
 schedule: '*/5 * * * *'
 
+# Job cleanup settings
+jobs:
+  # Time in seconds after which completed jobs are deleted
+  ttlSecondsAfterFinished: 300  # 5 minutes
+
 # Official SUSE Application Collection Ollama chart configuration
 ollama:
   enabled: true
