@@ -102,4 +102,4 @@ def start_handbook_system():
 
 
 if __name__ == "__main__":
-    start()
+    start_handbook_system()
