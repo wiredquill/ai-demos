@@ -36,16 +36,21 @@ spec:
             # Set OLLAMA_HOST early so ollama list can find the service
             OLLAMA_URL="http://{{ include "hr-assistant.fullname" . }}-ollama:11434"
             export OLLAMA_HOST="$OLLAMA_URL"
+            echo "Setting OLLAMA_HOST=$OLLAMA_HOST"
 
             max_retries=30
             retry_count=0
 
             while [ $retry_count -lt $max_retries ]; do
-              if ollama list > /dev/null 2>&1; then
+              echo "Attempting to connect to Ollama at $OLLAMA_HOST..."
+              RESULT=$(ollama list 2>&1)
+              EXITCODE=$?
+              if [ $EXITCODE -eq 0 ]; then
                 echo "✅ Ollama service is ready at $OLLAMA_URL"
+                echo "Available models: $RESULT"
                 break
               fi
-              echo "⏳ Waiting for Ollama service... (attempt $((retry_count + 1))/$max_retries)"
+              echo "⏳ Waiting for Ollama service... (attempt $((retry_count + 1))/$max_retries, exit code: $EXITCODE)"
               sleep 5
               retry_count=$((retry_count + 1))
             done
