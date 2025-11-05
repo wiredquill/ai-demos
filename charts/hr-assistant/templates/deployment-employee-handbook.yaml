@@ -37,6 +37,8 @@ spec:
           env:
           - name: APP_NAME
             value: EmployeeHandbook
+          - name: MODEL
+            value: "llama3.2:1b"
           - name: OLLAMA_ENDPOINT
             value: {{ include "hr-assistant.ollamaEndpoint" . }}
           - name: OTLP_ENDPOINT
