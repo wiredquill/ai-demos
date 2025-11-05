@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "hr-assistant.fullname" . }}-employee-handbook
+  name: {{ include "genai-observability-demo.fullname" . }}-employee-handbook
   labels:
-    {{- include "hr-assistant.labels" . | nindent 4 }}
+    {{- include "genai-observability-demo.labels" . | nindent 4 }}
     app.component: employee-handbook
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "hr-assistant.selectorLabels" . | nindent 6 }}
+      {{- include "genai-observability-demo.selectorLabels" . | nindent 6 }}
       app.component: employee-handbook
   template:
     metadata:
@@ -18,18 +18,17 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "hr-assistant.labels" . | nindent 8 }}
+        {{- include "genai-observability-demo.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
         app.component: employee-handbook
-        genai: employee-handbook
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "hr-assistant.serviceAccountName" . }}
+      serviceAccountName: {{ include "genai-observability-demo.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -37,12 +36,10 @@ spec:
           env:
           - name: APP_NAME
             value: EmployeeHandbook
-          - name: MODEL
-            value: "{{ .Values.model }}"
           - name: OLLAMA_ENDPOINT
-            value: "{{ include "hr-assistant.ollamaEndpoint" . }}"
+            value: {{ .Values.ollamaEndpoint }}
           - name: OTLP_ENDPOINT
-            value: "{{ .Values.otlpEndpoint }}"
+            value: {{ .Values.otlpEndpoint }}
           - name: COLLECT_GPU_STATS
             value: "{{ .Values.collectGpuStats }}"
           securityContext:
@@ -53,22 +50,6 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            timeoutSeconds: 3
-            failureThreshold: 2
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}

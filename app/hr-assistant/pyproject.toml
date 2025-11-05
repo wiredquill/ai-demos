@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "genai-demo"
+version = "0.1.0"
+description = ""
+authors = ["Ravan Naidoo <rnaidoo@stackstate.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+openlit = "^1.26.0"
+openai = "^1.53.0"
+pymilvus = {extras = ["model"], version = "^2.4.9"}
+sentence-transformers = "^3.2.1"
+langchain = "^0.3.6"
+langchain-milvus = "^0.1.6"
+langchain-huggingface = "^0.1.2"
+ollama = "^0.3.3"
+langchain-ollama = "^0.2.0"
+pypdf = "^5.1.0"
+langchainhub = "^0.1.21"
+torch = "2.1.2"
+fastapi = {extras = ["standard"], version = "^0.115.4"}
+langchain-community = "^0.3.5"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
