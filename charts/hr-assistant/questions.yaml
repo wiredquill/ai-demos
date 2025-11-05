@@ -1,30 +1,30 @@
 questions:
 - variable: otlpEndpoint
-  label: "OTLP Endpoint"
+  label: "⚠️ OTLP Endpoint"
   type: string
-  description: "Open Telemetry Endpoint  - Include http:// and port."
+  description: "Open Telemetry Endpoint - Include http:// and port. IMPORTANT: This setting is critical for error logging and observability. If pods are generating errors, verify this endpoint is correctly configured and accessible."
   required: true
-  default: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
+  default: "http://opentelemetry-collector.observability.svc.cluster.local:4318"
   group: General
 
 - variable: ollama.enabled
-  group: General
-  label: "Enable Ollama Deployment"
+  group: "Ollama Deployment"
+  label: "Enable Ollama from SUSE Application Collection"
   description: "If true, Ollama will be deployed as part of this chart."
   type: "boolean"
   default: true
 
 - variable: ollamaEndpoint
-  label: "Ollama Endpoint"
+  label: "Ollama Server URL"
   type: string
-  description: "The URL for the Ollama service - Include http:// and port."
+  description: "URL for your existing Ollama Server. Make sure it has llama3.2:1b and bge-large:latest models available."
   required: true
-  default: "http://ollama:11434"
-  group: General
+  default: "http://ollama.example.com:11434"
+  group: "Ollama Deployment"
   show_if: "ollama.enabled=false"
 
 - variable: ollama.gpu.enabled
-  group: General
+  group: "Ollama Deployment"
   label: "Enable NVIDIA GPU Acceleration"
   description: "Requires a node with NVIDIA drivers and the k8s device plugin installed."
   type: "boolean"
@@ -37,27 +37,27 @@ questions:
   default: "false"
   description: "Set to 'true' to collect GPU stats"
   required: true
-  group: General
+  group: "Ollama Deployment"
   show_if: "ollama.gpu.enabled=true"
 
 - variable: ollama.models[0]
-  group: "Ollama Configuration"
-  label: "Primary Ollama Model"
-  description: "The primary Ollama model to pull (e.g., 'llama3.2:1b', 'tinyllama:latest')."
+  group: "Ollama Deployment"
+  label: "Primary AI Model"
+  description: "The primary AI model to pull for HR queries (e.g., 'llama3.2:1b')."
   type: "string"
   default: "llama3.2:1b"
   show_if: "ollama.enabled=true"
 
 - variable: ollama.models[1]
-  group: "Ollama Configuration"
-  label: "Secondary Ollama Model"
+  group: "Ollama Deployment"
+  label: "Secondary AI Model"
   description: "Additional model for embeddings (optional)."
   type: "string"
   default: "bge-large:latest"
   show_if: "ollama.enabled=true"
 
 - variable: ollama.service.type
-  group: "Ollama Configuration"
+  group: "Ollama Deployment"
   label: "Ollama Service Type"
   description: "Method to expose the Ollama service. 'ClusterIP' is recommended."
   type: "enum"
