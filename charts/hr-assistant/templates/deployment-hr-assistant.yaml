@@ -37,6 +37,8 @@ spec:
           env:
           - name: APP_NAME
             value: HRAssistant
+          - name: MODEL
+            value: "{{ .Values.model }}"
           - name: OLLAMA_ENDPOINT
             value: "{{ include "hr-assistant.ollamaEndpoint" . }}"
           - name: OTLP_ENDPOINT

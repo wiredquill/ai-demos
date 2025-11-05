@@ -10,6 +10,9 @@ imagePullSecrets:
 otlpEndpoint: 'http://opentelemetry-collector.opentelemetry-collector.svc.cluster.local:4318'
 collectGpuStats: 'false'
 
+# Model configuration
+model: 'tinyllama'  # Model to use for LLM operations (must be available in Ollama)
+
 schedule: '*/5 * * * *'
 
 # Job cleanup settings
