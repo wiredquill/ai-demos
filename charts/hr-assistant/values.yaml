@@ -11,8 +11,7 @@ otlpEndpoint: 'http://opentelemetry-collector.opentelemetry-collector.svc.cluste
 collectGpuStats: 'false'
 
 # Model configuration
-model: 'llama2'  # Model to use for LLM operations (must be available in Ollama)
-              # llama2 is smaller than llama3.2 but still supports tools for RAG applications
+model: 'llama3.2'  # Model to use for LLM operations (must be available in Ollama)
 
 schedule: '*/5 * * * *'
 
@@ -50,7 +49,7 @@ ollama:
     size: 10Gi
   models:
     pull:
-      - llama2:latest
+      - llama3.2:latest
       - bge-large:latest
 
 # Image pull policy
