@@ -34,7 +34,8 @@ spec:
             echo "Waiting for Ollama service to be ready..."
 
             # Set OLLAMA_HOST early so ollama list can find the service
-            OLLAMA_URL="http://{{ include "hr-assistant.fullname" . }}-ollama:11434"
+            # The Ollama subchart creates service: {release-name}-ollama
+            OLLAMA_URL="http://{{ .Release.Name }}-ollama:11434"
             export OLLAMA_HOST="$OLLAMA_URL"
             echo "Setting OLLAMA_HOST=$OLLAMA_HOST"
 
