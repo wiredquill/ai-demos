@@ -52,9 +52,8 @@ ollama:
         - |
           ollama serve &
           sleep 5
-          {{- range .Values.ollama.models.pull }}
-          ollama pull {{ . }}
-          {{- end }}
+          ollama pull llama3.2:latest
+          ollama pull bge-large:latest
       resources:
         requests:
           cpu: "500m"
