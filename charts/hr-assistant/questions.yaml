@@ -45,7 +45,7 @@ questions:
   type: "boolean"
   default: true
 
-- variable: ollama.models[0]
+- variable: ollama.models.pull[0]
   group: "Ollama Deployment"
   label: "Primary AI Model"
   description: "The primary AI model to pull for HR queries (e.g., 'llama3.2:latest', 'tinyllama:latest')."
@@ -53,7 +53,7 @@ questions:
   default: "llama3.2:latest"
   show_if: "ollama.enabled=true"
 
-- variable: ollama.models[1]
+- variable: ollama.models.pull[1]
   group: "Ollama Deployment"
   label: "Secondary AI Model"
   description: "Additional model for embeddings (optional)."
