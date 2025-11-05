@@ -12,6 +12,13 @@ collectGpuStats: 'false'
 
 schedule: '*/5 * * * *'
 
+# Job cleanup settings
+jobs:
+  # Time in seconds after which completed jobs are deleted
+  # Helm will wait for jobs to complete during installation
+  # Lower values make installation finish faster
+  ttlSecondsAfterFinished: 300  # 5 minutes - change to 3600 for 1 hour retention
+
 # SUSE Application Collection Ollama configuration
 ollama:
   enabled: true
