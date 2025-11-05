@@ -27,4 +27,4 @@ name: ai-compare-opentelemetry
 sources:
   - https://github.com/wiredquill/ai-demos
 type: application
-version: 0.1.426
+version: 0.1.427
