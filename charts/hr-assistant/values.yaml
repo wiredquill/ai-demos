@@ -8,7 +8,7 @@ imagePullSecrets:
 # Observability endpoints
 otlpEndpoint: 'http://opentelemetry-collector.opentelemetry-collector.svc.cluster.local:4318'
 ollamaEndpoint: 'http://my-hr-assistant-ollama:11434'
-collectGpuStats: 'true'  # Enable GPU metrics for demo
+collectGpuStats: 'false'  # Enable GPU metrics for demo
 
 # CronJob schedule for automated requests (demo traffic generation)
 schedule: '*/5 * * * *'
@@ -46,7 +46,7 @@ ollama:
     - bge-large:latest
 
 
-    
+
 # This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
 replicaCount: 1
 
