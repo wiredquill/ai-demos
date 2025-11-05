@@ -44,10 +44,9 @@ spec:
 
             while [ $retry_count -lt $max_retries ]; do
               echo "Attempting to connect to Ollama at $OLLAMA_HOST... (attempt $((retry_count + 1))/$max_retries)"
-              # Use curl to check HTTP endpoint - more reliable than ollama list
-              if curl -s "$OLLAMA_HOST/api/tags" > /dev/null 2>&1; then
+              # Try ollama list command to check if service is ready
+              if RESULT=$(ollama list 2>&1); then
                 echo "✅ Ollama service is ready at $OLLAMA_URL"
-                RESULT=$(ollama list 2>&1 || echo "Models: (could not list)")
                 echo "Available models: $RESULT"
                 break
               fi
