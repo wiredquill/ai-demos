@@ -49,3 +49,5 @@ COPY hr-documents ./hr-documents
 
 # Application entrypoint
 ENTRYPOINT ["fastapi", "run", "main.py"]
+
+# HR Documents are included in the image for RAG applications
