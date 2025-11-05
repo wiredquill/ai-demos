@@ -31,15 +31,6 @@ questions:
   group: "Ollama Deployment"
   show_if: "ollama.enabled=false"
 
-- variable: collectGpuStats
-  label: "Collect GPU Stats"
-  type: string
-  default: "false"
-  description: "Set to 'true' to collect GPU stats"
-  required: true
-  group: "Ollama Deployment"
-  show_if: "ollama.gpu.enabled=true"
-
 - variable: ollama.models[0]
   group: "Ollama Deployment"
   label: "Primary AI Model"
