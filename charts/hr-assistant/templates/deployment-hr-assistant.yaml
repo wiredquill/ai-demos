@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "genai-observability-demo.fullname" . }}-hr-assistant
+  name: {{ include "hr-assistant.fullname" . }}-hr-assistant
   labels:
-    {{- include "genai-observability-demo.labels" . | nindent 4 }}
+    {{- include "hr-assistant.labels" . | nindent 4 }}
     app.component: hr-assistant
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "genai-observability-demo.selectorLabels" . | nindent 6 }}
+      {{- include "hr-assistant.selectorLabels" . | nindent 6 }}
       app.component: hr-assistant
   template:
     metadata:
@@ -18,7 +18,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "genai-observability-demo.labels" . | nindent 8 }}
+        {{- include "hr-assistant.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -28,7 +28,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "genai-observability-demo.serviceAccountName" . }}
+      serviceAccountName: {{ include "hr-assistant.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
