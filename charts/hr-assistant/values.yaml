@@ -41,29 +41,6 @@ ollama:
     pull:
       - llama3.2:latest
       - bge-large:latest
-  # Init container for model pulling - runs before main Ollama container
-  initContainers:
-    - name: ollama-pull-model
-      image: "dp.apps.rancher.io/containers/ollama:0.11.4-10.88"
-      imagePullPolicy: IfNotPresent
-      command:
-        - /bin/sh
-        - -c
-        - |
-          ollama serve &
-          sleep 5
-          ollama pull llama3.2:latest
-          ollama pull bge-large:latest
-      resources:
-        requests:
-          cpu: "500m"
-          memory: "512Mi"
-        limits:
-          cpu: "2"
-          memory: "4Gi"
-      volumeMounts:
-        - name: ollama-models
-          mountPath: /root/.ollama
 
 # Image pull policy
 imagePullPolicy: IfNotPresent
