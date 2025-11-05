@@ -33,8 +33,10 @@ spec:
             echo "=== Ollama Model Puller Job Starting ==="
             echo "Waiting for Ollama service to be ready..."
 
-            # Wait for Ollama service to be ready
+            # Set OLLAMA_HOST early so ollama list can find the service
             OLLAMA_URL="http://{{ include "hr-assistant.fullname" . }}-ollama:11434"
+            export OLLAMA_HOST="$OLLAMA_URL"
+
             max_retries=30
             retry_count=0
 
@@ -52,9 +54,6 @@ spec:
               echo "❌ FAILED: Ollama service did not become ready in time"
               exit 1
             fi
-
-            # Export OLLAMA_HOST for the pull commands
-            export OLLAMA_HOST="$OLLAMA_URL"
 
             # Pull configured models
             {{- if .Values.ollama.models.pull }}
