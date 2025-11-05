@@ -38,25 +38,25 @@ spec:
             export OLLAMA_HOST="$OLLAMA_URL"
             echo "Setting OLLAMA_HOST=$OLLAMA_HOST"
 
-            max_retries=30
+            max_retries=60
             retry_count=0
 
             while [ $retry_count -lt $max_retries ]; do
-              echo "Attempting to connect to Ollama at $OLLAMA_HOST..."
-              RESULT=$(ollama list 2>&1)
-              EXITCODE=$?
-              if [ $EXITCODE -eq 0 ]; then
+              echo "Attempting to connect to Ollama at $OLLAMA_HOST... (attempt $((retry_count + 1))/$max_retries)"
+              # Use curl to check HTTP endpoint - more reliable than ollama list
+              if curl -s "$OLLAMA_HOST/api/tags" > /dev/null 2>&1; then
                 echo "✅ Ollama service is ready at $OLLAMA_URL"
+                RESULT=$(ollama list 2>&1 || echo "Models: (could not list)")
                 echo "Available models: $RESULT"
                 break
               fi
-              echo "⏳ Waiting for Ollama service... (attempt $((retry_count + 1))/$max_retries, exit code: $EXITCODE)"
+              echo "⏳ Waiting for Ollama service... (attempt $((retry_count + 1))/$max_retries)"
               sleep 5
               retry_count=$((retry_count + 1))
             done
 
             if [ $retry_count -eq $max_retries ]; then
-              echo "❌ FAILED: Ollama service did not become ready in time"
+              echo "❌ FAILED: Ollama service did not become ready in time (300 seconds)"
               exit 1
             fi
 
