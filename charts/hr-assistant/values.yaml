@@ -46,7 +46,7 @@ ollama:
     size: 10Gi
   models:
     pull:
-      - llama3.2:latest
+      - tinyllama:latest
       - bge-large:latest
 
 # Image pull policy
