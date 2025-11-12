@@ -49,7 +49,6 @@ questions:
   options:
     - "ClusterIP"
     - "NodePort"
-    - "LoadBalancer"
 
 - variable: aiCompare.service.nodePort
   group: General
@@ -102,7 +101,6 @@ questions:
   options:
     - "ClusterIP"
     - "NodePort"
-    - "LoadBalancer"
 
 - variable: ollama.resources.requests.cpu
   group: "Ollama Deployment"
@@ -159,3 +157,143 @@ questions:
   type: "string"
   default: ""
   show_if: "ollama.enabled=true && ollama.persistence.enabled=true"
+
+# Resource Configuration (GPU-aware)
+- variable: ollama.gpu.enabled
+  group: "Resource Configuration"
+  label: "GPU-Aware Resource Sizing"
+  description: "Toggle GPU mode affects Ollama resource allocation: GPU enabled uses 1CPU/4Gi, disabled uses 1.5CPU/6Gi (follows K8s best practices)"
+  type: "boolean"
+  default: true
+  show_if: "ollama.enabled=true"
+
+- variable: aiCompare.resources.requests.cpu
+  group: "Resource Configuration"
+  label: "AI Compare CPU Request (CPU-only deployments)"
+  description: "CPU request for AI Compare app in CPU-only mode. GPU deployments use 400m automatically."
+  type: "string"
+  default: "500m"
+  show_if: "ollama.enabled=true"
+
+- variable: aiCompare.resources.requests.memory
+  group: "Resource Configuration"
+  label: "AI Compare Memory Request (CPU-only deployments)"
+  description: "Memory request for AI Compare app in CPU-only mode. GPU deployments use 512Mi automatically."
+  type: "string"
+  default: "1Gi"
+  show_if: "ollama.enabled=true"
+
+- variable: aiCompare.resources.limits.cpu
+  group: "Resource Configuration"
+  label: "AI Compare CPU Limit (CPU-only deployments)"
+  description: "CPU limit for AI Compare app in CPU-only mode. GPU deployments use 1000m automatically."
+  type: "string"
+  default: "2000m"
+  show_if: "ollama.enabled=true"
+
+- variable: aiCompare.resources.limits.memory
+  group: "Resource Configuration"
+  label: "AI Compare Memory Limit (CPU-only deployments)"
+  description: "Memory limit for AI Compare app in CPU-only mode. GPU deployments use 2Gi automatically."
+  type: "string"
+  default: "4Gi"
+  show_if: "ollama.enabled=true"
+
+# Ollama GPU-Aware Resources
+- variable: ollama.resources.requests.cpu
+  group: "Resource Configuration"
+  label: "Ollama CPU Request (GPU deployments)"
+  description: "CPU request for Ollama in GPU-enabled mode (will be overridden to 1.5 if GPU disabled)."
+  type: "string"
+  default: "1"
+  show_if: "ollama.enabled=true"
+
+- variable: ollama.resources.limits.cpu
+  group: "Resource Configuration"
+  label: "Ollama CPU Limit (GPU deployments)"
+  description: "CPU limit for Ollama in GPU-enabled mode (will be overridden to 3 if GPU disabled)."
+  type: "string"
+  default: "2"
+  show_if: "ollama.enabled=true"
+
+- variable: ollama.resources.requests.memory
+  group: "Resource Configuration"
+  label: "Ollama Memory Request (GPU deployments)"
+  description: "Memory request for Ollama in GPU-enabled mode (will be overridden to 6Gi if GPU disabled)."
+  type: "string"
+  default: "4Gi"
+  show_if: "ollama.enabled=true"
+
+- variable: ollama.resources.limits.memory
+  group: "Resource Configuration"
+  label: "Ollama Memory Limit (GPU deployments)"
+  description: "Memory limit for Ollama in GPU-enabled mode (will be overridden to 12Gi if GPU disabled)."
+  type: "string"
+  default: "8Gi"
+  show_if: "ollama.enabled=true"
+
+# CPU-only Resource Overrides (when GPU disabled)
+- variable: ollama.resourcesCpuOnly.requests.cpu
+  group: "Resource Configuration"
+  label: "Ollama CPU Request (CPU-only mode)"
+  description: "CPU request for Ollama when GPU is disabled. Used as override when ollama.gpu.enabled=false."
+  type: "string"
+  default: "1.5"
+  show_if: "ollama.enabled=true && ollama.gpu.enabled=false"
+
+- variable: ollama.resourcesCpuOnly.limits.cpu
+  group: "Resource Configuration"
+  label: "Ollama CPU Limit (CPU-only mode)"
+  description: "CPU limit for Ollama when GPU is disabled. Used as override when ollama.gpu.enabled=false."
+  type: "string"
+  default: "3"
+  show_if: "ollama.enabled=true && ollama.gpu.enabled=false"
+
+- variable: ollama.resourcesCpuOnly.requests.memory
+  group: "Resource Configuration"
+  label: "Ollama Memory Request (CPU-only mode)"
+  description: "Memory request for Ollama when GPU is disabled. Used as override when ollama.gpu.enabled=false."
+  type: "string"
+  default: "6Gi"
+  show_if: "ollama.enabled=true && ollama.gpu.enabled=false"
+
+- variable: ollama.resourcesCpuOnly.limits.memory
+  group: "Resource Configuration"
+  label: "Ollama Memory Limit (CPU-only mode)"
+  description: "Memory limit for Ollama when GPU is disabled. Used as override when ollama.gpu.enabled=false."
+  type: "string"
+  default: "12Gi"
+  show_if: "ollama.enabled=true && ollama.gpu.enabled=false"
+
+# GPU-optimized Resources (AI Compare)
+- variable: aiCompare.resourcesGpuOptimized.requests.cpu
+  group: "Resource Configuration"
+  label: "AI Compare CPU Request (GPU-optimized mode)"
+  description: "CPU request for AI Compare app when GPU is enabled. Used as override when ollama.gpu.enabled=true."
+  type: "string"
+  default: "400m"
+  show_if: "ollama.enabled=true && ollama.gpu.enabled=true"
+
+- variable: aiCompare.resourcesGpuOptimized.limits.cpu
+  group: "Resource Configuration"
+  label: "AI Compare CPU Limit (GPU-optimized mode)"
+  description: "CPU limit for AI Compare app when GPU is enabled. Used as override when ollama.gpu.enabled=true."
+  type: "string"
+  default: "1000m"
+  show_if: "ollama.enabled=true && ollama.gpu.enabled=true"
+
+- variable: aiCompare.resourcesGpuOptimized.requests.memory
+  group: "Resource Configuration"
+  label: "AI Compare Memory Request (GPU-optimized mode)"
+  description: "Memory request for AI Compare app when GPU is enabled. Used as override when ollama.gpu.enabled=true."
+  type: "string"
+  default: "512Mi"
+  show_if: "ollama.enabled=true && ollama.gpu.enabled=true"
+
+- variable: aiCompare.resourcesGpuOptimized.limits.memory
+  group: "Resource Configuration"
+  label: "AI Compare Memory Limit (GPU-optimized mode)"
+  description: "Memory limit for AI Compare app when GPU is enabled. Used as override when ollama.gpu.enabled=true."
+  type: "string"
+  default: "2Gi"
+  show_if: "ollama.enabled=true && ollama.gpu.enabled=true"

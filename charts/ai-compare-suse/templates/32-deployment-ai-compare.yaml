@@ -129,7 +129,13 @@ spec:
               mountPath: /app/demo-config
               readOnly: true
           resources:
+            {{- if .Values.ollama.gpu.enabled }}
+            # GPU-optimized: lighter footprint as GPU handles inference
+            {{- toYaml .Values.aiCompare.resourcesGpuOptimized | nindent 12 }}
+            {{- else }}
+            # CPU deployment: standard resources
             {{- toYaml .Values.aiCompare.resources | nindent 12 }}
+            {{- end }}
       volumes:
         - name: config-volume
           configMap:
