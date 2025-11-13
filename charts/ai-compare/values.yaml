@@ -25,11 +25,11 @@ ollama:
   # Resources are configured differently based on GPU availability
   resources:
     requests:
-      cpu: "1"           # 1 CPU for GPU, will be overridden to 1.5 if GPU disabled
-      memory: "4Gi"      # 4Gi for GPU, will be overridden to 6Gi if GPU disabled
+      cpu: "1" # 1 CPU for GPU, will be overridden to 1.5 if GPU disabled
+      memory: "4Gi" # 4Gi for GPU, will be overridden to 6Gi if GPU disabled
     limits:
-      cpu: "2"           # 2 CPU for GPU, will be overridden to 3 if GPU disabled
-      memory: "8Gi"      # 8Gi for GPU, will be overridden to 12Gi if GPU disabled
+      cpu: "2" # 2 CPU for GPU, will be overridden to 3 if GPU disabled
+      memory: "8Gi" # 8Gi for GPU, will be overridden to 12Gi if GPU disabled
   # CPU-only resource configuration (used when gpu.enabled=false)
   resourcesCpuOnly:
     requests:
@@ -88,7 +88,7 @@ pipelines:
 aiCompare:
   image:
     repository: ghcr.io/wiredquill/ai-demos
-    tag: "7f38f32"
+    tag: "8dd80c3"
   service:
     port: 7860
     type: NodePort
