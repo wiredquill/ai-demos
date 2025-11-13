@@ -23,22 +23,6 @@ questions:
   type: "boolean"
   default: true
 
-- variable: frontend.enabled
-  group: General
-  label: "Enable Load Simulator"
-  description: "Deploy HTTP load simulator for traffic generation and observability monitoring."
-  type: "boolean"
-  default: false
-
-- variable: schedule
-  label: "Schedule"
-  type: string
-  default: "*/5 * * * *"
-  description: "Cron schedule for user simulation request to apps"
-  required: true
-  group: General
-  show_if: "frontend.enabled=true"
-
 - variable: aiCompare.service.type
   group: General
   label: "AI Compare Service Type"

@@ -58,7 +58,7 @@ spec:
           echo "Configuring group..."
 
           # Create/Update Group
-          curl -k -X PATCH {{ .Values.neuvector.controllerUrl }}/v1/group/nv.{{ .Release.Namespace }}.{{ include "ai-compare-suse.fullname" . }} \
+          curl -k -X PATCH {{ .Values.neuvector.controllerUrl }}/v1/group/nv.{{ .Release.Namespace }}.{{ include "ai-compare.fullname" . }} \
             -H "Content-Type: application/json" \
             -H "X-Auth-Token: $TOKEN" \
             -d @/config/group-config.json || true
