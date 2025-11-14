@@ -7,13 +7,20 @@ metadata:
     {{- include "ai-compare-suse.labels" . | nindent 4 }}
 spec:
   target:
-    namespace: {{ .Release.Namespace }}
-    service: {{ include "ai-compare-suse.fullname" . }}
+    selector:
+      name: {{ .Release.Namespace }}.{{ include "ai-compare-suse.fullname" . }}
+      criteria:
+        - key: namespace
+          op: "="
+          value: {{ .Release.Namespace }}
+        - key: service
+          op: "="
+          value: {{ include "ai-compare-suse.fullname" . }}
   dlp:
     status: true
     settings:
       - name: {{ include "ai-compare-suse.fullname" . }}-dlp-sensor
-        action: alert
+        action: allow
   ingress:
     - action: allow
       name: Allow from Open WebUI

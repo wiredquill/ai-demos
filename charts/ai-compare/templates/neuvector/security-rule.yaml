@@ -7,13 +7,20 @@ metadata:
     {{- include "ai-compare.labels" . | nindent 4 }}
 spec:
   target:
-    namespace: {{ .Release.Namespace }}
-    service: {{ include "ai-compare.fullname" . }}
+    selector:
+      name: {{ .Release.Namespace }}.{{ include "ai-compare.fullname" . }}
+      criteria:
+        - key: namespace
+          op: "="
+          value: {{ .Release.Namespace }}
+        - key: service
+          op: "="
+          value: {{ include "ai-compare.fullname" . }}
   dlp:
     status: true
     settings:
       - name: {{ include "ai-compare.fullname" . }}-dlp-sensor
-        action: alert
+        action: allow
   ingress:
     - action: allow
       name: Allow from Open WebUI
