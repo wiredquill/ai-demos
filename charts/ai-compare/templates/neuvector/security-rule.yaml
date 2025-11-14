@@ -2,27 +2,30 @@
 apiVersion: neuvector.com/v1
 kind: NvSecurityRule
 metadata:
-  name: {{ include "ai-compare.fullname" . }}-security-rule
-  namespace: {{ .Release.Namespace }}
+  name: {{ .Release.Namespace }}-{{ include "ai-compare.fullname" . }}
   labels:
     {{- include "ai-compare.labels" . | nindent 4 }}
 spec:
-  name: {{ .Release.Namespace }}.{{ include "ai-compare.fullname" . }}
-  comment: "Security group for AI Compare application with DLP monitoring"
-  mode: discover
-  kind: container
-  dlpSensors:
-    - name: {{ include "ai-compare.fullname" . }}-dlp-rule
+  target:
+    namespace: {{ .Release.Namespace }}
+    service: {{ include "ai-compare.fullname" . }}
+  dlp:
+    status: true
+    settings:
+      - name: {{ include "ai-compare.fullname" . }}-dlp-sensor
+        action: alert
   ingress:
     - action: allow
       name: Allow from Open WebUI
-      selector: open-webui
+      selector:
+        name: open-webui
     - action: allow
       name: Allow from Ollama
-      selector: ollama
+      selector:
+        name: ollama
   egress:
     - action: allow
       name: Allow external traffic
-      selector: external
-      ports: any
+      selector:
+        name: external
 {{- end }}
