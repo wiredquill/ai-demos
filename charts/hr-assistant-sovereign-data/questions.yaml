@@ -1,0 +1,154 @@
+questions:
+- variable: deployment.region
+  label: "📍 Select Deployment Region"
+  type: "enum"
+  description: "Choose the region where this HR Assistant will be deployed. This determines available countries and data sovereignty requirements."
+  required: true
+  default: "americas"
+  group: "Sovereign Data Compliance"
+  options:
+    - "americas"
+    - "emea"
+    - "asia-pac"
+
+- variable: deployment.country
+  label: "🌍 Select Deployment Country"
+  type: string
+  description: "Select the country for deployment. The list will be filtered based on your region selection. If your country has data sovereignty requirements, you will be prompted to acknowledge them."
+  required: true
+  default: "United States"
+  group: "Sovereign Data Compliance"
+
+- variable: deployment.acknowledgeDataSovereignty
+  label: "✅ Acknowledge Local Data Sovereignty Laws"
+  type: "boolean"
+  description: "I acknowledge and agree to comply with all local data protection and sovereignty laws applicable to the selected country."
+  required: true
+  default: true
+  group: "Sovereign Data Compliance"
+
+- variable: otlpEndpoint
+  label: "⚠️ OTLP Endpoint"
+  type: string
+  description: "Open Telemetry Endpoint - Include http:// and port. IMPORTANT: This setting is critical for error logging and observability. If pods are generating errors, verify this endpoint is correctly configured and accessible."
+  required: true
+  default: "http://opentelemetry-collector.observability.svc.cluster.local:4318"
+  group: General
+
+- variable: ollama.enabled
+  group: "Ollama Deployment"
+  label: "Enable Ollama from SUSE Application Collection"
+  description: "If true, Ollama will be deployed as part of this chart."
+  type: "boolean"
+  default: true
+
+- variable: ollama.gpu.enabled
+  group: "General"
+  label: "Enable NVIDIA GPU Acceleration"
+  description: "Requires a node with NVIDIA drivers and the k8s device plugin installed."
+  type: "boolean"
+  default: false
+  show_if: "ollama.enabled=true"
+
+- variable: ollamaEndpoint
+  label: "Ollama Server URL"
+  type: string
+  description: "URL for your existing Ollama Server. Make sure it has llama3.2:1b and bge-large:latest models available."
+  required: true
+  default: "http://ollama.example.com:11434"
+  group: "Ollama Deployment"
+  show_if: "ollama.enabled=false"
+
+- variable: ollama.models[0]
+  group: "Ollama Deployment"
+  label: "Primary AI Model"
+  description: "The primary AI model to pull for HR queries (e.g., 'llama3.2:1b')."
+  type: "string"
+  default: "llama3.2:1b"
+  show_if: "ollama.enabled=true"
+
+- variable: ollama.models[1]
+  group: "Ollama Deployment"
+  label: "Secondary AI Model"
+  description: "Additional model for embeddings (optional)."
+  type: "string"
+  default: "bge-large:latest"
+  show_if: "ollama.enabled=true"
+
+- variable: ollama.service.type
+  group: "Ollama Deployment"
+  label: "Ollama Service Type"
+  description: "Method to expose the Ollama service. 'ClusterIP' is recommended."
+  type: "enum"
+  required: true
+  default: "ClusterIP"
+  show_if: "ollama.enabled=true"
+  options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"
+
+- variable: ollama.resources.requests.cpu
+  group: "Ollama Resources"
+  label: "Ollama CPU Request"
+  description: "The amount of CPU to reserve for the main Ollama container (e.g., '500m', '1')."
+  type: "string"
+  default: "2"
+  show_if: "ollama.enabled=true"
+
+- variable: ollama.resources.requests.memory
+  group: "Ollama Resources"
+  label: "Ollama Memory Request"
+  description: "The amount of memory to reserve for the main Ollama container (e.g., '1Gi', '2048Mi')."
+  type: "string"
+  default: "2Gi"
+  show_if: "ollama.enabled=true"
+
+- variable: ollama.resources.limits.cpu
+  group: "Ollama Resources"
+  label: "Ollama CPU Limit"
+  description: "The maximum amount of CPU the main Ollama container can use."
+  type: "string"
+  default: "4"
+  show_if: "ollama.enabled=true"
+
+- variable: ollama.resources.limits.memory
+  group: "Ollama Resources"
+  label: "Ollama Memory Limit"
+  description: "The maximum amount of memory the main Ollama container can use."
+  type: "string"
+  default: "16Gi"
+  show_if: "ollama.enabled=true"
+
+- variable: ollama.persistence.enabled
+  group: "Ollama Resources"
+  label: "Enable Ollama Model Persistence"
+  description: "If true, a PersistentVolumeClaim will be created to store Ollama models."
+  type: "boolean"
+  default: false
+  show_if: "ollama.enabled=true"
+
+- variable: ollama.persistence.size
+  group: "Ollama Resources"
+  label: "Ollama Model Storage Size"
+  description: "The size of the PersistentVolumeClaim for Ollama models (e.g., '10Gi', '50Gi')."
+  type: "string"
+  default: "10Gi"
+  show_if: "ollama.enabled=true && ollama.persistence.enabled=true"
+
+- variable: ollama.persistence.storageClassName
+  group: "Ollama Resources"
+  label: "Ollama Model Storage Class Name"
+  description: "The storage class name for the Ollama models PVC. Leave empty to use the default storage class."
+  type: "string"
+  default: ""
+  show_if: "ollama.enabled=true && ollama.persistence.enabled=true"
+
+
+- variable: schedule
+  label: "Schedule"
+  type: string
+  default: "*/5 * * * *"
+  description: "Cron schedule for user simulation request to apps"
+  required: true
+  group: General

@@ -1,0 +1,355 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "hr-assistant.fullname" . }}-sovereign-data-config
+  labels:
+    {{- include "hr-assistant.labels" . | nindent 4 }}
+data:
+  countries.json: |
+    {
+      "countries": {
+        "Canada": {
+          "region": "americas",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["PIPEDA"]
+        },
+        "United States": {
+          "region": "americas",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["CCPA", "HIPAA"]
+        },
+        "Mexico": {
+          "region": "americas",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["LFPDPPP"]
+        },
+        "Brazil": {
+          "region": "americas",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["LGPD"]
+        },
+        "Argentina": {
+          "region": "americas",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["PDPA"]
+        },
+        "Chile": {
+          "region": "americas",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["Law 19.628"]
+        },
+        "Colombia": {
+          "region": "americas",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["Law 1581"]
+        },
+        "Peru": {
+          "region": "americas",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["Law 27733"]
+        },
+        "UK": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["UK Data Protection Act 2018", "GDPR (retained)"],
+          "sovereigntyDetails": "UK data protection requirements include GDPR compliance and UK-specific data protection regulations. Data processors must maintain UK-based data residency for critical personal data."
+        },
+        "Spain": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "LSSI-CE"],
+          "sovereigntyDetails": "Spain enforces strict GDPR compliance with additional requirements through LSSI-CE. EU data localization standards apply. Spanish authorities have jurisdiction over data processing."
+        },
+        "Germany": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "TMG", "NetzDG"],
+          "sovereigntyDetails": "Germany has stringent data protection laws including GDPR, TMG (Telemediengesetz), and NetzDG. Data must be processed in compliance with German data protection authority (BfDI) requirements."
+        },
+        "France": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "CNIL Regulations"],
+          "sovereigntyDetails": "France enforces GDPR with additional requirements through CNIL (Commission Nationale de l'Informatique et des Libertés). Data processing must comply with French regulatory framework and may require explicit CNIL oversight."
+        },
+        "Italy": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Italian DPA Code"],
+          "sovereigntyDetails": "Italy requires GDPR compliance with additional provisions under Italian Data Protection Code. Italian Data Protection Authority (Garante) oversees compliance."
+        },
+        "Netherlands": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Dutch Data Protection Act"],
+          "sovereigntyDetails": "Netherlands enforces GDPR with Dutch-specific implementation. Dutch Data Protection Authority (AP) has oversight authority."
+        },
+        "Belgium": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Belgian Data Protection Law"],
+          "sovereigntyDetails": "Belgium enforces strict GDPR compliance through Belgian Data Protection Authority."
+        },
+        "Poland": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Polish UODO Regulations"],
+          "sovereigntyDetails": "Poland enforces GDPR with Polish-specific requirements through UODO (Polish Data Protection Authority)."
+        },
+        "Sweden": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Swedish Data Protection Act"],
+          "sovereigntyDetails": "Sweden enforces GDPR with Swedish Data Protection Authority (Datainspektionen) oversight."
+        },
+        "Norway": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Norwegian Personal Data Act"],
+          "sovereigntyDetails": "Norway applies GDPR equivalently through the Norwegian Personal Data Act with oversight by Norwegian Data Protection Authority."
+        },
+        "Denmark": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Danish Data Protection Act"],
+          "sovereigntyDetails": "Denmark enforces GDPR with Danish Data Protection Authority oversight."
+        },
+        "Finland": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Finnish Personal Data Act"],
+          "sovereigntyDetails": "Finland enforces GDPR with Finnish Data Protection Authority (Tietosuojavaltuutettu) oversight."
+        },
+        "Austria": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Austrian Data Protection Act"],
+          "sovereigntyDetails": "Austria enforces GDPR with Austrian Data Protection Authority oversight."
+        },
+        "Ireland": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Irish Data Protection Act"],
+          "sovereigntyDetails": "Ireland enforces GDPR with Irish Data Protection Commission oversight."
+        },
+        "Portugal": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Portuguese Data Protection Law"],
+          "sovereigntyDetails": "Portugal enforces GDPR with Portuguese Data Protection Commission oversight."
+        },
+        "Greece": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Greek Data Protection Authority Law"],
+          "sovereigntyDetails": "Greece enforces GDPR with Greek Data Protection Authority oversight."
+        },
+        "Czech Republic": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Czech Data Protection Act"],
+          "sovereigntyDetails": "Czech Republic enforces GDPR with Czech Data Protection Authority oversight."
+        },
+        "Hungary": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Hungarian Data Protection Law"],
+          "sovereigntyDetails": "Hungary enforces GDPR with Hungarian Data Protection Authority oversight."
+        },
+        "Romania": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Romanian Data Protection Law"],
+          "sovereigntyDetails": "Romania enforces GDPR with Romanian Data Protection Authority oversight."
+        },
+        "Bulgaria": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Bulgarian Personal Data Protection Law"],
+          "sovereigntyDetails": "Bulgaria enforces GDPR with Bulgarian Data Protection Commission oversight."
+        },
+        "Croatia": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Croatian Personal Data Protection Act"],
+          "sovereigntyDetails": "Croatia enforces GDPR with Croatian Data Protection Authority oversight."
+        },
+        "Slovenia": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Slovenian Personal Data Protection Act"],
+          "sovereigntyDetails": "Slovenia enforces GDPR with Slovenian Data Protection Authority oversight."
+        },
+        "Slovakia": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Slovak Personal Data Protection Act"],
+          "sovereigntyDetails": "Slovakia enforces GDPR with Slovak Data Protection Authority oversight."
+        },
+        "Luxembourg": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Luxembourg Data Protection Law"],
+          "sovereigntyDetails": "Luxembourg enforces GDPR with Luxembourg Data Protection Commission oversight."
+        },
+        "Malta": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Maltese Data Protection Act"],
+          "sovereigntyDetails": "Malta enforces GDPR with Maltese Information and Data Protection Commissioner oversight."
+        },
+        "Cyprus": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Cypriot Data Protection Law"],
+          "sovereigntyDetails": "Cyprus enforces GDPR with Cyprus Data Protection Authority oversight."
+        },
+        "Lithuania": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Lithuanian Data Protection Law"],
+          "sovereigntyDetails": "Lithuania enforces GDPR with Lithuanian Data Protection Authority oversight."
+        },
+        "Latvia": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Latvian Personal Data Protection Law"],
+          "sovereigntyDetails": "Latvia enforces GDPR with Latvian Data Protection Authority oversight."
+        },
+        "Estonia": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": true,
+          "dataLaws": ["GDPR", "Estonian Personal Data Protection Act"],
+          "sovereigntyDetails": "Estonia enforces GDPR with Estonian Data Protection Inspectorate oversight."
+        },
+        "United Arab Emirates": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["DIFC Data Protection Law"]
+        },
+        "Saudi Arabia": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["Saudi Arabia Data Protection Law"]
+        },
+        "Israel": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["Privacy Protection Law"]
+        },
+        "South Africa": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["POPIA"]
+        },
+        "Egypt": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["Egypt Data Protection Law"]
+        },
+        "Nigeria": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["NDPR"]
+        },
+        "Kenya": {
+          "region": "emea",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["KDPA"]
+        },
+        "Australia": {
+          "region": "asia-pac",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["Privacy Act 1988"]
+        },
+        "New Zealand": {
+          "region": "asia-pac",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["Privacy Act 2020"]
+        },
+        "Japan": {
+          "region": "asia-pac",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["APPI"]
+        },
+        "South Korea": {
+          "region": "asia-pac",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["PIPA"]
+        },
+        "China": {
+          "region": "asia-pac",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["PIPL"]
+        },
+        "India": {
+          "region": "asia-pac",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["DPDP Act"]
+        },
+        "Singapore": {
+          "region": "asia-pac",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["PDPA"]
+        },
+        "Malaysia": {
+          "region": "asia-pac",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["PDPA"]
+        },
+        "Thailand": {
+          "region": "asia-pac",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["PDPA"]
+        },
+        "Indonesia": {
+          "region": "asia-pac",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["Law 27 of 2022"]
+        },
+        "Vietnam": {
+          "region": "asia-pac",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["PDPL"]
+        },
+        "Philippines": {
+          "region": "asia-pac",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["DPA"]
+        },
+        "Taiwan": {
+          "region": "asia-pac",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["PDPA"]
+        },
+        "Hong Kong": {
+          "region": "asia-pac",
+          "requiresSovereigntyCompliance": false,
+          "dataLaws": ["PDPO"]
+        }
+      }
+    }
+
+  regions.json: |
+    {
+      "regions": [
+        {
+          "id": "americas",
+          "name": "Americas",
+          "description": "North and South America",
+          "countries": ["Canada", "United States", "Mexico", "Brazil", "Argentina", "Chile", "Colombia", "Peru"]
+        },
+        {
+          "id": "emea",
+          "name": "EMEA",
+          "description": "Europe, Middle East, and Africa",
+          "countries": ["UK", "Spain", "Germany", "France", "Italy", "Netherlands", "Belgium", "Poland", "Sweden", "Norway", "Denmark", "Finland", "Austria", "Ireland", "Portugal", "Greece", "Czech Republic", "Hungary", "Romania", "Bulgaria", "Croatia", "Slovenia", "Slovakia", "Luxembourg", "Malta", "Cyprus", "Lithuania", "Latvia", "Estonia", "United Arab Emirates", "Saudi Arabia", "Israel", "South Africa", "Egypt", "Nigeria", "Kenya"]
+        },
+        {
+          "id": "asia-pac",
+          "name": "ASIA-Pac",
+          "description": "Asia and Pacific Region",
+          "countries": ["Australia", "New Zealand", "Japan", "South Korea", "China", "India", "Singapore", "Malaysia", "Thailand", "Indonesia", "Vietnam", "Philippines", "Taiwan", "Hong Kong"]
+        }
+      ]
+    }

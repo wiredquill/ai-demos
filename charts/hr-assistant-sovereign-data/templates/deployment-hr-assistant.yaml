@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hr-assistant.fullname" . }}-hr-assistant
+  labels:
+    {{- include "hr-assistant.labels" . | nindent 4 }}
+    app.component: hr-assistant
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "hr-assistant.selectorLabels" . | nindent 6 }}
+      app.component: hr-assistant
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "hr-assistant.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        app.component: hr-assistant
+        genai: hr-assistant
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "hr-assistant.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          env:
+          - name: APP_NAME
+            value: HRAssistant
+          - name: MODEL
+            value: "llama3.2:1b"
+          - name: OLLAMA_ENDPOINT
+            value: {{ include "hr-assistant.ollamaEndpoint" . }}
+          - name: OTLP_ENDPOINT
+            value: {{ .Values.otlpEndpoint }}
+          - name: COLLECT_GPU_STATS
+            value: "{{ .Values.collectGpuStats }}"
+          # Sovereign Data Compliance Configuration
+          - name: DEPLOYMENT_REGION
+            value: "{{ .Values.deployment.region }}"
+          - name: DEPLOYMENT_COUNTRY
+            value: "{{ .Values.deployment.country }}"
+          - name: ACKNOWLEDGE_DATA_SOVEREIGNTY
+            value: "{{ .Values.deployment.acknowledgeDataSovereignty }}"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+          - name: config
+            mountPath: /app
+            readOnly: true
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+      - name: config
+        configMap:
+          name: {{ include "hr-assistant.fullname" . }}-sovereign-data-config
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

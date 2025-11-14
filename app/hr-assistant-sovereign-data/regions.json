@@ -1,0 +1,22 @@
+{
+  "regions": [
+    {
+      "id": "americas",
+      "name": "Americas",
+      "description": "North and South America",
+      "countries": ["Canada", "United States", "Mexico", "Brazil", "Argentina", "Chile", "Colombia", "Peru"]
+    },
+    {
+      "id": "emea",
+      "name": "EMEA",
+      "description": "Europe, Middle East, and Africa",
+      "countries": ["UK", "Spain", "Germany", "France", "Italy", "Netherlands", "Belgium", "Poland", "Sweden", "Norway", "Denmark", "Finland", "Austria", "Ireland", "Portugal", "Greece", "Czech Republic", "Hungary", "Romania", "Bulgaria", "Croatia", "Slovenia", "Slovakia", "Luxembourg", "Malta", "Cyprus", "Lithuania", "Latvia", "Estonia", "United Arab Emirates", "Saudi Arabia", "Israel", "South Africa", "Egypt", "Nigeria", "Kenya"]
+    },
+    {
+      "id": "asia-pac",
+      "name": "ASIA-Pac",
+      "description": "Asia and Pacific Region",
+      "countries": ["Australia", "New Zealand", "Japan", "South Korea", "China", "India", "Singapore", "Malaysia", "Thailand", "Indonesia", "Vietnam", "Philippines", "Taiwan", "Hong Kong"]
+    }
+  ]
+}

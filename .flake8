@@ -1,0 +1,17 @@
+[flake8]
+max-line-length = 127
+extend-ignore = E203,W503,E501,D100,D107,D200,D202,D401,D403,F401,F841,F811,E402
+exclude =
+    .git,
+    __pycache__,
+    .pytest_cache,
+    .venv,
+    venv,
+    htmlcov,
+    migrations,
+    node_modules,
+    .eggs,
+    *.egg-info
+per-file-ignores =
+    app/hr-assistant/apps/rag102.py: E402
+    app/hr-assistant-sovereign-data/apps/rag102.py: E402
