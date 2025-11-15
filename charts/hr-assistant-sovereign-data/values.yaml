@@ -7,8 +7,6 @@ imagePullSecrets:
 
 # Sovereign Data Compliance Configuration
 deployment:
-  appInfo: "App Info Loaded"              # Welcome information identifier
-  welcomeInfo: ""                         # Welcome information display (shown in Rancher UI)
   region: "americas"                      # Options: americas, emea, asia-pac
   country: "United States"                # Country within selected region (defaults: USA/Austria/Australia)
   sovereigntyNotice: ""                   # Question for countries with data sovereignty requirements (yes/no)
