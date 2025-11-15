@@ -34,7 +34,7 @@ questions:
   type: "enum"
   description: "Select the country for deployment. The list will be filtered based on your region selection. If your country has data sovereignty requirements, you will be prompted to acknowledge them."
   required: true
-  default: "Germany"
+  default: "Austria"
   group: "Sovereign Data Compliance"
   show_if: "deployment.region=emea"
   options:
@@ -97,21 +97,25 @@ questions:
     - "Pakistan"
     - "Bangladesh"
 
-# Compliance Notice for EU Countries (GDPR/Sovereignty Required)
+# Compliance Question for EU Countries (GDPR/Sovereignty Required)
 - variable: deployment.sovereigntyNotice
-  label: "⚠️ Data Sovereignty Requirement"
-  type: "string"
-  description: "This country has legal requirements for data sovereignty and protection. You must acknowledge compliance before deployment."
+  label: "⚠️ Data Sovereignty Compliance Question"
+  type: "enum"
+  description: "This country has legal requirements for data sovereignty and protection under GDPR and local data protection laws. Would you like to automatically apply the relevant data protection policies?"
   required: false
   show_if: "deployment.country=Austria || deployment.country=Belgium || deployment.country=Bulgaria || deployment.country=Croatia || deployment.country=Cyprus || deployment.country=Czechia || deployment.country=Denmark || deployment.country=Estonia || deployment.country=Finland || deployment.country=France || deployment.country=Germany || deployment.country=Greece || deployment.country=Hungary || deployment.country=Ireland || deployment.country=Italy || deployment.country=Latvia || deployment.country=Lithuania || deployment.country=Luxembourg || deployment.country=Malta || deployment.country=Netherlands || deployment.country=Poland || deployment.country=Portugal || deployment.country=Romania || deployment.country=Slovakia || deployment.country=Slovenia || deployment.country=Spain || deployment.country=Sweden || deployment.country=United Kingdom || deployment.country=Norway"
+  default: "yes"
+  options:
+    - "yes"
+    - "no"
   group: "Sovereign Data Compliance"
 
 - variable: deployment.acknowledgeDataSovereignty
-  label: "✅ Acknowledge Local Data Sovereignty Laws"
+  label: "✅ Confirm Data Sovereignty Compliance"
   type: "boolean"
-  description: "I acknowledge and agree to comply with all local data protection and sovereignty laws applicable to the selected country (GDPR, national implementations, and data residency requirements)."
+  description: "I confirm that I understand and will comply with all local data protection and sovereignty laws applicable to this country, including GDPR, national data protection regulations, and data residency requirements."
   required: false
-  default: false
+  default: true
   show_if: "deployment.country=Austria || deployment.country=Belgium || deployment.country=Bulgaria || deployment.country=Croatia || deployment.country=Cyprus || deployment.country=Czechia || deployment.country=Denmark || deployment.country=Estonia || deployment.country=Finland || deployment.country=France || deployment.country=Germany || deployment.country=Greece || deployment.country=Hungary || deployment.country=Ireland || deployment.country=Italy || deployment.country=Latvia || deployment.country=Lithuania || deployment.country=Luxembourg || deployment.country=Malta || deployment.country=Netherlands || deployment.country=Poland || deployment.country=Portugal || deployment.country=Romania || deployment.country=Slovakia || deployment.country=Slovenia || deployment.country=Spain || deployment.country=Sweden || deployment.country=United Kingdom || deployment.country=Norway"
   group: "Sovereign Data Compliance"
 
