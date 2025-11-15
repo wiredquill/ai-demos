@@ -1,4 +1,40 @@
 questions:
+# Welcome and Information Section
+- variable: deployment.appInfo
+  label: "🚀 Welcome to HR Assistant - Sovereign Data Edition"
+  type: "string"
+  description: |
+    This is the SUSE AI HR Assistant with comprehensive data sovereignty compliance.
+
+    🎯 About This Application:
+    The HR Assistant is an intelligent employee support system powered by advanced AI models.
+    It provides instant access to HR policies, employee handbook information, and policy database queries
+    with complete transparency through direct model response comparison.
+
+    🔒 Data Sovereignty & Compliance:
+    This edition includes built-in data protection features specifically designed for global deployments.
+    Depending on your deployment region/country, this application will automatically:
+
+    • Apply GDPR compliance requirements (EU deployments)
+    • Enforce data residency regulations (where applicable)
+    • Implement region-specific data protection policies
+    • Ensure compliance with local data protection laws
+
+    📋 Key Features:
+    • Regional deployment configuration (Americas, EMEA, ASIA-Pac)
+    • Automatic compliance detection based on country selection
+    • OpenTelemetry observability for audit and monitoring
+    • Ollama LLM integration for on-premise AI inference
+    • Employee handbook and policy database integration
+
+    ⚠️ Important: This deployment requires careful attention to data sovereignty laws.
+    Please ensure you understand and can comply with local regulations for your selected region.
+
+    🔧 Configuration:
+    Follow the prompts below to configure your deployment region, country, and compliance settings.
+  required: false
+  group: "Getting Started"
+
 - variable: deployment.region
   label: "📍 Select Deployment Region"
   type: "enum"
