@@ -50,6 +50,12 @@ spec:
             value: "{{ .Values.deployment.region }}"
           - name: DEPLOYMENT_COUNTRY
             value: "{{ .Values.deployment.country }}"
+          - name: SOVEREIGNTY_NOTICE
+            value: |
+              {{- if or (eq .Values.deployment.country "Austria") (eq .Values.deployment.country "Belgium") (eq .Values.deployment.country "Bulgaria") (eq .Values.deployment.country "Croatia") (eq .Values.deployment.country "Cyprus") (eq .Values.deployment.country "Czechia") (eq .Values.deployment.country "Denmark") (eq .Values.deployment.country "Estonia") (eq .Values.deployment.country "Finland") (eq .Values.deployment.country "France") (eq .Values.deployment.country "Germany") (eq .Values.deployment.country "Greece") (eq .Values.deployment.country "Hungary") (eq .Values.deployment.country "Ireland") (eq .Values.deployment.country "Italy") (eq .Values.deployment.country "Latvia") (eq .Values.deployment.country "Lithuania") (eq .Values.deployment.country "Luxembourg") (eq .Values.deployment.country "Malta") (eq .Values.deployment.country "Netherlands") (eq .Values.deployment.country "Poland") (eq .Values.deployment.country "Portugal") (eq .Values.deployment.country "Romania") (eq .Values.deployment.country "Slovakia") (eq .Values.deployment.country "Slovenia") (eq .Values.deployment.country "Spain") (eq .Values.deployment.country "Sweden") (eq .Values.deployment.country "United Kingdom") (eq .Values.deployment.country "Norway") }}
+              ⚠️ {{ .Values.deployment.country }} has local Data Sovereignty Laws. GDPR and national data protection regulations apply to this deployment.
+              {{- else }}
+              {{- end }}
           - name: ACKNOWLEDGE_DATA_SOVEREIGNTY
             value: "{{ .Values.deployment.acknowledgeDataSovereignty }}"
           securityContext:

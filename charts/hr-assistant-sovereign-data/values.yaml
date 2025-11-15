@@ -9,7 +9,8 @@ imagePullSecrets:
 deployment:
   region: "americas"                      # Options: americas, emea, asia-pac
   country: "United States"                # Country within selected region
-  acknowledgeDataSovereignty: true        # Acknowledges compliance with local data sovereignty laws
+  sovereigntyNotice: ""                   # Notice shown for countries with data sovereignty requirements
+  acknowledgeDataSovereignty: false       # Acknowledges compliance with local data sovereignty laws
 
 # Observability endpoints
 otlpEndpoint: 'http://opentelemetry-collector.opentelemetry-collector.svc.cluster.local:4318'

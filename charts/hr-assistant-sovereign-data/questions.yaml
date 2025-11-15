@@ -97,12 +97,22 @@ questions:
     - "Pakistan"
     - "Bangladesh"
 
+# Compliance Notice for EU Countries (GDPR/Sovereignty Required)
+- variable: deployment.sovereigntyNotice
+  label: "⚠️ Data Sovereignty Requirement"
+  type: "string"
+  description: "This country has legal requirements for data sovereignty and protection. You must acknowledge compliance before deployment."
+  required: false
+  show_if: "deployment.country=Austria || deployment.country=Belgium || deployment.country=Bulgaria || deployment.country=Croatia || deployment.country=Cyprus || deployment.country=Czechia || deployment.country=Denmark || deployment.country=Estonia || deployment.country=Finland || deployment.country=France || deployment.country=Germany || deployment.country=Greece || deployment.country=Hungary || deployment.country=Ireland || deployment.country=Italy || deployment.country=Latvia || deployment.country=Lithuania || deployment.country=Luxembourg || deployment.country=Malta || deployment.country=Netherlands || deployment.country=Poland || deployment.country=Portugal || deployment.country=Romania || deployment.country=Slovakia || deployment.country=Slovenia || deployment.country=Spain || deployment.country=Sweden || deployment.country=United Kingdom || deployment.country=Norway"
+  group: "Sovereign Data Compliance"
+
 - variable: deployment.acknowledgeDataSovereignty
   label: "✅ Acknowledge Local Data Sovereignty Laws"
   type: "boolean"
-  description: "I acknowledge and agree to comply with all local data protection and sovereignty laws applicable to the selected country."
-  required: true
-  default: true
+  description: "I acknowledge and agree to comply with all local data protection and sovereignty laws applicable to the selected country (GDPR, national implementations, and data residency requirements)."
+  required: false
+  default: false
+  show_if: "deployment.country=Austria || deployment.country=Belgium || deployment.country=Bulgaria || deployment.country=Croatia || deployment.country=Cyprus || deployment.country=Czechia || deployment.country=Denmark || deployment.country=Estonia || deployment.country=Finland || deployment.country=France || deployment.country=Germany || deployment.country=Greece || deployment.country=Hungary || deployment.country=Ireland || deployment.country=Italy || deployment.country=Latvia || deployment.country=Lithuania || deployment.country=Luxembourg || deployment.country=Malta || deployment.country=Netherlands || deployment.country=Poland || deployment.country=Portugal || deployment.country=Romania || deployment.country=Slovakia || deployment.country=Slovenia || deployment.country=Spain || deployment.country=Sweden || deployment.country=United Kingdom || deployment.country=Norway"
   group: "Sovereign Data Compliance"
 
 - variable: otlpEndpoint
