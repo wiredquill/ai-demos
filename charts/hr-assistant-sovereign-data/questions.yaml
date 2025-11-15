@@ -99,7 +99,7 @@ questions:
 
 # Compliance Question for EU Countries (GDPR/Sovereignty Required)
 - variable: deployment.sovereigntyNotice
-  label: "⚠️ Data Sovereignty Compliance Question"
+  label: "🔒 Observe Local Data Sovereignty Laws?"
   type: "enum"
   description: "This country has legal requirements for data sovereignty and protection under GDPR and local data protection laws. Would you like to automatically apply the relevant data protection policies?"
   required: false
