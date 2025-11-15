@@ -13,10 +13,12 @@ ollama:
     repository: ollama/ollama
     pullPolicy: IfNotPresent
     tag: "0.12.7"
+    useDevVersion: false
 
   # Service configuration - at root of dependency values
   service:
     type: ClusterIP
+    nodePort: null
 
   # Resource configuration - CPU and memory allocations
   # These are merged with GPU resources when gpu.enabled=true

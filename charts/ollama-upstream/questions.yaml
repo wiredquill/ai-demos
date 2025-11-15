@@ -1,5 +1,19 @@
 questions:
 # === FRONT PAGE - MOST IMPORTANT OPTIONS ===
+- variable: ollama.image.tag
+  default: "0.12.7"
+  description: "Ollama version to deploy (e.g., 0.12.7, latest, dev)"
+  type: string
+  label: Ollama Version
+  group: "Image Configuration"
+
+- variable: ollama.image.useDevVersion
+  default: false
+  description: "Pull development version of Ollama (uses 'dev' tag instead of version number)"
+  type: boolean
+  label: Use Dev Version
+  group: "Image Configuration"
+
 - variable: ollama.service.type
   default: "ClusterIP"
   description: "Service type for accessing Ollama"
@@ -10,6 +24,16 @@ questions:
     - "LoadBalancer"
   label: Service Type
   group: "Service Configuration"
+
+- variable: ollama.service.nodePort
+  default: null
+  description: "NodePort number (30000-32767). Leave empty for random assignment."
+  type: int
+  min: 30000
+  max: 32767
+  label: NodePort Number
+  group: "Service Configuration"
+  show_if: "ollama.service.type=NodePort"
 
 - variable: ollama.ollama.gpu.enabled
   default: true
