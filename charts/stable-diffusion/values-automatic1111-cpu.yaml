@@ -1,0 +1,47 @@
+# Example values for Automatic1111 WebUI with CPU-only mode
+# Usage: helm install sd charts/stable-diffusion -f values-automatic1111-cpu.yaml
+
+# UI Selection
+uiVariant: "automatic1111"
+
+# CPU-only mode
+gpu:
+  enabled: false
+
+# Storage
+storage:
+  models:
+    enabled: true
+    size: 50Gi
+  outputs:
+    enabled: true
+    size: 50Gi
+
+# Networking
+automatic1111:
+  service:
+    type: NodePort
+    port: 7860
+    nodePort: 31801
+  # Enable authentication
+  auth:
+    enabled: false
+    username: "admin"
+    password: "changeme"
+
+# Auto-download default models
+initModels:
+  enabled: true
+  models:
+    - url: "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
+      filename: "sd_v1-5.safetensors"
+
+# Higher CPU resources for CPU-only mode
+resources:
+  cpuOnly:
+    requests:
+      cpu: "4"
+      memory: "16Gi"
+    limits:
+      cpu: "8"
+      memory: "32Gi"

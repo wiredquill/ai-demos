@@ -1,0 +1,113 @@
+# Example production values with SMB/CIFS network share
+# Usage:
+# 1. Create SMB credentials secret:
+#    kubectl create secret generic smb-creds --from-literal=username=USER --from-literal=password=PASS -n stable-diffusion
+# 2. Install chart:
+#    helm install sd charts/stable-diffusion -f values-production-smb.yaml -n stable-diffusion
+
+# UI Selection - ComfyUI is most flexible for production
+uiVariant: "comfyui"
+
+# GPU Configuration
+gpu:
+  enabled: true
+  count: 1
+  type: "nvidia"
+
+# Storage with SMB share
+storage:
+  models:
+    enabled: true
+    size: 100Gi  # Larger for multiple models
+    storageClassName: "fast-ssd"  # Use fast storage class
+  outputs:
+    enabled: true
+    size: 200Gi  # Larger for long-term storage
+    storageClassName: "standard"
+  # SMB share for easy Windows network access
+  shared:
+    enabled: true
+    type: "smb"
+    smb:
+      server: "//fileserver.company.local/ai-outputs"
+      secretName: "smb-creds"
+      mountOptions:
+        - "vers=3.0"
+        - "dir_mode=0777"
+        - "file_mode=0666"
+    mountPath: "/shared"
+    linkToOutputs: true
+
+# Networking with LoadBalancer (cloud environment)
+comfyui:
+  service:
+    type: LoadBalancer
+    port: 8188
+  # Enable authentication for production
+  auth:
+    enabled: true
+    username: "admin"
+    password: "CHANGE-THIS-PASSWORD"
+
+# Ingress for custom domain (alternative to LoadBalancer)
+ingress:
+  enabled: false  # Set to true if using ingress instead of LoadBalancer
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: sd.company.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: stable-diffusion-tls
+      hosts:
+        - sd.company.com
+
+# Auto-download popular models
+initModels:
+  enabled: true
+  models:
+    # Stable Diffusion v1.5
+    - url: "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
+      filename: "sd_v1-5.safetensors"
+    # Add more models as needed
+    # - url: "https://civitai.com/api/download/models/..."
+    #   filename: "custom-model.safetensors"
+
+# Production resource limits
+resources:
+  gpuOptimized:
+    requests:
+      cpu: "4"
+      memory: "16Gi"
+    limits:
+      cpu: "8"
+      memory: "32Gi"
+
+# Observability for monitoring
+observability:
+  enabled: true
+  otlpEndpoint: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
+  collectGpuStats: true
+
+# Node affinity for dedicated GPU nodes
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/arch
+          operator: In
+          values:
+          - amd64
+        - key: node.kubernetes.io/gpu
+          operator: Exists
+
+# Tolerations for GPU nodes
+tolerations:
+  - key: nvidia.com/gpu
+    operator: Exists
+    effect: NoSchedule

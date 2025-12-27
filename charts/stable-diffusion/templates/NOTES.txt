@@ -1,0 +1,214 @@
+████████████████████████████████████████████████████████████████████████████████
+  Stable Diffusion - {{ .Values.uiVariant | upper }}
+████████████████████████████████████████████████████████████████████████████████
+
+Thank you for installing {{ .Chart.Name }} version {{ .Chart.Version }}!
+
+Your {{ .Values.uiVariant }} deployment is starting up...
+
+📋 DEPLOYMENT SUMMARY:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  UI Variant:       {{ .Values.uiVariant }}
+  GPU Enabled:      {{ .Values.gpu.enabled }}
+  {{- if .Values.gpu.enabled }}
+  GPU Count:        {{ .Values.gpu.count }}
+  {{- end }}
+  Service Type:     {{ include "stable-diffusion.serviceType" . }}
+  Service Port:     {{ include "stable-diffusion.servicePort" . }}
+  Namespace:        {{ .Release.Namespace }}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔍 CHECK DEPLOYMENT STATUS:
+
+  kubectl get pods -n {{ .Release.Namespace }}
+  kubectl get svc -n {{ .Release.Namespace }}
+
+{{- if .Values.initModels.enabled }}
+
+⏳ INITIAL MODEL DOWNLOAD:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  First startup will download default models (~4GB). This may take 5-15 minutes
+  depending on your internet connection.
+
+  Watch download progress:
+  kubectl logs -n {{ .Release.Namespace }} -l ui-variant={{ .Values.uiVariant }} -c download-models -f
+{{- end }}
+
+🌐 ACCESS YOUR STABLE DIFFUSION UI:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{{- if eq (include "stable-diffusion.serviceType" .) "NodePort" }}
+
+  1. Get your node IP:
+     kubectl get nodes -o wide
+
+  2. Access the UI:
+     http://<NODE-IP>:{{ include "stable-diffusion.nodePort" . }}
+
+  Or use port-forward for local access:
+     kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "stable-diffusion.fullname" . }} {{ include "stable-diffusion.servicePort" . }}:{{ include "stable-diffusion.servicePort" . }}
+     http://localhost:{{ include "stable-diffusion.servicePort" . }}
+
+{{- else if eq (include "stable-diffusion.serviceType" .) "LoadBalancer" }}
+
+  Wait for external IP assignment:
+     kubectl get svc -n {{ .Release.Namespace }} -w
+
+  Once EXTERNAL-IP is assigned, access the UI:
+     http://<EXTERNAL-IP>:{{ include "stable-diffusion.servicePort" . }}
+
+{{- else if eq (include "stable-diffusion.serviceType" .) "ClusterIP" }}
+
+  Service is internal-only. Use port-forward to access:
+     kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "stable-diffusion.fullname" . }} {{ include "stable-diffusion.servicePort" . }}:{{ include "stable-diffusion.servicePort" . }}
+     http://localhost:{{ include "stable-diffusion.servicePort" . }}
+
+  Or configure an Ingress resource for external access.
+{{- end }}
+
+📁 STORAGE CONFIGURATION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{{- if .Values.storage.models.enabled }}
+  ✓ Model Storage:  {{ .Values.storage.models.size }} PVC ({{ include "stable-diffusion.modelsPvcName" . }})
+{{- else }}
+  ✗ Model Storage:  Disabled (models stored in ephemeral storage)
+{{- end }}
+{{- if .Values.storage.outputs.enabled }}
+  ✓ Output Storage: {{ .Values.storage.outputs.size }} PVC ({{ include "stable-diffusion.outputsPvcName" . }})
+{{- else }}
+  ✗ Output Storage: Disabled (outputs lost on pod restart)
+{{- end }}
+{{- if .Values.storage.shared.enabled }}
+  ✓ Shared Access:  {{ .Values.storage.shared.type | upper }} ({{ if eq .Values.storage.shared.type "nfs" }}{{ .Values.storage.shared.nfs.server }}:{{ .Values.storage.shared.nfs.path }}{{ else }}{{ .Values.storage.shared.smb.server }}{{ end }})
+  {{- if .Values.storage.shared.linkToOutputs }}
+  ↳ Outputs linked to shared storage - images accessible via network share
+  {{- end }}
+{{- else }}
+  ✗ Shared Access:  Disabled
+{{- end }}
+
+  View PVC status:
+  kubectl get pvc -n {{ .Release.Namespace }}
+
+{{- if .Values.storage.shared.enabled }}
+
+📂 ACCESSING YOUR FILES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{{- if eq .Values.storage.shared.type "nfs" }}
+
+  Your generated images are accessible via NFS at:
+  {{ .Values.storage.shared.nfs.server }}:{{ .Values.storage.shared.nfs.path }}
+  {{- if .Values.storage.shared.linkToOutputs }}
+  └── outputs/  (generated images saved here)
+  {{- end }}
+
+  Mount on Linux/Mac:
+  sudo mount -t nfs {{ .Values.storage.shared.nfs.server }}:{{ .Values.storage.shared.nfs.path }} /mnt/ai-outputs
+
+  Mount on Windows:
+  net use Z: \\{{ .Values.storage.shared.nfs.server }}{{ .Values.storage.shared.nfs.path | replace "/" "\\" }}
+
+{{- else if eq .Values.storage.shared.type "smb" }}
+
+  Your generated images are accessible via SMB at:
+  {{ .Values.storage.shared.smb.server }}
+  {{- if .Values.storage.shared.linkToOutputs }}
+  └── outputs/  (generated images saved here)
+  {{- end }}
+
+  Mount on Windows:
+  net use Z: {{ .Values.storage.shared.smb.server }}
+
+  Mount on Linux/Mac:
+  sudo mount -t cifs {{ .Values.storage.shared.smb.server }} /mnt/ai-outputs
+
+{{- end }}
+{{- end }}
+
+🎨 {{ .Values.uiVariant | upper }} QUICK START:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{{- if eq .Values.uiVariant "comfyui" }}
+
+  1. Load the default workflow
+  2. Connect to model: "sd_v1-5.safetensors" (auto-downloaded)
+  3. Enter your prompt
+  4. Click "Queue Prompt" to generate
+
+  Tip: ComfyUI uses node-based workflows. Right-click canvas to add nodes.
+
+{{- else if eq .Values.uiVariant "automatic1111" }}
+
+  1. Go to the "txt2img" tab
+  2. Select model: "sd_v1-5.safetensors" (auto-downloaded)
+  3. Enter your prompt in the text box
+  4. Click "Generate" to create images
+
+  Tip: Explore extensions in Settings → Extensions for more features.
+
+{{- else if eq .Values.uiVariant "invokeai" }}
+
+  1. Open the "Text to Image" tab
+  2. Select model from dropdown (sd_v1-5 auto-downloaded)
+  3. Enter your prompt
+  4. Click "Invoke" to generate
+
+  Tip: Try the Unified Canvas for advanced editing capabilities.
+
+{{- end }}
+
+🔧 USEFUL COMMANDS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  # View logs
+  kubectl logs -n {{ .Release.Namespace }} -l ui-variant={{ .Values.uiVariant }} -f
+
+  # Get pod shell (for troubleshooting)
+  kubectl exec -it -n {{ .Release.Namespace }} deployment/{{ include "stable-diffusion.fullname" . }} -- /bin/bash
+
+  # Check resource usage
+  kubectl top pod -n {{ .Release.Namespace }}
+
+  # Restart deployment
+  kubectl rollout restart -n {{ .Release.Namespace }} deployment/{{ include "stable-diffusion.fullname" . }}
+
+  # Upgrade deployment
+  helm upgrade {{ .Release.Name }} charts/stable-diffusion -n {{ .Release.Namespace }} --reuse-values
+
+  # Uninstall (keeps PVCs)
+  helm uninstall {{ .Release.Name }} -n {{ .Release.Namespace }}
+
+{{- if .Values.gpu.enabled }}
+
+⚡ GPU PERFORMANCE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  GPU is ENABLED. Expected image generation times:
+  • 512x512 image: 2-5 seconds
+  • 1024x1024 image: 5-15 seconds
+
+  Monitor GPU usage:
+  kubectl exec -n {{ .Release.Namespace }} deployment/{{ include "stable-diffusion.fullname" . }} -- nvidia-smi
+
+{{- else }}
+
+⏱️  CPU MODE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Running in CPU mode. Expected image generation times:
+  • 512x512 image: 2-5 minutes
+  • 1024x1024 image: 5-15 minutes
+
+  For significantly faster generation, enable GPU:
+  helm upgrade {{ .Release.Name }} charts/stable-diffusion -n {{ .Release.Namespace }} --set gpu.enabled=true
+
+{{- end }}
+
+📚 DOCUMENTATION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Chart README:     charts/stable-diffusion/README.md
+  Values Reference: charts/stable-diffusion/values.yaml
+  GitHub:           https://github.com/wiredquill/ai-demos
+
+████████████████████████████████████████████████████████████████████████████████
+  Happy Creating! 🎨
+████████████████████████████████████████████████████████████████████████████████

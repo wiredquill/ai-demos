@@ -1,0 +1,20 @@
+{{- if and .Values.storage.models.enabled (not .Values.storage.models.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "stable-diffusion.fullname" . }}-models-pvc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "stable-diffusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: storage
+    storage-type: models
+spec:
+  accessModes:
+    - {{ .Values.storage.models.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.storage.models.size }}
+  {{- if .Values.storage.models.storageClassName }}
+  storageClassName: {{ .Values.storage.models.storageClassName }}
+  {{- end }}
+{{- end }}

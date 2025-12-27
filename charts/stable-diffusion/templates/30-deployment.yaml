@@ -1,0 +1,211 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "stable-diffusion.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "stable-diffusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.uiVariant }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # Required for PVC access
+  selector:
+    matchLabels:
+      {{- include "stable-diffusion.selectorLabels" . | nindent 6 }}
+      ui-variant: {{ .Values.uiVariant }}
+  template:
+    metadata:
+      labels:
+        {{- include "stable-diffusion.selectorLabels" . | nindent 8 }}
+        ui-variant: {{ .Values.uiVariant }}
+        app.kubernetes.io/component: {{ .Values.uiVariant }}
+    spec:
+      {{- if and .Values.gpu.enabled (eq .Values.gpu.type "nvidia") }}
+      runtimeClassName: nvidia
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      {{- if .Values.initModels.enabled }}
+      initContainers:
+      - name: download-models
+        image: curlimages/curl:latest
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        command:
+          - sh
+          - -c
+          - |
+            echo "Checking for existing models..."
+            {{- range .Values.initModels.models }}
+            if [ ! -f {{ $.Values.storage.models.mountPath }}/{{ .filename }} ]; then
+              echo "Downloading {{ .filename }}..."
+              curl -L -o {{ $.Values.storage.models.mountPath }}/{{ .filename }} "{{ .url }}"
+              echo "Downloaded {{ .filename }}"
+            else
+              echo "{{ .filename }} already exists, skipping download"
+            fi
+            {{- end }}
+            echo "Model initialization complete"
+        volumeMounts:
+        {{- if .Values.storage.models.enabled }}
+        - name: models
+          mountPath: {{ .Values.storage.models.mountPath }}
+        {{- end }}
+        securityContext:
+          runAsUser: 0
+          runAsNonRoot: false
+      {{- end }}
+      containers:
+      - name: stable-diffusion
+        image: {{ include "stable-diffusion.image" . }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        {{- if eq .Values.uiVariant "comfyui" }}
+        command: ["python3", "main.py"]
+        args:
+          - "--listen"
+          - "0.0.0.0"
+          - "--port"
+          - "{{ .Values.comfyui.service.port }}"
+        {{- else if eq .Values.uiVariant "automatic1111" }}
+        command: ["/bin/bash"]
+        args:
+          - "-c"
+          - |
+            cd /stable-diffusion-webui && \
+            python3 launch.py {{ range .Values.automatic1111.args }}{{ . }} {{ end }}
+        {{- else if eq .Values.uiVariant "invokeai" }}
+        command: ["invokeai-web"]
+        args:
+          - "--host"
+          - "{{ .Values.invokeai.config.host }}"
+          - "--port"
+          - "{{ .Values.invokeai.config.port }}"
+        {{- end }}
+        ports:
+        - name: http
+          containerPort: {{ include "stable-diffusion.servicePort" . }}
+          protocol: TCP
+        env:
+        {{- if .Values.observability.enabled }}
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "{{ .Values.observability.otlpEndpoint }}"
+        - name: OTEL_SERVICE_NAME
+          value: "stable-diffusion-{{ .Values.uiVariant }}"
+        {{- end }}
+        {{- if eq .Values.uiVariant "comfyui" }}
+        {{- if .Values.comfyui.auth.enabled }}
+        - name: COMFYUI_USERNAME
+          value: "{{ .Values.comfyui.auth.username }}"
+        - name: COMFYUI_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "stable-diffusion.fullname" . }}-auth
+              key: password
+        {{- end }}
+        {{- else if eq .Values.uiVariant "automatic1111" }}
+        {{- if .Values.automatic1111.auth.enabled }}
+        - name: GRADIO_USERNAME
+          value: "{{ .Values.automatic1111.auth.username }}"
+        - name: GRADIO_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "stable-diffusion.fullname" . }}-auth
+              key: password
+        {{- end }}
+        {{- end }}
+        {{- with .Values.env }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        resources:
+          {{- if .Values.gpu.enabled }}
+          {{- toYaml .Values.resources.gpuOptimized | nindent 10 }}
+          limits:
+            {{- if .Values.resources.gpuOptimized.limits }}
+            {{- toYaml .Values.resources.gpuOptimized.limits | nindent 12 }}
+            {{- end }}
+            {{- if eq .Values.gpu.type "nvidia" }}
+            {{ .Values.gpu.resourceName }}: {{ .Values.gpu.count }}
+            {{- end }}
+          {{- else }}
+          {{- toYaml .Values.resources.cpuOnly | nindent 10 }}
+          {{- end }}
+        volumeMounts:
+        {{- if .Values.storage.models.enabled }}
+        - name: models
+          mountPath: {{ .Values.storage.models.mountPath }}
+        {{- end }}
+        {{- if .Values.storage.outputs.enabled }}
+        - name: outputs
+          mountPath: {{ .Values.storage.outputs.mountPath }}
+        {{- end }}
+        {{- if .Values.storage.shared.enabled }}
+        - name: shared
+          mountPath: {{ .Values.storage.shared.mountPath }}
+        {{- end }}
+        {{- with .Values.extraVolumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+      volumes:
+      {{- if .Values.storage.models.enabled }}
+      - name: models
+        persistentVolumeClaim:
+          claimName: {{ include "stable-diffusion.modelsPvcName" . }}
+      {{- end }}
+      {{- if .Values.storage.outputs.enabled }}
+      - name: outputs
+        persistentVolumeClaim:
+          claimName: {{ include "stable-diffusion.outputsPvcName" . }}
+      {{- end }}
+      {{- if .Values.storage.shared.enabled }}
+      - name: shared
+        {{- if eq .Values.storage.shared.type "nfs" }}
+        nfs:
+          server: {{ .Values.storage.shared.nfs.server }}
+          path: {{ .Values.storage.shared.nfs.path }}
+        {{- else if eq .Values.storage.shared.type "smb" }}
+        csi:
+          driver: smb.csi.k8s.io
+          readOnly: false
+          volumeAttributes:
+            source: {{ .Values.storage.shared.smb.server }}
+          nodeStageSecretRef:
+            name: {{ .Values.storage.shared.smb.secretName }}
+        {{- end }}
+      {{- end }}
+      {{- with .Values.extraVolumes }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.gpu.enabled }}
+      tolerations:
+      - key: {{ .Values.gpu.resourceName }}
+        operator: Exists
+        effect: NoSchedule
+      {{- end }}
+      {{- with .Values.tolerations }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}

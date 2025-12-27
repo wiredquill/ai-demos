@@ -1,0 +1,42 @@
+# Example values for ComfyUI with GPU acceleration
+# Usage: helm install sd charts/stable-diffusion -f values-comfyui-gpu.yaml
+
+# UI Selection
+uiVariant: "comfyui"
+
+# GPU Configuration
+gpu:
+  enabled: true
+  count: 1
+  type: "nvidia"
+
+# Storage
+storage:
+  models:
+    enabled: true
+    size: 50Gi
+  outputs:
+    enabled: true
+    size: 100Gi
+  # Optional: Enable NFS share for easy file access
+  shared:
+    enabled: false
+    type: "nfs"
+    nfs:
+      server: "192.168.1.100"
+      path: "/mnt/ai-outputs"
+    linkToOutputs: true
+
+# Networking
+comfyui:
+  service:
+    type: NodePort
+    port: 8188
+    nodePort: 31800
+
+# Auto-download default models
+initModels:
+  enabled: true
+  models:
+    - url: "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
+      filename: "sd_v1-5.safetensors"

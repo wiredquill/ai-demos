@@ -1,0 +1,453 @@
+# Rancher Questions for Stable Diffusion Deployment
+# Provides UI-based configuration in Rancher Fleet
+
+questions:
+# =============================================================================
+# UI Variant Selection
+# =============================================================================
+- variable: uiVariant
+  group: "General"
+  label: "Stable Diffusion UI Variant"
+  description: |
+    Choose which Stable Diffusion interface to deploy:
+    • ComfyUI: Node-based workflow system, most flexible
+    • Automatic1111: Traditional UI, feature-rich and stable
+    • InvokeAI: Modern interface, good balance of features and usability
+  type: "enum"
+  required: true
+  default: "comfyui"
+  options:
+    - "comfyui"
+    - "automatic1111"
+    - "invokeai"
+
+# =============================================================================
+# GPU Configuration
+# =============================================================================
+- variable: gpu.enabled
+  group: "GPU Configuration"
+  label: "Enable NVIDIA GPU Acceleration"
+  description: "Requires a node with NVIDIA drivers and GPU operator installed. Significantly faster image generation."
+  type: "boolean"
+  default: true
+
+- variable: gpu.count
+  group: "GPU Configuration"
+  label: "Number of GPUs"
+  description: "Number of GPUs to allocate to this deployment (1-8)."
+  type: "integer"
+  default: 1
+  min: 1
+  max: 8
+  show_if: "gpu.enabled=true"
+
+- variable: gpu.resourceName
+  group: "GPU Configuration"
+  label: "GPU Resource Name"
+  description: "Kubernetes GPU resource name (default: nvidia.com/gpu). Only change if using custom GPU operator."
+  type: "string"
+  default: "nvidia.com/gpu"
+  show_if: "gpu.enabled=true"
+
+# =============================================================================
+# Storage Configuration - Models
+# =============================================================================
+- variable: storage.models.enabled
+  group: "Storage - Models"
+  label: "Enable Persistent Model Storage"
+  description: "Store model checkpoints, LoRAs, VAEs, and embeddings on persistent volume. Recommended for production."
+  type: "boolean"
+  default: true
+
+- variable: storage.models.size
+  group: "Storage - Models"
+  label: "Model Storage Size"
+  description: "Storage size for models. Each model is 2-10GB. Recommended: 50Gi for 5-10 models."
+  type: "string"
+  default: "50Gi"
+  show_if: "storage.models.enabled=true"
+
+- variable: storage.models.storageClassName
+  group: "Storage - Models"
+  label: "Model Storage Class"
+  description: "Storage class for model PVC. Leave empty to use cluster default."
+  type: "string"
+  default: ""
+  show_if: "storage.models.enabled=true"
+
+- variable: storage.models.existingClaim
+  group: "Storage - Models"
+  label: "Existing Model PVC Name"
+  description: "Use an existing PVC instead of creating new one. Leave empty to create new PVC."
+  type: "string"
+  default: ""
+  show_if: "storage.models.enabled=true"
+
+# =============================================================================
+# Storage Configuration - Outputs
+# =============================================================================
+- variable: storage.outputs.enabled
+  group: "Storage - Outputs"
+  label: "Enable Persistent Output Storage"
+  description: "Store generated images on persistent volume. Images are lost on pod restart if disabled."
+  type: "boolean"
+  default: true
+
+- variable: storage.outputs.size
+  group: "Storage - Outputs"
+  label: "Output Storage Size"
+  description: "Storage size for generated images. Images accumulate quickly. Recommended: 100Gi."
+  type: "string"
+  default: "100Gi"
+  show_if: "storage.outputs.enabled=true"
+
+- variable: storage.outputs.storageClassName
+  group: "Storage - Outputs"
+  label: "Output Storage Class"
+  description: "Storage class for output PVC. Leave empty to use cluster default."
+  type: "string"
+  default: ""
+  show_if: "storage.outputs.enabled=true"
+
+- variable: storage.outputs.existingClaim
+  group: "Storage - Outputs"
+  label: "Existing Output PVC Name"
+  description: "Use an existing PVC instead of creating new one. Leave empty to create new PVC."
+  type: "string"
+  default: ""
+  show_if: "storage.outputs.enabled=true"
+
+# =============================================================================
+# Storage Configuration - Shared Access (NFS/SMB)
+# =============================================================================
+- variable: storage.shared.enabled
+  group: "Storage - Shared Access"
+  label: "Enable Shared Storage (NFS/SMB)"
+  description: "Mount NFS or SMB share for easy access to outputs from your network. Great for accessing images from other machines."
+  type: "boolean"
+  default: false
+
+- variable: storage.shared.type
+  group: "Storage - Shared Access"
+  label: "Share Type"
+  description: "Network share protocol."
+  type: "enum"
+  default: "nfs"
+  options:
+    - "nfs"
+    - "smb"
+  show_if: "storage.shared.enabled=true"
+
+# --- NFS Configuration ---
+- variable: storage.shared.nfs.server
+  group: "Storage - Shared Access"
+  label: "NFS Server Address"
+  description: "IP address or hostname of your NFS server (e.g., 192.168.1.100 or nas.local)."
+  type: "string"
+  default: "192.168.1.100"
+  show_if: "storage.shared.enabled=true && storage.shared.type=nfs"
+
+- variable: storage.shared.nfs.path
+  group: "Storage - Shared Access"
+  label: "NFS Export Path"
+  description: "Path to the NFS export on the server (e.g., /mnt/ai-outputs)."
+  type: "string"
+  default: "/mnt/ai-outputs"
+  show_if: "storage.shared.enabled=true && storage.shared.type=nfs"
+
+# --- SMB Configuration ---
+- variable: storage.shared.smb.server
+  group: "Storage - Shared Access"
+  label: "SMB Share Path"
+  description: "SMB/CIFS share path (e.g., //192.168.1.100/ai-outputs or //nas.local/ai-outputs)."
+  type: "string"
+  default: "//192.168.1.100/ai-outputs"
+  show_if: "storage.shared.enabled=true && storage.shared.type=smb"
+
+- variable: storage.shared.smb.secretName
+  group: "Storage - Shared Access"
+  label: "SMB Credentials Secret Name"
+  description: "Name of Kubernetes secret containing SMB username and password. Create with: kubectl create secret generic smb-creds --from-literal=username=USER --from-literal=password=PASS"
+  type: "string"
+  default: "smb-credentials"
+  show_if: "storage.shared.enabled=true && storage.shared.type=smb"
+
+- variable: storage.shared.linkToOutputs
+  group: "Storage - Shared Access"
+  label: "Link Shared Storage to Outputs"
+  description: "Symlink the outputs directory to shared storage. When enabled, images save directly to the network share."
+  type: "boolean"
+  default: true
+  show_if: "storage.shared.enabled=true"
+
+# =============================================================================
+# Networking Configuration - ComfyUI
+# =============================================================================
+- variable: comfyui.service.type
+  group: "Networking - ComfyUI"
+  label: "ComfyUI Service Type"
+  description: |
+    How to expose the ComfyUI service:
+    • ClusterIP: Internal cluster access only (use with ingress)
+    • NodePort: Access via node IP and port (simple external access)
+    • LoadBalancer: Cloud load balancer (requires cloud provider)
+  type: "enum"
+  default: "NodePort"
+  options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"
+  show_if: "uiVariant=comfyui"
+
+- variable: comfyui.service.port
+  group: "Networking - ComfyUI"
+  label: "ComfyUI Service Port"
+  description: "Internal service port for ComfyUI."
+  type: "integer"
+  default: 8188
+  show_if: "uiVariant=comfyui"
+
+- variable: comfyui.service.nodePort
+  group: "Networking - ComfyUI"
+  label: "ComfyUI NodePort"
+  description: "NodePort for external access (30000-32767). Only used when Service Type is NodePort."
+  type: "integer"
+  default: 31800
+  min: 30000
+  max: 32767
+  show_if: "uiVariant=comfyui && comfyui.service.type=NodePort"
+
+# =============================================================================
+# Networking Configuration - Automatic1111
+# =============================================================================
+- variable: automatic1111.service.type
+  group: "Networking - Automatic1111"
+  label: "Automatic1111 Service Type"
+  description: |
+    How to expose the Automatic1111 service:
+    • ClusterIP: Internal cluster access only (use with ingress)
+    • NodePort: Access via node IP and port (simple external access)
+    • LoadBalancer: Cloud load balancer (requires cloud provider)
+  type: "enum"
+  default: "NodePort"
+  options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"
+  show_if: "uiVariant=automatic1111"
+
+- variable: automatic1111.service.port
+  group: "Networking - Automatic1111"
+  label: "Automatic1111 Service Port"
+  description: "Internal service port for Automatic1111."
+  type: "integer"
+  default: 7860
+  show_if: "uiVariant=automatic1111"
+
+- variable: automatic1111.service.nodePort
+  group: "Networking - Automatic1111"
+  label: "Automatic1111 NodePort"
+  description: "NodePort for external access (30000-32767). Only used when Service Type is NodePort."
+  type: "integer"
+  default: 31801
+  min: 30000
+  max: 32767
+  show_if: "uiVariant=automatic1111 && automatic1111.service.type=NodePort"
+
+# =============================================================================
+# Networking Configuration - InvokeAI
+# =============================================================================
+- variable: invokeai.service.type
+  group: "Networking - InvokeAI"
+  label: "InvokeAI Service Type"
+  description: |
+    How to expose the InvokeAI service:
+    • ClusterIP: Internal cluster access only (use with ingress)
+    • NodePort: Access via node IP and port (simple external access)
+    • LoadBalancer: Cloud load balancer (requires cloud provider)
+  type: "enum"
+  default: "NodePort"
+  options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"
+  show_if: "uiVariant=invokeai"
+
+- variable: invokeai.service.port
+  group: "Networking - InvokeAI"
+  label: "InvokeAI Service Port"
+  description: "Internal service port for InvokeAI."
+  type: "integer"
+  default: 9090
+  show_if: "uiVariant=invokeai"
+
+- variable: invokeai.service.nodePort
+  group: "Networking - InvokeAI"
+  label: "InvokeAI NodePort"
+  description: "NodePort for external access (30000-32767). Only used when Service Type is NodePort."
+  type: "integer"
+  default: 31802
+  min: 30000
+  max: 32767
+  show_if: "uiVariant=invokeai && invokeai.service.type=NodePort"
+
+# =============================================================================
+# Resource Configuration
+# =============================================================================
+- variable: resources.gpuOptimized.requests.cpu
+  group: "Resources"
+  label: "CPU Request (GPU Mode)"
+  description: "CPU request when GPU is enabled. Lower since GPU handles heavy work."
+  type: "string"
+  default: "2"
+  show_if: "gpu.enabled=true"
+
+- variable: resources.gpuOptimized.requests.memory
+  group: "Resources"
+  label: "Memory Request (GPU Mode)"
+  description: "Memory request when GPU is enabled."
+  type: "string"
+  default: "8Gi"
+  show_if: "gpu.enabled=true"
+
+- variable: resources.gpuOptimized.limits.cpu
+  group: "Resources"
+  label: "CPU Limit (GPU Mode)"
+  description: "CPU limit when GPU is enabled."
+  type: "string"
+  default: "4"
+  show_if: "gpu.enabled=true"
+
+- variable: resources.gpuOptimized.limits.memory
+  group: "Resources"
+  label: "Memory Limit (GPU Mode)"
+  description: "Memory limit when GPU is enabled."
+  type: "string"
+  default: "16Gi"
+  show_if: "gpu.enabled=true"
+
+- variable: resources.cpuOnly.requests.cpu
+  group: "Resources"
+  label: "CPU Request (CPU-Only Mode)"
+  description: "CPU request when GPU is disabled. Higher since CPU does all work."
+  type: "string"
+  default: "4"
+  show_if: "gpu.enabled=false"
+
+- variable: resources.cpuOnly.requests.memory
+  group: "Resources"
+  label: "Memory Request (CPU-Only Mode)"
+  description: "Memory request when GPU is disabled."
+  type: "string"
+  default: "16Gi"
+  show_if: "gpu.enabled=false"
+
+- variable: resources.cpuOnly.limits.cpu
+  group: "Resources"
+  label: "CPU Limit (CPU-Only Mode)"
+  description: "CPU limit when GPU is disabled."
+  type: "string"
+  default: "8"
+  show_if: "gpu.enabled=false"
+
+- variable: resources.cpuOnly.limits.memory
+  group: "Resources"
+  label: "Memory Limit (CPU-Only Mode)"
+  description: "Memory limit when GPU is disabled."
+  type: "string"
+  default: "32Gi"
+  show_if: "gpu.enabled=false"
+
+# =============================================================================
+# Advanced Configuration
+# =============================================================================
+- variable: initModels.enabled
+  group: "Advanced"
+  label: "Auto-Download Default Models"
+  description: "Automatically download Stable Diffusion v1.5 model on first startup. Saves time getting started."
+  type: "boolean"
+  default: true
+
+- variable: observability.enabled
+  group: "Advanced"
+  label: "Enable Observability (OpenTelemetry)"
+  description: "Enable OpenTelemetry metrics and GPU statistics collection."
+  type: "boolean"
+  default: false
+
+- variable: observability.otlpEndpoint
+  group: "Advanced"
+  label: "OpenTelemetry Collector Endpoint"
+  description: "OTLP endpoint for metrics collection (e.g., SUSE Observability)."
+  type: "string"
+  default: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
+  show_if: "observability.enabled=true"
+
+# =============================================================================
+# Ingress Configuration
+# =============================================================================
+- variable: ingress.enabled
+  group: "Ingress"
+  label: "Enable Ingress"
+  description: "Expose Stable Diffusion via Kubernetes Ingress with custom domain and TLS support."
+  type: "boolean"
+  default: false
+
+- variable: ingress.className
+  group: "Ingress"
+  label: "Ingress Class Name"
+  description: "Ingress controller class (e.g., nginx, traefik). Leave empty for default controller."
+  type: "string"
+  default: ""
+  show_if: "ingress.enabled=true"
+
+- variable: ingress.hosts[0].host
+  group: "Ingress"
+  label: "Hostname"
+  description: "Domain name for accessing Stable Diffusion (e.g., stable-diffusion.example.com)."
+  type: "string"
+  default: "stable-diffusion.example.com"
+  show_if: "ingress.enabled=true"
+
+- variable: ingress.hosts[0].paths[0].path
+  group: "Ingress"
+  label: "Path"
+  description: "URL path for the application (default: /)."
+  type: "string"
+  default: "/"
+  show_if: "ingress.enabled=true"
+
+- variable: ingress.hosts[0].paths[0].pathType
+  group: "Ingress"
+  label: "Path Type"
+  description: "How the path should be matched."
+  type: "enum"
+  default: "Prefix"
+  options:
+    - "Prefix"
+    - "Exact"
+  show_if: "ingress.enabled=true"
+
+- variable: ingress.tls[0].enabled
+  group: "Ingress"
+  label: "Enable TLS/HTTPS"
+  description: "Enable HTTPS with TLS certificate. Requires cert-manager or manual certificate."
+  type: "boolean"
+  default: false
+  show_if: "ingress.enabled=true"
+
+- variable: ingress.tls[0].secretName
+  group: "Ingress"
+  label: "TLS Secret Name"
+  description: "Name of the Kubernetes secret containing TLS certificate. Use cert-manager annotation to auto-generate."
+  type: "string"
+  default: "stable-diffusion-tls"
+  show_if: "ingress.enabled=true && ingress.tls[0].enabled=true"
+
+- variable: ingress.annotations
+  group: "Ingress"
+  label: "Ingress Annotations (JSON)"
+  description: "Additional annotations for ingress (e.g., cert-manager config, proxy settings). Use JSON format: {\"key\":\"value\"}"
+  type: "string"
+  default: "{}"
+  show_if: "ingress.enabled=true"
