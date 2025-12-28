@@ -63,14 +63,7 @@ spec:
       - name: stable-diffusion
         image: {{ include "stable-diffusion.image" . }}
         imagePullPolicy: {{ .Values.imagePullPolicy }}
-        {{- if eq .Values.uiVariant "comfyui" }}
-        command: ["python3", "main.py"]
-        args:
-          - "--listen"
-          - "0.0.0.0"
-          - "--port"
-          - "{{ .Values.comfyui.service.port }}"
-        {{- else if eq .Values.uiVariant "automatic1111" }}
+        {{- if eq .Values.uiVariant "automatic1111" }}
         command: ["/bin/bash"]
         args:
           - "-c"
