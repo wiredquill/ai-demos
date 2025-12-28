@@ -1,8 +1,8 @@
 # AI Demos Collection
 
-**Comprehensive enterprise AI demonstrations showcasing SUSE's complete cloud-native AI platform**
+**A comprehensive collection of enterprise AI applications and demonstrations for SUSE's cloud-native platform**
 
-This repository provides end-to-end demonstrations of AI application deployment, security, observability, and management using SUSE's enterprise-grade cloud-native stack. Perfect for sales demonstrations, technical evaluations, and hands-on learning.
+This repository serves as a curated catalog of AI-related applications and demonstrations, showcasing deployment, security, observability, and management using SUSE's enterprise-grade cloud-native stack. Each application is packaged as a production-ready Helm chart, deployable via Rancher Apps & Marketplace, Helm CLI, or GitOps with Fleet.
 
 ---
 
@@ -20,17 +20,28 @@ This repository provides end-to-end demonstrations of AI application deployment,
 
 ## 🎯 Repository Overview
 
-This repository contains a complete collection of AI demonstration materials organized into three main categories:
+This repository provides a curated collection of enterprise-ready AI applications and comprehensive demonstration materials organized into three main categories:
 
-### **1. 🤖 AI Compare Application**
-A production-ready AI response comparison tool that demonstrates:
-- **Direct vs Pipeline-Enhanced AI Responses**: Side-by-side comparison of local LLM responses vs processed responses
+### **1. 🤖 AI Applications Catalog**
+Production-ready Helm charts for AI workloads, each available in multiple variants:
+
+- **AI Compare** - AI response comparison tool with security and observability demonstrations
+  - `ai-compare-suse`: Enterprise SUSE BCI-based edition
+  - `ai-compare`: Upstream community edition
+  - `ai-compare-opentelemetry`: Advanced GenAI observability edition with token/cost tracking
+- **Ollama** - Local LLM inference server with GPU acceleration
+  - `ollama-suse`: SUSE enterprise edition
+  - `ollama-upstream`: Upstream community edition
+  - `ollama-suse-direct`: Direct NVIDIA GPU access variant
+
+**Key Application Features:**
 - **Security Demonstrations**: Built-in NeuVector DLP testing with dual data type transmission
 - **Enterprise Integration**: OpenTelemetry observability, GPU acceleration, persistent storage
 - **Multi-Deployment Options**: Rancher UI, Helm CLI, GitOps with Fleet
+- **Flexible Architecture**: Direct model access or pipeline-enhanced processing
 
-### **2. 📋 Platform Demonstrations** 
-Guided demonstrations covering:
+### **2. 📋 Platform Demonstrations**
+Guided demonstrations covering the complete AI application lifecycle:
 - **Infrastructure**: GPU provisioning and management with Rancher
 - **Deployment**: Multiple deployment methodologies for AI workloads
 - **Observability**: AI-specific monitoring with SUSE Observability
@@ -38,11 +49,24 @@ Guided demonstrations covering:
 - **Zero-Trust**: Network security and policy enforcement
 
 ### **3. 🏗️ Enterprise Infrastructure**
-Complete deployment automation including:
-- **Helm Charts**: Production-ready charts for both upstream and SUSE variants
+Complete deployment automation and configurations:
+- **Helm Charts**: Production-ready charts for all applications with SUSE and upstream variants
 - **GitOps**: Fleet-based continuous deployment configurations
 - **Observability**: Pre-configured monitoring and alerting
 - **Security**: NeuVector policy automation and DLP configurations
+
+### **📦 Available Charts**
+
+| Chart Name | Version | Description | Variants |
+|------------|---------|-------------|----------|
+| `ai-compare-suse` | 0.1.x | Enterprise AI comparison app (SUSE BCI) | Production |
+| `ai-compare` | 0.1.x | AI comparison app (Upstream) | Community |
+| `ai-compare-opentelemetry` | 0.1.x | Enhanced GenAI observability edition | Advanced |
+| `ollama-suse` | 0.1.x | LLM inference server (SUSE) | Enterprise |
+| `ollama-upstream` | 0.1.x | LLM inference server (Upstream) | Community |
+
+**Adding New Applications:**
+This repository is designed to grow as a catalog of AI applications. To add new applications, package them as Helm charts and submit via pull request following the existing chart structure.
 
 ---
 
@@ -54,7 +78,7 @@ The flagship AI Compare application provides real-time comparison between:
 - **🤖 Direct Ollama**: Local LLM inference (TinyLlama, Llama2, custom models)
 - **🌐 Pipeline-Enhanced**: Processed responses through Open WebUI pipelines with educational levels:
   - 👶 Kid-friendly explanations
-  - 🎓 Student-level responses  
+  - 🎓 Student-level responses
   - ⚗️ Scientific detailed analysis
 
 ### **Built-in Security Demonstrations**
@@ -109,6 +133,42 @@ The flagship AI Compare application provides real-time comparison between:
 - kubectl configured
 - Optional: GPU nodes with NVIDIA drivers
 
+### **Adding the Repository**
+
+#### **Option 1: Rancher UI (ClusterRepo)**
+Add this repository to Rancher's Apps & Marketplace by creating a ClusterRepo resource:
+
+1. Navigate to **Cluster → More Resources → Catalog (catalog.cattle.io) → ClusterRepos**
+2. Click **Create from YAML**
+3. Apply the following configuration:
+
+```yaml
+apiVersion: catalog.cattle.io/v1
+kind: ClusterRepo
+metadata:
+  name: ai-demos
+spec:
+  gitBranch: gh-pages
+  gitRepo: https://github.com/wiredquill/ai-demos.git
+```
+
+4. Click **Create** - Charts will appear in Apps & Marketplace within 1-2 minutes
+
+#### **Option 2: Helm Repository**
+```bash
+# Add the Helm repository
+helm repo add ai-demos https://wiredquill.github.io/ai-demos
+
+# Update repository index
+helm repo update
+
+# Search available charts
+helm search repo ai-demos
+
+# Install a chart
+helm install my-release ai-demos/ai-compare-suse
+```
+
 ### **Deployment Options**
 
 #### **Option 1: Rancher Apps & Marketplace (Recommended)**
@@ -127,7 +187,7 @@ helm install ai-demo charts/ai-compare-suse \
   --set ollama.gpu.enabled=true \
   --set aiCompare.observability.enabled=true
 
-# Upstream Community Edition  
+# Upstream Community Edition
 helm install ai-demo charts/ai-compare
 ```
 
@@ -232,24 +292,75 @@ aiCompare:
 
 ## 🤝 Contributing
 
+This repository welcomes contributions of new AI applications, improved demonstrations, and enhanced documentation.
+
+### **Adding New AI Applications to the Catalog**
+
+To add a new AI application to the repository:
+
+1. **Create Helm Chart Structure**
+   ```bash
+   # Create chart directory following naming convention
+   mkdir -p charts/your-app-name-suse
+   mkdir -p charts/your-app-name  # for upstream variant
+   ```
+
+2. **Package Your Application**
+   - Follow existing chart patterns (see `charts/ai-compare-suse` as reference)
+   - Include both SUSE BCI and upstream variants when possible
+   - Add comprehensive values.yaml with documentation
+   - Include README.md explaining application purpose and configuration
+
+3. **Test Your Chart**
+   ```bash
+   # Lint the chart
+   helm lint charts/your-app-name-suse
+
+   # Test deployment
+   helm install test-release charts/your-app-name-suse
+   helm test test-release
+   ```
+
+4. **Submit Pull Request**
+   - Charts are automatically packaged and published to gh-pages branch via CI/CD
+   - Include demo documentation if applicable
+   - Update main README.md to list your application in the catalog table
+
+### **General Contributions**
+
 1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/new-demo`
-3. **Make your changes**: Add new demos or improve existing ones
-4. **Test thoroughly**: Ensure all demos work in both SUSE and upstream environments
-5. **Submit a pull request**: Include clear description of changes
+2. **Create a feature branch**: `git checkout -b feature/new-app` or `git checkout -b feature/improved-demo`
+3. **Make your changes**: Add new applications, demos, or improvements
+4. **Test thoroughly**: Ensure all changes work in both SUSE and upstream environments
+5. **Submit a pull request**: Include clear description of changes and testing performed
 
 ### **Development Environment**
 ```bash
 # Setup local development
-git clone https://github.com/your-org/ai-demos.git
-cd ai-demos/app
+git clone https://github.com/wiredquill/ai-demos.git
+cd ai-demos
+
+# For application development
+cd app
 pip install -r requirements.txt
 python python-ollama-open-webui.py
+
+# For chart development
+helm lint charts/your-chart-name
+helm install test charts/your-chart-name --dry-run --debug
 
 # Run tests
 pytest tests/
 helm test my-release
 ```
+
+### **Chart Packaging and Publishing**
+
+Charts are automatically packaged and published via GitHub Actions:
+- Commits to `main` trigger automatic chart packaging
+- Charts are published to gh-pages branch
+- Rancher ClusterRepo and Helm repository automatically pick up updates
+- Manual packaging: See `.github/workflows/` for CI/CD pipeline details
 
 ---
 
