@@ -148,8 +148,7 @@ kind: ClusterRepo
 metadata:
   name: ai-demos
 spec:
-  gitBranch: gh-pages
-  gitRepo: https://github.com/wiredquill/ai-demos.git
+  url: https://wiredquill.github.io/ai-demos
 ```
 
 4. Click **Create** - Charts will appear in Apps & Marketplace within 1-2 minutes
