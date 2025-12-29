@@ -63,21 +63,6 @@ spec:
       - name: stable-diffusion
         image: {{ include "stable-diffusion.image" . }}
         imagePullPolicy: {{ .Values.imagePullPolicy }}
-        {{- if eq .Values.uiVariant "automatic1111" }}
-        command: ["/bin/bash"]
-        args:
-          - "-c"
-          - |
-            cd /stable-diffusion-webui && \
-            python3 launch.py {{ range .Values.automatic1111.args }}{{ . }} {{ end }}
-        {{- else if eq .Values.uiVariant "invokeai" }}
-        command: ["invokeai-web"]
-        args:
-          - "--host"
-          - "{{ .Values.invokeai.config.host }}"
-          - "--port"
-          - "{{ .Values.invokeai.config.port }}"
-        {{- end }}
         ports:
         - name: http
           containerPort: {{ include "stable-diffusion.servicePort" . }}
