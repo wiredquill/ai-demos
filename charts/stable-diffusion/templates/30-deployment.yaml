@@ -95,6 +95,11 @@ spec:
               key: password
         {{- end }}
         {{- end }}
+        # AI-Dock container configuration
+        - name: WEB_ENABLE_AUTH
+          value: "false"
+        - name: CF_QUICK_TUNNELS
+          value: "false"
         {{- with .Values.env }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
