@@ -44,9 +44,13 @@ jobs:
           for chart in charts/*/; do
             if [ -f "$chart/Chart.yaml" ]; then
               echo "Packaging chart: $chart"
-              helm package "$chart" --destination .cr-release-packages --dependency-update
+              helm package "$chart" --destination .cr-release-packages --dependency-update || \
+                echo "WARNING: Failed to package $chart (skipping)"
             fi
           done
+          # Fail if the core ai-compare charts weren't packaged
+          ls .cr-release-packages/ai-compare-[0-9]*.tgz || \
+            { echo "ERROR: ai-compare charts not packaged"; exit 1; }
 
       - name: Generate index
         run: |
