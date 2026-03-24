@@ -44,7 +44,7 @@ jobs:
           for chart in charts/*/; do
             if [ -f "$chart/Chart.yaml" ]; then
               echo "Packaging chart: $chart"
-              helm package "$chart" --destination .cr-release-packages
+              helm package "$chart" --destination .cr-release-packages --dependency-update
             fi
           done
 
