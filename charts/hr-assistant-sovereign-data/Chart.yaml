@@ -26,7 +26,7 @@ appVersion: "latest"
 # Dependencies from SUSE Application Collection
 dependencies:
   - name: ollama
-    version: 1.26.0
+    version: 1.38.0
     repository: oci://dp.apps.rancher.io/charts
     condition: ollama.enabled
 

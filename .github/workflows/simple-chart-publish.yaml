@@ -35,6 +35,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: Login to SUSE Application Collection
+        run: |
+          helm registry login dp.apps.rancher.io \
+            --username "${{ secrets.APPCOLLECTION_USERNAME }}" \
+            --password "${{ secrets.APPCOLLECTION_PASSWORD }}"
+
       - name: Create charts directory
         run: |
           mkdir -p .cr-release-packages
