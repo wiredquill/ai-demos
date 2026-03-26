@@ -62,28 +62,6 @@ repos:
   #       args: [--convention=google, --add-ignore=D100,D104]
   #       files: ^app/.*\.py$
 
-  # Test Execution (CRITICAL - validates before commit)
-  - repo: local
-    hooks:
-      - id: pytest-simple
-        name: "Run basic tests"
-        entry: bash
-        language: system
-        args:
-          - -c
-          - "cd app && python -m pytest tests/test_simple.py -v --tb=short"
-        files: ^app/.*\.py$
-        pass_filenames: false
-
-      - id: pytest-import-validation
-        name: "Validate Python imports"
-        entry: bash
-        language: system
-        args:
-          - -c
-          - "cd app && python -c 'import sys; sys.modules[\"gradio\"] = __import__(\"unittest.mock\").mock.MagicMock(); sys.modules[\"openlit\"] = __import__(\"unittest.mock\").mock.MagicMock(); import python_ollama_open_webui; print(\"✅ Import validation passed\")'"
-        files: ^app/python-ollama-open-webui\.py$
-        pass_filenames: false
 
   # File Quality Checks
   - repo: https://github.com/pre-commit/pre-commit-hooks

@@ -1,41 +1,39 @@
 """
-OpenAI client pattern for Ollama following Ravan's implementation.
-Uses OpenAI SDK with Ollama's OpenAI-compatible API endpoint.
+Ollama client for LLM inference with OpenLit instrumentation.
+Uses the ollama library directly to produce gen_ai.system=ollama spans
+which are required for SUSE Observability GenAI LLM System view.
 """
 
 import logging
 import os
 from typing import Dict, List
 
+import ollama
 import openlit
-from openai import OpenAI
 
 logger = logging.getLogger(__name__)
 
 
 class OllamaOpenAIClient:
     def __init__(self, ollama_url: str = None):
-        """Initialize OpenAI client for Ollama."""
+        """Initialize Ollama client."""
         self.ollama_url = ollama_url or os.getenv("OLLAMA_ENDPOINT", "http://ollama-service:11434")
-        self.client = OpenAI(
-            base_url=f"{self.ollama_url}/v1",
-            api_key="ollama",  # required, but unused
-        )
+        self.client = ollama.Client(host=self.ollama_url)  # type: ignore[attr-defined]
 
     @openlit.trace
     def chat_with_ollama(self, messages: List[Dict[str, str]], model: str = "llama3.2:latest") -> str:
-        """Chat with Ollama using OpenAI client pattern with OpenLit tracing."""
+        """Chat with Ollama using the ollama library with OpenLit tracing."""
         try:
             logger.info(f"Chatting with Ollama model: {model}")
-            completion = self.client.chat.completions.create(
+            response = self.client.chat(
                 model=model,
                 messages=messages,
             )
-            response_content = completion.choices[0].message.content
+            response_content = response.message.content
 
             # Log cost information (OpenLit handles the telemetry automatically)
-            if hasattr(completion, "usage") and completion.usage:
-                total_tokens = getattr(completion.usage, "total_tokens", 0)
+            total_tokens = getattr(response, "eval_count", 0) + getattr(response, "prompt_eval_count", 0)
+            if total_tokens:
                 logger.info(f"GenAI cost tracking - Tokens: {total_tokens}")
 
             return response_content
