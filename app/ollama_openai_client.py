@@ -29,10 +29,13 @@ class OllamaOpenAIClient:
                 model=model,
                 messages=messages,
             )
-            response_content = response.message.content
-
-            # Log cost information (OpenLit handles the telemetry automatically)
-            total_tokens = getattr(response, "eval_count", 0) + getattr(response, "prompt_eval_count", 0)
+            # OpenLit's instrumentation wrapper may return a dict instead of ChatResponse
+            if isinstance(response, dict):
+                response_content = response.get("message", {}).get("content", "")
+                total_tokens = response.get("eval_count", 0) + response.get("prompt_eval_count", 0)
+            else:
+                response_content = response.message.content
+                total_tokens = getattr(response, "eval_count", 0) + getattr(response, "prompt_eval_count", 0)
             if total_tokens:
                 logger.info(f"GenAI cost tracking - Tokens: {total_tokens}")
 

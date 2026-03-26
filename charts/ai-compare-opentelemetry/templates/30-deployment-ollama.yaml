@@ -147,12 +147,20 @@ spec:
             memory: "1Gi"
             cpu: "500m"
       {{- else }}
-      # Standard Model Download (no caching)
-      # Downloads model directly from Ollama registry every time
+      # Standard Model Download
+      # Pulls configured models; skipped if already cached in PVC
       - name: ollama-pull-model
         image: "{{ .Values.ollama.image.repository }}:{{ .Values.ollama.image.tag }}"
         imagePullPolicy: {{ .Values.imagePullPolicy }}
-        command: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull bge-large:latest && ollama pull llama3.2:latest && ollama pull tinyllama:latest"]
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            ollama serve &
+            sleep 5
+            {{- range .Values.ollama.models }}
+            ollama pull {{ . }}
+            {{- end }}
+            wait
         volumeMounts:
         - name: ollama-models
           mountPath: /root/.ollama

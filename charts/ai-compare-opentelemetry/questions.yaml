@@ -147,9 +147,9 @@ questions:
 - variable: ollama.persistence.enabled
   group: "Ollama Deployment"
   label: "Enable Ollama Model Persistence"
-  description: "If true, a PersistentVolumeClaim will be created to store Ollama models."
+  description: "If true, a PersistentVolumeClaim will be created to store Ollama models so they are not re-downloaded on restart."
   type: "boolean"
-  default: false
+  default: true
   show_if: "ollama.enabled=true"
 
 - variable: ollama.persistence.size
