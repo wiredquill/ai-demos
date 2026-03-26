@@ -21,8 +21,8 @@ keywords:
   - cost-tracking
   - demo
 maintainers:
-  - email: noreply@anthropic.com
-    name: AI Compare OpenTelemetry Team
+  - email: ai-team@suse.com
+    name: SUSE AI Team
 name: ai-compare-opentelemetry
 sources:
   - https://github.com/wiredquill/ai-demos
