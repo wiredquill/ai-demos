@@ -7,7 +7,7 @@ import threading
 
 # GitHub Actions test rebuild
 import time
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import gradio as gr
 import ollama  # Import at top level for OpenLit instrumentation
@@ -351,7 +351,7 @@ class ObservableAPIServer:
                     return jsonify({"error": "Missing 'message' in request body"}), 400
 
                 message = data["message"]
-                model = data.get("model", "tinyllama:latest")
+                model = data.get("model", "llama3.2:latest")
 
                 logger.info(f"Chat API request - message: '{message[:50]}...', model: {model}")
 
@@ -922,7 +922,7 @@ class ChatInterface:
             if result1.returncode == 0 and result2.returncode == 0:
                 logger.info("✅ ConfigMap manipulation successful - app should start failing!")
                 logger.info(
-                    '🔧 To fix externally: kubectl patch configmap <name> -n <namespace> --type=json -p=\'[{"op": "remove", "path": "/data/models_latest"}, {"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest"}]\''
+                    '🔧 To fix externally: kubectl patch configmap <name> -n <namespace> --type=json -p=\'[{"op": "remove", "path": "/data/models_latest"}, {"op": "add", "path": "/data/models-latest", "value": "llama3.2:latest"}]\''
                 )
                 return True
             else:
@@ -1088,7 +1088,7 @@ class ChatInterface:
                     "-n",
                     namespace,
                     "--type=json",
-                    '-p=[{"op": "add", "path": "/data/models-latest", "value": "tinyllama:latest"}]',
+                    '-p=[{"op": "add", "path": "/data/models-latest", "value": "llama3.2:latest"}]',
                 ],
                 capture_output=True,
                 text=True,
@@ -1424,7 +1424,7 @@ class ChatInterface:
         from concurrent.futures import ThreadPoolExecutor, as_completed
 
         logger.info("Updating all provider statuses.")
-        updated_status = {}
+        updated_status: Dict[str, Any] = {}
         start_time = time.time()
         # Allow 10 seconds total to judge if ALL models are online or offline
         max_total_time = 10  # Allow 10 seconds total for all parallel provider checks
@@ -2347,23 +2347,7 @@ spec:
                 )
 
             # Start the load simulator
-            result = self.start_load_simulator()
-
-            if result["success"]:
-                running_status = "<div style='text-align: center; color: #4CAF50; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 8px; margin: 10px 0;'>▶️ Load Simulator started - HTTP traffic generation active</div>"
-                logger.info("Load simulator started successfully from UI")
-                return (
-                    gr.Button(interactive=False),
-                    gr.Button(interactive=True),
-                    gr.HTML(value=running_status),
-                )
-            else:
-                error_status = f"<div style='text-align: center; color: #f44336; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 8px; margin: 10px 0;'>❌ Failed to start load simulator: {result['message']}</div>"
-                return (
-                    gr.Button(interactive=True),
-                    gr.Button(interactive=False),
-                    gr.HTML(value=error_status),
-                )
+            return self.start_load_simulator()
 
         except Exception as e:
             logger.error(f"Error starting load simulator from UI: {e}")
@@ -2377,23 +2361,7 @@ spec:
     def stop_load_simulator_ui(self):
         """Stop load simulator from UI - replacement for stop_automation."""
         try:
-            result = self.stop_load_simulator()
-
-            if result["success"]:
-                stopped_status = "<div style='text-align: center; color: #ffa726; padding: 10px; background: rgba(255, 167, 38, 0.1); border-radius: 8px; margin: 10px 0;'>⏹️ Load Simulator stopped - Click Start to begin HTTP traffic generation</div>"
-                logger.info("Load simulator stopped successfully from UI")
-                return (
-                    gr.Button(interactive=True),
-                    gr.Button(interactive=False),
-                    gr.HTML(value=stopped_status),
-                )
-            else:
-                error_status = f"<div style='text-align: center; color: #f44336; padding: 10px; background: rgba(244, 67, 54, 0.1); border-radius: 8px; margin: 10px 0;'>❌ Failed to stop load simulator: {result['message']}</div>"
-                return (
-                    gr.Button(interactive=True),
-                    gr.Button(interactive=True),
-                    gr.HTML(value=error_status),
-                )
+            return self.stop_load_simulator()
 
         except Exception as e:
             logger.error(f"Error stopping load simulator from UI: {e}")

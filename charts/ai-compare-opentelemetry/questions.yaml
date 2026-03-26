@@ -88,7 +88,7 @@ questions:
   label: "Primary Ollama Model"
   description: "The primary Ollama model to pull (e.g., 'llama3.2:latest', 'tinyllama:latest')."
   type: "string"
-  default: "tinyllama:latest"
+  default: "llama3.2:latest"
   show_if: "ollama.enabled=true"
 
 - variable: ollama.models[1]
@@ -167,6 +167,30 @@ questions:
   type: "string"
   default: ""
   show_if: "ollama.enabled=true && ollama.persistence.enabled=true"
+
+- variable: ollama.modelCache.nfs.enabled
+  group: "Ollama Deployment"
+  label: "Enable NFS Model Cache"
+  description: "Mount an NFS share to cache Ollama models across deployments and avoid re-downloading."
+  type: "boolean"
+  default: false
+  show_if: "ollama.enabled=true"
+
+- variable: ollama.modelCache.nfs.server
+  group: "Ollama Deployment"
+  label: "NFS Server"
+  description: "IP address or hostname of the NFS server."
+  type: "string"
+  default: ""
+  show_if: "ollama.enabled=true && ollama.modelCache.nfs.enabled=true"
+
+- variable: ollama.modelCache.nfs.path
+  group: "Ollama Deployment"
+  label: "NFS Share Path"
+  description: "Path on the NFS server to use for caching models (e.g., '/data/ai-models')."
+  type: "string"
+  default: "/data/ai-models"
+  show_if: "ollama.enabled=true && ollama.modelCache.nfs.enabled=true"
 
 # OpenTelemetry Observability Configuration
 - variable: collectGpuStats
