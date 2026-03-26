@@ -35,26 +35,28 @@ def initialize_openlit():
 
         # Get configuration from environment
         otlp_endpoint = os.getenv("OTLP_ENDPOINT")
-        app_name = os.getenv("APP_NAME", "ai-compare")
+        app_name = os.getenv("OTEL_SERVICE_NAME", os.getenv("APP_NAME", "ai-compare"))
+        environment = os.getenv("DEPLOYMENT_ENVIRONMENT", "production")
         collect_gpu_stats = os.getenv("COLLECT_GPU_STATS", "false").lower() == "true"
 
         if not otlp_endpoint:
             logger.warning("No OTLP_ENDPOINT configured, skipping OpenLit initialization")
             return False
 
-        logger.info(f"Initializing OpenLit for {app_name}")
+        logger.info(f"Initializing OpenLit for {app_name} (env: {environment})")
         logger.info(f"OTLP Endpoint: {otlp_endpoint}")
         logger.info(f"GPU Stats: {collect_gpu_stats}")
 
-        # Initialize OpenLit with pricing.json file and metrics enabled
+        # Initialize OpenLit with required resource attributes for SUSE Observability GenAI view
         openlit.init(
             otlp_endpoint=otlp_endpoint,
             disable_batch=True,
             trace_content=True,
             application_name=app_name,
-            pricing_json="./pricing.json",  # Key change: use file path like reference
+            environment=environment,
+            pricing_json="./pricing.json",
             collect_gpu_stats=collect_gpu_stats,
-            disable_metrics=False,  # Ensure metrics are enabled for GenAI Apps dashboard
+            disable_metrics=False,
         )
 
         logger.info("✅ OpenLit initialized successfully with pricing.json")
