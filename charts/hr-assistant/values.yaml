@@ -25,6 +25,8 @@ ollama:
     tag: "0.11.4"
   imagePullSecrets:
     - name: application-collection
+  # runtimeClassName required for NVIDIA libraries to be mounted in container
+  runtimeClassName: "nvidia"
   # Subchart's own "ollama" namespace (Helm strips parent key prefix)
   ollama:
     gpu:
