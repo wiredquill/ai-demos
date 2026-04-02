@@ -96,7 +96,7 @@ questions:
   label: "Ollama CPU Limit"
   description: "The maximum amount of CPU the main Ollama container can use."
   type: "string"
-  default: "4"
+  default: "1"
   show_if: "ollama.enabled=true"
 
 - variable: ollama.resources.limits.memory
