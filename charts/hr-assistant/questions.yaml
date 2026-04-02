@@ -16,11 +16,26 @@ questions:
 
 - variable: ollama.gpu.enabled
   group: "General"
-  label: "Enable NVIDIA GPU Acceleration"
+  label: "Enable NVIDIA GPU Acceleration for Ollama"
   description: "Requires a node with NVIDIA drivers and the k8s device plugin installed."
   type: "boolean"
   default: false
   show_if: "ollama.enabled=true"
+
+- variable: gpu.enabled
+  group: "General"
+  label: "Enable NVIDIA GPU for HR Assistant (time-slicing)"
+  description: "Add nvidia.com/gpu resource limit to the HR Assistant app pod. Required when using GPU time-slicing to ensure pod is scheduled on a GPU node."
+  type: "boolean"
+  default: false
+
+- variable: gpu.count
+  group: "General"
+  label: "GPU Count"
+  description: "Number of GPU slices to request (typically 1 for time-slicing)."
+  type: "integer"
+  default: 1
+  show_if: "gpu.enabled=true"
 
 - variable: ollamaEndpoint
   label: "Ollama Server URL"

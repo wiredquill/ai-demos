@@ -101,6 +101,10 @@ service:
   # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
   port: 8000
 
+gpu:
+  enabled: false
+  count: 1
+
 resources:
   requests:
     memory: '800Mi'
@@ -108,6 +112,10 @@ resources:
   limits:
     memory: '1000Mi'
     cpu: '600m'
+
+gpu:
+  enabled: false
+  count: 1
 
 nodeSelector: {}
 
