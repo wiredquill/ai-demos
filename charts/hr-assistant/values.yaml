@@ -28,7 +28,7 @@ ollama:
   # Subchart's own "ollama" namespace (Helm strips parent key prefix)
   ollama:
     gpu:
-      enabled: false
+      enabled: true
       type: "nvidia"
       number: 1
   resources:

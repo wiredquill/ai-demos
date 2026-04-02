@@ -19,7 +19,7 @@ questions:
   label: "Enable NVIDIA GPU Acceleration for Ollama"
   description: "Requires a node with NVIDIA drivers and the k8s device plugin installed."
   type: "boolean"
-  default: false
+  default: true
   show_if: "ollama.enabled=true"
 
 - variable: gpu.enabled
