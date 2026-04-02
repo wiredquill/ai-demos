@@ -25,12 +25,12 @@ ollama:
     tag: "0.11.4"
   imagePullSecrets:
     - name: application-collection
-  gpu:
-    enabled: true
-    type: "nvidia"
-    number: 1
-  hardware:
-    type: "nvidia"
+  # Subchart's own "ollama" namespace (Helm strips parent key prefix)
+  ollama:
+    gpu:
+      enabled: false
+      type: "nvidia"
+      number: 1
   resources:
     requests:
       cpu: "500m"
@@ -112,10 +112,6 @@ resources:
   limits:
     memory: '1000Mi'
     cpu: '600m'
-
-gpu:
-  enabled: false
-  count: 1
 
 nodeSelector: {}
 
