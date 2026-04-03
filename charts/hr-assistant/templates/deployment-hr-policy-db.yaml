@@ -44,7 +44,7 @@ spec:
           - name: DEPLOYMENT_ENVIRONMENT
             value: "production"
           - name: MODEL
-            value: "{{ .Values.model }}"
+            value: "llama3.2:1b"
           - name: OLLAMA_ENDPOINT
             value: "{{ include "hr-assistant.ollamaEndpoint" . }}"
           - name: OTLP_ENDPOINT
