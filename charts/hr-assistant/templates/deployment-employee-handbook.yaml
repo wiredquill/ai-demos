@@ -37,6 +37,12 @@ spec:
           env:
           - name: APP_NAME
             value: EmployeeHandbook
+          - name: OTEL_SERVICE_NAME
+            value: EmployeeHandbook
+          - name: OTEL_SERVICE_VERSION
+            value: "1.0.0"
+          - name: DEPLOYMENT_ENVIRONMENT
+            value: "production"
           - name: MODEL
             value: "llama3.2:1b"
           - name: OLLAMA_ENDPOINT
