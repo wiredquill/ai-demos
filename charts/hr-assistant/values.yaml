@@ -56,7 +56,7 @@ replicaCount: 1
 image:
   repository: ghcr.io/wiredquill/llm-experiments/genai-demo
   # This sets the pull policy for images.
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
 
