@@ -8,7 +8,7 @@ imagePullSecrets: []
 ollama:
   image:
     repository: ollama/ollama
-    tag: "0.11.4"
+    tag: "0.14.2"
   service:
     port: 11434
     type: ClusterIP
