@@ -21,7 +21,7 @@ questions:
   type: string
   description: "Open Telemetry Endpoint - Include http:// and port."
   required: true
-  default: "http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
+  default: "http://opentelemetry-collector.opentelemetry-collector.svc.cluster.local:4318"
   group: General
 
 - variable: ollama.gpu.enabled

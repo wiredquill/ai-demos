@@ -21,7 +21,7 @@ ollama:
   # -- OpenTelemetry observability for Ollama (enabled for GPU stats collection)
   observability:
     enabled: true # Enable for GPU statistics collection from actual GPU user
-    otlpEndpoint: "http://opentelemetry-collector.observability.svc.cluster.local:4318"
+    otlpEndpoint: "http://opentelemetry-collector.opentelemetry-collector.svc.cluster.local:4318"
     collectGpuStats: true # Collect GPU stats from Ollama (the actual GPU user)
   # -- Resource allocation for the main Ollama container
   resources:
@@ -58,7 +58,7 @@ openWebui:
   # OpenTelemetry observability settings
   observability:
     enabled: true # Enable OpenTelemetry integration
-    otlpEndpoint: "http://opentelemetry-collector.observability.svc.cluster.local:4317" # gRPC endpoint for Open WebUI
+    otlpEndpoint: "http://opentelemetry-collector.opentelemetry-collector.svc.cluster.local:4317" # gRPC endpoint for Open WebUI
     serviceName: "open-webui"
     serviceNamespace: "" # Will be set to deployment namespace
     # Enhanced telemetry features
@@ -117,7 +117,7 @@ aiCompare:
   # Observability settings for OpenTelemetry and OpenLit (enabled by default in OpenTelemetry edition)
   observability:
     enabled: true # Enabled by default for comprehensive GenAI telemetry and cost tracking
-    otlpEndpoint: "http://opentelemetry-collector.observability.svc.cluster.local:4318"
+    otlpEndpoint: "http://opentelemetry-collector.opentelemetry-collector.svc.cluster.local:4318"
     collectGpuStats: false # Disable GPU stats for AI Compare app (no GPU access) - Ollama handles GPU stats
     schedule: "*/5 * * * *"
     # Enhanced GenAI observability settings
