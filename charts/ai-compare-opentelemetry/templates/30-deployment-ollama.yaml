@@ -60,9 +60,8 @@ spec:
             ollama serve &
             sleep 5
             {{- range .Values.ollama.models }}
-            ollama list | grep -q "{{ . }}" || ollama pull {{ . }}
+            ollama show {{ . }} > /dev/null 2>&1 || ollama pull {{ . }}
             {{- end }}
-            wait
         volumeMounts:
         - name: ollama-models
           mountPath: /root/.ollama
@@ -88,9 +87,8 @@ spec:
             ollama serve &
             sleep 5
             {{- range .Values.ollama.models }}
-            ollama list | grep -q "{{ . }}" || ollama pull {{ . }}
+            ollama show {{ . }} > /dev/null 2>&1 || ollama pull {{ . }}
             {{- end }}
-            wait
         volumeMounts:
         - name: ollama-models
           mountPath: /root/.ollama

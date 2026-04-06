@@ -85,18 +85,11 @@ questions:
 # Ollama Deployment Configuration
 - variable: ollama.models[0]
   group: "Ollama Deployment"
-  label: "Primary Ollama Model"
-  description: "The primary Ollama model to pull (e.g., 'llama3.2:latest', 'tinyllama:latest')."
+  label: "Ollama Model"
+  description: "The Ollama model to pull and use for inference."
   type: "string"
   default: "llama3.2:latest"
-  show_if: "ollama.enabled=true"
-
-- variable: ollama.models[1]
-  group: "Ollama Deployment"
-  label: "Secondary Ollama Model (Costing Model)"
-  description: "Additional model for embeddings (optional)."
-  type: "string"
-  default: "bge-large:latest"
+  required: true
   show_if: "ollama.enabled=true"
 
 - variable: ollama.service.type
@@ -117,7 +110,7 @@ questions:
   label: "Ollama CPU Request"
   description: "The amount of CPU to reserve for the main Ollama container (e.g., '500m', '1')."
   type: "string"
-  default: "2"
+  default: "1"
   show_if: "ollama.enabled=true"
 
 - variable: ollama.resources.requests.memory
@@ -237,7 +230,7 @@ questions:
   label: "AI Compare CPU Request (CPU-only deployments)"
   description: "CPU request for AI Compare app in CPU-only mode. GPU deployments use 400m automatically."
   type: "string"
-  default: "500m"
+  default: "1"
   show_if: "ollama.enabled=true"
 
 - variable: aiCompare.resources.requests.memory
@@ -303,7 +296,7 @@ questions:
   label: "Ollama CPU Request (CPU-only mode)"
   description: "CPU request for Ollama when GPU is disabled. Used as override when ollama.gpu.enabled=false."
   type: "string"
-  default: "1.5"
+  default: "1"
   show_if: "ollama.enabled=true && ollama.gpu.enabled=false"
 
 - variable: ollama.resourcesCpuOnly.limits.cpu
