@@ -72,7 +72,7 @@ questions:
   group: "Resource Configuration"
 
 - variable: ollama.resources.requests.cpu
-  default: "1000m"
+  default: "1"
   description: "CPU request for Ollama pod"
   type: string
   label: CPU Request
@@ -91,6 +91,21 @@ questions:
   type: string
   label: CPU Limit
   group: "Resource Configuration"
+
+# === MODEL CONFIGURATION ===
+- variable: ollama.ollama.models[0]
+  default: "llama3.2:latest"
+  description: "Primary model to pull on startup (e.g., 'llama3.2:latest', 'tinyllama:latest')"
+  type: string
+  label: Primary Model
+  group: "Model Configuration"
+
+- variable: ollama.ollama.models[1]
+  default: ""
+  description: "Optional second model to pull on startup"
+  type: string
+  label: Secondary Model
+  group: "Model Configuration"
 
 # === STORAGE CONFIGURATION ===
 - variable: ollama.persistentVolume.enabled
