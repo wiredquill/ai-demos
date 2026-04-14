@@ -9,7 +9,7 @@ imagePullSecrets:
 ollama:
   image:
     repository: dp.apps.rancher.io/containers/ollama
-    tag: "0.14.2"
+    tag: "0.20.7"
   service:
     port: 11434
     type: ClusterIP
@@ -47,7 +47,7 @@ ollama:
 openWebui:
   image:
     repository: dp.apps.rancher.io/containers/open-webui
-    tag: "0.6.18" # SUSE Application Collection version with enterprise hardening
+    tag: "0.8.12" # SUSE Application Collection version with enterprise hardening
   service:
     port: 8080
     type: NodePort
