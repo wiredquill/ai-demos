@@ -26,11 +26,19 @@ ollama:
   # -- Resource allocation for the main Ollama container
   resources:
     requests:
-      cpu: "500m"
-      memory: "2Gi"
+      cpu: "1" # 1 CPU for GPU, will be overridden to 2 if GPU disabled
+      memory: "4Gi" # 4Gi for GPU, will be overridden to 8Gi if GPU disabled
     limits:
-      cpu: "4"
-      memory: "16Gi"
+      cpu: "1" # 1 CPU for GPU, will be overridden to 2 if GPU disabled
+      memory: "4Gi" # 4Gi for GPU, will be overridden to 8Gi if GPU disabled
+  # CPU-only resource configuration (used when gpu.enabled=false)
+  resourcesCpuOnly:
+    requests:
+      cpu: "2"
+      memory: "8Gi"
+    limits:
+      cpu: "2"
+      memory: "8Gi"
   models:
     - llama3.2:latest
   persistence:

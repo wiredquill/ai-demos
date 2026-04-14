@@ -35,11 +35,11 @@ ollama:
       number: 1
   resources:
     requests:
-      cpu: "500m"
-      memory: "2Gi"
+      cpu: "1"
+      memory: "4Gi"
     limits:
-      cpu: "4"
-      memory: "16Gi"
+      cpu: "1"
+      memory: "4Gi"
   persistence:
     enabled: false
     size: 10Gi

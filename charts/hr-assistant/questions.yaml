@@ -151,7 +151,7 @@ questions:
   label: "Ollama CPU Limit"
   description: "CPU limit for Ollama in GPU mode."
   type: "string"
-  default: "4"
+  default: "1"
   show_if: "ollama.enabled=true && ollama.ollama.gpu.enabled=true"
 
 - variable: ollama.resources.limits.memory
@@ -159,7 +159,7 @@ questions:
   label: "Ollama Memory Limit"
   description: "Memory limit for Ollama in GPU mode."
   type: "string"
-  default: "16Gi"
+  default: "4Gi"
   show_if: "ollama.enabled=true && ollama.ollama.gpu.enabled=true"
 
 # Ollama Resources - CPU-only mode
@@ -184,7 +184,7 @@ questions:
   label: "Ollama CPU Limit"
   description: "CPU limit for Ollama in CPU-only mode."
   type: "string"
-  default: "4"
+  default: "2"
   show_if: "ollama.enabled=true && ollama.ollama.gpu.enabled=false"
 
 - variable: ollama.resources.limits.memory
@@ -192,5 +192,5 @@ questions:
   label: "Ollama Memory Limit"
   description: "Memory limit for Ollama in CPU-only mode."
   type: "string"
-  default: "16Gi"
+  default: "8Gi"
   show_if: "ollama.enabled=true && ollama.ollama.gpu.enabled=false"
