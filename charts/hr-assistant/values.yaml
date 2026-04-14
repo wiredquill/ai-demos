@@ -22,7 +22,7 @@ jobs:
 ollama:
   enabled: true
   image:
-    tag: "0.20.7"
+    tag: "0.14.2-11.17"
   imagePullSecrets:
     - name: application-collection
   # runtimeClassName required for NVIDIA libraries to be mounted in container

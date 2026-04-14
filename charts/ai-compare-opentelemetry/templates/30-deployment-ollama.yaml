@@ -30,8 +30,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      # --- ADDED RUNTIMECLASSNAME BLOCK ---
-      # This will add runtimeClassName: nvidia only when GPU is enabled for NVIDIA
+      # runtimeClassName: nvidia only for NVIDIA GPUs; AMD uses ROCm device plugin without a special runtime class
       {{- if and .Values.ollama.gpu.enabled (eq .Values.ollama.hardware.type "nvidia") }}
       runtimeClassName: nvidia
       {{- end }}
@@ -123,6 +122,8 @@ spec:
             cpu: {{ .Values.ollama.resources.limits.cpu | quote }}
             {{- if and .Values.ollama.gpu.enabled (eq .Values.ollama.hardware.type "nvidia") }}
             nvidia.com/gpu: 1
+            {{- else if and .Values.ollama.gpu.enabled (eq .Values.ollama.hardware.type "amd") }}
+            amd.com/gpu: 1
             {{- end }}
         readinessProbe:
           httpGet:

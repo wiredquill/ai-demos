@@ -42,16 +42,30 @@ fetch_latest_tag() {
 
 info "Fetching latest component versions from GitHub..."
 
-OLLAMA_VERSION=$(fetch_latest_tag "ollama/ollama")       || error "Failed to get Ollama version"
-WEBUI_VERSION=$(fetch_latest_tag "open-webui/open-webui") || error "Failed to get Open WebUI version"
+# IMPORTANT: SUSE Application Collection images use the format <upstream-version>-<build>
+# e.g. dp.apps.rancher.io/containers/ollama:0.14.2-11.17
+# These are fetched from the SUSE App Collection helm chart, NOT from upstream GitHub tags.
+# Run: helm show values oci://dp.apps.rancher.io/charts/ollama | grep tag:
+# Run: helm show values oci://dp.apps.rancher.io/charts/open-webui | grep tag:
+# Run: helm show values oci://dp.apps.rancher.io/charts/open-webui-pipelines | grep tag:
+#
+# Upstream versions (ai-compare) should match the base version of the SUSE App Collection image
+# e.g. if SUSE uses 0.14.2-11.17 then upstream uses 0.14.2
 
-info "  Ollama:     ${OLLAMA_VERSION}"
-info "  Open WebUI: ${WEBUI_VERSION}"
+SUSE_OLLAMA_TAG=$(helm show values oci://dp.apps.rancher.io/charts/ollama 2>/dev/null | grep 'tag:' | head -1 | tr -d ' "' | sed 's/tag://') \
+  || { warn "helm pull failed for ollama — using hardcoded fallback"; SUSE_OLLAMA_TAG="0.14.2-11.17"; }
+SUSE_WEBUI_TAG=$(helm show values oci://dp.apps.rancher.io/charts/open-webui 2>/dev/null | grep 'tag:' | grep -v redis | head -1 | tr -d ' "' | sed 's/tag://') \
+  || { warn "helm pull failed for open-webui — using hardcoded fallback"; SUSE_WEBUI_TAG="0.6.41-14.20"; }
+SUSE_PIPELINES_TAG=$(helm show values oci://dp.apps.rancher.io/charts/open-webui-pipelines 2>/dev/null | grep 'tag:' | head -1 | tr -d ' "' | sed 's/tag://') \
+  || { warn "helm pull failed for pipelines — using hardcoded fallback"; SUSE_PIPELINES_TAG="0.20250819.030501-8.19"; }
 
-# Pipelines has no formal releases — uses date-stamped SUSE App Collection builds.
-# Update SUSE_PIPELINES_TAG manually when a new build is available.
-SUSE_PIPELINES_TAG="0.20250329.151219"
-warn "  Pipelines (SUSE): ${SUSE_PIPELINES_TAG} (update manually from dp.apps.rancher.io)"
+# Derive upstream versions by stripping the -build suffix
+OLLAMA_VERSION=$(echo "$SUSE_OLLAMA_TAG" | cut -d- -f1)
+WEBUI_VERSION=$(echo "$SUSE_WEBUI_TAG" | cut -d- -f1)
+
+info "  Ollama:     ${OLLAMA_VERSION}  (SUSE: ${SUSE_OLLAMA_TAG})"
+info "  Open WebUI: ${WEBUI_VERSION}  (SUSE: ${SUSE_WEBUI_TAG})"
+info "  Pipelines:  (SUSE: ${SUSE_PIPELINES_TAG}, upstream: main)"
 
 # ── Helper: in-place sed that works on macOS and Linux ───────────────────────
 sed_inplace() {
@@ -97,44 +111,61 @@ bump_chart_version() {
 }
 
 # ── Charts configuration ──────────────────────────────────────────────────────
-# Format: "chart_dir|ollama_registry|webui_registry|has_pipelines"
+# Format: "chart_dir|registry_type"
+# registry_type: suse = dp.apps.rancher.io (versioned build tags)
+#                upstream = ghcr.io / docker hub (plain version tags)
+#                hr = suse App Collection only (no webui)
 declare -a CHARTS=(
-    "ai-compare|ollama/ollama|ghcr.io/open-webui/open-webui|upstream"
-    "ai-compare-suse|dp.apps.rancher.io/containers/ollama|dp.apps.rancher.io/containers/open-webui|suse"
-    "ai-compare-opentelemetry|dp.apps.rancher.io/containers/ollama|dp.apps.rancher.io/containers/open-webui|suse"
-    "hr-assistant|dp.apps.rancher.io/containers/ollama|||none"
+    "ai-compare|upstream"
+    "ai-compare-suse|suse"
+    "ai-compare-opentelemetry|suse"
+    "hr-assistant|hr"
 )
 
 echo
 info "Updating image tags across charts..."
 echo
 
-# Track current values for diffs — read once before changes
-CURRENT_OLLAMA=$(grep -h "tag:.*0\." "${CHARTS_DIR}/ai-compare-suse/values.yaml" | head -1 | tr -d ' "' | sed 's/tag://')
-
 for entry in "${CHARTS[@]}"; do
-    IFS='|' read -r chart_dir _ollama_repo _webui_repo pipelines_type <<< "$entry"
+    IFS='|' read -r chart_dir registry_type <<< "$entry"
     values="${CHARTS_DIR}/${chart_dir}/values.yaml"
     chart_yaml="${CHARTS_DIR}/${chart_dir}/Chart.yaml"
 
-    info "── ${chart_dir} ──"
+    info "── ${chart_dir} (${registry_type}) ──"
 
     if [[ ! -f "$values" ]]; then
         warn "  values.yaml not found, skipping"
         continue
     fi
 
-    # Get current Ollama tag from this chart
-    cur_ollama=$(grep 'tag:' "$values" | head -1 | tr -d ' "' | sed 's/tag://')
+    if [[ "$registry_type" == "upstream" ]]; then
+        ollama_new="$OLLAMA_VERSION"
+        webui_new="$WEBUI_VERSION"
+    else
+        # suse and hr both use SUSE App Collection tags
+        ollama_new="$SUSE_OLLAMA_TAG"
+        webui_new="$SUSE_WEBUI_TAG"
+    fi
 
-    # Ollama image
-    update_image_tag "$values" "$cur_ollama" "$OLLAMA_VERSION" "Ollama"
+    # Find and update Ollama tag (first tag: line in the ollama section)
+    cur_ollama=$(grep -A2 'repository:.*ollama' "$values" | grep 'tag:' | head -1 | tr -d ' "' | sed 's/tag://' | cut -d'#' -f1 | tr -d ' ')
+    if [[ -n "$cur_ollama" ]]; then
+        update_image_tag "$values" "$cur_ollama" "$ollama_new" "Ollama"
+    fi
 
-    # Open WebUI image (not in hr-assistant)
-    if [[ "$pipelines_type" != "none" ]]; then
-        cur_webui=$(grep -A1 'open-webui' "$values" | grep 'tag:' | head -1 | tr -d ' "#.*' | sed 's/tag://')
+    # Open WebUI (not in hr-assistant)
+    if [[ "$registry_type" != "hr" ]]; then
+        cur_webui=$(grep -A2 'repository:.*open-webui[^-]' "$values" | grep 'tag:' | head -1 | tr -d ' "' | sed 's/tag://' | cut -d'#' -f1 | tr -d ' ')
         if [[ -n "$cur_webui" ]]; then
-            update_image_tag "$values" "$cur_webui" "$WEBUI_VERSION" "Open WebUI"
+            update_image_tag "$values" "$cur_webui" "$webui_new" "Open WebUI"
+        fi
+
+        # Pipelines (SUSE only; upstream uses 'main' which stays)
+        if [[ "$registry_type" == "suse" ]]; then
+            cur_pipelines=$(grep -A2 'open-webui-pipelines' "$values" | grep 'tag:' | head -1 | tr -d ' "' | sed 's/tag://' | cut -d'#' -f1 | tr -d ' ')
+            if [[ -n "$cur_pipelines" ]]; then
+                update_image_tag "$values" "$cur_pipelines" "$SUSE_PIPELINES_TAG" "Pipelines"
+            fi
         fi
     fi
 

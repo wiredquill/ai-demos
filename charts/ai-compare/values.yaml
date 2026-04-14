@@ -8,7 +8,7 @@ imagePullSecrets: []
 ollama:
   image:
     repository: ollama/ollama
-    tag: "0.20.7"
+    tag: "0.14.2"
   service:
     port: 11434
     type: ClusterIP
@@ -52,7 +52,7 @@ ollama:
 openWebui:
   image:
     repository: ghcr.io/open-webui/open-webui
-    tag: "0.8.12" # Pipeline-enabled version
+    tag: "0.6.41" # Pipeline-enabled version
   service:
     port: 8080
     type: NodePort

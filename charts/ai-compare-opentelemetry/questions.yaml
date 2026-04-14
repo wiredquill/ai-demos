@@ -31,6 +31,17 @@ questions:
   type: "boolean"
   default: true
 
+- variable: ollama.hardware.type
+  group: General
+  label: "GPU Vendor"
+  description: "Select the GPU vendor. NVIDIA requires the NVIDIA device plugin and runtimeClass. AMD requires the AMD ROCm device plugin (amd.com/gpu)."
+  type: "enum"
+  default: "nvidia"
+  show_if: "ollama.gpu.enabled=true"
+  options:
+    - "nvidia"
+    - "amd"
+
 - variable: frontend.enabled
   group: General
   label: "Enable Load Simulator"
