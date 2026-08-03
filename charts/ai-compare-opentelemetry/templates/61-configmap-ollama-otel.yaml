@@ -90,8 +90,8 @@ data:
         compression: gzip
 
       # Debug logging (optional)
-      logging:
-        loglevel: info
+      debug:
+        verbosity: basic
 
     extensions:
       health_check:
@@ -107,9 +107,9 @@ data:
         traces:
           receivers: [otlp]
           processors: [resource, batch]
-          exporters: [otlphttp, logging]
+          exporters: [otlphttp, debug]
         metrics:
           receivers: [prometheus, httpcheck]
           processors: [resource, batch]
-          exporters: [otlphttp, logging]
+          exporters: [otlphttp, debug]
 {{- end }}

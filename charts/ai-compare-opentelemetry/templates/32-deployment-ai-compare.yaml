@@ -95,11 +95,6 @@ spec:
               value: "{{ .Values.aiCompare.observability.modelMetrics }}"
             - name: TRACE_REQUESTS_ENABLED
               value: "{{ .Values.aiCompare.observability.traceRequests }}"
-            # Clean OpenLit configuration (following ravan/llm-experiments pattern)
-            - name: COLLECT_GPU_STATS
-              value: "{{ .Values.aiCompare.observability.collectGpuStats }}"
-            - name: OLLAMA_ENDPOINT
-              value: "http://ollama-service:11434"
             # Model configuration for demo
             - name: MODEL_CONFIG
               valueFrom:
@@ -137,9 +132,6 @@ spec:
               value: "8"
             - name: INFERENCE_TIMEOUT
               value: "60"
-            # Enable mock mode for reliable telemetry generation
-            - name: GENAI_MOCK_MODE
-              value: "true"
             # Required Kubernetes environment variables for resource attributes
             - name: K8S_POD_NAME
               valueFrom:
@@ -157,14 +149,15 @@ spec:
             - name: OTEL_RESOURCE_ATTRIBUTES
               value: >-
                 service.namespace={{ .Release.Namespace }},service.version=1.0.0,service.instance.id=$(K8S_POD_UID),
-                deployment.environment={{ .Release.Namespace }},k8s.namespace.name={{ .Release.Namespace }},
-                k8s.pod.name=$(K8S_POD_NAME),k8s.pod.uid=$(K8S_POD_UID),k8s.node.name=$(K8S_NODE_NAME)
+                deployment.environment={{ .Values.aiCompare.env.DEPLOYMENT_ENVIRONMENT | default "production" }},k8s.namespace.name={{ .Release.Namespace }},
+                k8s.pod.name=$(K8S_POD_NAME),k8s.pod.uid=$(K8S_POD_UID),k8s.node.name=$(K8S_NODE_NAME),
+                suse.ai.component.type=agent,suse.ai.component.name={{ .Values.aiCompare.env.OTEL_SERVICE_NAME | default "ai-compare" }},suse.ai.managed=true
             # Explicit service name configuration (matching working genai apps pattern)
             - name: OTEL_SERVICE_NAME
-              value: "AICompareGenerator"
+              value: {{ .Values.aiCompare.env.OTEL_SERVICE_NAME | default "ai-compare" | quote }}
             # Add APP_NAME like working genai apps (match exact pattern)
             - name: APP_NAME
-              value: "AICompareGenerator"
+              value: {{ .Values.aiCompare.env.OTEL_SERVICE_NAME | default "ai-compare" | quote }}
             # OpenTelemetry service configuration overrides
             {{- if .Values.aiCompare.env }}
             {{- range $key, $value := .Values.aiCompare.env }}
@@ -182,19 +175,23 @@ spec:
             httpGet:
               path: /health
               port: {{ .Values.aiCompare.httpApi.port }}
-            initialDelaySeconds: 15
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
+            # Generous probes: the app's HTTP API is single-threaded, so a slow
+            # inference request (shared time-sliced GPU) blocks /health. Tolerate
+            # ~65s of probe failures before restart, else every chat request
+            # SIGKILLs the pod via liveness.
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 6
           readinessProbe:
             httpGet:
               path: /health
               port: {{ .Values.aiCompare.httpApi.port }}
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            timeoutSeconds: 3
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 10
             successThreshold: 1
-            failureThreshold: 3
+            failureThreshold: 6
           volumeMounts:
             - name: config-volume
               mountPath: /app/config.json

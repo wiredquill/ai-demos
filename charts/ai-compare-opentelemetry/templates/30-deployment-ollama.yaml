@@ -11,7 +11,7 @@ metadata:
     observability.suse.com/genai-app: "true"
     ai.application.category: "model-serving"
 spec:
-  replicas: 1
+  replicas: {{ .Values.ollama.replicaCount }}
   selector:
     matchLabels:
       app: ollama
@@ -121,7 +121,7 @@ spec:
             memory: {{ .Values.ollama.resources.limits.memory | quote }}
             cpu: {{ .Values.ollama.resources.limits.cpu | quote }}
             {{- if and .Values.ollama.gpu.enabled (eq .Values.ollama.hardware.type "nvidia") }}
-            nvidia.com/gpu: 1
+            nvidia.com/gpu: {{ .Values.ollama.gpu.slices }}
             {{- else if and .Values.ollama.gpu.enabled (eq .Values.ollama.hardware.type "amd") }}
             amd.com/gpu: 1
             {{- end }}
@@ -134,7 +134,7 @@ spec:
       {{- if .Values.ollama.observability.enabled }}
       # OpenTelemetry Sidecar for Ollama observability
       - name: otel-collector
-        image: otel/opentelemetry-collector-contrib:0.91.0
+        image: otel/opentelemetry-collector-contrib:0.157.0
         ports:
         - containerPort: 4317
           name: otlp-grpc
