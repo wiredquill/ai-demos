@@ -133,7 +133,7 @@ image:
   # -- Image repository to use for the open-webui container
   repository: containers/open-webui
   # -- Image tag to use for the open-webui container
-  tag: "0.6.18"
+  tag: "0.6.41-14.20"
   # -- Image pull policy to use for the open-webui container
   pullPolicy: IfNotPresent
 # -- Open WebUI container command (overrides default entrypoint)

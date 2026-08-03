@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-openlit = "^1.26.0"
+openlit = "^1.44.0"
 openai = "^1.53.0"
 pymilvus = {extras = ["model"], version = "^2.4.9"}
 sentence-transformers = "^3.2.1"

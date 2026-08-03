@@ -8,12 +8,16 @@ imagePullSecrets: []
 ollama:
   image:
     repository: ollama/ollama
-    tag: "0.14.2"
+    tag: "0.21.2"
   service:
     port: 11434
     type: ClusterIP
   gpu:
     enabled: true
+    # -- Number of NVIDIA time-sliced GPU slices to request (nvidia.com/gpu)
+    slices: 1
+  # -- Number of Ollama replicas (scale out on time-sliced GPUs)
+  replicaCount: 1
   # -- Hardware Configuration for Ollama
   hardware:
     type: "nvidia" # Options: "nvidia", "apple"

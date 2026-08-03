@@ -9,12 +9,20 @@ imagePullSecrets:
 ollama:
   image:
     repository: dp.apps.rancher.io/containers/ollama
-    tag: "0.14.2-11.17"
+    tag: "0.21.2-11.48"
   service:
     port: 11434
     type: ClusterIP
   gpu:
     enabled: true
+    # -- Number of NVIDIA time-sliced GPU slices to request (nvidia.com/gpu).
+    # On a time-sliced cluster (GPU Operator with time-slicing-config, replicas=N)
+    # each physical GPU advertises N slices; set this to 1 (one slice) and scale
+    # ollama.replicaCount to run multiple instances sharing the same physical GPU.
+    slices: 1
+  # -- Number of Ollama replicas. With GPU time-slicing enabled, run several
+  # replicas (each taking one slice) to demonstrate GPU sharing.
+  replicaCount: 1
   # -- Hardware Configuration for Ollama
   hardware:
     type: "nvidia" # Options: "nvidia", "apple"

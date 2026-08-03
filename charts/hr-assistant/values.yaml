@@ -22,7 +22,7 @@ jobs:
 ollama:
   enabled: true
   image:
-    tag: "0.14.2-11.17"
+    tag: "0.21.2-11.48"
   imagePullSecrets:
     - name: application-collection
   # runtimeClassName required for NVIDIA libraries to be mounted in container
@@ -51,6 +51,7 @@ ollama:
       server: "" # NFS server IP/hostname
       path: "/data/ai-models" # NFS share path for caching models
   models:
+    pull:
     - llama3.2:1b
     - bge-large:latest
 

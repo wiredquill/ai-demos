@@ -6,14 +6,32 @@ metadata:
 spec:
   repo: https://helm.ngc.nvidia.com/nvidia
   chart: gpu-operator
+  version: v26.3.3 # Pinned: latest stable NVIDIA GPU Operator (2026-08)
   targetNamespace: gpu-operator # Installs the operator into its own namespace
   createNamespace: true
   valuesContent: |-
     driver:
       enabled: false # Important: Do not let the operator manage the driver
+    dcgmExporter:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9400"
+      # Restores the prometheus.io annotations that the v26.3.3 upgrade dropped from the
+      # dcgm-exporter pod. Not required by the current collector (static target on the
+      # Service DNS name), but keeps pod-level SD scraping working for any other scraper.
     toolkit:
       env:
       - name: CONTAINERD_CONFIG
         value: /var/lib/rancher/rke2/agent/etc/containerd/config.toml
       - name: CONTAINERD_SOCKET
         value: /run/k3s/containerd/containerd.sock
+    devicePlugin:
+      # Time-slicing: each physical GPU is advertised as 8 virtual GPUs.
+      # The ConfigMap (time-slicing-config) must exist in gpu-operator before
+      # the operator starts the device plugin.
+      config:
+        name: time-slicing-config
+        default: any
+      env:
+      - name: DEVICE_LIST_STRATEGY
+        value: cdi-annotations # CDI mode: kubelet injects cdi.k8s.io annotations so the runtime resolves the k8s.device-plugin.nvidia.com/gpu spec (required for time-sliced GPU pods on rke2; volume-mounts falls back to management.nvidia.com/gpu and fails)

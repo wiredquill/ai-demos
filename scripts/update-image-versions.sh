@@ -43,17 +43,17 @@ fetch_latest_tag() {
 info "Fetching latest component versions from GitHub..."
 
 # IMPORTANT: SUSE Application Collection images use the format <upstream-version>-<build>
-# e.g. dp.apps.rancher.io/containers/ollama:0.14.2-11.17
+# e.g. dp.apps.rancher.io/containers/ollama:0.21.2-11.48
 # These are fetched from the SUSE App Collection helm chart, NOT from upstream GitHub tags.
 # Run: helm show values oci://dp.apps.rancher.io/charts/ollama | grep tag:
 # Run: helm show values oci://dp.apps.rancher.io/charts/open-webui | grep tag:
 # Run: helm show values oci://dp.apps.rancher.io/charts/open-webui-pipelines | grep tag:
 #
 # Upstream versions (ai-compare) should match the base version of the SUSE App Collection image
-# e.g. if SUSE uses 0.14.2-11.17 then upstream uses 0.14.2
+# e.g. if SUSE uses 0.21.2-11.48 then upstream uses 0.21.2
 
 SUSE_OLLAMA_TAG=$(helm show values oci://dp.apps.rancher.io/charts/ollama 2>/dev/null | grep 'tag:' | head -1 | tr -d ' "' | sed 's/tag://') \
-  || { warn "helm pull failed for ollama — using hardcoded fallback"; SUSE_OLLAMA_TAG="0.14.2-11.17"; }
+  || { warn "helm pull failed for ollama — using hardcoded fallback"; SUSE_OLLAMA_TAG="0.21.2-11.48"; }
 SUSE_WEBUI_TAG=$(helm show values oci://dp.apps.rancher.io/charts/open-webui 2>/dev/null | grep 'tag:' | grep -v redis | head -1 | tr -d ' "' | sed 's/tag://') \
   || { warn "helm pull failed for open-webui — using hardcoded fallback"; SUSE_WEBUI_TAG="0.6.41-14.20"; }
 SUSE_PIPELINES_TAG=$(helm show values oci://dp.apps.rancher.io/charts/open-webui-pipelines 2>/dev/null | grep 'tag:' | head -1 | tr -d ' "' | sed 's/tag://') \

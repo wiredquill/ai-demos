@@ -1,10 +1,10 @@
 annotations:
   helm.sh/images: |
-    - image: dp.apps.rancher.io/containers/open-webui:0.6.18
+    - image: dp.apps.rancher.io/containers/open-webui:0.6.41-14.20
       name: open-webui
   licenses: MIT
 apiVersion: v2
-appVersion: 0.6.18
+appVersion: 0.6.41
 dependencies:
 - condition: ollama.enabled
   import-values:
@@ -39,4 +39,4 @@ maintainers:
 - name: SUSE LLC
   url: https://www.suse.com
 name: open-webui
-version: 7.2.0
+version: 7.3.0
