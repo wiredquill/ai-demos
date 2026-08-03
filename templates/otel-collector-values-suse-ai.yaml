@@ -1,0 +1,305 @@
+clusterRole:
+  create: true
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    - nodes
+    - endpoints
+    - services
+    - namespaces
+    verbs:
+    - get
+    - list
+    - watch
+config:
+  connectors:
+    routing/traces:
+      error_mode: ignore
+      table:
+      - action: copy
+        condition: "true"
+        pipelines:
+        - traces/sampling
+        - traces/model-relations
+        - traces/provider-relations
+        - traces/topology
+  exporters:
+    debug:
+      verbosity: basic
+    otlp_grpc:
+      endpoint: otlp-observability.mort.dna-42.com:443
+      headers:
+        Authorization: SUSEObservability ${env:API_KEY}
+      tls:
+        insecure: false
+    topology:
+      api_key: ${env:API_KEY}
+      endpoint: https://observability.mort.dna-42.com
+      namespace: ${env:SUSE_AI_NAMESPACE}
+      tls:
+        insecure_skip_verify: true
+  processors:
+    filter/exclude-already-tagged:
+      error_mode: ignore
+      metrics:
+        resource:
+        - attributes["suse.ai.component.name"] != nil
+    filter/genai-metrics-only:
+      error_mode: ignore
+      metrics:
+        metric:
+        - not(IsMatch(name, "gen_ai\\..*"))
+    filter/genai-spans:
+      error_mode: ignore
+      traces:
+        span:
+        - attributes["gen_ai.request.model"] == nil
+    groupbyattrs/infer-models:
+      keys:
+      - gen_ai.request.model
+      - gen_ai.provider.name
+    groupbyattrs/infer-providers:
+      keys:
+      - gen_ai.provider.name
+    groupbyattrs/model-relations:
+      keys:
+      - gen_ai.provider.name
+    transform/infer-applications:
+      error_mode: ignore
+      metric_statements:
+      - context: resource
+        statements:
+        - set(attributes["suse.ai.managed"], "true")
+        - set(attributes["suse.ai.component.type"], "application")
+        - set(attributes["suse.ai.component.name"], attributes["service.name"])
+        - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}")
+    transform/infer-models:
+      error_mode: ignore
+      metric_statements:
+      - context: resource
+        statements:
+        - set(attributes["service.name"], attributes["gen_ai.request.model"]) where
+          attributes["gen_ai.request.model"] != nil
+        - set(attributes["service.instance.id"], attributes["gen_ai.request.model"])
+          where attributes["gen_ai.request.model"] != nil
+        - set(attributes["suse.ai.managed"], "true") where attributes["gen_ai.request.model"]
+          != nil
+        - set(attributes["suse.ai.component.name"], attributes["gen_ai.request.model"])
+          where attributes["gen_ai.request.model"] != nil
+        - set(attributes["suse.ai.component.type"], "llm-model") where attributes["gen_ai.request.model"]
+          != nil
+        - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where
+          attributes["gen_ai.request.model"] != nil
+    transform/infer-providers:
+      error_mode: ignore
+      metric_statements:
+      - context: resource
+        statements:
+        - set(attributes["service.name"], attributes["gen_ai.provider.name"]) where
+          attributes["gen_ai.provider.name"] != nil
+        - set(attributes["service.instance.id"], attributes["gen_ai.provider.name"])
+          where attributes["gen_ai.provider.name"] != nil
+        - set(attributes["suse.ai.managed"], "true") where attributes["gen_ai.provider.name"]
+          != nil
+        - set(attributes["suse.ai.component.name"], attributes["gen_ai.provider.name"])
+          where attributes["gen_ai.provider.name"] != nil
+        - set(attributes["suse.ai.component.type"], "inference-engine") where attributes["gen_ai.provider.name"]
+          != nil
+        - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where
+          attributes["gen_ai.provider.name"] != nil
+    transform/topology-provider:
+      error_mode: ignore
+      trace_statements:
+      - context: span
+        statements:
+        - set(attributes["gen_ai.provider.name"], resource.attributes["gen_ai.provider.name"]) where resource.attributes["gen_ai.provider.name"] != nil
+        - set(attributes["gen_ai.request.model"], resource.attributes["gen_ai.request.model"]) where resource.attributes["gen_ai.request.model"] != nil
+    transform/model-relations:
+      error_mode: ignore
+      trace_statements:
+      - context: resource
+        statements:
+        - set(attributes["service.name"], attributes["gen_ai.provider.name"]) where
+          attributes["gen_ai.provider.name"] != nil
+        - set(attributes["service.instance.id"], attributes["gen_ai.provider.name"])
+          where attributes["gen_ai.provider.name"] != nil
+      - context: span
+        statements:
+        - set(attributes["peer.service"], attributes["gen_ai.request.model"]) where
+          attributes["gen_ai.request.model"] != nil
+    transform/provider-relations:
+      error_mode: ignore
+      trace_statements:
+      - context: span
+        statements:
+        - set(attributes["peer.service"], resource.attributes["gen_ai.provider.name"])
+          where resource.attributes["gen_ai.provider.name"] != nil
+  receivers:
+    prometheus:
+      config:
+        scrape_configs:
+        - job_name: gpu-metrics
+          scheme: http
+          scrape_interval: 10s
+          static_configs:
+          - labels:
+              host: dev-ai-pool1-6fk5c-8fkdl
+              hostname: dev-ai-pool1-6fk5c-8fkdl
+              k8s_node_name: dev-ai-pool1-6fk5c-8fkdl
+              kubernetes_namespace: gpu-operator
+              kubernetes_node: dev-ai-pool1-6fk5c-8fkdl
+              node: dev-ai-pool1-6fk5c-8fkdl
+              service: nvidia-dcgm-exporter
+            targets:
+            - nvidia-dcgm-exporter.gpu-operator.svc:9400
+        - job_name: vllm
+          kubernetes_sd_configs:
+          - role: service
+          relabel_configs:
+          - action: keep
+            regex: vllm
+            source_labels:
+            - __meta_kubernetes_service_label_app
+          - action: keep
+            regex: "true"
+            source_labels:
+            - __meta_kubernetes_service_annotation_prometheus_io_scrape
+          - regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            source_labels:
+            - __address__
+            - __meta_kubernetes_service_annotation_prometheus_io_port
+            target_label: __address__
+          scrape_interval: 10s
+  service:
+    pipelines:
+      logs:
+        exporters:
+        - otlp_grpc
+        - debug
+        processors:
+        - k8s_attributes
+        - memory_limiter
+        - batch
+        receivers:
+        - otlp
+      metrics:
+        exporters:
+        - otlp_grpc
+        - debug
+        processors:
+        - k8s_attributes
+        - memory_limiter
+        - batch
+        receivers:
+        - prometheus
+        - otlp
+      metrics/infer-applications:
+        exporters:
+        - otlp_grpc
+        processors:
+        - filter/genai-metrics-only
+        - filter/exclude-already-tagged
+        - transform/infer-applications
+        - k8s_attributes
+        - batch
+        receivers:
+        - otlp
+      metrics/infer-models:
+        exporters:
+        - otlp_grpc
+        processors:
+        - filter/genai-metrics-only
+        - groupbyattrs/infer-models
+        - transform/infer-models
+        - k8s_attributes
+        - batch
+        receivers:
+        - otlp
+      metrics/infer-providers:
+        exporters:
+        - otlp_grpc
+        processors:
+        - filter/genai-metrics-only
+        - groupbyattrs/infer-providers
+        - transform/infer-providers
+        - k8s_attributes
+        - batch
+        receivers:
+        - otlp
+      traces:
+        exporters:
+        - routing/traces
+        processors:
+        - k8s_attributes
+        - memory_limiter
+        - batch
+        receivers:
+        - otlp
+        - jaeger
+        - zipkin
+      traces/model-relations:
+        exporters:
+        - otlp_grpc
+        - debug
+        processors:
+        - filter/genai-spans
+        - groupbyattrs/model-relations
+        - transform/model-relations
+        - batch
+        receivers:
+        - routing/traces
+      traces/provider-relations:
+        exporters:
+        - otlp_grpc
+        - debug
+        processors:
+        - filter/genai-spans
+        - transform/provider-relations
+        - batch
+        receivers:
+        - routing/traces
+      traces/sampling:
+        exporters:
+        - otlp_grpc
+        - debug
+        processors:
+        - batch
+        receivers:
+        - routing/traces
+      traces/topology:
+        exporters:
+        - topology
+        processors:
+        - transform/topology-provider
+        - batch
+        receivers:
+        - routing/traces
+extraEnvs:
+- name: K8S_CLUSTER_NAME
+  value: dev-ai
+- name: SUSE_AI_NAMESPACE
+  value: ai-compare
+extraEnvsFrom:
+- secretRef:
+    name: open-telemetry-collector
+global:
+  imagePullSecrets:
+  - name: application-collection
+image:
+  pullPolicy: IfNotPresent
+  registry: registry.suse.com
+  repository: ai/containers/suse-ai-opentelemetry-collector
+  tag: 0.149.0
+imagePullSecrets:
+- name: suse-ai-registry
+mode: deployment
+ports:
+  metrics:
+    enabled: true
+presets:
+  kubernetesAttributes:
+    enabled: true
+    extractAllPodLabels: true
