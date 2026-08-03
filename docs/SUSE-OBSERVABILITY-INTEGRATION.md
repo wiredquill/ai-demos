@@ -2,6 +2,8 @@
 
 This guide explains how to enable OpenTelemetry observability for an existing Python application to appear in SUSE Observability's GenAI Applications section with full metrics, traces, and LLM system detection.
 
+> **Compatibility (2026-08):** The stack is verified against SUSE Observability v2.10.x with the `suse-ai-observability-extension` v2.x. OpenLit is pinned at `1.44.0` in `app/requirements.txt` (latest as of Aug 2026). For SUSE Observability **2.6.2 and newer**, the collector must rename `vllm:`-prefixed metrics (see the "SUSE Observability 2.6.2+ Transform Processor" section below) or vLLM metrics are silently dropped.
+
 ## Overview
 
 This implementation demonstrates integrating a Python AI application with SUSE Observability using OpenTelemetry and OpenLit for comprehensive GenAI observability. The application will appear in:
@@ -27,10 +29,12 @@ flask
 ollama
 
 # OpenTelemetry dependencies
-openlit>=1.28.0
+openlit>=1.44.0
 opentelemetry-api
 opentelemetry-sdk
 ```
+
+> **Note:** `app/requirements.txt` pins `openlit==1.44.0` exactly for reproducible builds. The `>=` constraint here is for applications that want to track latest. OpenLit 1.44.0 (Aug 2026) is the current release and is verified against SUSE Observability 2.10.x.
 
 ## Step 2: Python Application Changes
 
@@ -288,6 +292,27 @@ After deployment, you should see:
 - Model usage and performance metrics
 
 ## Troubleshooting
+
+### SUSE Observability 2.6.2+ Transform Processor (vLLM metrics dropped)
+
+Starting with SUSE Observability 2.6.2, metric names with a `vllm:` prefix are reserved for Prometheus recording rules and are silently dropped. If you scrape vLLM `/metrics` (or any exporter emitting `vllm:`-prefixed names) into the collector, add a transform processor that renames the prefix:
+
+```yaml
+processors:
+  transform:
+    metric_statements:
+      - context: metric
+        statements:
+          - replace_pattern(name, "^vllm:", "vllm_")
+  service:
+    pipelines:
+      metrics:
+        receivers: [otlp, spanmetrics, prometheus]
+        processors: [transform, memory_limiter, resource, batch]
+        exporters: [otlp_grpc]
+```
+
+Keep `memory_limiter`, `resource`, and `batch` in the pipeline — the OTel Helm chart injects them automatically and omitting them disables memory protection and batching. Only needed for SUSE Observability 2.6.2+; 2.6.1 and below do not require it.
 
 ### Common Issues
 

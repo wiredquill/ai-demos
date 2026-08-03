@@ -23,7 +23,7 @@ spec:
       restartPolicy: Never
       containers:
       - name: ollama-model-puller
-        image: "dp.apps.rancher.io/containers/ollama:{{ .Values.ollama.image.tag | default "0.11.4-10.88" }}"
+        image: "dp.apps.rancher.io/containers/ollama:{{ .Values.ollama.image.tag | default "0.21.2-11.48" }}"
         imagePullPolicy: IfNotPresent
         command: ["/bin/sh"]
         args:
@@ -61,9 +61,9 @@ spec:
             fi
 
             # Pull configured models
-            {{- if .Values.ollama.models }}
+            {{- if .Values.ollama.models.pull }}
             echo "=== Pulling configured models ==="
-            {{- range .Values.ollama.models }}
+            {{- range .Values.ollama.models.pull }}
             echo "📥 Pulling model: {{ . }}"
             if ! ollama pull {{ . }} 2>&1; then
               echo "⚠️  WARNING: Failed to pull {{ . }}, but continuing with other models"
@@ -72,7 +72,7 @@ spec:
             fi
             {{- end }}
             {{- else }}
-            echo "⚠️  No models configured in ollama.models"
+            echo "⚠️  No models configured in ollama.models.pull"
             {{- end }}
 
             # Verify models are available

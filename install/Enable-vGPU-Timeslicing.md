@@ -2,13 +2,15 @@
 
 This guide details how to configure the NVIDIA GPU Operator to enable "virtual GPUs" (vGPUs) via time-slicing on an existing, Rancher-managed Kubernetes cluster. Time-slicing allows a single physical NVIDIA GPU to be shared by multiple pods, which is ideal for running multiple, less-intensive workloads, maximizing resource utilization, and demonstrating GPU sharing.
 
+> **Fleet automation:** If you use Fleet GitOps, the time-slicing config is already automated in this repo under `fleet/gpu-operator/` — the HelmChart CR (`gpu-operator.yaml`, pinned to GPU Operator v26.3.3) references a `time-slicing-config` ConfigMap (`time-slicing-config.yaml`) that slices each GPU into 8 replicas and sets `DEVICE_LIST_STRATEGY=cdi-annotations`. Deploy the `fleet/gpu-operator/` directory to a fleet-managed cluster and time-slicing is configured end-to-end. The manual steps below remain for clusters not using Fleet.
+
 ## Prerequisites
 
 This guide assumes you have already completed the following setup:
 
 - **A Running Kubernetes Cluster:** Your cluster is operational and managed by Rancher.
 - **NVIDIA GPU Node:** At least one node in your cluster has a physical NVIDIA GPU.
-- **NVIDIA GPU Operator:** The NVIDIA GPU Operator is already successfully installed in the `gpu-operator` namespace.
+- **NVIDIA GPU Operator:** The NVIDIA GPU Operator is already successfully installed in the `gpu-operator` namespace. Recommended: v26.3.3 or newer.
 - **Rancher Management:** Your cluster is imported into and managed by your Rancher instance.
 - **`kubectl` Access:** Your `kubectl` command-line tool is configured to communicate with your cluster.
 
@@ -85,6 +87,12 @@ Now we instruct the GPU Operator to use the `ConfigMap` we just created.
     A success message should confirm the resource was patched. The `nvidia-device-plugin` pod will automatically restart to apply the new configuration.
 
 ## Step 4: Verify and Demonstrate vGPU in Rancher
+
+> **Known rke2/k3s issue (fixed in fleet config):** on rke2/k3s clusters the GPU Operator chart's *default* toolkit config points at `/run/containerd` and `/etc/containerd`, which are NOT where rke2's containerd lives. Symptoms: `nvidia-container-toolkit-daemonset` CrashLoopBackOff and pods failing with `unresolvable CDI devices management.nvidia.com/gpu=GPU-...`. Two fixes are required:
+> 1. **Toolkit socket paths** (rke2): set `toolkit.env.CONTAINERD_CONFIG=/var/lib/rancher/rke2/agent/etc/containerd/config.toml` and `CONTAINERD_SOCKET=/run/k3s/containerd/containerd.sock` (already in `fleet/gpu-operator/gpu-operator.yaml`).
+> 2. **CDI device list strategy** (time-slicing on containerd): set `devicePlugin.env.DEVICE_LIST_STRATEGY=cdi-annotations`. The chart default `volume-mounts` makes the runtime fall back to the `management.nvidia.com/gpu` CDI spec (which only contains the `all` device), so time-sliced GPU pods fail with `unresolvable CDI devices`. With `cdi-annotations`, kubelet injects `cdi.k8s.io/k8s.device-plugin.nvidia.com/gpu=GPU-...` annotations and containerd resolves the device from the correct spec.
+>
+> Verify after enabling: `kubectl get nodes -o jsonpath='{.items[0].status.allocatable.nvidia\.com/gpu}'` should show the replica count (e.g. `8`).
 
 ### Verify the Configuration
 

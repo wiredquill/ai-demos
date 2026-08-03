@@ -2,8 +2,8 @@ apiVersion: v2
 name: ollama-upstream
 description: Wrapper chart for upstream Ollama with custom questions.yaml
 type: application
-version: 0.2.0
-appVersion: "0.12.7"
+version: 0.2.1
+appVersion: "0.21.2"
 
 dependencies:
   - name: ollama

@@ -1,8 +1,8 @@
 questions:
 # === FRONT PAGE - MOST IMPORTANT OPTIONS ===
 - variable: ollama.image.tag
-  default: "0.12.7"
-  description: "Ollama version to deploy (e.g., 0.12.7, latest, dev)"
+  default: "0.21.2"
+  description: "Ollama version to deploy (e.g., 0.21.2, latest, dev)"
   type: string
   label: Ollama Version
   group: "Image Configuration"

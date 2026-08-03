@@ -1,0 +1,22 @@
+# Time-slicing configuration for the NVIDIA GPU Operator.
+# Referenced by fleet/gpu-operator/gpu-operator.yaml via devicePlugin.config.name.
+# Slices each physical GPU into 8 virtual GPUs (nvidia.com/gpu), enabling many
+# light AI demo workloads (AI-compare, hr-assistant) to share one physical GPU.
+# Adjust replicas per node capacity. renameByDefault=true makes each slice show
+# up as a distinct GPU UUID; failRequestsGreaterThanOne=true rejects pods that
+# ask for more than one slice (they would silently over-subscribe).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: time-slicing-config
+  namespace: gpu-operator
+data:
+  any: |-
+    version: v1
+    sharing:
+      timeSlicing:
+        renameByDefault: true
+        failRequestsGreaterThanOne: true
+        resources:
+        - name: nvidia.com/gpu
+          replicas: 8
