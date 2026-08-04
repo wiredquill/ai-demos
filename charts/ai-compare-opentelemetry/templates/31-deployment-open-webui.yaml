@@ -52,11 +52,11 @@ spec:
           value: "true"
         # Open WebUI-specific endpoint override variables
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: {{ .Values.openWebui.observability.otlpEndpoint | quote }}
+          value: {{ include "ai-compare-opentelemetry.otlpGrpcEndpoint" . | quote }}
         - name: OTEL_METRICS_EXPORTER_OTLP_ENDPOINT
-          value: {{ .Values.openWebui.observability.otlpEndpoint | quote }}
+          value: {{ include "ai-compare-opentelemetry.otlpGrpcEndpoint" . | quote }}
         - name: OTEL_LOGS_EXPORTER_OTLP_ENDPOINT
-          value: {{ .Values.openWebui.observability.otlpEndpoint | quote }}
+          value: {{ include "ai-compare-opentelemetry.otlpGrpcEndpoint" . | quote }}
         # Security and protocol settings  
         - name: OTEL_EXPORTER_OTLP_INSECURE
           value: "true"

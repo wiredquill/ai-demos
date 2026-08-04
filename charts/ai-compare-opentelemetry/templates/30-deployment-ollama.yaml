@@ -146,7 +146,7 @@ spec:
         - name: OLLAMA_ENDPOINT
           value: "http://localhost:{{ .Values.ollama.service.port }}"
         - name: OTLP_ENDPOINT
-          value: "{{ .Values.ollama.observability.otlpEndpoint }}"
+          value: "{{ include "ai-compare-opentelemetry.otlpHttpEndpoint" . }}"
         volumeMounts:
         - name: otel-config
           mountPath: /etc/otel-collector-config.yaml

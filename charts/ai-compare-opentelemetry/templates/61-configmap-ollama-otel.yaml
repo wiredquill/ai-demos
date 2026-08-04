@@ -84,7 +84,7 @@ data:
     exporters:
       # Export to SUSE Observability
       otlphttp:
-        endpoint: {{ .Values.ollama.observability.otlpEndpoint }}
+        endpoint: {{ include "ai-compare-opentelemetry.otlpHttpEndpoint" . }}
         headers:
           "Content-Type": "application/x-protobuf"
         compression: gzip

@@ -77,7 +77,7 @@ spec:
             - name: OBSERVABILITY_ENABLED
               value: "{{ .Values.aiCompare.observability.enabled }}"
             - name: OTLP_ENDPOINT
-              value: "{{ .Values.aiCompare.observability.otlpEndpoint }}"
+              value: "{{ include "ai-compare-opentelemetry.otlpHttpEndpoint" . }}"
             - name: COLLECT_GPU_STATS
               value: "{{ .Values.aiCompare.observability.collectGpuStats }}"
             # Force development mode for OpenLit instrumentation
