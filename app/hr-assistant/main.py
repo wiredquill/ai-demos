@@ -19,7 +19,7 @@ collect_gpu_stats = os.getenv("COLLECT_GPU_STATS", "false") == "true"
 openlit.init(
     otlp_endpoint=otlp_endpoint,
     disable_batch=True,
-    trace_content=True,
+    capture_message_content=True,
     application_name=app_name,
     pricing_json="./pricing.json",
     collect_gpu_stats=collect_gpu_stats,
