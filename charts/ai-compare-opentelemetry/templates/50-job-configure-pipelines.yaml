@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Release.Name }}-ai-compare-opentelemetry-configure-pipelines
+  name: {{ include "ai-compare-opentelemetry.fullname" . | trunc 40 | trimSuffix "-" }}-configure-pipelines
   labels:
     app.kubernetes.io/name: ai-compare-opentelemetry
     app.kubernetes.io/instance: {{ .Release.Name }}

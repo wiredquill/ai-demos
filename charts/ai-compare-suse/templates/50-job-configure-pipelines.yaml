@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Release.Name }}-ai-compare-suse-configure-pipelines
+  name: {{ include "ai-compare-suse.fullname" . | trunc 40 | trimSuffix "-" }}-configure-pipelines
   labels:
     app.kubernetes.io/name: ai-compare-suse
     app.kubernetes.io/instance: {{ .Release.Name }}
