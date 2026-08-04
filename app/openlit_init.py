@@ -51,7 +51,7 @@ def initialize_openlit():
         openlit.init(
             otlp_endpoint=otlp_endpoint,
             disable_batch=True,
-            trace_content=True,
+            capture_message_content=True,
             application_name=app_name,
             environment=environment,
             pricing_json="./pricing.json",
