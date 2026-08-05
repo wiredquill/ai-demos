@@ -26,7 +26,8 @@
         "textembedding-gecko@001": 0.0001,
         "textembedding-gecko@002": 0.0001,
         "textembedding-gecko@003": 0.0001,
-        "bge-large": 0.0001
+        "bge-large": 0.0001,
+        "bge-large:latest": 0.0001
     },
     "images": {
         "dall-e-3": {
@@ -384,6 +385,18 @@
             "completionPrice": 0.0001
         },
         "llama3.2": {
+            "promptPrice": 0.00005,
+            "completionPrice": 0.0001
+        },
+        "llama3.2:latest": {
+            "promptPrice": 0.00005,
+            "completionPrice": 0.0001
+        },
+        "llama3.2:1b": {
+            "promptPrice": 0.00005,
+            "completionPrice": 0.0001
+        },
+        "llama3.2:3b": {
             "promptPrice": 0.00005,
             "completionPrice": 0.0001
         },

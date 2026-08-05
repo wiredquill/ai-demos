@@ -1,12 +1,111 @@
 questions:
-# General Configuration
+# Observability Configuration
+- variable: opentelemetry.operator.enabled
+  label: "Use the OpenTelemetry Operator"
+  description: "Let the OpenTelemetry Operator create a SUSE AI collector dedicated to this release, already wired with the GenAI topology pipeline that SUSE Observability needs. The apps then send telemetry to it instead of a shared cluster collector, and SUSE AI components are grouped under this namespace. Requires the OpenTelemetry Operator to be installed in the cluster."
+  type: boolean
+  default: false
+  group: Observability
+
 - variable: otlpEndpoint
   label: "⚠️ OTLP Endpoint"
   type: string
   description: "Open Telemetry Endpoint - Include http:// and port. IMPORTANT: This setting is critical for error logging and observability. If pods are generating errors, verify this endpoint is correctly configured and accessible."
   required: true
   default: "http://opentelemetry-collector.observability.svc.cluster.local:4318"
-  group: General
+  group: Observability
+  show_if: "opentelemetry.operator.enabled=false"
+
+- variable: opentelemetry.operator.suseObservability.apiUrl
+  label: "SUSE Observability URL"
+  description: "Base URL of the SUSE Observability server, used to publish the SUSE AI topology. Example: https://observability.example.com"
+  type: string
+  required: true
+  default: ""
+  group: Observability
+  show_if: "opentelemetry.operator.enabled=true"
+
+- variable: opentelemetry.operator.suseObservability.otlpEndpoint
+  label: "SUSE Observability OTLP Endpoint"
+  description: "OTLP gRPC ingestion endpoint as host:port, with no scheme. Example: otlp-observability.example.com:443"
+  type: string
+  required: true
+  default: ""
+  group: Observability
+  show_if: "opentelemetry.operator.enabled=true"
+
+- variable: opentelemetry.operator.suseObservability.apiKey
+  label: "SUSE Observability API Key"
+  description: "API key used to ship traces, metrics and topology. Leave empty if you supply an existing secret instead."
+  type: password
+  default: ""
+  group: Observability
+  show_if: "opentelemetry.operator.enabled=true"
+
+- variable: opentelemetry.operator.suseObservability.existingSecret
+  label: "Existing API Key Secret"
+  description: "Name of an existing secret in this namespace holding the API key. Takes the place of the API key field above."
+  type: string
+  default: ""
+  group: Observability
+  show_if: "opentelemetry.operator.enabled=true"
+
+- variable: opentelemetry.operator.suseObservability.existingSecretKey
+  label: "Existing API Key Secret Key"
+  description: "Key inside that secret which holds the API key."
+  type: string
+  default: "API_KEY"
+  group: Observability
+  show_if: "opentelemetry.operator.enabled=true && opentelemetry.operator.suseObservability.existingSecret!="
+
+- variable: opentelemetry.operator.clusterName
+  label: "Cluster Name"
+  description: "Name of this cluster as registered in SUSE Observability. Recorded on the telemetry the collector sends."
+  type: string
+  default: ""
+  group: Observability
+  show_if: "opentelemetry.operator.enabled=true"
+
+- variable: opentelemetry.operator.suseAiNamespace
+  label: "SUSE AI Namespace"
+  description: "SUSE AI namespace the application, inference engine and model components are grouped under. Defaults to the namespace this chart is installed into."
+  type: string
+  default: ""
+  group: Observability
+  show_if: "opentelemetry.operator.enabled=true"
+
+- variable: opentelemetry.operator.suseObservability.skipTlsVerify
+  label: "Skip TLS Verification"
+  description: "Skip certificate verification when talking to SUSE Observability. Useful for demo clusters using self-signed certificates."
+  type: boolean
+  default: true
+  group: Observability
+  show_if: "opentelemetry.operator.enabled=true"
+
+- variable: opentelemetry.operator.image.tag
+  label: "SUSE AI Collector Image Tag"
+  description: "Tag of the SUSE AI OpenTelemetry Collector image the Operator should run."
+  type: string
+  default: "0.149.0"
+  group: Observability
+  show_if: "opentelemetry.operator.enabled=true"
+
+- variable: opentelemetry.operator.debug
+  label: "Log Telemetry to Collector Stdout"
+  description: "Also write received traces and metrics to the collector's log. Useful when verifying a demo is reporting correctly."
+  type: boolean
+  default: false
+  group: Observability
+  show_if: "opentelemetry.operator.enabled=true"
+
+- variable: genai.providerName
+  label: "GenAI Provider Name"
+  description: "Reported as gen_ai.provider.name. This is what SUSE Observability uses to draw the inference engine in the SUSE AI topology and to link the application to the models it calls."
+  type: string
+  default: "ollama"
+  group: Observability
+
+# General Configuration
 
 - variable: ollama.enabled
   group: General

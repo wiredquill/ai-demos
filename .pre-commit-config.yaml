@@ -38,7 +38,10 @@ repos:
     hooks:
       - id: mypy
         name: "Type check Python code"
-        args: [--ignore-missing-imports, --no-strict-optional]
+        # --follow-imports=silent is what makes the exclude below actually work:
+        # without it mypy follows imports out of the checked file and reports
+        # errors inside excluded modules anyway.
+        args: [--ignore-missing-imports, --no-strict-optional, --follow-imports=silent]
         files: ^app/.*\.py$
         exclude: ^app/.*/patch/.*\.py$
         additional_dependencies: [types-requests]

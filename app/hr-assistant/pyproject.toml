@@ -18,7 +18,10 @@ ollama = "^0.6.2"
 langchain-ollama = "^0.2.0"
 pypdf = "^5.1.0"
 langchainhub = "^0.1.21"
-torch = "2.1.2"
+# transformers >= 4.42 calls torch.utils._pytree.register_pytree_node, which only
+# exists from torch 2.2 on. Pinning torch at 2.1.2 against the current
+# transformers made the image fail at import.
+torch = "^2.6.0"
 fastapi = {extras = ["standard"], version = "^0.115.4"}
 langchain-community = "^0.3.5"
 

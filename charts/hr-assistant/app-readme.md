@@ -20,3 +20,39 @@ A backend service that provides structured access to HR policies and procedures,
 - **Comprehensive Observability**: Full OpenTelemetry instrumentation to monitor and trace all LLM interactions
 - **CronJob Automation**: Scheduled testing of all services to ensure continuous availability
 - **Production-Ready**: Deployed on Kubernetes with proper health checks and resource management
+
+## Observability with SUSE Observability
+
+The applications are instrumented with OpenLit and report GenAI telemetry that SUSE
+Observability turns into a SUSE AI topology: each application, the Ollama inference
+engine, and every model it calls appear as components, with token usage and cost
+attached.
+
+That topology is built from the `gen_ai.provider.name` resource attribute, so the
+chart sets it (along with `gen_ai.request.model`) on every application pod. Change
+it with `genai.providerName` if the apps are pointed at a different inference engine.
+
+### Sending telemetry
+
+Two options:
+
+- **Shared collector** (default): set `otlpEndpoint` to an existing OpenTelemetry
+  collector that already has the SUSE AI GenAI pipeline configured.
+- **OpenTelemetry Operator**: set `opentelemetry.operator.enabled=true` and the chart
+  asks the OpenTelemetry Operator to create a SUSE AI collector dedicated to this
+  release, already wired with that pipeline. The applications are pointed at it
+  automatically and the SUSE AI components are grouped under the release namespace.
+  This needs the OpenTelemetry Operator installed in the cluster, plus the SUSE
+  Observability URL, OTLP endpoint and an API key.
+
+```bash
+helm install hr-assistant . -n hr-assistant \
+  --set opentelemetry.operator.enabled=true \
+  --set opentelemetry.operator.clusterName=my-cluster \
+  --set opentelemetry.operator.suseObservability.apiUrl=https://observability.example.com \
+  --set opentelemetry.operator.suseObservability.otlpEndpoint=otlp-observability.example.com:443 \
+  --set opentelemetry.operator.suseObservability.existingSecret=suse-obs-otlp
+```
+
+Set `opentelemetry.operator.debug=true` to also log the telemetry, including the
+inferred SUSE AI components, to the collector's stdout when checking a demo.

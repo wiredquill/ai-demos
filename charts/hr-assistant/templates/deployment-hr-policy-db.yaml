@@ -42,17 +42,17 @@ spec:
           - name: OTEL_SERVICE_VERSION
             value: "1.0.0"
           - name: DEPLOYMENT_ENVIRONMENT
-            value: "production"
+            value: "{{ .Values.deploymentEnvironment }}"
           - name: MODEL
-            value: "llama3.2:1b"
+            value: "{{ include "hr-assistant.model" . }}"
           - name: OLLAMA_ENDPOINT
             value: "{{ include "hr-assistant.ollamaEndpoint" . }}"
           - name: OTLP_ENDPOINT
-            value: "{{ .Values.otlpEndpoint }}"
+            value: "{{ include "hr-assistant.otlpEndpoint" . }}"
           - name: COLLECT_GPU_STATS
             value: "{{ .Values.collectGpuStats }}"
           - name: OTEL_RESOURCE_ATTRIBUTES
-            value: "deployment.environment=production"
+            value: "{{ include "hr-assistant.otelResourceAttributes" . }}"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

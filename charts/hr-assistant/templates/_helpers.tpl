@@ -67,3 +67,61 @@ Create the ollama endpoint URL based on release name
 {{- define "hr-assistant.ollamaEndpoint" -}}
 http://{{ .Release.Name }}-ollama:11434
 {{- end }}
+
+{{/*
+Name of the OpenTelemetryCollector CR managed by the OpenTelemetry Operator.
+*/}}
+{{- define "hr-assistant.collectorName" -}}
+{{- printf "%s-otel" (include "hr-assistant.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Namespace SUSE AI components are attributed to. Defaults to the release namespace
+so each install shows up as its own SUSE AI namespace in the topology.
+*/}}
+{{- define "hr-assistant.suseAiNamespace" -}}
+{{- default .Release.Namespace .Values.opentelemetry.operator.suseAiNamespace }}
+{{- end }}
+
+{{/*
+OTLP endpoint the applications export to. When the OpenTelemetry Operator option is
+enabled the apps talk to the collector this chart provisions in its own namespace;
+otherwise they talk to whatever shared collector .Values.otlpEndpoint points at.
+*/}}
+{{- define "hr-assistant.otlpEndpoint" -}}
+{{- if .Values.opentelemetry.operator.enabled -}}
+http://{{ include "hr-assistant.collectorName" . }}-collector.{{ .Release.Namespace }}.svc.cluster.local:4318
+{{- else -}}
+{{ .Values.otlpEndpoint }}
+{{- end -}}
+{{- end }}
+
+{{/*
+The primary model. Falls back to the first model the bundled Ollama pulls.
+*/}}
+{{- define "hr-assistant.model" -}}
+{{- if .Values.model -}}
+{{ .Values.model }}
+{{- else if and .Values.ollama.models .Values.ollama.models.pull -}}
+{{ first .Values.ollama.models.pull }}
+{{- else -}}
+llama3.2:1b
+{{- end -}}
+{{- end }}
+
+{{/*
+OTEL_RESOURCE_ATTRIBUTES for the app containers.
+
+SUSE Observability builds the SUSE AI topology from resource attributes: the
+collector's transform/infer-providers, transform/infer-models and the trace
+relation pipelines all read gen_ai.provider.name (and gen_ai.request.model) off
+the *resource*. OpenLIT only ever sets gen_ai.system as a span/datapoint
+attribute, so without these the app never renders as an LLM component and no
+model or inference-engine relations are drawn.
+*/}}
+{{- define "hr-assistant.otelResourceAttributes" -}}
+{{- $attrs := list (printf "deployment.environment=%s" .Values.deploymentEnvironment) -}}
+{{- $attrs = append $attrs (printf "gen_ai.provider.name=%s" .Values.genai.providerName) -}}
+{{- $attrs = append $attrs (printf "gen_ai.request.model=%s" (include "hr-assistant.model" .)) -}}
+{{- join "," $attrs }}
+{{- end }}

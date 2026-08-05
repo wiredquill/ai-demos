@@ -23,6 +23,11 @@ openlit.init(
     application_name=app_name,
     pricing_json="./pricing.json",
     collect_gpu_stats=collect_gpu_stats,
+    # The OpenAI SDK here only ever talks to Ollama's /v1 endpoint. openlit's own
+    # openai instrumentor would report gen_ai.provider.name=openai, which puts a
+    # bogus OpenAI inference engine in the SUSE AI topology, so patch_openlit()
+    # owns that path instead and reports Ollama.
+    disabled_instrumentors=["openai"],
 )
 
 patch.patch_openlit()
