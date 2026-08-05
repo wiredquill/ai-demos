@@ -6,9 +6,9 @@ imagePullSecrets:
   - name: application-collection
 
 # Observability endpoints
-# Ignored when opentelemetry.operator.enabled=true - the apps then export to the
-# collector this chart provisions in its own namespace.
-otlpEndpoint: 'http://opentelemetry-collector.opentelemetry-collector.svc.cluster.local:4318'
+# Used when observability.mode=existing. A single shared collector can serve every
+# namespace in the cluster; each release names itself via observability.serviceNamespace.
+otlpEndpoint: 'http://opentelemetry-collector.observability.svc.cluster.local:4318'
 ollamaEndpoint: 'http://my-hr-assistant-ollama:11434'
 collectGpuStats: 'false'  # Enable GPU metrics for demo
 
@@ -28,18 +28,30 @@ model: ''
 genai:
   providerName: ollama
 
-# OpenTelemetry Operator integration.
+# How the applications ship telemetry.
 #
-# When enabled, the chart hands the OpenTelemetry Operator an
-# OpenTelemetryCollector CR so this release gets its own SUSE AI collector in its
-# own namespace, pre-wired with the GenAI topology pipeline. This replaces
-# maintaining one shared, hand-edited cluster collector, and it means
-# SUSE_AI_NAMESPACE matches the release namespace so components land under the
-# right SUSE AI namespace instead of whatever the shared collector was pinned to.
-#
-# Requires the OpenTelemetry Operator to already be installed in the cluster.
+#   existing  - send to a collector that already runs in the cluster, named by
+#               otlpEndpoint above. Nothing extra is installed.
+#   operator  - ask the OpenTelemetry Operator to create a SUSE AI collector in
+#               this namespace, pre-wired with the GenAI topology pipeline. The
+#               applications are pointed at it automatically. Requires the
+#               OpenTelemetry Operator to be installed in the cluster.
+observability:
+  mode: existing
+
+  # Reported as the service.namespace resource attribute, and the primary source
+  # SUSE Observability uses to group this release's SUSE AI components.
+  #
+  # SUSE's collector pipeline reads service.namespace first and only falls back to
+  # the collector's own SUSE_AI_NAMESPACE when an application does not declare one.
+  # Because each application names its own namespace, one shared collector can
+  # serve the whole cluster and still group every app correctly - a collector per
+  # namespace is not required. Defaults to the release namespace.
+  serviceNamespace: ''
+
 opentelemetry:
   operator:
+    # Set by observability.mode; kept for callers that set it directly.
     enabled: false
     mode: deployment
     replicas: 1
@@ -60,28 +72,39 @@ opentelemetry:
       limits:
         cpu: '1'
         memory: 1Gi
-    # Cluster name recorded on the telemetry. Should match the cluster name
-    # registered with SUSE Observability.
+    # Cluster name recorded on the telemetry. Defaults to the Rancher-injected
+    # global.cattle.clusterName, so it rarely needs setting by hand.
     clusterName: ''
-    # SUSE AI namespace the inferred components are attributed to.
-    # Defaults to the release namespace when left empty.
+
+    # SUSE_AI_NAMESPACE on the collector: the fallback applied only to telemetry
+    # that carries no service.namespace of its own (Milvus, OpenSearch, vLLM
+    # scraped over Prometheus). Defaults to the release namespace when empty.
     suseAiNamespace: ''
+
     suseObservability:
       # Base URL of the SUSE Observability server, used by the topology exporter.
-      # Example: https://observability.example.com
       apiUrl: ''
       # OTLP gRPC ingestion endpoint as host:port, with no scheme.
-      # Example: otlp-observability.example.com:443
       otlpEndpoint: ''
       # Plaintext gRPC. Leave false for a TLS ingestion endpoint.
       otlpInsecure: false
       # Skip TLS verification, for demo clusters with self-signed certificates.
       skipTlsVerify: true
-      # API key for SUSE Observability. Prefer existingSecret in real installs.
+
+      # API key resolution, in order:
+      #   1. existingSecret, if set
+      #   2. apiKey, if set - the chart creates a secret holding it
+      #   3. otherwise a pre-install hook copies apiKeySecret out of
+      #      sourceNamespace, so nobody has to paste a token at install time
       apiKey: ''
-      # Name of an existing secret holding the API key instead of apiKey above.
       existingSecret: ''
       existingSecretKey: API_KEY
+      # Where to copy the API key secret from when neither of the above is set.
+      copySecret:
+        enabled: true
+        sourceNamespace: observability
+        name: open-telemetry-collector
+        image: curlimages/curl:8.5.0
 
 # CronJob schedule for automated requests (demo traffic generation)
 schedule: '*/5 * * * *'

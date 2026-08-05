@@ -1,14 +1,14 @@
-{{- if .Values.opentelemetry.operator.enabled }}
+{{- if include "hr-assistant.collectorEnabled" . }}
 {{- $collector := include "hr-assistant.collectorName" . }}
 {{- $so := .Values.opentelemetry.operator.suseObservability }}
-{{- if and (not $so.existingSecret) (not $so.apiKey) }}
-{{- fail "opentelemetry.operator.enabled requires either suseObservability.apiKey or suseObservability.existingSecret" }}
-{{- end }}
 {{- if not $so.apiUrl }}
-{{- fail "opentelemetry.operator.enabled requires suseObservability.apiUrl (e.g. https://observability.example.com)" }}
+{{- fail "observability.mode=operator requires opentelemetry.operator.suseObservability.apiUrl (e.g. https://observability.example.com)" }}
 {{- end }}
 {{- if not $so.otlpEndpoint }}
-{{- fail "opentelemetry.operator.enabled requires suseObservability.otlpEndpoint (host:port, no scheme)" }}
+{{- fail "observability.mode=operator requires opentelemetry.operator.suseObservability.otlpEndpoint (host:port, no scheme)" }}
+{{- end }}
+{{- if and (not $so.existingSecret) (not $so.apiKey) (not $so.copySecret.enabled) }}
+{{- fail "observability.mode=operator needs an API key: set suseObservability.apiKey, .existingSecret, or leave .copySecret.enabled=true" }}
 {{- end }}
 ---
 apiVersion: v1
@@ -52,7 +52,7 @@ subjects:
   - kind: ServiceAccount
     name: {{ $collector }}
     namespace: {{ .Release.Namespace }}
-{{- if not $so.existingSecret }}
+{{- if and $so.apiKey (not $so.existingSecret) }}
 ---
 apiVersion: v1
 kind: Secret
@@ -87,13 +87,13 @@ spec:
         fieldRef:
           fieldPath: status.podIP
     - name: K8S_CLUSTER_NAME
-      value: {{ .Values.opentelemetry.operator.clusterName | quote }}
+      value: {{ include "hr-assistant.clusterName" . | quote }}
     - name: SUSE_AI_NAMESPACE
       value: {{ include "hr-assistant.suseAiNamespace" . | quote }}
     - name: API_KEY
       valueFrom:
         secretKeyRef:
-          name: {{ $so.existingSecret | default $collector }}
+          name: {{ include "hr-assistant.apiKeySecretName" . }}
           key: {{ $so.existingSecretKey }}
   config:
     receivers:
@@ -170,7 +170,8 @@ spec:
               - set(attributes["suse.ai.managed"], "true")
               - set(attributes["suse.ai.component.type"], "application")
               - set(attributes["suse.ai.component.name"], attributes["service.name"])
-              - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}")
+              - set(attributes["k8s.namespace.name"], attributes["service.namespace"]) where attributes["service.namespace"] != nil
+              - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["service.namespace"] == nil
       transform/infer-models:
         error_mode: ignore
         metric_statements:
@@ -181,7 +182,8 @@ spec:
               - set(attributes["suse.ai.managed"], "true") where attributes["gen_ai.request.model"] != nil
               - set(attributes["suse.ai.component.name"], attributes["gen_ai.request.model"]) where attributes["gen_ai.request.model"] != nil
               - set(attributes["suse.ai.component.type"], "llm-model") where attributes["gen_ai.request.model"] != nil
-              - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["gen_ai.request.model"] != nil
+              - set(attributes["k8s.namespace.name"], attributes["service.namespace"]) where attributes["gen_ai.request.model"] != nil and attributes["service.namespace"] != nil
+              - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["gen_ai.request.model"] != nil and attributes["service.namespace"] == nil
       transform/infer-providers:
         error_mode: ignore
         metric_statements:
@@ -192,7 +194,8 @@ spec:
               - set(attributes["suse.ai.managed"], "true") where attributes["gen_ai.provider.name"] != nil
               - set(attributes["suse.ai.component.name"], attributes["gen_ai.provider.name"]) where attributes["gen_ai.provider.name"] != nil
               - set(attributes["suse.ai.component.type"], "inference-engine") where attributes["gen_ai.provider.name"] != nil
-              - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["gen_ai.provider.name"] != nil
+              - set(attributes["k8s.namespace.name"], attributes["service.namespace"]) where attributes["gen_ai.provider.name"] != nil and attributes["service.namespace"] != nil
+              - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["gen_ai.provider.name"] != nil and attributes["service.namespace"] == nil
       transform/model-relations:
         error_mode: ignore
         trace_statements:

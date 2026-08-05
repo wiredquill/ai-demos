@@ -28,31 +28,44 @@ Observability turns into a SUSE AI topology: each application, the Ollama infere
 engine, and every model it calls appear as components, with token usage and cost
 attached.
 
-That topology is built from the `gen_ai.provider.name` resource attribute, so the
-chart sets it (along with `gen_ai.request.model`) on every application pod. Change
-it with `genai.providerName` if the apps are pointed at a different inference engine.
+Two resource attributes make that work, and the chart sets both on every pod:
 
-### Sending telemetry
+- `gen_ai.provider.name` - what SUSE Observability draws the inference engine from,
+  and what links each application to the models it calls. OpenLit only emits the
+  older `gen_ai.system` span attribute, so the chart supplies this explicitly.
+  Override with `genai.providerName` if the apps point at a different engine.
+- `service.namespace` - the namespace this release's components are grouped under.
+  SUSE's collector reads this first and only falls back to its own
+  `SUSE_AI_NAMESPACE` when an application does not declare one. Defaults to the
+  release namespace; override with `observability.serviceNamespace`.
 
-Two options:
+### One collector, many namespaces
 
-- **Shared collector** (default): set `otlpEndpoint` to an existing OpenTelemetry
-  collector that already has the SUSE AI GenAI pipeline configured.
-- **OpenTelemetry Operator**: set `opentelemetry.operator.enabled=true` and the chart
-  asks the OpenTelemetry Operator to create a SUSE AI collector dedicated to this
-  release, already wired with that pipeline. The applications are pointed at it
-  automatically and the SUSE AI components are grouped under the release namespace.
-  This needs the OpenTelemetry Operator installed in the cluster, plus the SUSE
-  Observability URL, OTLP endpoint and an API key.
+Because each application names its own namespace, **a single shared collector can
+serve the whole cluster** and still group every application correctly. A collector
+per namespace is not required.
+
+Set `observability.mode`:
+
+- `existing` (default) - point `otlpEndpoint` at a collector that already runs in
+  the cluster. Nothing extra is installed.
+- `operator` - the OpenTelemetry Operator creates a SUSE AI collector dedicated to
+  this release, pre-wired with the GenAI topology pipeline. Useful when a release
+  needs its own ingestion path or the shared collector is out of reach. The
+  applications are pointed at it automatically and the SUSE Observability API key is
+  copied in by a pre-install hook, so there is no token to paste.
 
 ```bash
 helm install hr-assistant . -n hr-assistant \
-  --set opentelemetry.operator.enabled=true \
-  --set opentelemetry.operator.clusterName=my-cluster \
+  --set observability.mode=operator \
   --set opentelemetry.operator.suseObservability.apiUrl=https://observability.example.com \
-  --set opentelemetry.operator.suseObservability.otlpEndpoint=otlp-observability.example.com:443 \
-  --set opentelemetry.operator.suseObservability.existingSecret=suse-obs-otlp
+  --set opentelemetry.operator.suseObservability.otlpEndpoint=otlp-observability.example.com:443
 ```
 
-Set `opentelemetry.operator.debug=true` to also log the telemetry, including the
-inferred SUSE AI components, to the collector's stdout when checking a demo.
+Set `opentelemetry.operator.debug=true` to also log telemetry, including the inferred
+SUSE AI components, to the collector's stdout when checking a demo.
+
+If a shared collector is grouping everything under one namespace, it is running a
+revision of SUSE's pipeline that predates the `service.namespace` lookup. See
+`integrations/otel-collector/otel-values.yaml` in SUSE/suse-ai-observability-extension
+for the current version.
