@@ -74,7 +74,8 @@ config:
         - set(attributes["suse.ai.managed"], "true")
         - set(attributes["suse.ai.component.type"], "application")
         - set(attributes["suse.ai.component.name"], attributes["service.name"])
-        - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}")
+        - set(attributes["k8s.namespace.name"], attributes["service.namespace"]) where attributes["service.namespace"] != nil
+        - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["service.namespace"] == nil
     transform/infer-models:
       error_mode: ignore
       metric_statements:
@@ -90,8 +91,8 @@ config:
           where attributes["gen_ai.request.model"] != nil
         - set(attributes["suse.ai.component.type"], "llm-model") where attributes["gen_ai.request.model"]
           != nil
-        - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where
-          attributes["gen_ai.request.model"] != nil
+        - set(attributes["k8s.namespace.name"], attributes["service.namespace"]) where attributes["gen_ai.request.model"] != nil and attributes["service.namespace"] != nil
+        - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["gen_ai.request.model"] != nil and attributes["service.namespace"] == nil
     transform/infer-providers:
       error_mode: ignore
       metric_statements:
@@ -107,8 +108,8 @@ config:
           where attributes["gen_ai.provider.name"] != nil
         - set(attributes["suse.ai.component.type"], "inference-engine") where attributes["gen_ai.provider.name"]
           != nil
-        - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where
-          attributes["gen_ai.provider.name"] != nil
+        - set(attributes["k8s.namespace.name"], attributes["service.namespace"]) where attributes["gen_ai.provider.name"] != nil and attributes["service.namespace"] != nil
+        - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["gen_ai.provider.name"] != nil and attributes["service.namespace"] == nil
     transform/topology-provider:
       error_mode: ignore
       trace_statements:

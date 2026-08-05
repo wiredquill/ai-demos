@@ -55,24 +55,16 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 {{/*
 Compute the OTLP HTTP endpoint (4318) for app telemetry.
-When collector.operator.enabled is true, point at the operator-managed
-per-namespace collector service; otherwise fall back to the configured endpoint.
+Apps point at the shared cluster collector, which groups telemetry by
+service.namespace (set to the release namespace by each app).
 */}}
 {{- define "ai-compare-opentelemetry.otlpHttpEndpoint" -}}
-{{- if .Values.collector.operator.enabled -}}
-http://{{ .Values.collector.operator.name }}-collector.{{ .Release.Namespace }}.svc.cluster.local:4318
-{{- else -}}
 {{ .Values.aiCompare.observability.otlpEndpoint }}
-{{- end -}}
 {{- end -}}
 
 {{/*
 Compute the OTLP gRPC endpoint (4317) for Open WebUI telemetry.
 */}}
 {{- define "ai-compare-opentelemetry.otlpGrpcEndpoint" -}}
-{{- if .Values.collector.operator.enabled -}}
-http://{{ .Values.collector.operator.name }}-collector.{{ .Release.Namespace }}.svc.cluster.local:4317
-{{- else -}}
 {{ .Values.openWebui.observability.otlpEndpoint }}
-{{- end -}}
 {{- end -}}

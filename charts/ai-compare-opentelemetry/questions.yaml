@@ -19,11 +19,10 @@ questions:
 - variable: otlpEndpoint
   label: "OTLP Endpoint"
   type: string
-  description: "Open Telemetry Endpoint - Include http:// and port. NOTE: when 'Deploy Collector via OpenTelemetry Operator' is enabled, this value is ignored and apps are auto-pointed at the operator-managed collector in this namespace."
+  description: "Open Telemetry Endpoint - Include http:// and port. Apps are pointed at the shared cluster collector, which groups telemetry by service.namespace (set to the release namespace)."
   required: true
-  default: "http://opentelemetry-collector.opentelemetry-collector.svc.cluster.local:4318"
+  default: "http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4318"
   group: General
-  show_if: "collector.operator.enabled=false"
 
 - variable: ollama.gpu.enabled
   group: General
@@ -230,69 +229,3 @@ questions:
   type: "string"
   default: "8Gi"
   show_if: "ollama.enabled=true && ollama.gpu.enabled=false"
-
-# Collector (OpenTelemetry Operator) Configuration
-# NOTE: This option REQUIRES the OpenTelemetry Operator to be installed in the
-# cluster (Rancher: Apps > Charts > opentelemetry-operator from the SUSE
-# Application Collection catalog, installed into the observability namespace).
-# Without the operator, the OpenTelemetryCollector CR will not be reconciled.
-- variable: collector.operator.enabled
-  group: "Collector (OpenTelemetry Operator)"
-  label: "Deploy Collector via OpenTelemetry Operator"
-  description: "Deploy a per-namespace OpenTelemetryCollector CR managed by the OpenTelemetry Operator, pinned to this namespace via SUSE_AI_NAMESPACE. REQUIRES the OpenTelemetry Operator to be installed in the cluster (opentelemetry-operator chart from the SUSE Application Collection). When enabled, apps are auto-pointed at this collector and the OTLP Endpoint field is ignored."
-  type: "boolean"
-  default: false
-
-- variable: collector.operator.name
-  group: "Collector (OpenTelemetry Operator)"
-  label: "Collector CR Name"
-  description: "Name of the OpenTelemetryCollector CR. The operator creates the service as <name>-collector.<namespace>.svc.cluster.local:4318."
-  type: "string"
-  required: true
-  default: "otel-collector"
-  show_if: "collector.operator.enabled=true"
-
-- variable: collector.operator.clusterName
-  group: "Collector (OpenTelemetry Operator)"
-  label: "Cluster Name"
-  description: "K8S_CLUSTER_NAME stamped on all telemetry sent to SUSE Observability."
-  type: "string"
-  required: true
-  default: "dev-ai"
-  show_if: "collector.operator.enabled=true"
-
-- variable: collector.operator.backendEndpoint
-  group: "Collector (OpenTelemetry Operator)"
-  label: "SUSE Observability Backend"
-  description: "Base URL of the SUSE Observability backend for topology export."
-  type: "string"
-  required: true
-  default: "https://observability.mort.dna-42.com"
-  show_if: "collector.operator.enabled=true"
-
-- variable: collector.operator.otlpGrpcEndpoint
-  group: "Collector (OpenTelemetry Operator)"
-  label: "OTLP gRPC Ingest Endpoint"
-  description: "OTLP gRPC endpoint of the SUSE Observability backend for metrics/traces."
-  type: "string"
-  required: true
-  default: "otlp-observability.mort.dna-42.com:443"
-  show_if: "collector.operator.enabled=true"
-
-- variable: collector.operator.sourceNamespace
-  group: "Collector (OpenTelemetry Operator)"
-  label: "API Key Source Namespace"
-  description: "Namespace holding the API_KEY secret (open-telemetry-collector) that the collector uses to authenticate to SUSE Observability. Copied into this namespace during install."
-  type: "string"
-  required: true
-  default: "observability"
-  show_if: "collector.operator.enabled=true"
-
-- variable: collector.operator.apiKeySecret
-  group: "Collector (OpenTelemetry Operator)"
-  label: "API Key Secret Name"
-  description: "Name of the secret containing the API_KEY for SUSE Observability. Must exist in the source namespace."
-  type: "string"
-  required: true
-  default: "open-telemetry-collector"
-  show_if: "collector.operator.enabled=true"

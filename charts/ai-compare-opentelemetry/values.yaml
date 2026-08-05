@@ -221,27 +221,3 @@ demo:
 # NeuVector Security Configuration
 neuvector:
   enabled: false
-# OpenTelemetry Operator-managed Collector
-# When enabled, this chart deploys an OpenTelemetryCollector CR in the release
-# namespace via the OpenTelemetry Operator (instead of pointing at the shared
-# helm-managed collector). Each collector CR is pinned to its own namespace via
-# SUSE_AI_NAMESPACE, so new test namespaces get fresh data with zero cross-talk.
-# REQUIRES: the OpenTelemetry Operator to be installed in the cluster.
-collector:
-  operator:
-    enabled: false
-    # Name of the OpenTelemetryCollector CR. The operator creates the service as
-    # <name>-collector.<namespace>.svc.cluster.local:4318
-    name: otel-collector
-    # Image for the collector (SUSE AI image with infer pipelines + topology exporter)
-    image: registry.suse.com/ai/containers/suse-ai-opentelemetry-collector:0.149.0
-    # K8S_CLUSTER_NAME stamped on all telemetry
-    clusterName: dev-ai
-    # SUSE Observability backend endpoints
-    backendEndpoint: https://observability.mort.dna-42.com
-    otlpGrpcEndpoint: otlp-observability.mort.dna-42.com:443
-    # Namespace that holds the API_KEY secret (copied into release namespace by pre-install hook)
-    sourceNamespace: observability
-    apiKeySecret: open-telemetry-collector
-    # Node hosting nvidia-dcgm-exporter for GPU metrics scrape
-    gpuNode: dev-ai-pool1-6fk5c-8fkdl
