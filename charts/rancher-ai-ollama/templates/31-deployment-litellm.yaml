@@ -1,0 +1,89 @@
+{{- if .Values.litellm.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "rancher-ai-ollama.fullname" . }}-litellm
+  labels:
+    {{- include "rancher-ai-ollama.labels" . | nindent 4 }}
+    app.kubernetes.io/component: litellm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: litellm
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: litellm
+        release: {{ .Release.Name }}
+        app.kubernetes.io/component: litellm
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: litellm
+        image: "{{ .Values.litellm.image.registry }}/{{ .Values.litellm.image.repository }}:{{ .Values.litellm.image.tag }}"
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        command: ["litellm"]
+        args: ["--config=/app/config.yaml", "--port={{ .Values.litellm.service.port }}"]
+        ports:
+        - containerPort: {{ .Values.litellm.service.port }}
+          name: http
+        env:
+        - name: LITELLM_MASTER_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "rancher-ai-ollama.fullname" . }}-litellm-masterkey
+              key: masterkey
+        {{- if .Values.litellm.observability.enabled }}
+        # OTel v2: gen_ai.* token/cost/latency metrics (input/output tokens,
+        # TTFT, TPOT, tokens/sec) -> SUSE Observability collector
+        - name: LITELLM_OTEL_V2
+          value: "true"
+        - name: OTEL_EXPORTER
+          value: "otlp_http"
+        - name: OTEL_ENDPOINT
+          value: "{{ .Values.litellm.observability.otlpEndpoint }}"
+        {{- if .Values.litellm.observability.apiKeySecret }}
+        - name: OTEL_HEADERS
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.litellm.observability.apiKeySecret }}
+              key: {{ .Values.litellm.observability.apiKeySecretKey }}
+        {{- end }}
+        {{- end }}
+        - name: LITELLM_LOG
+          value: "INFO"
+        volumeMounts:
+        - name: litellm-config
+          mountPath: /app/config.yaml
+          subPath: config.yaml
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+        readinessProbe:
+          httpGet:
+            path: /health/liveliness
+            port: {{ .Values.litellm.service.port }}
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          failureThreshold: 6
+        livenessProbe:
+          httpGet:
+            path: /health/liveliness
+            port: {{ .Values.litellm.service.port }}
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          failureThreshold: 3
+      volumes:
+      - name: litellm-config
+        configMap:
+          name: {{ include "rancher-ai-ollama.fullname" . }}-litellm-config
+{{- end }}

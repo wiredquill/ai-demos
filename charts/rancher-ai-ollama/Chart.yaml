@@ -1,0 +1,24 @@
+apiVersion: v2
+name: rancher-ai-ollama
+description: Ollama model serving optimized for SUSE Rancher AI (Liz) with LiteLLM gateway for token/cost observability via SUSE Observability
+type: application
+version: 0.1.0
+appVersion: "0.21.2"
+
+maintainers:
+  - name: AI Demos Team
+    email: ai-demos@example.com
+
+keywords:
+  - rancher-ai
+  - ollama
+  - litellm
+  - llm
+  - ai
+  - observability
+  - suse
+
+annotations:
+  category: MachineLearning
+  suse.com/registry: "SUSE Application Collection"
+  suse.com/enterprise: "true"
