@@ -159,20 +159,29 @@ config:
           kubernetes_sd_configs:
           - role: service
           relabel_configs:
+          # Keep Services labelled app.kubernetes.io/part-of=vllm (rancher-ai-vllm
+          # chart: engine service + engine-scrape service) OR legacy app=vllm
+          # (dev-ai original deployment). Single keep rule over the joined pair.
           - action: keep
-            regex: vllm
+            regex: (vllm;.*)|(.*;vllm)
+            separator: ";"
             source_labels:
+            - __meta_kubernetes_service_label_app_kubernetes_io_part_of
             - __meta_kubernetes_service_label_app
-          - action: keep
-            regex: "true"
-            source_labels:
-            - __meta_kubernetes_service_annotation_prometheus_io_scrape
           - regex: ([^:]+)(?::\d+)?;(\d+)
             replacement: $1:$2
             source_labels:
             - __address__
             - __meta_kubernetes_service_annotation_prometheus_io_port
             target_label: __address__
+          metric_relabel_configs:
+          # SUSE Observability expects underscores in metric names:
+          # vllm:prompt_tokens_total -> vllm_prompt_tokens_total
+          - action: replace
+            regex: vllm:(.*)
+            replacement: vllm_${1}
+            source_labels:
+            - __name__
           scrape_interval: 10s
   service:
     pipelines:

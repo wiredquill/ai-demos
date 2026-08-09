@@ -1,0 +1,212 @@
+questions:
+# ===== General =====
+- variable: clusterName
+  group: "General"
+  label: "Cluster Name"
+  description: "Cluster identity stamped into OTel resource attributes (k8s.cluster.name). Use the same value you configured in the SUSE Observability collector (e.g. dev-ai, h100-prod)."
+  type: "string"
+  default: ""
+
+- variable: ollama.gpu.enabled
+  group: "General"
+  label: "Enable GPU Acceleration"
+  description: "Requires a node with NVIDIA/AMD drivers and the corresponding device plugin installed."
+  type: "boolean"
+  default: true
+
+- variable: ollama.gpu.type
+  group: "General"
+  label: "GPU Vendor"
+  description: "Select the GPU vendor. NVIDIA requires the NVIDIA device plugin and nvidia runtime class. AMD requires the AMD ROCm device plugin (amd.com/gpu)."
+  type: "enum"
+  default: "nvidia"
+  show_if: "ollama.gpu.enabled=true"
+  options:
+    - "nvidia"
+    - "amd"
+    - "cpu"
+
+- variable: ollama.gpu.count
+  group: "General"
+  label: "GPUs per Replica"
+  description: "Number of GPUs (or time-sliced slices) to request per Ollama replica. With GPU Operator time-slicing, each physical GPU advertises N slices and nvidia.com/gpu requests one slice."
+  type: "integer"
+  default: 1
+  show_if: "ollama.gpu.enabled=true && ollama.gpu.type=nvidia"
+
+- variable: ollama.gpu.resource
+  group: "General"
+  label: "GPU Resource Name"
+  description: "Kubernetes resource name for the GPU. nvidia.com/gpu for full or time-sliced GPUs; a MIG profile (e.g. nvidia.com/mig-4g.71gb) for MIG partitions on H100/A100."
+  type: "string"
+  default: "nvidia.com/gpu"
+  show_if: "ollama.gpu.enabled=true && ollama.gpu.type=nvidia"
+
+# ===== Model Selection =====
+- variable: ollama.models.primary
+  group: "Model"
+  label: "Primary Model (by GPU VRAM class)"
+  description: "Choose the model that fits your GPU. Sizes are official Ollama tags. gpt-oss:20b ≈ 14GB, gpt-oss:120b ≈ 65GB, gemma4:12b ≈ 7.6GB, gemma4:26b ≈ 18GB, gemma4:31b ≈ 20GB. qwen3.6-35b-a3b variants are community tags of Qwen/Qwen3.6-35B-A3B (GGUF)."
+  type: "enum"
+  default: "gpt-oss:20b"
+  required: true
+  options:
+    # 16GB class
+    - label: "16GB GPU — gpt-oss:20b (14GB)"
+      value: "gpt-oss:20b"
+    - label: "16GB GPU — gemma4:12b (7.6GB)"
+      value: "gemma4:12b"
+    # 24GB class
+    - label: "24GB GPU — gpt-oss:20b (14GB)"
+      value: "gpt-oss:20b"
+    - label: "24GB GPU — gemma4:26b (18GB)"
+      value: "gemma4:26b"
+    - label: "24GB GPU — gemma4:31b (20GB)"
+      value: "gemma4:31b"
+    - label: "24GB GPU — qwen3.6-35b-a3b:q4-24gbGPU (community)"
+      value: "qwen3.6-35b-a3b:q4-24gbGPU"
+    # 64GB class
+    - label: "64GB GPU — qwen3.6-35b-a3b:q6 (community, ~27GB)"
+      value: "qwen3.6-35b-a3b:q6"
+    - label: "64GB GPU — gpt-oss:20b (14GB)"
+      value: "gpt-oss:20b"
+    # 100GB class
+    - label: "100GB GPU — gpt-oss:120b (65GB)"
+      value: "gpt-oss:120b"
+    - label: "100GB GPU — qwen3.6-35b-a3b:q8 (community, ~39GB)"
+      value: "qwen3.6-35b-a3b:q8"
+
+- variable: ollama.models.extra
+  group: "Model"
+  label: "Additional Models"
+  description: "Comma-separated list of extra models to pull and register in LiteLLM (e.g. 'gemma4:12b,bge-large:latest'). Optional."
+  type: "string"
+  default: ""
+
+# ===== Ollama Storage =====
+- variable: ollama.persistence.enabled
+  group: "Ollama"
+  label: "Enable Model Persistence"
+  description: "If true, a PersistentVolumeClaim stores Ollama models so they are not re-downloaded on restart."
+  type: "boolean"
+  default: true
+
+- variable: ollama.persistence.existingClaim
+  group: "Ollama"
+  label: "Existing PVC Name (shared model cache)"
+  description: "Use an existing PVC instead of creating one — point at a shared model cache volume to avoid re-downloading across deployments (hr-assistant / ai-compare pattern). Leave empty to create a new PVC."
+  type: "string"
+  default: ""
+  show_if: "ollama.persistence.enabled=true"
+
+- variable: ollama.persistence.size
+  group: "Ollama"
+  label: "Model Storage Size"
+  description: "Size of the PVC for Ollama models (e.g. '100Gi', '500Gi'). Ignored when an existing PVC is used."
+  type: "string"
+  default: "100Gi"
+  show_if: "ollama.persistence.enabled=true && ollama.persistence.existingClaim="
+
+- variable: ollama.persistence.storageClassName
+  group: "Ollama"
+  label: "Storage Class"
+  description: "Storage class for the models PVC. Leave empty for the cluster default. Use a shared RWX class (longhorn/nfs) if you want multiple deployments to share one cache."
+  type: "string"
+  default: ""
+  show_if: "ollama.persistence.enabled=true && ollama.persistence.existingClaim="
+
+- variable: ollama.modelCache.nfs.enabled
+  group: "Ollama"
+  label: "Enable NFS Model Cache"
+  description: "Pre-warm models from a shared NFS cache directory and re-populate it on first pull. Speeds up cold starts on clusters without a shared storage class."
+  type: "boolean"
+  default: false
+  show_if: "ollama.persistence.enabled=true"
+
+- variable: ollama.modelCache.nfs.server
+  group: "Ollama"
+  label: "NFS Server"
+  description: "IP or hostname of the NFS server."
+  type: "string"
+  default: ""
+  show_if: "ollama.persistence.enabled=true && ollama.modelCache.nfs.enabled=true"
+
+- variable: ollama.modelCache.nfs.path
+  group: "Ollama"
+  label: "NFS Share Path"
+  description: "Path on the NFS server used for caching models (e.g. '/data/ai-models')."
+  type: "string"
+  default: "/data/ai-models"
+  show_if: "ollama.persistence.enabled=true && ollama.modelCache.nfs.enabled=true"
+
+# ===== LiteLLM (token costing gateway) =====
+- variable: litellm.enabled
+  group: "LiteLLM"
+  label: "Enable LiteLLM Gateway"
+  description: "LiteLLM in front of Ollama is REQUIRED for token costing — Ollama has no OpenTelemetry export of its own. Disable only if you do not need token metrics (Rancher AI would then point directly at Ollama)."
+  type: "boolean"
+  default: true
+
+- variable: litellm.masterkey
+  group: "LiteLLM"
+  label: "LiteLLM Master Key (OpenAI API key for Rancher AI)"
+  description: "Acts as the API key when Rancher AI connects to LiteLLM (openaiApiKey). Leave empty to auto-generate; retrieve from secret <release>-rancher-ai-ollama-litellm-masterkey."
+  type: "password"
+  default: ""
+  show_if: "litellm.enabled=true"
+
+- variable: litellm.observability.enabled
+  group: "LiteLLM"
+  label: "Enable OTel v2 Token Metrics"
+  description: "Export gen_ai.* token/cost/latency metrics (input/output tokens, TTFT, tokens/sec) to the SUSE Observability collector."
+  type: "boolean"
+  default: true
+  show_if: "litellm.enabled=true"
+
+- variable: litellm.observability.otlpEndpoint
+  group: "LiteLLM"
+  label: "OTLP HTTP Endpoint"
+  description: "Endpoint of the shared OTel collector (http://collector-svc:4318). This chart ships with the standard SUSE Observability collector endpoint pre-filled."
+  type: "string"
+  default: "http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4318"
+  show_if: "litellm.enabled=true && litellm.observability.enabled=true"
+
+- variable: litellm.observability.apiKeySecret
+  group: "LiteLLM"
+  label: "Collector API Key Secret (optional)"
+  description: "Name of an existing secret holding the collector bearer token (key: API_KEY). Sent as OTEL_HEADERS 'Authorization: Bearer <token>'. Leave empty if your collector does not require auth."
+  type: "string"
+  default: ""
+  show_if: "litellm.enabled=true && litellm.observability.enabled=true"
+
+# ===== Observability extras =====
+- variable: observability.ollamaSidecar.enabled
+  group: "Observability"
+  label: "Ollama OTel Sidecar (status/health)"
+  description: "Deploy a tiny OTel collector sidecar next to Ollama that exports HTTP status/health metrics. NOT required for token costing — tokens come from LiteLLM."
+  type: "boolean"
+  default: false
+
+# ===== Ingress =====
+- variable: ingress.enabled
+  group: "Ingress"
+  label: "Enable Ingress (expose to Rancher AI / external clusters)"
+  description: "Rancher AI (Liz) runs on the Rancher LOCAL cluster and talks to the LLM over the network — enable this to expose the LiteLLM OpenAI endpoint via Ingress. Required when Liz is on a different cluster than this chart."
+  type: "boolean"
+  default: false
+
+- variable: ingress.host
+  group: "Ingress"
+  label: "Ingress Hostname"
+  description: "Hostname for the LiteLLM OpenAI-compatible endpoint, e.g. llm.wiredquill.com. Rancher AI openaiUrl becomes https://<host>/v1."
+  type: "string"
+  default: ""
+  show_if: "ingress.enabled=true"
+
+- variable: ingress.className
+  group: "Ingress"
+  label: "Ingress Class"
+  description: "Ingress controller class name."
+  type: "string"
+  default: "nginx"
+  show_if: "ingress.enabled=true"

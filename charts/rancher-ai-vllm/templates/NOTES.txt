@@ -1,0 +1,26 @@
+Thank you for installing {{ .Chart.Name }} (vLLM serving for SUSE Rancher AI).
+
+SUSE Rancher AI (Liz) integration
+  Point Liz at the OpenAI-compatible router endpoint:
+    activeLlm: openai
+    openaiUrl: http://{{ .Release.Name }}-router-service:80/v1
+    openaiLlmModel: {{ (index .Values.vllm.servingEngineSpec.modelSpec 0).modelURL }}
+    openaiApiKey: <any non-empty value; use the vllmApiKey if configured>
+
+{{- if .Values.vllm.routerSpec.ingress.enabled }}
+  Ingress: https://{{ (index .Values.vllm.routerSpec.ingress.hosts 0).host }}/v1
+{{- end }}
+
+Model serving
+  Engine deployment: {{ .Release.Name }}-{{ (index .Values.vllm.servingEngineSpec.modelSpec 0).name }}-deployment
+  Engine service:    {{ .Release.Name }}-{{ (index .Values.vllm.servingEngineSpec.modelSpec 0).name }}-engine-service
+  Router service:    {{ .Release.Name }}-router-service
+  Scrape target:     {{ .Release.Name }}-engine-scrape (app.kubernetes.io/part-of=vllm)
+
+Observability (SUSE Observability)
+  Token metrics come from vLLM's native /metrics endpoint, scraped by the
+  cluster-level collector (see docs/rancher-ai-observability.md for the
+  collector scrape job + PromQL recipes).
+  Key metrics: vllm_prompt_tokens_total, vllm_generation_tokens_total,
+               vllm_time_to_first_token_seconds, vllm_time_per_output_token_seconds
+  Tokens/sec:  rate(vllm_generation_tokens_total[1m])

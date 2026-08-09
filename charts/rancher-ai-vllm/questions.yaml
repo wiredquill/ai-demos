@@ -1,0 +1,129 @@
+questions:
+# ===== General =====
+- variable: clusterName
+  group: "General"
+  label: "Cluster Name"
+  description: "Cluster identity stamped into OTel resource attributes (k8s.cluster.name). Use the same value you configured in the SUSE Observability collector (e.g. dev-ai, h100-prod)."
+  type: "string"
+  default: ""
+
+# ===== Model Selection =====
+- variable: vllm.servingEngineSpec.modelSpec[0].modelURL
+  group: "Model"
+  label: "Model (by GPU VRAM class)"
+  description: "Choose the model that fits your GPU (Hugging Face model ID). VRAM depends on quantization: 16GB -> Qwen2.5-7B (fp16); 24GB -> Qwen3.6-35B-A3B (AWQ/GPTQ); 64GB -> Qwen3.6-35B-A3B (fp8) or Llama-3.3-70B (AWQ); 100GB -> gpt-oss-120b or Qwen3.6-35B-A3B (bf16)."
+  type: "enum"
+  default: "Qwen/Qwen3.6-35B-A3B"
+  required: true
+  options:
+    # 16GB class
+    - label: "16GB GPU — Qwen/Qwen2.5-7B-Instruct (~16GB fp16)"
+      value: "Qwen/Qwen2.5-7B-Instruct"
+    # 24GB class
+    - label: "24GB GPU — Qwen/Qwen3.6-35B-A3B (AWQ ~19GB)"
+      value: "Qwen/Qwen3.6-35B-A3B"
+    # 64GB class
+    - label: "64GB GPU — Qwen/Qwen3.6-35B-A3B (fp8 ~35GB)"
+      value: "Qwen/Qwen3.6-35B-A3B"
+    - label: "64GB GPU — meta-llama/Llama-3.3-70B-Instruct (AWQ ~40GB)"
+      value: "meta-llama/Llama-3.3-70B-Instruct"
+    # 100GB class
+    - label: "100GB GPU — openai/gpt-oss-120b (~68GB)"
+      value: "openai/gpt-oss-120b"
+    - label: "100GB GPU — Qwen/Qwen3.6-35B-A3B (bf16 ~70GB)"
+      value: "Qwen/Qwen3.6-35B-A3B"
+
+- variable: vllm.servingEngineSpec.modelSpec[0].name
+  group: "Model"
+  label: "Model Deployment Name"
+  description: "Short name used in resource names (Services, Deployments). Lowercase, no spaces. e.g. qwen3.6-35b, gpt-oss-120b."
+  type: "string"
+  default: "model"
+  required: true
+
+- variable: vllm.servingEngineSpec.modelSpec[0].requestGPU
+  group: "Model"
+  label: "GPUs per Replica"
+  description: "Number of GPUs requested for the serving engine."
+  type: "integer"
+  default: 1
+  required: true
+
+- variable: vllm.servingEngineSpec.modelSpec[0].requestGPUType
+  group: "Model"
+  label: "GPU Resource Name"
+  description: "Kubernetes resource name for the GPU. nvidia.com/gpu for full or time-sliced GPUs; a MIG profile (e.g. nvidia.com/mig-4g.71gb) for MIG partitions on H100/A100."
+  type: "string"
+  default: "nvidia.com/gpu"
+
+- variable: vllm.servingEngineSpec.modelSpec[0].requestCPU
+  group: "Model"
+  label: "CPU Request"
+  description: "CPU cores requested for the serving engine."
+  type: "integer"
+  default: 8
+
+- variable: vllm.servingEngineSpec.modelSpec[0].requestMemory
+  group: "Model"
+  label: "Memory Request"
+  description: "Memory requested for the serving engine (e.g. '32Gi')."
+  type: "string"
+  default: "32Gi"
+
+# ===== Model Storage =====
+- variable: vllm.servingEngineSpec.modelSpec[0].pvcStorage
+  group: "Storage"
+  label: "Model Cache PVC Size"
+  description: "vLLM downloads model weights into a PVC so restarts are fast. Set generous size (e.g. 100Gi-500Gi). To share an existing cache volume, set the storage class or mount a prefetched cache via extraVolumes (see docs)."
+  type: "string"
+  default: "100Gi"
+
+- variable: vllm.servingEngineSpec.modelSpec[0].storageClass
+  group: "Storage"
+  label: "Storage Class"
+  description: "Storage class for the model cache PVC. Leave empty for the cluster default. Use a shared RWX class (longhorn/nfs) to share one cache across clusters/deployments."
+  type: "string"
+  default: ""
+
+# ===== Router (OpenAI-compatible endpoint) =====
+- variable: vllm.routerSpec.serviceType
+  group: "Router"
+  label: "Router Service Type"
+  description: "How to expose the OpenAI-compatible router endpoint (port 80). ClusterIP is fine when Rancher AI runs in the same cluster; NodePort/LoadBalancer for external access."
+  type: "enum"
+  default: "ClusterIP"
+  options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"
+
+- variable: vllm.routerSpec.otel.endpoint
+  group: "Router"
+  label: "OTLP Endpoint (traces)"
+  description: "OTLP gRPC endpoint of the shared SUSE Observability collector. Traces only — token metrics come from the Prometheus scrape."
+  type: "string"
+  default: "http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4317"
+
+# ===== Ingress =====
+- variable: vllm.routerSpec.ingress.enabled
+  group: "Ingress"
+  label: "Enable Ingress (expose to Rancher AI / external clusters)"
+  description: "Rancher AI (Liz) runs on the Rancher LOCAL cluster and talks to the LLM over the network — enable this to expose the router endpoint via Ingress. Required when Liz is on a different cluster than this chart."
+  type: "boolean"
+  default: false
+
+- variable: vllm.routerSpec.ingress.hosts[0].host
+  group: "Ingress"
+  label: "Ingress Hostname"
+  description: "Hostname for the vLLM OpenAI-compatible endpoint, e.g. vllm.wiredquill.com. Rancher AI openaiUrl becomes https://<host>/v1."
+  type: "string"
+  default: "vllm.wiredquill.com"
+  show_if: "vllm.routerSpec.ingress.enabled=true"
+
+- variable: vllm.routerSpec.ingress.className
+  group: "Ingress"
+  label: "Ingress Class"
+  description: "Ingress controller class name."
+  type: "string"
+  default: "nginx"
+  show_if: "vllm.routerSpec.ingress.enabled=true"

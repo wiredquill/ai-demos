@@ -1,0 +1,17 @@
+{{- if and .Values.ollama.persistence.enabled (not .Values.ollama.persistence.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "rancher-ai-ollama.fullname" . }}-ollama-models-pvc
+  labels:
+    {{- include "rancher-ai-ollama.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  {{- if .Values.ollama.persistence.storageClassName }}
+  storageClassName: {{ .Values.ollama.persistence.storageClassName | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.ollama.persistence.size | quote }}
+{{- end }}
