@@ -7,7 +7,7 @@ metadata:
     {{- include "rancher-ai-ollama.labels" . | nindent 4 }}
 spec:
   accessModes:
-    - ReadWriteMany
+    - {{ .Values.ollama.persistence.accessMode | default "ReadWriteOnce" | quote }}
   {{- if .Values.ollama.persistence.storageClassName }}
   storageClassName: {{ .Values.ollama.persistence.storageClassName | quote }}
   {{- end }}

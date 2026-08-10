@@ -19,10 +19,12 @@ spec:
         release: {{ .Release.Name }}
         app.kubernetes.io/component: litellm
     spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
+      {{- $pullSecrets := .Values.imagePullSecrets }}
+      {{- if .Values.imagePullSecretName }}
+      {{- $pullSecrets = append $pullSecrets (dict "name" .Values.imagePullSecretName) }}
       {{- end }}
+      imagePullSecrets:
+        {{- toYaml $pullSecrets | nindent 8 }}
       containers:
       - name: litellm
         image: "{{ .Values.litellm.image.registry }}/{{ .Values.litellm.image.repository }}:{{ .Values.litellm.image.tag }}"
@@ -63,11 +65,11 @@ spec:
           subPath: config.yaml
         resources:
           requests:
-            cpu: "100m"
-            memory: "256Mi"
+            cpu: {{ .Values.litellm.resources.requests.cpu | default "100m" | quote }}
+            memory: {{ .Values.litellm.resources.requests.memory | default "512Mi" | quote }}
           limits:
-            cpu: "1"
-            memory: "1Gi"
+            cpu: {{ .Values.litellm.resources.limits.cpu | default "1" | quote }}
+            memory: {{ .Values.litellm.resources.limits.memory | default "4Gi" | quote }}
         readinessProbe:
           httpGet:
             path: /health/liveliness

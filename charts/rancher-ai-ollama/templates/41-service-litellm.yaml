@@ -7,11 +7,19 @@ metadata:
     app.kubernetes.io/component: litellm
 spec:
   type: {{ .Values.litellm.service.type }}
+  {{- if eq .Values.litellm.service.type "LoadBalancer" }}
+  {{- with .Values.litellm.service.loadBalancerIP }}
+  loadBalancerIP: {{ . }}
+  {{- end }}
+  {{- end }}
   ports:
   - port: {{ .Values.litellm.service.port }}
     targetPort: http
     protocol: TCP
     name: http
+    {{- if and (eq .Values.litellm.service.type "NodePort") (.Values.litellm.service.nodePort) }}
+    nodePort: {{ .Values.litellm.service.nodePort }}
+    {{- end }}
   selector:
     app: litellm
     release: {{ .Release.Name }}

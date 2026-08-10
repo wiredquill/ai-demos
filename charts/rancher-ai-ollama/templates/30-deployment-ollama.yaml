@@ -18,10 +18,12 @@ spec:
         release: {{ .Release.Name }}
         app.kubernetes.io/component: ollama
     spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
+      {{- $pullSecrets := .Values.imagePullSecrets }}
+      {{- if .Values.imagePullSecretName }}
+      {{- $pullSecrets = append $pullSecrets (dict "name" .Values.imagePullSecretName) }}
       {{- end }}
+      imagePullSecrets:
+        {{- toYaml $pullSecrets | nindent 8 }}
       {{- if and .Values.ollama.gpu.enabled (eq .Values.ollama.gpu.type "nvidia") }}
       runtimeClassName: nvidia
       {{- end }}

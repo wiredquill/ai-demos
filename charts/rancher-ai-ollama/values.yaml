@@ -7,6 +7,10 @@ imagePullPolicy: IfNotPresent
 # -- Correctly formatted list for imagePullSecrets
 imagePullSecrets:
   - name: application-collection
+# -- Optional: an extra image pull secret NAME (e.g. "suse-ai-registry" for
+# registry.suse.com images). Appended to imagePullSecrets above. Selectable in
+# the Rancher UI via the "Extra Image Pull Secret" dropdown.
+imagePullSecretName: ""
 # -- Extra image pull secret for the SUSE Registry (registry.suse.com) when using
 # the SUSE-published LiteLLM image. Create a secret named `suse-ai-registry` and
 # add it here, e.g.:
@@ -54,6 +58,10 @@ ollama:
     enabled: true
     size: "100Gi"
     storageClassName: "" # Use default if empty
+    # -- PVC access mode. ReadWriteOnce (block path) is the safe default on
+    # single-node Harvester; ReadWriteMany requires the NetworkFS path which
+    # needs a routable share-manager endpoint from the guest cluster.
+    accessMode: ReadWriteOnce
     # -- Use an existing PVC instead of creating one (shared model cache)
     existingClaim: ""
   modelCache:
@@ -75,10 +83,27 @@ litellm:
     tag: "1.94.2"
   service:
     port: 4000
+    # -- Service type: ClusterIP (default, in-cluster only), NodePort (expose
+    # on every node's IP), or LoadBalancer (cloud/metallb external IP).
     type: ClusterIP
+    # -- NodePort to use when service.type=NodePort (range 30000-32767)
+    nodePort: ""
+    # -- Optional static external IP when service.type=LoadBalancer
+    loadBalancerIP: ""
   # -- LiteLLM master key (used as the OpenAI API key by Rancher AI / clients).
   # Leave empty to auto-generate (retrieve from the generated secret).
   masterkey: ""
+  # -- Optional: name of an EXISTING secret holding the master key (key:
+  # "masterkey"). Takes precedence over auto-generation; used on upgrade so the
+  # key stays stable. Ignored when litellm.masterkey is set explicitly.
+  masterkeySecret: ""
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "512Mi"
+    limits:
+      cpu: "1"
+      memory: "4Gi"
   observability:
     # -- Export gen_ai.* token/cost/latency metrics to the OTel collector
     enabled: true

@@ -71,6 +71,13 @@ LiteLLM master key: explicit value > existing secret > generated.
 {{- define "rancher-ai-ollama.litellmMasterKey" -}}
 {{- if .Values.litellm.masterkey -}}
 {{- .Values.litellm.masterkey -}}
+{{- else if .Values.litellm.masterkeySecret -}}
+{{- $secret := lookup "v1" "Secret" .Release.Namespace .Values.litellm.masterkeySecret -}}
+{{- if $secret -}}
+{{- index $secret.data "masterkey" | b64dec -}}
+{{- else -}}
+{{- printf "MISSING_SECRET_%s" .Values.litellm.masterkeySecret -}}
+{{- end -}}
 {{- else -}}
 {{- $name := printf "%s-litellm-masterkey" (include "rancher-ai-ollama.fullname" .) -}}
 {{- $secret := lookup "v1" "Secret" .Release.Namespace $name -}}
