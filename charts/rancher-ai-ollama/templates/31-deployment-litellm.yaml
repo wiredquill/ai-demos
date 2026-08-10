@@ -19,10 +19,12 @@ spec:
         release: {{ .Release.Name }}
         app.kubernetes.io/component: litellm
     spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
+      {{- $pullSecrets := .Values.imagePullSecrets }}
+      {{- if .Values.imagePullSecretName }}
+      {{- $pullSecrets = append $pullSecrets (dict "name" .Values.imagePullSecretName) }}
       {{- end }}
+      imagePullSecrets:
+        {{- toYaml $pullSecrets | nindent 8 }}
       containers:
       - name: litellm
         image: "{{ .Values.litellm.image.registry }}/{{ .Values.litellm.image.repository }}:{{ .Values.litellm.image.tag }}"
@@ -47,6 +49,11 @@ spec:
           value: "otlp_http"
         - name: OTEL_ENDPOINT
           value: "{{ .Values.litellm.observability.otlpEndpoint }}"
+        # CRITICAL: litellm gates the gen_ai.* token/cost METRIC histograms behind
+        # this flag (default false). Without it, only traces+span attributes are
+        # exported and token counts never show up in SUSE Observability.
+        - name: LITELLM_OTEL_INTEGRATION_ENABLE_METRICS
+          value: {{ .Values.litellm.observability.enableMetrics | default true | quote }}
         {{- if .Values.litellm.observability.apiKeySecret }}
         - name: OTEL_HEADERS
           valueFrom:
@@ -63,11 +70,11 @@ spec:
           subPath: config.yaml
         resources:
           requests:
-            cpu: "100m"
-            memory: "256Mi"
+            cpu: {{ .Values.litellm.resources.requests.cpu | default "100m" | quote }}
+            memory: {{ .Values.litellm.resources.requests.memory | default "512Mi" | quote }}
           limits:
-            cpu: "1"
-            memory: "1Gi"
+            cpu: {{ .Values.litellm.resources.limits.cpu | default "1" | quote }}
+            memory: {{ .Values.litellm.resources.limits.memory | default "4Gi" | quote }}
         readinessProbe:
           httpGet:
             path: /health/liveliness

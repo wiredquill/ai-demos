@@ -7,6 +7,13 @@ questions:
   type: "string"
   default: ""
 
+- variable: imagePullSecretName
+  group: "General"
+  label: "Extra Image Pull Secret (optional)"
+  description: "Additional image pull secret to use for pulling the Ollama/LiteLLM images (e.g. 'suse-ai-registry' when using the SUSE-published LiteLLM image from registry.suse.com). The default 'application-collection' secret is always used. Select from existing secrets in this namespace."
+  type: "secret"
+  default: ""
+
 - variable: ollama.gpu.enabled
   group: "General"
   label: "Enable GPU Acceleration"
@@ -150,8 +157,16 @@ questions:
 - variable: litellm.masterkey
   group: "LiteLLM"
   label: "LiteLLM Master Key (OpenAI API key for Rancher AI)"
-  description: "Acts as the API key when Rancher AI connects to LiteLLM (openaiApiKey). Leave empty to auto-generate; retrieve from secret <release>-rancher-ai-ollama-litellm-masterkey."
+  description: "Acts as the API key when Rancher AI connects to LiteLLM (openaiApiKey). Leave empty to auto-generate; retrieve from secret <release>-rancher-ai-ollama-litellm-masterkey. To keep a STABLE key across upgrades, either set this explicitly or use the Existing Master Key Secret field below."
   type: "password"
+  default: ""
+  show_if: "litellm.enabled=true"
+
+- variable: litellm.masterkeySecret
+  group: "LiteLLM"
+  label: "Existing Master Key Secret (stable key on upgrade)"
+  description: "Name of an EXISTING secret in this namespace holding the LiteLLM master key (data key: masterkey). Used so the OpenAI API key Rancher AI points at does not change when this chart is upgraded. Leave empty to auto-generate a new key (only used when litellm.masterkey is also empty)."
+  type: "secret"
   default: ""
   show_if: "litellm.enabled=true"
 
@@ -162,6 +177,14 @@ questions:
   type: "boolean"
   default: true
   show_if: "litellm.enabled=true"
+
+- variable: litellm.observability.enableMetrics
+  group: "LiteLLM"
+  label: "Enable GenAI Token Metric Histograms"
+  description: "litellm gates its gen_ai.client.token.usage / gen_ai.client.operation.duration metric histograms behind this flag (default false = traces only). MUST be true for token counts to appear in SUSE Observability dashboards."
+  type: "boolean"
+  default: true
+  show_if: "litellm.enabled=true && litellm.observability.enabled=true"
 
 - variable: litellm.observability.otlpEndpoint
   group: "LiteLLM"
@@ -179,6 +202,33 @@ questions:
   default: ""
   show_if: "litellm.enabled=true && litellm.observability.enabled=true"
 
+- variable: litellm.service.type
+  group: "LiteLLM"
+  label: "LiteLLM Service Type (how Rancher AI reaches it)"
+  description: "How the LiteLLM OpenAI-compatible endpoint is exposed. ClusterIP = in-cluster only (default). NodePort = expose on each node's IP, good for bare-metal / Rancher clusters without a load balancer (Rancher AI openaiUrl: http://<node-ip>:<nodePort>/v1). LoadBalancer = external LB IP from cloud providers or MetalLB (openaiUrl: http://<lb-ip>:4000/v1)."
+  type: "enum"
+  default: "ClusterIP"
+  show_if: "litellm.enabled=true"
+  options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"
+
+- variable: litellm.service.nodePort
+  group: "LiteLLM"
+  label: "LiteLLM NodePort"
+  description: "NodePort (30000-32767) to expose the LiteLLM endpoint on every node's IP. Rancher AI openaiUrl becomes http://<node-ip>:<nodePort>/v1."
+  type: "string"
+  default: "30080"
+  show_if: "litellm.enabled=true && litellm.service.type=NodePort"
+
+- variable: litellm.service.loadBalancerIP
+  group: "LiteLLM"
+  label: "LiteLLM LoadBalancer IP (optional)"
+  description: "Request a specific external IP from the load balancer (MetalLB / cloud LB). Leave empty to let the LB assign one. Rancher AI openaiUrl becomes http://<lb-ip>:4000/v1."
+  type: "string"
+  default: ""
+  show_if: "litellm.enabled=true && litellm.service.type=LoadBalancer"
 # ===== Observability extras =====
 - variable: observability.ollamaSidecar.enabled
   group: "Observability"
@@ -191,7 +241,7 @@ questions:
 - variable: ingress.enabled
   group: "Ingress"
   label: "Enable Ingress (expose to Rancher AI / external clusters)"
-  description: "Rancher AI (Liz) runs on the Rancher LOCAL cluster and talks to the LLM over the network — enable this to expose the LiteLLM OpenAI endpoint via Ingress. Required when Liz is on a different cluster than this chart."
+  description: "Rancher AI (Liz) runs on the Rancher LOCAL cluster and talks to the LLM over the network — enable this to expose the LiteLLM OpenAI endpoint via Ingress (which fronts the same LiteLLM service). Required when Liz is on a different cluster than this chart. Alternative: set LiteLLM Service Type (LiteLLM group) to NodePort or LoadBalancer to expose the service directly without an Ingress."
   type: "boolean"
   default: false
 
