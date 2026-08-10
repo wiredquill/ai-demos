@@ -178,6 +178,14 @@ questions:
   default: true
   show_if: "litellm.enabled=true"
 
+- variable: litellm.observability.enableMetrics
+  group: "LiteLLM"
+  label: "Enable GenAI Token Metric Histograms"
+  description: "litellm gates its gen_ai.client.token.usage / gen_ai.client.operation.duration metric histograms behind this flag (default false = traces only). MUST be true for token counts to appear in SUSE Observability dashboards."
+  type: "boolean"
+  default: true
+  show_if: "litellm.enabled=true && litellm.observability.enabled=true"
+
 - variable: litellm.observability.otlpEndpoint
   group: "LiteLLM"
   label: "OTLP HTTP Endpoint"

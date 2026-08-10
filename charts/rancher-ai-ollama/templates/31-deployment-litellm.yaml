@@ -49,6 +49,11 @@ spec:
           value: "otlp_http"
         - name: OTEL_ENDPOINT
           value: "{{ .Values.litellm.observability.otlpEndpoint }}"
+        # CRITICAL: litellm gates the gen_ai.* token/cost METRIC histograms behind
+        # this flag (default false). Without it, only traces+span attributes are
+        # exported and token counts never show up in SUSE Observability.
+        - name: LITELLM_OTEL_INTEGRATION_ENABLE_METRICS
+          value: {{ .Values.litellm.observability.enableMetrics | default true | quote }}
         {{- if .Values.litellm.observability.apiKeySecret }}
         - name: OTEL_HEADERS
           valueFrom:

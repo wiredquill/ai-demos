@@ -107,6 +107,10 @@ litellm:
   observability:
     # -- Export gen_ai.* token/cost/latency metrics to the OTel collector
     enabled: true
+    # -- Enable litellm's GenAI metric histograms (gen_ai.client.token.usage,
+    # gen_ai.client.operation.duration, ...). REQUIRED for token counts to show
+    # up in SUSE Observability: litellm defaults this to false (traces only).
+    enableMetrics: true
     # -- OTLP/HTTP endpoint of the shared SUSE Observability collector
     otlpEndpoint: "http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4318"
     # -- Optional existing secret holding the collector bearer token; the value
