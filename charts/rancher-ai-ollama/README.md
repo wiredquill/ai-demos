@@ -11,7 +11,6 @@ tracked in **SUSE Observability**.
                          │   litellm.cost.*  ·  traces + spans         │
                          └──────────────▲──────────────────────────────┘
                                         │ OTLP/HTTP :4318 (gen_ai.* metrics + traces)
-                                        │
                          ┌──────────────┴───────────────┐
                          │   OpenTelemetry Collector    │
                          │   (observability ns)         │
@@ -22,19 +21,24 @@ tracked in **SUSE Observability**.
                     │   OpenAI-compatible /v1 API            │
                     │   LITELLM_OTEL_V2=true (+metrics)      │
                     │   master key auth                      │
-                    └───────────────────▲────────────────────┘
-                                        │ /api/chat · /api/generate
-                    ┌───────────────────┴────────────────────┐
-                    │            Ollama (:11434)             │
-                    │   gpt-oss:20b (or your model)          │
-                    │   GPU-accelerated                      │
-                    └────────────────────────────────────────┘
-                                        ▲
-                    ┌───────────────────┴────────────────────┐
-                    │            Rancher AI (Liz)            │
-                    │   openaiUrl → LiteLLM /v1              │
-                    │   openaiApiKey → LiteLLM master key    │
-                    └────────────────────────────────────────┘
+                    └──────┬──────────────▲──────────────────┘
+                           │              │ /api/chat · /api/generate
+                           │              │
+                    ┌──────┴──────────────┴───────────────────┐
+                    │            Ollama (:11434)              │
+                    │   gpt-oss:20b (or your model)           │
+                    │   GPU-accelerated                       │
+                    └─────────────────────────────────────────┘
+
+                    ┌─────────────────────────────────────────┐
+                    │            Rancher AI (Liz)             │
+                    │   ── /v1 (OpenAI API) ──► LiteLLM       │
+                    │   openaiUrl → LiteLLM /v1               │
+                    │   openaiApiKey → LiteLLM master key     │
+                    └─────────────────────────────────────────┘
+
+   Rancher AI ──► LiteLLM ──► Ollama     (OpenAI-compatible /v1 calls)
+   LiteLLM ────► Collector ─► SUSE Observability   (token/cost metrics)
 ```
 
 ## Why LiteLLM in front of Ollama?
