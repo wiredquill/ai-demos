@@ -26,4 +26,4 @@ name: ai-compare-suse
 sources:
   - https://github.com/wiredquill/ai-demos
 type: application
-version: 0.1.498
+version: 0.1.499

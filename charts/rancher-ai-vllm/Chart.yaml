@@ -2,19 +2,16 @@ apiVersion: v2
 name: rancher-ai-vllm
 description: vLLM model serving for SUSE Rancher AI (Liz) with native Prometheus token metrics scraped into SUSE Observability (wraps the SUSE Application Collection vllm chart)
 type: application
-version: 0.1.0
+version: 0.1.1
 appVersion: "0.19.0"
-
 dependencies:
   - name: vllm
     version: 0.1.10
     repository: oci://dp.apps.rancher.io/charts
     alias: vllm
-
 maintainers:
   - name: AI Demos Team
     email: ai-demos@example.com
-
 keywords:
   - rancher-ai
   - vllm
@@ -22,7 +19,6 @@ keywords:
   - ai
   - observability
   - suse
-
 annotations:
   category: MachineLearning
   suse.com/registry: "SUSE Application Collection"
