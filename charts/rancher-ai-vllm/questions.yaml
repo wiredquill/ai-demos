@@ -41,34 +41,56 @@ questions:
   default: "model"
   required: true
 
+# ===== Model Resources =====
 - variable: vllm.servingEngineSpec.modelSpec[0].requestGPU
-  group: "Model"
-  label: "GPUs per Replica"
-  description: "Number of GPUs requested for the serving engine."
+  group: "Model Resources"
+  label: "GPU Request (per replica)"
+  description: "Number of GPUs the serving engine requests. vLLM keeps the model weights + KV cache in VRAM, so the GPU does the heavy lifting. 1 full GPU per replica unless the model needs tensor parallelism (see GPU limits below)."
   type: "integer"
   default: 1
   required: true
 
 - variable: vllm.servingEngineSpec.modelSpec[0].requestGPUType
-  group: "Model"
+  group: "Model Resources"
   label: "GPU Resource Name"
-  description: "Kubernetes resource name for the GPU. nvidia.com/gpu for full or time-sliced GPUs; a MIG profile (e.g. nvidia.com/mig-4g.71gb) for MIG partitions on H100/A100."
+  description: "Kubernetes resource name for the GPU. nvidia.com/gpu for full or time-sliced GPUs; a MIG profile (e.g. nvidia.com/mig-4g.71gb) for MIG partitions on H100/A100. For MIG, also set the GPU memory limit below."
   type: "string"
   default: "nvidia.com/gpu"
 
 - variable: vllm.servingEngineSpec.modelSpec[0].requestCPU
-  group: "Model"
-  label: "CPU Request"
-  description: "CPU cores requested for the serving engine."
+  group: "Model Resources"
+  label: "CPU Request (cores)"
+  description: "CPU cores requested for the serving engine. The GPU does the matmuls; CPU handles tokenization, scheduling and Python overhead. 2 cores is fine for a small model / test; use 8+ for a 35B model and concurrent load."
+  type: "integer"
+  default: 8
+
+- variable: vllm.servingEngineSpec.modelSpec[0].limitCPU
+  group: "Model Resources"
+  label: "CPU Limit (cores)"
+  description: "Hard CPU ceiling. Leave equal to the request to avoid throttling surprises. 0 inherits the request."
   type: "integer"
   default: 8
 
 - variable: vllm.servingEngineSpec.modelSpec[0].requestMemory
-  group: "Model"
+  group: "Model Resources"
   label: "Memory Request"
-  description: "Memory requested for the serving engine (e.g. '32Gi')."
+  description: "Memory requested for the serving engine. vLLM streams model weights through CPU RAM before moving them to the GPU, so this must comfortably EXCEED the model size: 35B AWQ ~19GB -> 32Gi; 7B fp16 ~16GB -> 24Gi; 70B AWQ ~40GB -> 64Gi."
   type: "string"
   default: "32Gi"
+
+- variable: vllm.servingEngineSpec.modelSpec[0].limitMemory
+  group: "Model Resources"
+  label: "Memory Limit"
+  description: "Hard memory ceiling. Must exceed the model size for the load phase (see Memory Request). A too-low limit OOM-kills the pod during model load. 0 inherits the request."
+  type: "string"
+  default: "48Gi"
+
+- variable: vllm.servingEngineSpec.modelSpec[0].limitGPUMem
+  group: "Model Resources"
+  label: "GPU Memory Limit (MIG, MiB)"
+  description: "Optional. For MIG-partitioned GPUs (nvidia.com/gpumem), cap VRAM per instance — e.g. 71680 for a 70GB slice. Leave empty on full GPUs; the requestGPU count is the limit there."
+  type: "string"
+  default: ""
 
 # ===== Model Storage =====
 - variable: vllm.servingEngineSpec.modelSpec[0].pvcStorage
@@ -86,10 +108,10 @@ questions:
   default: ""
 
 # ===== Router (OpenAI-compatible endpoint) =====
-- variable: vllm.routerSpec.serviceType
+- variable: vllm.routerExposure.type
   group: "Router"
-  label: "Router Service Type"
-  description: "How to expose the OpenAI-compatible router endpoint (port 80). ClusterIP is fine when Rancher AI runs in the same cluster; NodePort/LoadBalancer for external access."
+  label: "Router Exposure Type (how Rancher AI reaches it)"
+  description: "How the vLLM OpenAI-compatible endpoint (port 80) is exposed. ClusterIP = in-cluster only (default). NodePort = expose on each node's IP, good for bare-metal / Rancher clusters without a load balancer (Rancher AI openaiUrl: http://<node-ip>:<nodePort>/v1). LoadBalancer = external LB IP from cloud providers or MetalLB (openaiUrl: http://<lb-ip>:80/v1). Ingress (below) is the other alternative."
   type: "enum"
   default: "ClusterIP"
   options:
@@ -97,10 +119,26 @@ questions:
     - "NodePort"
     - "LoadBalancer"
 
+- variable: vllm.routerExposure.nodePort
+  group: "Router"
+  label: "Router NodePort (30000-32767)"
+  description: "Fixed NodePort for the vLLM endpoint on every node's IP. Rancher AI openaiUrl becomes http://<node-ip>:<nodePort>/v1. Pick a free port (e.g. 30081) — 30000-32767 only."
+  type: "string"
+  default: "30081"
+  show_if: "vllm.routerExposure.type=NodePort"
+
+- variable: vllm.routerExposure.loadBalancerIP
+  group: "Router"
+  label: "LoadBalancer IP (optional)"
+  description: "Fixed external IP for a LoadBalancer service (e.g. a MetalLB pool address). Leave empty to let the LB auto-assign. Rancher AI openaiUrl becomes http://<lb-ip>:80/v1."
+  type: "string"
+  default: ""
+  show_if: "vllm.routerExposure.type=LoadBalancer"
+
 - variable: vllm.routerSpec.otel.endpoint
   group: "Router"
   label: "OTLP Endpoint (traces)"
-  description: "OTLP gRPC endpoint of the shared SUSE Observability collector. Traces only — token metrics come from the Prometheus scrape."
+  description: "OTLP gRPC endpoint of the shared SUSE Observability collector. Traces only — token metrics come from the Prometheus scrape (vllm_prompt_tokens_total, vllm_generation_tokens_total)."
   type: "string"
   default: "http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4317"
 
@@ -108,7 +146,7 @@ questions:
 - variable: vllm.routerSpec.ingress.enabled
   group: "Ingress"
   label: "Enable Ingress (expose to Rancher AI / external clusters)"
-  description: "Rancher AI (Liz) runs on the Rancher LOCAL cluster and talks to the LLM over the network — enable this to expose the router endpoint via Ingress. Required when Liz is on a different cluster than this chart."
+  description: "Rancher AI (Liz) runs on the Rancher LOCAL cluster and talks to the LLM over the network — enable this to expose the router endpoint via Ingress. Alternative to the NodePort/LoadBalancer exposure above; pick one. Required when Liz is on a different cluster than this chart."
   type: "boolean"
   default: false
 

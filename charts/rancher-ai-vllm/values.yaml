@@ -36,11 +36,21 @@ vllm:
         requestGPUType: nvidia.com/gpu
         requestCPU: 8
         requestMemory: "32Gi"
+        # Limits: vLLM loads weights through CPU RAM before moving to GPU.
+        # limitMemory must comfortably exceed the model size (e.g. 35B AWQ ~19GB
+        # -> 32Gi; 7B fp16 ~16GB -> 24Gi). Leave 0/"" to inherit the request.
+        limitCPU: 8
+        limitMemory: "48Gi"
+        # MIG only: uncomment to cap GPU memory on partitioned GPUs (nvidia.com/gpumem).
+        # limitGPUMem: "71680"
         # Model cache: vLLM downloads weights into a PVC so restarts are fast.
         pvcStorage: "100Gi"
         storageClass: "" # leave empty for the cluster default
   routerSpec:
     enableRouter: true
+    # Internal router service. ALWAYS ClusterIP — external exposure is handled
+    # by the dedicated Service in routerExposure below (the packaged subchart's
+    # router Service cannot render nodePort/loadBalancerIP, so we render our own).
     serviceType: ClusterIP
     otel:
       # Traces to the shared SUSE Observability collector (gRPC endpoint)
@@ -59,6 +69,20 @@ vllm:
             - path: /
               pathType: Prefix
       tls: []
+  # ===== External exposure of the router endpoint (NodePort / LoadBalancer) =====
+  # Alternative to Ingress. Rendered as a dedicated Service selecting the same
+  # router pods. Rancher AI openaiUrl:
+  #   NodePort:      http://<node-ip>:<nodePort>/v1
+  #   LoadBalancer:  http://<lb-ip>:80/v1
+  routerExposure:
+    # ClusterIP = in-cluster only (no extra Service created).
+    # NodePort = expose on every node's IP (bare-metal / Rancher without LB).
+    # LoadBalancer = external LB IP (cloud / MetalLB).
+    type: ClusterIP
+    # Fixed NodePort (30000-32767) used when type=NodePort.
+    nodePort: ""
+    # Fixed LoadBalancer IP used when type=LoadBalancer (optional; empty = auto).
+    loadBalancerIP: ""
   extraObjects:
     # Prometheus scrape target for the engine: a Service selecting the same
     # pods as the chart's engine Service, labelled for the collector's
@@ -83,3 +107,36 @@ vllm:
         - name: http
           port: 80
           targetPort: container-port
+    # External exposure of the router endpoint — rendered only when
+    # routerExposure.type is NodePort or LoadBalancer. Selects the same pods
+    # as the internal router Service (helm-release-name + router labels).
+    - |-
+      {{- if ne .Values.routerExposure.type "ClusterIP" }}
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: {{ .Release.Name }}-router-external
+        labels:
+          app.kubernetes.io/part-of: vllm
+          app.kubernetes.io/managed-by: helm
+      spec:
+        type: {{ .Values.routerExposure.type }}
+        {{- if eq .Values.routerExposure.type "LoadBalancer" }}
+        {{- if .Values.routerExposure.loadBalancerIP }}
+        loadBalancerIP: {{ .Values.routerExposure.loadBalancerIP }}
+        {{- end }}
+        {{- end }}
+        selector:
+          app.kubernetes.io/name: router
+          app.kubernetes.io/instance: {{ .Release.Name }}
+          app.kubernetes.io/component: router
+        ports:
+        - name: http
+          port: 80
+          targetPort: 8000
+          {{- if eq .Values.routerExposure.type "NodePort" }}
+          {{- if .Values.routerExposure.nodePort }}
+          nodePort: {{ .Values.routerExposure.nodePort }}
+          {{- end }}
+          {{- end }}
+      {{- end }}
