@@ -92,34 +92,48 @@ questions:
   type: "string"
   default: ""
 
-# ===== Model Storage =====
+# ===== Storage =====
 - variable: vllm.servingEngineSpec.modelSpec[0].pvcStorage
   group: "Storage"
   label: "Model Cache PVC Size"
-  description: "vLLM downloads model weights into a PVC so restarts are fast. Set generous size (e.g. 100Gi-500Gi). To share an existing cache volume, set the storage class or mount a prefetched cache via extraVolumes (see docs)."
+  description: "vLLM downloads model weights into a PVC so restarts are fast. Set generous size (e.g. 100Gi-500Gi). The shared NFS cache option below can replace this per-instance PVC with one cache shared across deployments."
   type: "string"
   default: "100Gi"
 
 - variable: vllm.servingEngineSpec.modelSpec[0].storageClass
   group: "Storage"
-  label: "Storage Class (REQUIRED — do not leave empty)"
-  description: "Storage class for the model cache PVC. WARNING: this chart renders storageClassName for ANY value, so an EMPTY STRING blocks the cluster default and the PVC stays Pending forever ('no persistent volumes available... no storage class is set'). Always set the real class — e.g. harvester on dev-ai, longhorn on Rancher. Use a shared RWX class to share one cache across clusters."
-  type: "string"
-  default: "harvester"
+  label: "Storage Class"
+  description: "Storage class for the model cache PVC. 'Default' (recommended) uses the cluster's DEFAULT storage class — the safe choice on any cluster. Pick a specific class by name when you need one (harvester on Harvester, longhorn on Rancher/Longhorn, local-path on plain RKE2/k3s). Use a shared RWX class to share one cache across deployments."
+  type: "enum"
+  default: "Default"
+  options:
+    - "Default"
+    - "harvester"
+    - "longhorn"
+    - "local-path"
+
+- variable: vllm.sharedPvcStorage.enabled
+  group: "Storage"
+  label: "Enable Shared NFS Model Cache (skip re-downloads)"
+  description: "Cache model weights ONCE on a shared NFS volume; every new instance/release reuses them — no multi-GB re-download on each launch. vLLM writes to /data/shared-pvc-storage (--download-dir) on the NFS share. Disable to fall back to the per-instance model PVC. Requires TCP 2049 from cluster nodes to the NFS server."
+  type: "boolean"
+  default: true
 
 - variable: vllm.sharedPvcStorage.nfs.server
   group: "Storage"
-  label: "Shared NFS Model Cache — Server (skip re-downloads!)"
-  description: "NFS server for a SHARED model cache. vLLM downloads model weights ONCE into this share and every new instance/release reuses them — no 15GB re-download on each launch (matches the ollama modelCache.nfs pattern). e.g. 10.0.9.10. Requires the share to be reachable from cluster nodes (TCP 2049). To DISABLE shared caching entirely, remove the sharedPvcStorage block from the chart values (a blank server here fails the install — the subchart requires it)."
+  label: "Shared NFS Model Cache — Server"
+  description: "NFS server hosting the shared cache, e.g. 10.0.9.10."
   type: "string"
   default: "10.0.9.10"
+  show_if: "vllm.sharedPvcStorage.enabled=true"
 
 - variable: vllm.sharedPvcStorage.nfs.path
   group: "Storage"
   label: "Shared NFS Model Cache — Path"
-  description: "Directory on the NFS server for the model cache, e.g. /data/ai-models. Should be a dedicated dir; vLLM creates model subdirectories inside it (HF cache layout)."
+  description: "Directory on the NFS server for the model cache, e.g. /data/ai-models. Dedicated dir; vLLM creates model subdirectories inside it (HF cache layout)."
   type: "string"
   default: "/data/ai-models"
+  show_if: "vllm.sharedPvcStorage.enabled=true"
 
 - variable: vllm.sharedPvcStorage.size
   group: "Storage"
@@ -127,6 +141,7 @@ questions:
   description: "PV/PVC capacity for the shared cache. Large enough for ALL models you'll serve: 100Gi per ~35B quantized model, 50Gi per 7B. Default 200Gi."
   type: "string"
   default: "200Gi"
+  show_if: "vllm.sharedPvcStorage.enabled=true"
 
 # ===== Router (OpenAI-compatible endpoint) =====
 - variable: vllm.routerExposure.type

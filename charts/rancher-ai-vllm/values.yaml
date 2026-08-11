@@ -45,11 +45,12 @@ vllm:
         # limitGPUMem: "71680"
         # Model cache: vLLM downloads weights into a PVC so restarts are fast.
         pvcStorage: "100Gi"
-        # IMPORTANT: empty string here makes the subchart render
-        # `storageClassName: ""` (its hasKey check fires on ANY value), which
-        # BLOCKS the cluster default class and leaves the PVC Pending forever.
-        # Set the real class (e.g. harvester on dev-ai), or remove the key.
-        storageClass: "harvester"
+        # Storage class for the model cache PVC. "Default" (chart default) uses
+        # the cluster's DEFAULT storage class — the vendored subchart is
+        # patched to omit storageClassName for "Default"/"" so the default
+        # class provisions it. Set any real class name (harvester, longhorn,
+        # local-path) to pin a specific class.
+        storageClass: "Default"
         # Shared NFS model cache (see sharedPvcStorage below): downloads go to
         # /data/shared-pvc-storage so a NEW instance skips re-downloading.
         vllmConfig:
@@ -60,14 +61,17 @@ vllm:
   # your NFS share and mounts it at /data/shared-pvc-storage in the engine.
   # vLLM caches downloaded weights there (--download-dir above), so launching
   # another instance / release reuses the same model files — no re-download.
-  # Set nfs.server to your share (e.g. 10.0.9.10) or remove this block to
-  # disable and fall back to per-instance PVC downloads.
+  # enabled: false turns the whole block off (no PV/PVC/mount) and vLLM falls
+  # back to the per-instance model PVC. storageClass "Default"/"" = static
+  # NFS binding (storageClassName: "" on both PV and PVC) — no provisioner
+  # class required; set a real class name to pin one.
   sharedPvcStorage:
+    enabled: true
     nfs:
       server: "10.0.9.10"
       path: "/data/ai-models"
     size: "200Gi"
-    storageClass: "harvester"
+    storageClass: "Default"
     accessModes:
       - ReadWriteMany
   routerSpec:

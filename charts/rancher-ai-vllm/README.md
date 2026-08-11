@@ -16,7 +16,9 @@ tokens, tokens/sec, TTFT, and KV-cache pressure.
 
 - Model dropdown organized by GPU VRAM class (16/24/64/100 GB)
 - OpenAI-compatible router endpoint (port 80) — the sanctioned Rancher AI hook
-- Model weights cached in a PVC (fast restarts), optional shared storage class
+- Model weights cached in a PVC (fast restarts); storage class is a dropdown
+  with 'Default' = cluster default, plus optional shared NFS model cache
+  (enable/disable + server/path/size) so new instances skip re-downloading
 - Scrape target Service `<release>-engine-scrape` labelled
   `app.kubernetes.io/part-of=vllm` (+ `prometheus.io/*` annotations)
 - Router traces via `routerSpec.otel.endpoint` (gRPC → collector)
