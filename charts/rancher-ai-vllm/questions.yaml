@@ -8,7 +8,7 @@ questions:
   default: ""
 
 # ===== Model Selection =====
-- variable: vllm.servingEngineSpec.modelSpec[0].modelURL
+- variable: vllm.servingEngineSpec.modelSpec.main.modelURL
   group: "Model"
   label: "Model (by GPU VRAM class)"
   description: "Choose the model that fits your GPU (Hugging Face model ID). VRAM depends on quantization: 16GB -> Qwen2.5-7B (fp16); 24GB -> Qwen3.6-35B-A3B (AWQ/GPTQ); 64GB -> Qwen3.6-35B-A3B (fp8) or Llama-3.3-70B (AWQ); 100GB -> gpt-oss-120b or Qwen3.6-35B-A3B (bf16)."
@@ -33,7 +33,7 @@ questions:
     - label: "100GB GPU — Qwen/Qwen3.6-35B-A3B (bf16 ~70GB)"
       value: "Qwen/Qwen3.6-35B-A3B"
 
-- variable: vllm.servingEngineSpec.modelSpec[0].name
+- variable: vllm.servingEngineSpec.modelSpec.main.name
   group: "Model"
   label: "Model Deployment Name"
   description: "Short name used in resource names (Deployments, Services, PVCs). MUST be DNS-1035 safe: lowercase alphanumerics and dashes only — NO dots, underscores, or spaces (a dot like 'qwen3.6-35b' makes the Service name invalid and helm install fails). e.g. qwen35b, gpt-oss-120b. This is just the Kubernetes resource name; the actual served model comes from the model URL above."
@@ -42,7 +42,7 @@ questions:
   required: true
 
 # ===== Model Resources =====
-- variable: vllm.servingEngineSpec.modelSpec[0].requestGPU
+- variable: vllm.servingEngineSpec.modelSpec.main.requestGPU
   group: "Model Resources"
   label: "GPU Request (per replica)"
   description: "Number of GPUs the serving engine requests. vLLM keeps the model weights + KV cache in VRAM, so the GPU does the heavy lifting. 1 full GPU per replica unless the model needs tensor parallelism (see GPU limits below)."
@@ -50,42 +50,42 @@ questions:
   default: 1
   required: true
 
-- variable: vllm.servingEngineSpec.modelSpec[0].requestGPUType
+- variable: vllm.servingEngineSpec.modelSpec.main.requestGPUType
   group: "Model Resources"
   label: "GPU Resource Name"
   description: "Kubernetes resource name for the GPU. nvidia.com/gpu for full or time-sliced GPUs; a MIG profile (e.g. nvidia.com/mig-4g.71gb) for MIG partitions on H100/A100. For MIG, also set the GPU memory limit below."
   type: "string"
   default: "nvidia.com/gpu"
 
-- variable: vllm.servingEngineSpec.modelSpec[0].requestCPU
+- variable: vllm.servingEngineSpec.modelSpec.main.requestCPU
   group: "Model Resources"
   label: "CPU Request (cores)"
   description: "CPU cores requested for the serving engine. The GPU does the matmuls; CPU handles tokenization, scheduling and Python overhead. 2 cores is fine for a small model / test; use 8+ for a 35B model and concurrent load."
   type: "integer"
   default: 8
 
-- variable: vllm.servingEngineSpec.modelSpec[0].limitCPU
+- variable: vllm.servingEngineSpec.modelSpec.main.limitCPU
   group: "Model Resources"
   label: "CPU Limit (cores)"
   description: "Hard CPU ceiling. Leave equal to the request to avoid throttling surprises. 0 inherits the request."
   type: "integer"
   default: 8
 
-- variable: vllm.servingEngineSpec.modelSpec[0].requestMemory
+- variable: vllm.servingEngineSpec.modelSpec.main.requestMemory
   group: "Model Resources"
   label: "Memory Request"
   description: "Memory requested for the serving engine. vLLM streams model weights through CPU RAM before moving them to the GPU, so this must comfortably EXCEED the model size: 35B AWQ ~19GB -> 32Gi; 7B fp16 ~16GB -> 24Gi; 70B AWQ ~40GB -> 64Gi."
   type: "string"
   default: "32Gi"
 
-- variable: vllm.servingEngineSpec.modelSpec[0].limitMemory
+- variable: vllm.servingEngineSpec.modelSpec.main.limitMemory
   group: "Model Resources"
   label: "Memory Limit"
   description: "Hard memory ceiling. Must exceed the model size for the load phase (see Memory Request). A too-low limit OOM-kills the pod during model load. 0 inherits the request."
   type: "string"
   default: "48Gi"
 
-- variable: vllm.servingEngineSpec.modelSpec[0].limitGPUMem
+- variable: vllm.servingEngineSpec.modelSpec.main.limitGPUMem
   group: "Model Resources"
   label: "GPU Memory Limit (MIG, MiB)"
   description: "Optional. For MIG-partitioned GPUs (nvidia.com/gpumem), cap VRAM per instance — e.g. 71680 for a 70GB slice. Leave empty on full GPUs; the requestGPU count is the limit there."
@@ -93,14 +93,14 @@ questions:
   default: ""
 
 # ===== Storage =====
-- variable: vllm.servingEngineSpec.modelSpec[0].pvcStorage
+- variable: vllm.servingEngineSpec.modelSpec.main.pvcStorage
   group: "Storage"
   label: "Model Cache PVC Size"
   description: "vLLM downloads model weights into a PVC so restarts are fast. Set generous size (e.g. 100Gi-500Gi). The shared NFS cache option below can replace this per-instance PVC with one cache shared across deployments."
   type: "string"
   default: "100Gi"
 
-- variable: vllm.servingEngineSpec.modelSpec[0].storageClass
+- variable: vllm.servingEngineSpec.modelSpec.main.storageClass
   group: "Storage"
   label: "Storage Class"
   description: "Storage class for the model cache PVC. 'Default' (recommended) uses the cluster's DEFAULT storage class — the safe choice on any cluster. Pick a specific class by name when you need one (harvester on Harvester, longhorn on Rancher/Longhorn, local-path on plain RKE2/k3s). Use a shared RWX class to share one cache across deployments."
@@ -186,7 +186,7 @@ questions:
   type: "boolean"
   default: false
 
-- variable: vllm.routerSpec.ingress.hosts[0].host
+- variable: vllm.routerSpec.ingress.hosts.main.host
   group: "Ingress"
   label: "Ingress Hostname"
   description: "Hostname for the vLLM OpenAI-compatible endpoint, e.g. vllm.wiredquill.com. Rancher AI openaiUrl becomes https://<host>/v1."

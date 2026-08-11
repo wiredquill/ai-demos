@@ -173,13 +173,13 @@ requests:
   {{- $gpuType := default "nvidia.com/gpu" $modelSpec.requestGPUType }}
   {{ $gpuType }}: {{ required "Value 'modelSpec.requestGPU' must be defined !" (index $modelSpec.requestGPU | quote) }}
   {{- end }}
-  {{- if (hasKey $modelSpec "requestGPUMem") }}
+  {{- if and (hasKey $modelSpec "requestGPUMem") (not (empty $modelSpec.requestGPUMem)) }}
   nvidia.com/gpumem: {{ $modelSpec.requestGPUMem | quote }}
   {{- end }}
-  {{- if (hasKey $modelSpec "requestGPUMemPercentage") }}
+  {{- if and (hasKey $modelSpec "requestGPUMemPercentage") (not (empty $modelSpec.requestGPUMemPercentage)) }}
   nvidia.com/gpumem-percentage: {{ $modelSpec.requestGPUMemPercentage | quote }}
   {{- end }}
-  {{- if (hasKey $modelSpec "requestGPUCores") }}
+  {{- if and (hasKey $modelSpec "requestGPUCores") (not (empty $modelSpec.requestGPUCores)) }}
   nvidia.com/gpucores: {{ $modelSpec.requestGPUCores | quote }}
   {{- end }}
 {{- if (include "chart.hasLimits" $modelSpec | fromYaml) }}
@@ -194,13 +194,13 @@ limits:
   {{- $gpuType := default "nvidia.com/gpu" $modelSpec.requestGPUType }}
   {{ $gpuType }}: {{ required "Value 'modelSpec.requestGPU' must be defined !" (index $modelSpec.requestGPU | quote) }}
   {{- end }}
-  {{- if (hasKey $modelSpec "limitGPUMem") }}
+  {{- if and (hasKey $modelSpec "limitGPUMem") (not (empty $modelSpec.limitGPUMem)) }}
   nvidia.com/gpumem: {{ $modelSpec.limitGPUMem | quote }}
   {{- end }}
-  {{- if (hasKey $modelSpec "limitGPUMemPercentage") }}
+  {{- if and (hasKey $modelSpec "limitGPUMemPercentage") (not (empty $modelSpec.limitGPUMemPercentage)) }}
   nvidia.com/gpumem-percentage: {{ $modelSpec.limitGPUMemPercentage | quote }}
   {{- end }}
-  {{- if (hasKey $modelSpec "limitGPUCores") }}
+  {{- if and (hasKey $modelSpec "limitGPUCores") (not (empty $modelSpec.limitGPUCores)) }}
   nvidia.com/gpucores: {{ $modelSpec.limitGPUCores | quote }}
   {{- end }}
 {{- end }}

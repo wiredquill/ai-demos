@@ -4,16 +4,16 @@ SUSE Rancher AI (Liz) integration
   Point Liz at the OpenAI-compatible router endpoint:
     activeLlm: openai
     openaiUrl: http://{{ .Release.Name }}-router-service:80/v1
-    openaiLlmModel: {{ (index .Values.vllm.servingEngineSpec.modelSpec 0).modelURL }}
+    openaiLlmModel: {{ (first (values .Values.vllm.servingEngineSpec.modelSpec)).modelURL }}
     openaiApiKey: <any non-empty value; use the vllmApiKey if configured>
 
 {{- if .Values.vllm.routerSpec.ingress.enabled }}
-  Ingress: https://{{ (index .Values.vllm.routerSpec.ingress.hosts 0).host }}/v1
+  Ingress: https://{{ (first (values .Values.vllm.routerSpec.ingress.hosts)).host }}/v1
 {{- end }}
 
 Model serving
-  Engine deployment: {{ .Release.Name }}-{{ (index .Values.vllm.servingEngineSpec.modelSpec 0).name }}-deployment
-  Engine service:    {{ .Release.Name }}-{{ (index .Values.vllm.servingEngineSpec.modelSpec 0).name }}-engine-service
+  Engine deployment: {{ .Release.Name }}-{{ (first (values .Values.vllm.servingEngineSpec.modelSpec)).name }}-deployment
+  Engine service:    {{ .Release.Name }}-{{ (first (values .Values.vllm.servingEngineSpec.modelSpec)).name }}-engine-service
   Router service:    {{ .Release.Name }}-router-service
   Scrape target:     {{ .Release.Name }}-engine-scrape (app.kubernetes.io/part-of=vllm)
 
