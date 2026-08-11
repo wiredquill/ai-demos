@@ -27,7 +27,7 @@ vllm:
       #   24GB  -> Qwen/Qwen3.6-35B-A3B with AWQ/GPTQ weights (~19GB)
       #   64GB  -> Qwen/Qwen3.6-35B-A3B fp8 (~35GB), meta-llama/Llama-3.3-70B-Instruct AWQ (~40GB)
       #   100GB -> openai/gpt-oss-120b (~68GB), Qwen/Qwen3.6-35B-A3B bf16 (~70GB)
-      - name: qwen3.6-35b
+      - name: qwen35b
         registry: dp.apps.rancher.io
         repository: containers/vllm-openai
         tag: "0.19.0"
@@ -36,11 +36,45 @@ vllm:
         requestGPUType: nvidia.com/gpu
         requestCPU: 8
         requestMemory: "32Gi"
+        # Limits: vLLM loads weights through CPU RAM before moving to GPU.
+        # limitMemory must comfortably exceed the model size (e.g. 35B AWQ ~19GB
+        # -> 32Gi; 7B fp16 ~16GB -> 24Gi). Leave 0/"" to inherit the request.
+        limitCPU: 8
+        limitMemory: "48Gi"
+        # MIG only: uncomment to cap GPU memory on partitioned GPUs (nvidia.com/gpumem).
+        # limitGPUMem: "71680"
         # Model cache: vLLM downloads weights into a PVC so restarts are fast.
         pvcStorage: "100Gi"
-        storageClass: "" # leave empty for the cluster default
+        # IMPORTANT: empty string here makes the subchart render
+        # `storageClassName: ""` (its hasKey check fires on ANY value), which
+        # BLOCKS the cluster default class and leaves the PVC Pending forever.
+        # Set the real class (e.g. harvester on dev-ai), or remove the key.
+        storageClass: "harvester"
+        # Shared NFS model cache (see sharedPvcStorage below): downloads go to
+        # /data/shared-pvc-storage so a NEW instance skips re-downloading.
+        vllmConfig:
+          extraArgs:
+            - "--download-dir"
+            - "/data/shared-pvc-storage"
+  # Shared NFS-backed model cache. Creates a static PV+PVC (RWX) pointing at
+  # your NFS share and mounts it at /data/shared-pvc-storage in the engine.
+  # vLLM caches downloaded weights there (--download-dir above), so launching
+  # another instance / release reuses the same model files — no re-download.
+  # Set nfs.server to your share (e.g. 10.0.9.10) or remove this block to
+  # disable and fall back to per-instance PVC downloads.
+  sharedPvcStorage:
+    nfs:
+      server: "10.0.9.10"
+      path: "/data/ai-models"
+    size: "200Gi"
+    storageClass: "harvester"
+    accessModes:
+      - ReadWriteMany
   routerSpec:
     enableRouter: true
+    # Internal router service. ALWAYS ClusterIP — external exposure is handled
+    # by the dedicated Service in routerExposure below (the packaged subchart's
+    # router Service cannot render nodePort/loadBalancerIP, so we render our own).
     serviceType: ClusterIP
     otel:
       # Traces to the shared SUSE Observability collector (gRPC endpoint)
@@ -59,6 +93,20 @@ vllm:
             - path: /
               pathType: Prefix
       tls: []
+  # ===== External exposure of the router endpoint (NodePort / LoadBalancer) =====
+  # Alternative to Ingress. Rendered as a dedicated Service selecting the same
+  # router pods. Rancher AI openaiUrl:
+  #   NodePort:      http://<node-ip>:<nodePort>/v1
+  #   LoadBalancer:  http://<lb-ip>:80/v1
+  routerExposure:
+    # ClusterIP = in-cluster only (no extra Service created).
+    # NodePort = expose on every node's IP (bare-metal / Rancher without LB).
+    # LoadBalancer = external LB IP (cloud / MetalLB).
+    type: ClusterIP
+    # Fixed NodePort (30000-32767) used when type=NodePort.
+    nodePort: ""
+    # Fixed LoadBalancer IP used when type=LoadBalancer (optional; empty = auto).
+    loadBalancerIP: ""
   extraObjects:
     # Prometheus scrape target for the engine: a Service selecting the same
     # pods as the chart's engine Service, labelled for the collector's
@@ -83,3 +131,36 @@ vllm:
         - name: http
           port: 80
           targetPort: container-port
+    # External exposure of the router endpoint — rendered only when
+    # routerExposure.type is NodePort or LoadBalancer. Selects the same pods
+    # as the internal router Service (helm-release-name + router labels).
+    - |-
+      {{- if ne .Values.routerExposure.type "ClusterIP" }}
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: {{ .Release.Name }}-router-external
+        labels:
+          app.kubernetes.io/part-of: vllm
+          app.kubernetes.io/managed-by: helm
+      spec:
+        type: {{ .Values.routerExposure.type }}
+        {{- if eq .Values.routerExposure.type "LoadBalancer" }}
+        {{- if .Values.routerExposure.loadBalancerIP }}
+        loadBalancerIP: {{ .Values.routerExposure.loadBalancerIP }}
+        {{- end }}
+        {{- end }}
+        selector:
+          app.kubernetes.io/name: router
+          app.kubernetes.io/instance: {{ .Release.Name }}
+          app.kubernetes.io/component: router
+        ports:
+        - name: http
+          port: 80
+          targetPort: 8000
+          {{- if eq .Values.routerExposure.type "NodePort" }}
+          {{- if .Values.routerExposure.nodePort }}
+          nodePort: {{ .Values.routerExposure.nodePort }}
+          {{- end }}
+          {{- end }}
+      {{- end }}
