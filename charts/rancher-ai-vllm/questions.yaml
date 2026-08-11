@@ -107,6 +107,27 @@ questions:
   type: "string"
   default: "harvester"
 
+- variable: vllm.sharedPvcStorage.nfs.server
+  group: "Storage"
+  label: "Shared NFS Model Cache — Server (skip re-downloads!)"
+  description: "NFS server for a SHARED model cache. vLLM downloads model weights ONCE into this share and every new instance/release reuses them — no 15GB re-download on each launch (matches the ollama modelCache.nfs pattern). e.g. 10.0.9.10. Requires the share to be reachable from cluster nodes (TCP 2049). To DISABLE shared caching entirely, remove the sharedPvcStorage block from the chart values (a blank server here fails the install — the subchart requires it)."
+  type: "string"
+  default: "10.0.9.10"
+
+- variable: vllm.sharedPvcStorage.nfs.path
+  group: "Storage"
+  label: "Shared NFS Model Cache — Path"
+  description: "Directory on the NFS server for the model cache, e.g. /data/ai-models. Should be a dedicated dir; vLLM creates model subdirectories inside it (HF cache layout)."
+  type: "string"
+  default: "/data/ai-models"
+
+- variable: vllm.sharedPvcStorage.size
+  group: "Storage"
+  label: "Shared NFS Model Cache — Size"
+  description: "PV/PVC capacity for the shared cache. Large enough for ALL models you'll serve: 100Gi per ~35B quantized model, 50Gi per 7B. Default 200Gi."
+  type: "string"
+  default: "200Gi"
+
 # ===== Router (OpenAI-compatible endpoint) =====
 - variable: vllm.routerExposure.type
   group: "Router"

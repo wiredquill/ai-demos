@@ -50,6 +50,26 @@ vllm:
         # BLOCKS the cluster default class and leaves the PVC Pending forever.
         # Set the real class (e.g. harvester on dev-ai), or remove the key.
         storageClass: "harvester"
+        # Shared NFS model cache (see sharedPvcStorage below): downloads go to
+        # /data/shared-pvc-storage so a NEW instance skips re-downloading.
+        vllmConfig:
+          extraArgs:
+            - "--download-dir"
+            - "/data/shared-pvc-storage"
+  # Shared NFS-backed model cache. Creates a static PV+PVC (RWX) pointing at
+  # your NFS share and mounts it at /data/shared-pvc-storage in the engine.
+  # vLLM caches downloaded weights there (--download-dir above), so launching
+  # another instance / release reuses the same model files — no re-download.
+  # Set nfs.server to your share (e.g. 10.0.9.10) or remove this block to
+  # disable and fall back to per-instance PVC downloads.
+  sharedPvcStorage:
+    nfs:
+      server: "10.0.9.10"
+      path: "/data/ai-models"
+    size: "200Gi"
+    storageClass: "harvester"
+    accessModes:
+      - ReadWriteMany
   routerSpec:
     enableRouter: true
     # Internal router service. ALWAYS ClusterIP — external exposure is handled
