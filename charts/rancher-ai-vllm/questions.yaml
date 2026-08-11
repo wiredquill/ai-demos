@@ -36,9 +36,9 @@ questions:
 - variable: vllm.servingEngineSpec.modelSpec[0].name
   group: "Model"
   label: "Model Deployment Name"
-  description: "Short name used in resource names (Services, Deployments). Lowercase, no spaces. e.g. qwen3.6-35b, gpt-oss-120b."
+  description: "Short name used in resource names (Deployments, Services, PVCs). MUST be DNS-1035 safe: lowercase alphanumerics and dashes only — NO dots, underscores, or spaces (a dot like 'qwen3.6-35b' makes the Service name invalid and helm install fails). e.g. qwen35b, gpt-oss-120b. This is just the Kubernetes resource name; the actual served model comes from the model URL above."
   type: "string"
-  default: "model"
+  default: "qwen35b"
   required: true
 
 # ===== Model Resources =====
@@ -102,10 +102,10 @@ questions:
 
 - variable: vllm.servingEngineSpec.modelSpec[0].storageClass
   group: "Storage"
-  label: "Storage Class"
-  description: "Storage class for the model cache PVC. Leave empty for the cluster default. Use a shared RWX class (longhorn/nfs) to share one cache across clusters/deployments."
+  label: "Storage Class (REQUIRED — do not leave empty)"
+  description: "Storage class for the model cache PVC. WARNING: this chart renders storageClassName for ANY value, so an EMPTY STRING blocks the cluster default and the PVC stays Pending forever ('no persistent volumes available... no storage class is set'). Always set the real class — e.g. harvester on dev-ai, longhorn on Rancher. Use a shared RWX class to share one cache across clusters."
   type: "string"
-  default: ""
+  default: "harvester"
 
 # ===== Router (OpenAI-compatible endpoint) =====
 - variable: vllm.routerExposure.type
