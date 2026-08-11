@@ -1,6 +1,0 @@
-dependencies:
-- name: vllm
-  repository: oci://dp.apps.rancher.io/charts
-  version: 0.1.10
-digest: sha256:25c2077bd1d907f7a59a7f8256d360a34eee57ccd6a4b49e65b4dcc9307cc9ca
-generated: "2026-08-08T13:57:04.81834957-07:00"
