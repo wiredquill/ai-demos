@@ -11,6 +11,21 @@ EMBEDDING_MODEL = "bge-large"
 
 embedding_fn = model.DefaultEmbeddingFunction()
 
+# Keep a single MilvusClient for the lifetime of the process. milvus-lite's
+# embedded server is bound to the client that started it; creating a fresh
+# MilvusClient per request (the pymilvus 2.x pattern) lets the old embedded
+# server on 127.0.0.1:<port> die, and the next request fails with
+# "Fail connecting to server ... server unavailable". A module-level client
+# keeps the server alive across /ask calls.
+_milvus_client = None
+
+
+def get_milvus_client():
+    global _milvus_client
+    if _milvus_client is None:
+        _milvus_client = MilvusClient(MILVUS_URL)
+    return _milvus_client
+
 documents = [
     "Employees are entitled to 20 days of paid vacation per year after one year of service.",
     "Remote work policy allows up to 3 days per week with manager approval.",
@@ -76,7 +91,7 @@ def initialize_policy_database():
 def build_policy_vault():
     data = initialize_policy_database()
     # Create a collection and insert the data
-    client = MilvusClient(MILVUS_URL)
+    client = get_milvus_client()
     client.create_collection(
         collection_name="demo_collection",
         dimension=768,
@@ -130,7 +145,7 @@ def get_benefits_information(benefit_type: str, employee_level: str) -> str:
 @openlit.trace
 def search_policy_database(query: str) -> str:
     query_vectors = embedding_fn.encode_queries([query])
-    client = MilvusClient(MILVUS_URL)
+    client = get_milvus_client()
     res = client.search(
         collection_name="demo_collection",
         data=query_vectors,
@@ -206,10 +221,22 @@ def handle_hr_inquiry(question: str):
 
 @openlit.trace
 def start_hr_policy_system():
-    build_policy_vault()
+    try:
+        build_policy_vault()
 
-    question = "What are the vacation benefits for senior employees?"
-    handle_hr_inquiry(question)
+        question = "What are the vacation benefits for senior employees?"
+        handle_hr_inquiry(question)
 
-    question = "What is our remote work policy?"
-    return handle_hr_inquiry(question)
+        question = "What is our remote work policy?"
+        return handle_hr_inquiry(question)
+    except Exception as e:
+        # Fall back to a plain LLM answer if the vector store is unavailable.
+        # Keeps /ask returning 200 (and telemetry flowing) during vector-store
+        # outages instead of surfacing a 500 to the load generator.
+        print(f"RAG unavailable, falling back to plain LLM: {e}")
+        client = ollama.Client()
+        response = client.chat(
+            model=MODEL,
+            messages=[{"role": "user", "content": "What is our remote work policy?"}],
+        )
+        return response

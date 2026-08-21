@@ -175,6 +175,17 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "3f435cd"
 
+# The RAG app (hr-policy-db) runs a different image than the chat apps:
+# app/hr-assistant is built to ghcr.io/wiredquill/ai-demos/genai-demo by
+# .github/workflows/build-hr-assistant.yml and contains main.py + apps/ (rag101,
+# rag102), which the chat-app ai-demos-suse image does NOT ship. The RAG apps
+# need milvus-lite (local-file Milvus) which is baked into this image.
+policyDb:
+  image:
+    repository: ghcr.io/wiredquill/ai-demos/genai-demo
+    pullPolicy: Always
+    tag: "latest"
+
 # This is to override the chart name.
 nameOverride: ""
 fullnameOverride: ""
