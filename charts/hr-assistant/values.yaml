@@ -184,7 +184,7 @@ policyDb:
   image:
     repository: ghcr.io/wiredquill/ai-demos/genai-demo
     pullPolicy: Always
-    tag: "latest"
+    tag: "feat-rancher-ai-vllm-storage-options-7bb3e14"
 
 # This is to override the chart name.
 nameOverride: ""
