@@ -148,6 +148,7 @@ ollama:
       path: "/data/ai-models" # NFS share path for caching models
   models:
     pull:
+    - llama3.2:latest
     - llama3.2:1b
     - bge-large:latest
 
