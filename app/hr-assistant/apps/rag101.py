@@ -178,9 +178,45 @@ def process_hr_ai_response(messages, response):
         }
 
         for tool in response["message"]["tool_calls"]:
-            function_to_call = available_functions[tool["function"]["name"]]
+            function_name = tool["function"]["name"]
+            function_to_call = available_functions.get(function_name)
+            if function_to_call is None:
+                print(f"Unknown tool call: {function_name}, skipping")
+                continue
+
+            # The model sometimes returns arguments as a JSON string, and
+            # small models (llama3.2:1b) occasionally emit malformed
+            # arguments (e.g. the function description as a kwarg name).
+            # Tolerate both so the request never 500s.
             function_args = tool["function"]["arguments"]
-            function_response = function_to_call(**function_args)
+            if isinstance(function_args, str):
+                try:
+                    function_args = json.loads(function_args)
+                except Exception:
+                    print(f"Malformed JSON tool args for {function_name}, skipping: {function_args}")
+                    continue
+            if not isinstance(function_args, dict):
+                print(f"Unexpected tool args type for {function_name}, skipping")
+                continue
+
+            try:
+                function_response = function_to_call(**function_args)
+            except TypeError as e:
+                # Drop invalid keys that the model hallucinated (e.g. the
+                # function description as a kwarg name) and retry with only
+                # the keys the function accepts.
+                import inspect
+                valid = inspect.signature(function_to_call).parameters
+                filtered = {k: v for k, v in function_args.items() if k in valid}
+                print(f"Tool call {function_name} got bad args ({e}); retrying with {filtered}")
+                try:
+                    function_response = function_to_call(**filtered)
+                except Exception as e2:
+                    print(f"Tool call {function_name} failed even after filtering: {e2}")
+                    continue
+            except Exception as e:
+                print(f"Tool call {function_name} failed: {e}")
+                continue
             # Add function response to the conversation
             messages.append(
                 {
