@@ -155,10 +155,15 @@ attribute, so without these the app never renders as an LLM component and no
 model or inference-engine relations are drawn.
 */}}
 {{- define "hr-assistant.otelResourceAttributes" -}}
-{{- $attrs := list (printf "deployment.environment=%s" .Values.deploymentEnvironment) -}}
-{{- $attrs = append $attrs (printf "gen_ai.provider.name=%s" .Values.genai.providerName) -}}
-{{- $attrs = append $attrs (printf "gen_ai.request.model=%s" (include "hr-assistant.model" .)) -}}
-{{- $attrs = append $attrs (printf "service.namespace=%s" (include "hr-assistant.serviceNamespace" .)) -}}
+{{- $ctx := .ctx | default . -}}
+{{- $component := .componentName | default "hr-assistant" -}}
+{{- $attrs := list (printf "deployment.environment=%s" $ctx.Values.deploymentEnvironment) -}}
+{{- $attrs = append $attrs (printf "gen_ai.provider.name=%s" $ctx.Values.genai.providerName) -}}
+{{- $attrs = append $attrs (printf "gen_ai.request.model=%s" (include "hr-assistant.model" $ctx)) -}}
+{{- $attrs = append $attrs (printf "service.namespace=%s" (include "hr-assistant.serviceNamespace" $ctx)) -}}
+{{- $attrs = append $attrs "suse.ai.component.type=agent" -}}
+{{- $attrs = append $attrs (printf "suse.ai.component.name=%s" $component) -}}
+{{- $attrs = append $attrs "suse.ai.managed=true" -}}
 {{- join "," $attrs }}
 {{- end }}
 
