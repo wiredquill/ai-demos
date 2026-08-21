@@ -18,7 +18,7 @@ from langchain_milvus import Milvus
 from langchain_ollama import OllamaLLM
 from pymilvus import MilvusClient
 
-#### Constant For PDF Downloads, If you Change This, Change in Section Below As Well
+#### Constant For PDF Downloads, If You Change This, Change in Section Below As Well
 path_pdfs = "hr-documents/"
 
 #### Initialize Our Documents
@@ -29,6 +29,16 @@ ollama_url = os.getenv("OLLAMA_ENDPOINT")
 MILVUS_URL = "./employee_handbook.db"
 MODEL = os.getenv("MODEL", "llama3.2")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "bge-large")
+
+# Keep a single MilvusClient for the lifetime of the process (see rag101.py).
+_milvus_client = None
+
+
+def get_milvus_client():
+    global _milvus_client
+    if _milvus_client is None:
+        _milvus_client = MilvusClient(MILVUS_URL)
+    return _milvus_client
 
 
 @openlit.trace
@@ -44,7 +54,7 @@ def load_hr_documents():
 @openlit.trace
 def build_handbook_vault():
     # Create a collection to get relation to db.
-    client = MilvusClient(MILVUS_URL)
+    client = get_milvus_client()
     client.create_collection(
         collection_name="demo_collection",
         dimension=768,
@@ -94,11 +104,22 @@ def query_handbook_system(query, vectorstore) -> str:
 
 @openlit.trace
 def start_handbook_system():
-    load_hr_documents()
-    vectorstore = build_hr_knowledge_base()
-    result = query_handbook_system("What are the employee onboarding procedures?", vectorstore)
-    print(result)
-    return result
+    try:
+        load_hr_documents()
+        vectorstore = build_hr_knowledge_base()
+        result = query_handbook_system("What are the employee onboarding procedures?", vectorstore)
+        print(result)
+        return result
+    except Exception as e:
+        # Fall back to a plain LLM answer if the vector store is unavailable
+        # (same rationale as rag101.start_hr_policy_system).
+        print(f"RAG unavailable, falling back to plain LLM: {e}")
+        llm = OllamaLLM(
+            model=MODEL,
+            callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
+            stop=["<|eot_id|>"],
+        )
+        return llm.invoke("What are the employee onboarding procedures?")
 
 
 if __name__ == "__main__":
