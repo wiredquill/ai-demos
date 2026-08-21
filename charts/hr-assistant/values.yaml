@@ -161,11 +161,15 @@ image:
   # Published by .github/workflows/build-hr-assistant.yml from app/hr-assistant.
   # The old llm-experiments repository is no longer built and is frozen on
   # openlit 1.27, which predates the gen_ai.provider.name convention.
-  repository: ghcr.io/wiredquill/ai-demos/genai-demo
+  # SUSE Observability instrumented variant (OpenLIT + pricing.json bundled).
+  # The upstream ai-demos/genai-demo image has no OpenLIT init and ships zero
+  # gen_ai telemetry. 3f435cd carries openlit 1.28.0 whose underscore
+  # gen_ai_* counters are verified against the suse-ai StackPack on dev-ai.
+  repository: ghcr.io/wiredquill/ai-demos-suse
   # This sets the pull policy for images.
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+  tag: "3f435cd"
 
 # This is to override the chart name.
 nameOverride: ""
