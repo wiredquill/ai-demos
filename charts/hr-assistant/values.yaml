@@ -107,7 +107,10 @@ opentelemetry:
         image: curlimages/curl:8.5.0
 
 # CronJob schedule for automated requests (demo traffic generation)
-schedule: '*/5 * * * *'
+# Aligned with ai-compare load-gen cadence (*/2) so topology components
+# stay fresh — the backend topology TTL expires components ~2min after
+# the last telemetry, and */5 leaves the SUSE AI view empty most of the time.
+schedule: '*/2 * * * *'
 
 # Job cleanup settings
 jobs:
