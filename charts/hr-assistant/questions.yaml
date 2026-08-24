@@ -8,7 +8,7 @@ questions:
 # question - see observability.mode in values.yaml.
 - variable: otlpEndpoint
   label: "OTLP Endpoint"
-  description: "Address of the OpenTelemetry collector the applications report to, including scheme and port."
+  description: "Address of the OpenTelemetry collector the applications report to, including scheme and port. Find the collector service on your cluster with: kubectl get svc -n observability | grep opentelemetry  (commonly open-telemetry-collector-opentelemetry-collector). Full command to print the URL: OTLP_ENDPOINT=\"http://$(kubectl get svc -n observability -l app.kubernetes.io/name=opentelemetry-collector -o jsonpath='{.items[0].metadata.name}').observability.svc.cluster.local:4318\"; echo $OTLP_ENDPOINT. If the apps cannot resolve this host, they log NameResolutionError and NO telemetry/token costing reaches SUSE Observability."
   type: string
   required: true
   default: "http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4318"
@@ -235,6 +235,13 @@ questions:
 # component (OpenSearch). They are demo data sources: the hr-policy-db app
 # seeds and queries both on every load-gen cycle, so the topology shows the
 # app depending on them. Disable either to remove the component.
+#
+# TOKEN USAGE + COST: every /ask that hits the LLM emits gen_ai.client.token.usage
+# and gen_ai.usage.cost from OpenLIT. In SUSE Observability -> SUSE AI, click any
+# component (e.g. inference-engine ollama) and open its GenAI tab to see tokens
+# and cost; the GenAI Token Usage / GenAI Cost dashboards aggregate them. If the
+# view is empty, first check the OTLP Endpoint question (above) resolves from
+# inside the cluster — a bad endpoint means zero telemetry, zero costing.
 - variable: qdrant.enabled
   group: "Observability Demo Components"
   label: "Deploy Qdrant (Vector Database)"
