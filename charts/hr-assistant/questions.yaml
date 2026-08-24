@@ -8,10 +8,18 @@ questions:
 # question - see observability.mode in values.yaml.
 - variable: otlpEndpoint
   label: "OTLP Endpoint"
-  description: "Address of the OpenTelemetry collector the applications report to, including scheme and port. Find the collector service on your cluster with: kubectl get svc -n observability | grep opentelemetry  (commonly open-telemetry-collector-opentelemetry-collector). Full command to print the URL: OTLP_ENDPOINT=\"http://$(kubectl get svc -n observability -l app.kubernetes.io/name=opentelemetry-collector -o jsonpath='{.items[0].metadata.name}').observability.svc.cluster.local:4318\"; echo $OTLP_ENDPOINT. If the apps cannot resolve this host, they log NameResolutionError and NO telemetry/token costing reaches SUSE Observability."
+  description: "Address of the OpenTelemetry collector the applications report to (scheme://host:port). LEAVE BLANK TO AUTO-DISCOVER: on install the chart looks up the collector Service in the Collector Namespace below and uses it automatically. If you enter a value, a pre-install check tests connectivity and ABORTS the install with the correct URL in the helm log if it cannot be reached. Find it manually with: kubectl get svc -n <collector-namespace> | grep opentelemetry. A bad or unreachable endpoint means the apps deploy but report NO telemetry/token costing."
   type: string
-  required: true
-  default: "http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4318"
+  required: false
+  default: ""
+  group: Observability
+
+- variable: observability.collectorNamespace
+  label: "Collector Namespace"
+  description: "Namespace that holds the shared OpenTelemetry collector Service. Used to auto-discover the collector when OTLP Endpoint is left blank, and by the pre-install connectivity check. Default: observability."
+  type: string
+  required: false
+  default: "observability"
   group: Observability
 
 # General Configuration

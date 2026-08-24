@@ -119,15 +119,62 @@ so each install shows up as its own SUSE AI namespace in the topology.
 {{- end }}
 
 {{/*
+Find the shared OpenTelemetry collector Service in the cluster at install time.
+
+Helm's `lookup` runs against the live API server during install/upgrade (it
+returns nothing during `helm template`), so this auto-discovers the collector
+instead of asking the user to type it. Matches a Service whose name contains
+"opentelemetry-collector" or that carries the app.kubernetes.io/name label.
+*/}}
+{{- define "hr-assistant.collectorService" -}}
+{{- $ns := .Values.observability.collectorNamespace | default "observability" -}}
+{{- $svc := "" -}}
+{{- $found := lookup "v1" "Service" $ns "" -}}
+{{- range $item := ($found.items | default list) -}}
+  {{- $lbl := dig "app.kubernetes.io/name" "" ($item.metadata.labels | default dict) -}}
+  {{- if or (contains "opentelemetry-collector" $item.metadata.name) (eq $lbl "opentelemetry-collector") -}}
+    {{- $svc = $item.metadata.name -}}
+  {{- end -}}
+{{- end -}}
+{{- $svc -}}
+{{- end }}
+
+{{/*
 OTLP endpoint the applications export to. When the OpenTelemetry Operator option is
 enabled the apps talk to the collector this chart provisions in its own namespace;
-otherwise they talk to whatever shared collector .Values.otlpEndpoint points at.
+otherwise the endpoint resolves as follows:
+
+1. .Values.otlpEndpoint if explicitly set (used verbatim; the pre-install hook
+   validates connectivity and fails the install with the proper URL if wrong).
+2. Auto-discovered collector Service in observability.collectorNamespace
+   (Helm lookup at install time) - the "right collector" without typing anything.
+3. The conventional shared-collector FQDN as a last resort.
 */}}
 {{- define "hr-assistant.otlpEndpoint" -}}
 {{- if include "hr-assistant.collectorEnabled" . -}}
 http://{{ include "hr-assistant.collectorName" . }}-collector.{{ .Release.Namespace }}.svc.cluster.local:4318
 {{- else -}}
-{{ .Values.otlpEndpoint }}
+{{- $endpoint := .Values.otlpEndpoint -}}
+{{- if not $endpoint -}}
+  {{- $svc := include "hr-assistant.collectorService" . -}}
+  {{- if $svc -}}
+    {{- $endpoint = printf "http://%s.%s.svc.cluster.local:4318" $svc (.Values.observability.collectorNamespace | default "observability") -}}
+  {{- else -}}
+    {{- $endpoint = "http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4318" -}}
+  {{- end -}}
+{{- end -}}
+{{- $endpoint -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+The auto-discovered collector endpoint, used by the connectivity-check hook to
+suggest the correct URL when the user-supplied one is unreachable.
+*/}}
+{{- define "hr-assistant.discoveredCollectorEndpoint" -}}
+{{- $svc := include "hr-assistant.collectorService" . -}}
+{{- if $svc -}}
+http://{{ $svc }}.{{ .Values.observability.collectorNamespace | default "observability" }}.svc.cluster.local:4318
 {{- end -}}
 {{- end }}
 

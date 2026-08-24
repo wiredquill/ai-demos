@@ -18,9 +18,21 @@ of minutes so the topology stays alive.
 
 ## 1. Find your OTLP collector endpoint
 
-The apps must report to the cluster's OpenTelemetry collector. The chart's
-default endpoint assumes a shared collector installed in the `observability`
-namespace. To find the real service name and URL for YOUR cluster, run:
+The apps must report to the cluster's OpenTelemetry collector.
+
+**You usually do not need to set this at all.** If the **OTLP Endpoint** question
+is left blank, the chart auto-discovers the collector at install time: it looks
+up Services in the `observability` namespace (configurable via the **Collector
+Namespace** question) for one whose name contains `opentelemetry-collector`, and
+uses `http://<service>.<ns>.svc.cluster.local:4318` automatically.
+
+If you do supply a value, a **pre-install connectivity check** runs before the
+apps deploy: a small hook Job resolves and probes the endpoint. If the collector
+cannot be reached, the install **aborts with the auto-discovered correct URL in
+the Rancher helm log** — so a wrong collector address fails loudly at install
+time instead of silently deploying apps that report no telemetry.
+
+To find the collector URL by hand (e.g. to verify what the chart discovered):
 
 ```bash
 kubectl get svc -n observability -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | grep opentelemetry
@@ -200,6 +212,10 @@ topology sent components=5 relations=4 status=200
 
 ## 7. Chart versions
 
+- **1.7.0** — OTLP collector auto-discovery (Helm lookup) + pre-install
+  connectivity-check hook that aborts the install with the correct URL if the
+  collector is unreachable; otlpEndpoint question now optional (blank =
+  auto-discover); new Collector Namespace question.
 - **1.6.0** — Qdrant + OpenSearch components, dashboard, `/stats`, `/logs`
 - **1.6.1** — fast load-gen default (`*/2`), service type/nodePort questions
 - **1.6.2** — policy-db image pinned to a build that fixes the app boot crash
