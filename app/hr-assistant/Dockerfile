@@ -21,6 +21,12 @@ COPY pyproject.toml poetry.lock ./
 # Install dependencies
 RUN poetry install --no-root && rm -rf $POETRY_CACHE_DIR
 
+# The RAG apps (apps/rag101.py, rag102.py) use local-file Milvus
+# (MilvusClient("./rag101.db")) which requires the milvus-lite embedded server.
+# It is deliberately kept OUT of pyproject.toml/poetry.lock (it drags in
+# faiss-cpu + pyarrow and slows every lock regen) and pinned here instead.
+RUN /app/.venv/bin/pip install milvus-lite
+
 # SUSE BCI Migration - Runtime Stage
 FROM registry.suse.com/bci/python:3.11 AS runtime
 
@@ -43,6 +49,7 @@ COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 # Copy application files
 COPY main.py ./main.py
 COPY pricing.json ./pricing.json
+COPY dashboard.html ./dashboard.html
 COPY apps ./apps
 COPY patch ./patch
 COPY hr-documents ./hr-documents

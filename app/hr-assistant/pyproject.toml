@@ -9,6 +9,7 @@ readme = "README.md"
 python = "^3.11"
 openlit = "^1.44.0"
 openai = "^1.53.0"
+requests = "^2.32.0"  # direct dep: rag101 talks to Qdrant + OpenSearch over REST
 pymilvus = {extras = ["model"], version = "^2.4.9"}
 sentence-transformers = "^3.2.1"
 langchain = "^0.3.6"

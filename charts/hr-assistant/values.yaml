@@ -107,7 +107,10 @@ opentelemetry:
         image: curlimages/curl:8.5.0
 
 # CronJob schedule for automated requests (demo traffic generation)
-schedule: '*/5 * * * *'
+# Aligned with ai-compare load-gen cadence (*/2) so topology components
+# stay fresh — the backend topology TTL expires components ~2min after
+# the last telemetry, and */5 leaves the SUSE AI view empty most of the time.
+schedule: '*/2 * * * *'
 
 # Job cleanup settings
 jobs:
@@ -148,6 +151,7 @@ ollama:
       path: "/data/ai-models" # NFS share path for caching models
   models:
     pull:
+    - llama3.2:latest
     - llama3.2:1b
     - bge-large:latest
 
@@ -161,11 +165,88 @@ image:
   # Published by .github/workflows/build-hr-assistant.yml from app/hr-assistant.
   # The old llm-experiments repository is no longer built and is frozen on
   # openlit 1.27, which predates the gen_ai.provider.name convention.
-  repository: ghcr.io/wiredquill/ai-demos/genai-demo
+  # SUSE Observability instrumented variant (OpenLIT + pricing.json bundled).
+  # The upstream ai-demos/genai-demo image has no OpenLIT init and ships zero
+  # gen_ai telemetry. 3f435cd carries openlit 1.28.0 whose underscore
+  # gen_ai_* counters are verified against the suse-ai StackPack on dev-ai.
+  repository: ghcr.io/wiredquill/ai-demos-suse
   # This sets the pull policy for images.
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+  tag: "3f435cd"
+
+# The RAG app (hr-policy-db) runs a different image than the chat apps:
+# app/hr-assistant is built to ghcr.io/wiredquill/ai-demos/genai-demo by
+# .github/workflows/build-hr-assistant.yml and contains main.py + apps/ (rag101,
+# rag102), which the chat-app ai-demos-suse image does NOT ship. The RAG apps
+# need milvus-lite (local-file Milvus) which is baked into this image.
+policyDb:
+  image:
+    repository: ghcr.io/wiredquill/ai-demos/genai-demo
+    pullPolicy: Always
+    # Built from feat/hr-ai-observability-full-stack (773a04b) — carries the
+    # Qdrant/OpenSearch RAG paths, /stats, /logs and the Apple-design dashboard.
+    tag: "feat-hr-ai-observability-full-stack-773a04b"
+
+# Qdrant — vector database component.
+#
+# Deployed so the SUSE AI section in SUSE Observability shows a component under
+# "Vector Databases". The shared collector scrapes qdrant:6333/metrics with the
+# "qdrant" Prometheus job; its transform/qdrant processor tags every metric with
+# suse.ai.component.type=vectordb (see templates/otel-collector-values-suse-ai.yaml).
+# The hr-policy-db app upserts HR policy embeddings and searches them, so the
+# topology shows hr-policy-db -> qdrant as a dependency.
+qdrant:
+  enabled: true
+  image:
+    repository: qdrant/qdrant
+    tag: "v1.19.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  service:
+    type: ClusterIP
+    port: 6333
+
+# OpenSearch — search engine component.
+#
+# Deployed so the SUSE AI section shows a component under "Search Engines".
+# The shared collector polls the OpenSearch REST API with the elasticsearch
+# receiver; its resource/opensearch processor tags the metrics with
+# suse.ai.component.type=search-engine. The hr-policy-db app indexes HR policy
+# documents and queries them, so the topology shows hr-policy-db -> opensearch.
+opensearch:
+  enabled: true
+  image:
+    repository: opensearchproject/opensearch
+    tag: "2.19.6"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 250m
+      memory: 1Gi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+  service:
+    type: ClusterIP
+    port: 9200
+  # Single-node demo: security plugin disabled, no auth. The collector's
+  # elasticsearch receiver connects over plain HTTP.
+  env:
+    - name: discovery.type
+      value: single-node
+    - name: DISABLE_SECURITY_PLUGIN
+      value: "true"
+    - name: bootstrap.memory_lock
+      value: "false"
+    - name: ES_JAVA_OPTS
+      value: "-Xms512m -Xmx512m"
 
 # This is to override the chart name.
 nameOverride: ""

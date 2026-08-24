@@ -47,12 +47,18 @@ spec:
             value: "{{ include "hr-assistant.model" . }}"
           - name: OLLAMA_ENDPOINT
             value: {{ include "hr-assistant.ollamaEndpoint" . }}
+          - name: OLLAMA_BASE_URL
+            value: {{ include "hr-assistant.ollamaEndpoint" . }}
+          - name: OBSERVABILITY_ENABLED
+            value: "true"
           - name: OTLP_ENDPOINT
             value: "{{ include "hr-assistant.otlpEndpoint" . }}"
           - name: COLLECT_GPU_STATS
             value: "{{ .Values.collectGpuStats }}"
+          - name: HTTP_API_PORT
+            value: "8000"
           - name: OTEL_RESOURCE_ATTRIBUTES
-            value: "{{ include "hr-assistant.otelResourceAttributes" . }}"
+            value: "{{ include "hr-assistant.otelResourceAttributes" (dict "ctx" . "componentName" "hr-assistant") }}"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

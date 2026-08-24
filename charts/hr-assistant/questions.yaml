@@ -202,3 +202,24 @@ questions:
   type: "string"
   default: "8Gi"
   show_if: "ollama.enabled=true && ollama.ollama.gpu.enabled=false"
+
+# Vector Database + Search Engine components
+#
+# These deploy alongside the app so the SUSE AI section in SUSE Observability
+# shows a "Vector Databases" component (Qdrant) and a "Search Engines"
+# component (OpenSearch). They are demo data sources: the hr-policy-db app
+# seeds and queries both on every load-gen cycle, so the topology shows the
+# app depending on them. Disable either to remove the component.
+- variable: qdrant.enabled
+  group: "Observability Demo Components"
+  label: "Deploy Qdrant (Vector Database)"
+  description: "Deploys Qdrant and wires the collector to tag it as a Vector Databases component. The RAG app seeds and searches it for topology data."
+  type: "boolean"
+  default: true
+
+- variable: opensearch.enabled
+  group: "Observability Demo Components"
+  label: "Deploy OpenSearch (Search Engine)"
+  description: "Deploys OpenSearch and wires the collector to tag it as a Search Engines component. The RAG app indexes and searches it for topology data."
+  type: "boolean"
+  default: true
