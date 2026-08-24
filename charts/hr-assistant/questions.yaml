@@ -84,18 +84,26 @@ questions:
   show_if: "service.type=NodePort"
 
 # Ollama Deployment Configuration
-- variable: ollama.models[0]
+- variable: ollama.models.pull.main
   group: "Ollama Deployment"
   label: "Primary AI Model"
   description: "The primary AI model to pull for HR queries (e.g., 'llama3.2:1b')."
   type: "string"
-  default: "llama3.2:1b"
+  default: "llama3.2:latest"
   show_if: "ollama.enabled=true"
 
-- variable: ollama.models[1]
+- variable: ollama.models.pull.secondary
   group: "Ollama Deployment"
   label: "Secondary AI Model"
   description: "Additional model for embeddings (optional)."
+  type: "string"
+  default: "llama3.2:1b"
+  show_if: "ollama.enabled=true"
+
+- variable: ollama.models.pull.embeddings
+  group: "Ollama Deployment"
+  label: "Embeddings Model"
+  description: "Model used for embedding lookups (e.g., 'bge-large:latest')."
   type: "string"
   default: "bge-large:latest"
   show_if: "ollama.enabled=true"

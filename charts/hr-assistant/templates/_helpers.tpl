@@ -185,7 +185,7 @@ The primary model. Falls back to the first model the bundled Ollama pulls.
 {{- if .Values.model -}}
 {{ .Values.model }}
 {{- else if and .Values.ollama.models .Values.ollama.models.pull -}}
-{{ first .Values.ollama.models.pull }}
+{{ get .Values.ollama.models.pull "main" | default (first (values .Values.ollama.models.pull)) }}
 {{- else -}}
 llama3.2:1b
 {{- end -}}

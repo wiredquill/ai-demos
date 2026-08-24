@@ -158,10 +158,15 @@ ollama:
       server: "" # NFS server IP/hostname
       path: "/data/ai-models" # NFS share path for caching models
   models:
+    # Map form of the model list — Rancher's questions.yaml cannot set list
+    # elements (paths like models[0] are stored as literal keys and ignored),
+    # so the pullable models are keyed instead. The Ollama subchart and the
+    # model-puller job range over the map VALUES, so they behave exactly like
+    # the old list.
     pull:
-    - llama3.2:latest
-    - llama3.2:1b
-    - bge-large:latest
+      main: llama3.2:latest
+      secondary: llama3.2:1b
+      embeddings: bge-large:latest
 
 
 
