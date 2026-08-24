@@ -1,4 +1,30 @@
 questions:
+# Dashboard / Service Access
+#
+# The dashboard is served by the hr-policy-db app at /dashboard (and each app
+# exposes /stats and /logs). Pick how the app services are published so you can
+# reach the dashboard from a browser. NodePort is the default so the dashboard
+# is reachable right after install without port-forwarding.
+- variable: service.type
+  group: "Dashboard / Service Access"
+  label: "App Service Type (Dashboard Access)"
+  description: "How to expose the app services (the dashboard lives at /dashboard on the hr-policy-db service). 'NodePort' (default) or 'LoadBalancer' expose it for direct browser access; 'ClusterIP' is fine when you will port-forward."
+  type: "enum"
+  required: true
+  default: "NodePort"
+  options:
+    - "NodePort"
+    - "LoadBalancer"
+    - "ClusterIP"
+
+- variable: service.nodePort
+  group: "Dashboard / Service Access"
+  label: "Dashboard NodePort"
+  description: "NodePort for the hr-policy-db service (dashboard). Only used when the service type is NodePort. Must be 30000-32767."
+  type: "int"
+  default: 30080
+  show_if: "service.type=NodePort"
+
 # Observability Configuration
 #
 # A single shared collector serves every namespace: each release declares its own
@@ -8,7 +34,7 @@ questions:
 # question - see observability.mode in values.yaml.
 - variable: otlpEndpoint
   label: "OTLP Endpoint"
-  description: "Address of the OpenTelemetry collector the applications report to (scheme://host:port). LEAVE BLANK TO AUTO-DISCOVER: on install the chart looks up the collector Service in the Collector Namespace below and uses it automatically. If you enter a value, a pre-install check tests connectivity and ABORTS the install with the correct URL in the helm log if it cannot be reached. Find it manually with: kubectl get svc -n <collector-namespace> | grep opentelemetry. A bad or unreachable endpoint means the apps deploy but report NO telemetry/token costing."
+  description: "Address of the OpenTelemetry collector the applications report to (scheme://host:port). LEAVE BLANK TO AUTO-DISCOVER: on install the chart looks up the collector Service in the Collector Namespace below (it checks both observability and suse-observability) and uses it automatically. If you enter a value, a pre-install check tests connectivity and ABORTS the install with the correct URL in the helm log if it cannot be reached. Find it manually with: kubectl get svc -n <collector-namespace> | grep opentelemetry. EXAMPLE (fill this in yourself): http://open-telemetry-collector-opentelemetry-collector.suse-observability.svc.cluster.local:4318. A bad or unreachable endpoint means the apps deploy but report NO telemetry/token costing."
   type: string
   required: false
   default: ""
@@ -16,7 +42,7 @@ questions:
 
 - variable: observability.collectorNamespace
   label: "Collector Namespace"
-  description: "Namespace that holds the shared OpenTelemetry collector Service. Used to auto-discover the collector when OTLP Endpoint is left blank, and by the pre-install connectivity check. Default: observability."
+  description: "Namespace that holds the shared OpenTelemetry collector Service. Used to auto-discover the collector when OTLP Endpoint is left blank, and by the pre-install connectivity check. Default: observability. If your collector lives in suse-observability instead, enter suse-observability here (or just leave it blank and the chart checks both)."
   type: string
   required: false
   default: "observability"
@@ -57,31 +83,6 @@ questions:
   description: "Cron schedule for the load generator that calls the apps. Keep it at */2 or faster: the SUSE AI topology exporter expires components ~2 minutes after their last telemetry, so */5 leaves the SUSE AI view empty most of the time. Use '*/1 * * * *' or even '*/2' for quick demo data."
   required: true
   group: General
-
-# Dashboard / Service Access
-#
-# The dashboard is served by the hr-policy-db app at /dashboard (and each app
-# exposes /stats and /logs). Pick how the app services are published so you can
-# reach the dashboard from a browser.
-- variable: service.type
-  group: "Dashboard / Service Access"
-  label: "App Service Type (Dashboard Access)"
-  description: "How to expose the app services (the dashboard lives at /dashboard on the hr-policy-db service). 'ClusterIP' is fine when you will port-forward; 'NodePort' or 'LoadBalancer' expose it for direct browser access."
-  type: "enum"
-  required: true
-  default: "ClusterIP"
-  options:
-    - "ClusterIP"
-    - "NodePort"
-    - "LoadBalancer"
-
-- variable: service.nodePort
-  group: "Dashboard / Service Access"
-  label: "Dashboard NodePort"
-  description: "NodePort for the hr-policy-db service (dashboard). Only used when the service type is NodePort. Must be 30000-32767."
-  type: "int"
-  default: 30080
-  show_if: "service.type=NodePort"
 
 # Ollama Deployment Configuration
 - variable: ollama.models.pull.main

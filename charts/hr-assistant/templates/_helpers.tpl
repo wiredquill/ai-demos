@@ -127,16 +127,58 @@ instead of asking the user to type it. Matches a Service whose name contains
 "opentelemetry-collector" or that carries the app.kubernetes.io/name label.
 */}}
 {{- define "hr-assistant.collectorService" -}}
-{{- $ns := .Values.observability.collectorNamespace | default "observability" -}}
+{{- $explicit := .Values.observability.collectorNamespace | default "" -}}
+{{- $candidates := list -}}
+{{- if $explicit -}}
+  {{- $candidates = append $candidates $explicit -}}
+{{- end -}}
+{{- $candidates = append $candidates "observability" -}}
+{{- $candidates = append $candidates "suse-observability" -}}
 {{- $svc := "" -}}
-{{- $found := lookup "v1" "Service" $ns "" -}}
-{{- range $item := ($found.items | default list) -}}
-  {{- $lbl := dig "app.kubernetes.io/name" "" ($item.metadata.labels | default dict) -}}
-  {{- if or (contains "opentelemetry-collector" $item.metadata.name) (eq $lbl "opentelemetry-collector") -}}
-    {{- $svc = $item.metadata.name -}}
+{{- range $ns := $candidates -}}
+  {{- if not $svc -}}
+    {{- $found := lookup "v1" "Service" $ns "" -}}
+    {{- range $item := ($found.items | default list) -}}
+      {{- if not $svc -}}
+        {{- $lbl := dig "app.kubernetes.io/name" "" ($item.metadata.labels | default dict) -}}
+        {{- if or (contains "opentelemetry-collector" $item.metadata.name) (eq $lbl "opentelemetry-collector") -}}
+          {{- $svc = $item.metadata.name -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
 {{- $svc -}}
+{{- end }}
+
+{{/*
+The namespace the auto-discovered collector was found in (or the explicitly
+configured one). Used to build the endpoint when the collector lives somewhere
+other than the default (observability or suse-observability).
+*/}}
+{{- define "hr-assistant.collectorNamespace" -}}
+{{- $explicit := .Values.observability.collectorNamespace | default "" -}}
+{{- $candidates := list -}}
+{{- if $explicit -}}
+  {{- $candidates = append $candidates $explicit -}}
+{{- end -}}
+{{- $candidates = append $candidates "observability" -}}
+{{- $candidates = append $candidates "suse-observability" -}}
+{{- $ns := "" -}}
+{{- range $cand := $candidates -}}
+  {{- if not $ns -}}
+    {{- $found := lookup "v1" "Service" $cand "" -}}
+    {{- range $item := ($found.items | default list) -}}
+      {{- if not $ns -}}
+        {{- $lbl := dig "app.kubernetes.io/name" "" ($item.metadata.labels | default dict) -}}
+        {{- if or (contains "opentelemetry-collector" $item.metadata.name) (eq $lbl "opentelemetry-collector") -}}
+          {{- $ns = $cand -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- default "observability" $ns -}}
 {{- end }}
 
 {{/*
@@ -158,7 +200,7 @@ http://{{ include "hr-assistant.collectorName" . }}-collector.{{ .Release.Namesp
 {{- if not $endpoint -}}
   {{- $svc := include "hr-assistant.collectorService" . -}}
   {{- if $svc -}}
-    {{- $endpoint = printf "http://%s.%s.svc.cluster.local:4318" $svc (.Values.observability.collectorNamespace | default "observability") -}}
+    {{- $endpoint = printf "http://%s.%s.svc.cluster.local:4318" $svc (include "hr-assistant.collectorNamespace" .) -}}
   {{- else -}}
     {{- $endpoint = "http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4318" -}}
   {{- end -}}
@@ -174,7 +216,7 @@ suggest the correct URL when the user-supplied one is unreachable.
 {{- define "hr-assistant.discoveredCollectorEndpoint" -}}
 {{- $svc := include "hr-assistant.collectorService" . -}}
 {{- if $svc -}}
-http://{{ $svc }}.{{ .Values.observability.collectorNamespace | default "observability" }}.svc.cluster.local:4318
+http://{{ $svc }}.{{ include "hr-assistant.collectorNamespace" . }}.svc.cluster.local:4318
 {{- end -}}
 {{- end }}
 
