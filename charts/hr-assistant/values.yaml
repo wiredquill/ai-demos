@@ -8,7 +8,7 @@ imagePullSecrets:
 # Observability endpoints
 # Used when observability.mode=existing. A single shared collector can serve every
 # namespace in the cluster; each release names itself via observability.serviceNamespace.
-otlpEndpoint: 'http://opentelemetry-collector.observability.svc.cluster.local:4318'
+otlpEndpoint: 'http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4318'
 ollamaEndpoint: 'http://my-hr-assistant-ollama:11434'
 collectGpuStats: 'false'  # Enable GPU metrics for demo
 

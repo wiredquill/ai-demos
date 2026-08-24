@@ -11,7 +11,7 @@ questions:
   description: "Address of the OpenTelemetry collector the applications report to, including scheme and port."
   type: string
   required: true
-  default: "http://opentelemetry-collector.observability.svc.cluster.local:4318"
+  default: "http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4318"
   group: Observability
 
 # General Configuration
