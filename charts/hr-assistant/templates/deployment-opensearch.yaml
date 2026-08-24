@@ -1,0 +1,40 @@
+{{- if .Values.opensearch.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hr-assistant.fullname" . }}-opensearch
+  labels:
+    {{- include "hr-assistant.labels" . | nindent 4 }}
+    app.component: opensearch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "hr-assistant.selectorLabels" . | nindent 6 }}
+      app.component: opensearch
+  template:
+    metadata:
+      labels:
+        {{- include "hr-assistant.labels" . | nindent 8 }}
+        app.component: opensearch
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: opensearch
+          image: "{{ .Values.opensearch.image.repository }}:{{ .Values.opensearch.image.tag }}"
+          imagePullPolicy: {{ .Values.opensearch.image.pullPolicy }}
+          env:
+            {{- toYaml .Values.opensearch.env | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.opensearch.service.port }}
+              protocol: TCP
+          # OpenSearch exposes no /metrics; the shared SUSE Observability
+          # collector polls the REST API with the elasticsearch receiver and
+          # tags the component suse.ai.component.type=search-engine.
+          resources:
+            {{- toYaml .Values.opensearch.resources | nindent 12 }}
+{{- end }}

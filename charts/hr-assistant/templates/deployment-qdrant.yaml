@@ -1,0 +1,38 @@
+{{- if .Values.qdrant.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hr-assistant.fullname" . }}-qdrant
+  labels:
+    {{- include "hr-assistant.labels" . | nindent 4 }}
+    app.component: qdrant
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "hr-assistant.selectorLabels" . | nindent 6 }}
+      app.component: qdrant
+  template:
+    metadata:
+      labels:
+        {{- include "hr-assistant.labels" . | nindent 8 }}
+        app.component: qdrant
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: qdrant
+          image: "{{ .Values.qdrant.image.repository }}:{{ .Values.qdrant.image.tag }}"
+          imagePullPolicy: {{ .Values.qdrant.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.qdrant.service.port }}
+              protocol: TCP
+          # Qdrant serves Prometheus metrics on the same HTTP port (/metrics),
+          # which the shared SUSE Observability collector scrapes with the
+          # "qdrant" job and tags suse.ai.component.type=vectordb.
+          resources:
+            {{- toYaml .Values.qdrant.resources | nindent 12 }}
+{{- end }}

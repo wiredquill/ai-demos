@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HR Assistant — SUSE AI Observability</title>
+<style>
+  /* ---------------------------------------------------------------------
+     Apple design language: SF-style system font stack, frosted glass cards,
+     generous whitespace, system blue accent, automatic light/dark mode.
+     --------------------------------------------------------------------- */
+  :root {
+    --accent: #0a84ff;                 /* system blue */
+    --bg: #f5f5f7;                     /* light gray canvas */
+    --card: rgba(255, 255, 255, 0.72); /* frosted glass */
+    --card-border: rgba(0, 0, 0, 0.08);
+    --text: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    --green: #30d158;
+    --red: #ff453a;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000;
+      --card: rgba(28, 28, 30, 0.72);
+      --card-border: rgba(255, 255, 255, 0.10);
+      --text: #f5f5f7;
+      --text-secondary: #98989d;
+      --shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+  .container { max-width: 1080px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  /* Hero header */
+  .hero { margin-bottom: 40px; animation: fadeUp 0.5s ease both; }
+  .hero .eyebrow {
+    font-size: 13px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--text-secondary); margin-bottom: 8px;
+  }
+  .hero h1 {
+    font-size: 40px; font-weight: 700; letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--text) 0%, var(--text-secondary) 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero .subtitle { font-size: 17px; color: var(--text-secondary); margin-top: 10px; }
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 16px;
+    padding: 6px 14px; border-radius: 100px; font-size: 13px; font-weight: 500;
+    background: var(--card); border: 1px solid var(--card-border);
+    backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+  .status-dot.error { background: var(--red); }
+
+  /* Stat cards */
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px; margin-bottom: 32px;
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--card-border); border-radius: 20px;
+    padding: 24px; backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+    box-shadow: var(--shadow); animation: fadeUp 0.5s ease both;
+  }
+  .card .label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+  .card .value {
+    font-size: 40px; font-weight: 700; letter-spacing: -0.02em; margin-top: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .card .value.small { font-size: 28px; }
+  .card .delta { font-size: 13px; color: var(--green); margin-top: 4px; font-weight: 500; }
+  .card.accent .value { color: var(--accent); }
+
+  /* Section headers */
+  .section-title {
+    font-size: 22px; font-weight: 700; letter-spacing: -0.01em; margin: 40px 0 16px;
+  }
+
+  /* Sparkline */
+  .spark-card { padding: 20px 24px; }
+  .spark-card canvas { width: 100%; height: 90px; display: block; margin-top: 12px; }
+  .bar { display: inline-block; width: 6px; border-radius: 3px; margin-right: 3px;
+         background: var(--accent); vertical-align: bottom; transition: height 0.3s ease; }
+
+  /* Log viewer */
+  .log-card { padding: 0; overflow: hidden; }
+  .log-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 24px; border-bottom: 1px solid var(--card-border);
+  }
+  .log-head .label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+  .log-body {
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.6;
+    padding: 16px 24px; max-height: 380px; overflow-y: auto;
+  }
+  .log-line { white-space: pre-wrap; word-break: break-word; padding: 2px 0; color: var(--text); }
+  .log-line .ts { color: var(--text-secondary); margin-right: 10px; }
+  .log-line.error { color: var(--red); }
+
+  .footer { margin-top: 48px; font-size: 13px; color: var(--text-secondary); text-align: center; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @media (max-width: 640px) {
+    .hero h1 { font-size: 30px; }
+    .container { padding: 32px 16px 64px; }
+    .card .value { font-size: 32px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="hero">
+    <div class="eyebrow">SUSE AI Factory · Observability Demo</div>
+    <h1>HR Assistant</h1>
+    <p class="subtitle">Live request, RAG and log telemetry from the demo stack — see it appear in SUSE Observability under <b>All GenAI Components</b>.</p>
+    <div class="status-pill"><span class="status-dot" id="statusDot"></span><span id="statusText">connecting…</span></div>
+  </header>
+
+  <section class="grid" id="statCards">
+    <div class="card"><div class="label">Requests Handled</div><div class="value" id="statRequests">–</div><div class="delta" id="deltaRequests"></div></div>
+    <div class="card accent"><div class="label">RAG · Vector DB Searches</div><div class="value small" id="statQdrant">–</div></div>
+    <div class="card accent"><div class="label">RAG · Search Engine Queries</div><div class="value small" id="statOpenSearch">–</div></div>
+    <div class="card"><div class="label">RAG · Store Seeds</div><div class="value small" id="statSeeds">–</div></div>
+    <div class="card"><div class="label">Errors</div><div class="value small" id="statErrors">–</div></div>
+    <div class="card"><div class="label">Uptime</div><div class="value small" id="statUptime">–</div></div>
+  </section>
+
+  <div class="section-title">Request Rate</div>
+  <div class="card spark-card">
+    <div class="label">requests per poll interval (last 60s)</div>
+    <div id="spark"></div>
+  </div>
+
+  <div class="section-title">Live Logs</div>
+  <div class="card log-card">
+    <div class="log-head"><span class="label">stdout ring buffer — the same print() lines the app emits while processing</span><span class="label" id="logCount"></span></div>
+    <div class="log-body" id="logBody"></div>
+  </div>
+
+  <div class="footer">HR Assistant demo · polls /stats and /logs · SUSE Observability shows the same workload as topology + GenAI metrics</div>
+</div>
+
+<script>
+/* ---------------------------------------------------------------------
+   Dashboard logic — deliberately simple. Polls the FastAPI app it is
+   served from (same origin) for /stats and /logs every 2s and renders
+   the numbers. No build step, no dependencies, one file.
+   --------------------------------------------------------------------- */
+const POLL_MS = 2000;
+const MAX_BARS = 30;
+let rates = [];
+
+const $ = (id) => document.getElementById(id);
+const fmtUptime = (s) => {
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  return h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${sec}s` : `${sec}s`;
+};
+
+function renderSpark() {
+  const el = $("spark");
+  el.innerHTML = "";
+  const max = Math.max(1, ...rates.map(r => r));
+  rates.forEach(r => {
+    const b = document.createElement("span");
+    b.className = "bar";
+    b.style.height = `${Math.max(4, (r / max) * 70)}px`;
+    b.title = `${r} req`;
+    el.appendChild(b);
+  });
+}
+
+async function poll() {
+  try {
+    const [statsRes, logsRes] = await Promise.all([
+      fetch("/stats"),
+      fetch("/logs"),
+    ]);
+    const stats = await statsRes.json();
+    const logs = await logsRes.json();
+
+    // Status pill
+    $("statusText").textContent = `${stats.app || "app"} · live`;
+    $("statusDot").className = "status-dot";
+
+    // Counters
+    $("statRequests").textContent = stats.requests ?? "–";
+    $("statErrors").textContent = stats.errors ?? "–";
+    $("statUptime").textContent = fmtUptime(stats.uptime_seconds ?? 0);
+    if (stats.rag) {
+      $("statQdrant").textContent = stats.rag.qdrant_searches ?? "–";
+      $("statOpenSearch").textContent = stats.rag.opensearch_searches ?? "–";
+      $("statSeeds").textContent = stats.rag.seeds ?? "–";
+    }
+
+    // Request-rate sparkline (diff per poll)
+    if (stats.requests !== undefined) {
+      if (rates.length === 0 || rates[rates.length - 1].total !== stats.requests) {
+        const prev = rates.length ? rates[rates.length - 1].total : stats.requests;
+        rates.push({ total: stats.requests, diff: Math.max(0, stats.requests - prev) });
+        if (rates.length > MAX_BARS) rates.shift();
+      }
+      renderSpark();
+    }
+
+    // Logs (newest at bottom, auto-scroll)
+    const body = $("logBody");
+    const wasAtBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
+    const lines = (logs.logs || []).map(l => {
+      // Line format: "<ISO timestamp> <text>"
+      const m = l.match(/^(\S+)\s(.*)$/s);
+      return m
+        ? `<div class="log-line"><span class="ts">${m[1]}</span>${escapeHtml(m[2])}</div>`
+        : `<div class="log-line">${escapeHtml(l)}</div>`;
+    });
+    body.innerHTML = lines.join("");
+    $("logCount").textContent = `${lines.length} lines`;
+    if (wasAtBottom) body.scrollTop = body.scrollHeight;
+  } catch (err) {
+    $("statusText").textContent = "offline — retrying…";
+    $("statusDot").className = "status-dot error";
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+poll();
+setInterval(poll, POLL_MS);
+</script>
+</body>
+</html>

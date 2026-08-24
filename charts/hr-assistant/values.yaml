@@ -186,6 +186,66 @@ policyDb:
     pullPolicy: Always
     tag: "feat-rancher-ai-vllm-storage-options-7bb3e14"
 
+# Qdrant — vector database component.
+#
+# Deployed so the SUSE AI section in SUSE Observability shows a component under
+# "Vector Databases". The shared collector scrapes qdrant:6333/metrics with the
+# "qdrant" Prometheus job; its transform/qdrant processor tags every metric with
+# suse.ai.component.type=vectordb (see templates/otel-collector-values-suse-ai.yaml).
+# The hr-policy-db app upserts HR policy embeddings and searches them, so the
+# topology shows hr-policy-db -> qdrant as a dependency.
+qdrant:
+  enabled: true
+  image:
+    repository: qdrant/qdrant
+    tag: "v1.19.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  service:
+    type: ClusterIP
+    port: 6333
+
+# OpenSearch — search engine component.
+#
+# Deployed so the SUSE AI section shows a component under "Search Engines".
+# The shared collector polls the OpenSearch REST API with the elasticsearch
+# receiver; its resource/opensearch processor tags the metrics with
+# suse.ai.component.type=search-engine. The hr-policy-db app indexes HR policy
+# documents and queries them, so the topology shows hr-policy-db -> opensearch.
+opensearch:
+  enabled: true
+  image:
+    repository: opensearchproject/opensearch
+    tag: "2.19.6"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 250m
+      memory: 1Gi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+  service:
+    type: ClusterIP
+    port: 9200
+  # Single-node demo: security plugin disabled, no auth. The collector's
+  # elasticsearch receiver connects over plain HTTP.
+  env:
+    - name: discovery.type
+      value: single-node
+    - name: DISABLE_SECURITY_PLUGIN
+      value: "true"
+    - name: bootstrap.memory_lock
+      value: "false"
+    - name: ES_JAVA_OPTS
+      value: "-Xms512m -Xmx512m"
+
 # This is to override the chart name.
 nameOverride: ""
 fullnameOverride: ""
