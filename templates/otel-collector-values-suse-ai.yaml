@@ -137,7 +137,57 @@ config:
         statements:
         - set(attributes["peer.service"], resource.attributes["gen_ai.provider.name"])
           where resource.attributes["gen_ai.provider.name"] != nil
+    # Qdrant scrape -> vector database component. The prometheus receiver sets
+    # service.name to the job name ("qdrant"); this transform tags every metric
+    # from that job with the SUSE AI component attributes so SUSE Observability
+    # renders the component under "Vector Databases".
+    transform/qdrant:
+      error_mode: ignore
+      metric_statements:
+      - context: resource
+        statements:
+        - set(attributes["suse.ai.managed"], "true") where attributes["service.name"] == "qdrant"
+        - set(attributes["suse.ai.component.name"], "qdrant") where attributes["service.name"] == "qdrant"
+        - set(attributes["suse.ai.component.type"], "vectordb") where attributes["service.name"] == "qdrant"
+        - set(attributes["service.instance.id"], "qdrant") where attributes["service.name"] == "qdrant"
+        - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["service.name"] == "qdrant" and attributes["k8s.namespace.name"] == nil
+    # OpenSearch receiver -> search engine component. The elasticsearch receiver
+    # emits metrics with service.name=elasticsearch; this resource processor
+    # renames the component to opensearch and tags it as a search engine so
+    # SUSE Observability renders it under "Search Engines".
+    resource/opensearch:
+      error_mode: ignore
+      attributes:
+      - key: suse.ai.managed
+        value: "true"
+        action: insert
+      - key: suse.ai.component.name
+        value: "opensearch"
+        action: insert
+      - key: suse.ai.component.type
+        value: "search-engine"
+        action: insert
+      - key: service.name
+        value: "opensearch"
+        action: insert
+      - key: service.instance.id
+        value: "opensearch"
+        action: insert
+      - key: k8s.namespace.name
+        value: "${env:SUSE_AI_NAMESPACE}"
+        action: insert
   receivers:
+    # OpenSearch — search engine component. The elasticsearch receiver polls the
+    # OpenSearch REST API (_cluster/health, _nodes/stats) and emits
+    # elasticsearch.* metrics; the resource/opensearch processor tags them with
+    # suse.ai.component.type=search-engine so SUSE Observability renders the
+    # component under "Search Engines".
+    elasticsearch:
+      endpoint: http://opensearch.hr-assistant.svc.cluster.local:9200
+      collection_interval: 15s
+      # Demo OpenSearch runs with security disabled (single-node, no auth).
+      tls:
+        insecure_skip_verify: true
     prometheus:
       config:
         scrape_configs:
@@ -146,12 +196,12 @@ config:
           scrape_interval: 10s
           static_configs:
           - labels:
-              host: dev-ai-pool1-6fk5c-8fkdl
-              hostname: dev-ai-pool1-6fk5c-8fkdl
-              k8s_node_name: dev-ai-pool1-6fk5c-8fkdl
+              host: dev-ai-pool1-9tjr7-6d2rk
+              hostname: dev-ai-pool1-9tjr7-6d2rk
+              k8s_node_name: dev-ai-pool1-9tjr7-6d2rk
               kubernetes_namespace: gpu-operator
-              kubernetes_node: dev-ai-pool1-6fk5c-8fkdl
-              node: dev-ai-pool1-6fk5c-8fkdl
+              kubernetes_node: dev-ai-pool1-9tjr7-6d2rk
+              node: dev-ai-pool1-9tjr7-6d2rk
               service: nvidia-dcgm-exporter
             targets:
             - nvidia-dcgm-exporter.gpu-operator.svc:9400
@@ -174,15 +224,37 @@ config:
             - __address__
             - __meta_kubernetes_service_annotation_prometheus_io_port
             target_label: __address__
+          - action: keep
+            regex: 'true'
+            source_labels:
+            - __meta_kubernetes_service_annotation_prometheus_io_scrape
           metric_relabel_configs:
           # SUSE Observability expects underscores in metric names:
           # vllm:prompt_tokens_total -> vllm_prompt_tokens_total
           - action: replace
             regex: vllm:(.*)
-            replacement: vllm_${1}
+            replacement: vllm_$1
             source_labels:
             - __name__
+            target_label: __name__
           scrape_interval: 10s
+        # Qdrant — vector database component. The scrape job name becomes
+        # service.name on the collected metrics, and transform/qdrant below
+        # tags those metrics with suse.ai.component.type=vectordb so the
+        # component shows up under "Vector Databases" in the SUSE AI section.
+        - job_name: qdrant
+          scheme: http
+          scrape_interval: 10s
+          static_configs:
+          - labels:
+              kubernetes_namespace: hr-assistant
+            targets:
+            - qdrant.hr-assistant.svc.cluster.local:6333
+          metric_relabel_configs:
+          - action: keep
+            regex: 'qdrant_collection.*|qdrant_grpc.*|qdrant_app_info.*'
+            source_labels:
+            - __name__
   service:
     pipelines:
       logs:
@@ -201,11 +273,25 @@ config:
         - debug
         processors:
         - k8s_attributes
+        - transform/qdrant
         - memory_limiter
         - batch
         receivers:
         - prometheus
         - otlp
+      # OpenSearch metrics: elasticsearch receiver -> resource/opensearch tags
+      # the component as a search engine, then the shared resource + batch
+      # processors normalize before export.
+      metrics/opensearch:
+        exporters:
+        - otlp_grpc
+        - debug
+        processors:
+        - resource/opensearch
+        - memory_limiter
+        - batch
+        receivers:
+        - elasticsearch
       metrics/infer-applications:
         exporters:
         - otlp_grpc
@@ -291,20 +377,21 @@ extraEnvs:
 - name: K8S_CLUSTER_NAME
   value: dev-ai
 - name: SUSE_AI_NAMESPACE
-  value: ac3
+  value: hr-assistant
 extraEnvsFrom:
 - secretRef:
     name: open-telemetry-collector
 global:
   imagePullSecrets:
   - name: application-collection
+  - name: suse-registry
 image:
   pullPolicy: IfNotPresent
   registry: registry.suse.com
   repository: ai/containers/suse-ai-opentelemetry-collector
   tag: 0.149.0
 imagePullSecrets:
-- name: suse-ai-registry
+- name: suse-registry
 mode: deployment
 ports:
   metrics:
