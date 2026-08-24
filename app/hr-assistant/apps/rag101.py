@@ -212,7 +212,14 @@ def search_opensearch(query: str) -> str:
         timeout=5,
     )
     hits = res.json().get("hits", {}).get("hits", [])
-    return json.dumps([{"text": h["_source"]["text"], "score": h["_score"]} for h in hits])
+    # .get() throughout — a hit is not guaranteed to carry _score, and the
+    # demo app must never 500 on a quirky backend response.
+    return json.dumps(
+        [
+            {"text": h.get("_source", {}).get("text", ""), "score": h.get("_score")}
+            for h in hits
+        ]
+    )
 
 
 # Simulates an API call to get flight times
