@@ -290,6 +290,9 @@ service:
   type: ClusterIP
   # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
   port: 8000
+  # Optional NodePort for the hr-policy-db service (dashboard at /dashboard).
+  # Only applied when service.type is NodePort.
+  nodePort: 30080
 
 gpu:
   enabled: false

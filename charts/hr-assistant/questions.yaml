@@ -43,12 +43,37 @@ questions:
     - "amd"
 
 - variable: schedule
-  label: "Schedule"
+  label: "Load Generation Schedule"
   type: string
-  default: "*/5 * * * *"
-  description: "Cron schedule for user simulation request to apps"
+  default: "*/2 * * * *"
+  description: "Cron schedule for the load generator that calls the apps. Keep it at */2 or faster: the SUSE AI topology exporter expires components ~2 minutes after their last telemetry, so */5 leaves the SUSE AI view empty most of the time. Use '*/1 * * * *' or even '*/2' for quick demo data."
   required: true
   group: General
+
+# Dashboard / Service Access
+#
+# The dashboard is served by the hr-policy-db app at /dashboard (and each app
+# exposes /stats and /logs). Pick how the app services are published so you can
+# reach the dashboard from a browser.
+- variable: service.type
+  group: "Dashboard / Service Access"
+  label: "App Service Type (Dashboard Access)"
+  description: "How to expose the app services (the dashboard lives at /dashboard on the hr-policy-db service). 'ClusterIP' is fine when you will port-forward; 'NodePort' or 'LoadBalancer' expose it for direct browser access."
+  type: "enum"
+  required: true
+  default: "ClusterIP"
+  options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"
+
+- variable: service.nodePort
+  group: "Dashboard / Service Access"
+  label: "Dashboard NodePort"
+  description: "NodePort for the hr-policy-db service (dashboard). Only used when the service type is NodePort. Must be 30000-32767."
+  type: "int"
+  default: 30080
+  show_if: "service.type=NodePort"
 
 # Ollama Deployment Configuration
 - variable: ollama.models[0]
