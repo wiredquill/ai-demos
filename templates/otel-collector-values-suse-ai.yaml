@@ -182,7 +182,7 @@ config:
     # suse.ai.component.type=search-engine so SUSE Observability renders the
     # component under "Search Engines".
     elasticsearch:
-      endpoint: http://opensearch.hr-assistant.svc.cluster.local:9200
+      endpoint: http://${env:SUSE_AI_RELEASE}-opensearch.${env:SUSE_AI_NAMESPACE}.svc.cluster.local:9200
       collection_interval: 15s
       # Demo OpenSearch runs with security disabled (single-node, no auth).
       tls:
@@ -246,9 +246,9 @@ config:
           scrape_interval: 10s
           static_configs:
           - labels:
-              kubernetes_namespace: hr-assistant
+              kubernetes_namespace: ${env:SUSE_AI_NAMESPACE}
             targets:
-            - qdrant.hr-assistant.svc.cluster.local:6333
+            - ${env:SUSE_AI_RELEASE}-qdrant.${env:SUSE_AI_NAMESPACE}.svc.cluster.local:6333
           metric_relabel_configs:
           - action: keep
             regex: 'qdrant_collection.*|qdrant_grpc.*|qdrant_app_info.*'
@@ -377,6 +377,12 @@ extraEnvs:
   value: dev-ai
 - name: SUSE_AI_NAMESPACE
   value: hr-assistant
+# Release name prefix of the hr-assistant Helm release, used to reach the
+# qdrant/opensearch services. Set to the release name you used in Rancher
+# (e.g. hr-assistant-1-1787597048). The chart names its services
+# <release-name>-qdrant / <release-name>-opensearch.
+- name: SUSE_AI_RELEASE
+  value: hr-assistant-1-1787597048
 extraEnvsFrom:
 - secretRef:
     name: open-telemetry-collector
