@@ -187,7 +187,7 @@ policyDb:
     # Built from main@e290e823 (build run 15) — carries the Qdrant/OpenSearch
     # RAG paths, /stats, /logs, the Apple-design dashboard, and the _RingTee
     # isatty fix so the app boots under fastapi-cli.
-    tag: "main-e290e823"
+    tag: "main-e290e82"
 
 # Qdrant — vector database component.
 #
