@@ -54,6 +54,7 @@ def get_milvus_client():
         _milvus_client = MilvusClient(MILVUS_URL)
     return _milvus_client
 
+
 documents = [
     "Employees are entitled to 20 days of paid vacation per year after one year of service.",
     "Remote work policy allows up to 3 days per week with manager approval.",
@@ -135,6 +136,7 @@ def build_policy_vault():
 # hr-policy-db -> qdrant. All wrapped in @openlit.trace so every upsert and
 # search produces a span (and gen_ai metrics when the embedding model runs).
 
+
 @openlit.trace
 def seed_qdrant():
     """Upsert the HR policy documents into Qdrant (idempotent)."""
@@ -183,6 +185,7 @@ def search_qdrant(query: str) -> str:
 # resource/opensearch tags the metrics suse.ai.component.type=search-engine.
 # These calls make the topology show hr-policy-db -> opensearch.
 
+
 @openlit.trace
 def seed_opensearch():
     """Index the HR policy documents into OpenSearch (idempotent)."""
@@ -214,12 +217,7 @@ def search_opensearch(query: str) -> str:
     hits = res.json().get("hits", {}).get("hits", [])
     # .get() throughout — a hit is not guaranteed to carry _score, and the
     # demo app must never 500 on a quirky backend response.
-    return json.dumps(
-        [
-            {"text": h.get("_source", {}).get("text", ""), "score": h.get("_score")}
-            for h in hits
-        ]
-    )
+    return json.dumps([{"text": h.get("_source", {}).get("text", ""), "score": h.get("_score")} for h in hits])
 
 
 # Simulates an API call to get flight times
@@ -329,6 +327,7 @@ def process_hr_ai_response(messages, response):
                 # function description as a kwarg name) and retry with only
                 # the keys the function accepts.
                 import inspect
+
                 valid = inspect.signature(function_to_call).parameters
                 filtered = {k: v for k, v in function_args.items() if k in valid}
                 print(f"Tool call {function_name} got bad args ({e}); retrying with {filtered}")
