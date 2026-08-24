@@ -184,9 +184,10 @@ policyDb:
   image:
     repository: ghcr.io/wiredquill/ai-demos/genai-demo
     pullPolicy: Always
-    # Built from feat/hr-ai-observability-full-stack (773a04b) — carries the
-    # Qdrant/OpenSearch RAG paths, /stats, /logs and the Apple-design dashboard.
-    tag: "feat-hr-ai-observability-full-stack-773a04b"
+    # Built from main@e290e823 (build run 15) — carries the Qdrant/OpenSearch
+    # RAG paths, /stats, /logs, the Apple-design dashboard, and the _RingTee
+    # isatty fix so the app boots under fastapi-cli.
+    tag: "main-e290e823"
 
 # Qdrant — vector database component.
 #
