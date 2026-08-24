@@ -21,4 +21,4 @@ name: ai-compare
 sources:
   - https://github.com/wiredquill/ai-demos
 type: application
-version: 0.1.503
+version: 0.1.504
