@@ -184,7 +184,9 @@ policyDb:
   image:
     repository: ghcr.io/wiredquill/ai-demos/genai-demo
     pullPolicy: Always
-    tag: "feat-rancher-ai-vllm-storage-options-7bb3e14"
+    # Built from feat/hr-ai-observability-full-stack (773a04b) — carries the
+    # Qdrant/OpenSearch RAG paths, /stats, /logs and the Apple-design dashboard.
+    tag: "feat-hr-ai-observability-full-stack-773a04b"
 
 # Qdrant — vector database component.
 #
