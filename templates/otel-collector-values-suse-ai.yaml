@@ -156,7 +156,6 @@ config:
     # renames the component to opensearch and tags it as a search engine so
     # SUSE Observability renders it under "Search Engines".
     resource/opensearch:
-      error_mode: ignore
       attributes:
       - key: suse.ai.managed
         value: "true"
