@@ -65,6 +65,15 @@ class _RingTee:
     def flush(self):
         self._stream.flush()
 
+    def isatty(self):
+        # fastapi-cli / uvicorn call sys.stdout.isatty() at startup to decide
+        # whether to use rich logs. Without this the app crashed on boot:
+        # AttributeError: '_RingTee' object has no attribute 'isatty'.
+        return self._stream.isatty()
+
+    def fileno(self):
+        return self._stream.fileno()
+
 
 sys.stdout = _RingTee(sys.stdout)
 
