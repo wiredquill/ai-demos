@@ -1,8 +1,16 @@
 # AI Demos Collection
 
-**A comprehensive collection of enterprise AI applications and demonstrations for SUSE's cloud-native platform**
+**Enterprise AI applications and demonstrations for SUSE's cloud-native platform**
 
-This repository serves as a curated catalog of AI-related applications and demonstrations, showcasing deployment, security, observability, and management using SUSE's enterprise-grade cloud-native stack. Each application is packaged as a production-ready Helm chart, deployable via Rancher Apps & Marketplace, Helm CLI, or GitOps with Fleet.
+This repository is scoped to the applications this project actively develops:
+**AI Compare** and **HR Assistant** (including the sovereign-data variant). Their
+source code lives under `app/`, `frontend/`, `frontend-react/`, and `pipelines/`,
+and their deployable Helm charts under `charts/`.
+
+Standalone/shared Helm charts (ollama, open-webui, ollama-suse, ollama-upstream,
+ollama-webui-upstream, rancher-ai-ollama, rancher-ai-vllm, stable-diffusion,
+genai-observability-demo, etc.) have moved to the dedicated charts repository
+**`wiredquill/helm-charts`** (GitHub Pages catalog, installable via Rancher).
 
 ---
 
@@ -22,17 +30,18 @@ This repository serves as a curated catalog of AI-related applications and demon
 
 This repository provides a curated collection of enterprise-ready AI applications and comprehensive demonstration materials organized into three main categories:
 
-### **1. 🤖 AI Applications Catalog**
-Production-ready Helm charts for AI workloads, each available in multiple variants:
+### **1. 🤖 AI Applications** (source in this repo)
+Production Helm charts for the apps actively developed here:
 
 - **AI Compare** - AI response comparison tool with security and observability demonstrations
   - `ai-compare-suse`: Enterprise SUSE BCI-based edition
   - `ai-compare`: Upstream community edition
   - `ai-compare-opentelemetry`: Advanced GenAI observability edition with token/cost tracking
-- **Ollama** - Local LLM inference server with GPU acceleration
-  - `ollama-suse`: SUSE enterprise edition
-  - `ollama-upstream`: Upstream community edition
-  - `ollama-suse-direct`: Direct NVIDIA GPU access variant
+- **HR Assistant** - RAG-based HR assistant
+  - `hr-assistant`: Full stack with OpenTelemetry, Qdrant/OpenSearch retrieval
+  - `hr-assistant-sovereign-data`: Sovereign-data variant
+
+> Standalone Ollama / Open WebUI / Rancher AI / Stable Diffusion charts now live in `wiredquill/helm-charts`.
 
 **Key Application Features:**
 - **Security Demonstrations**: Built-in NeuVector DLP testing with dual data type transmission
