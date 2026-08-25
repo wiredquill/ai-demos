@@ -31,7 +31,7 @@ loadGenerator:
   # Set false to remove the persistent load-generator pod entirely.
   enabled: true
   # Seconds between polling cycles for the app /ask endpoints.
-  intervalSeconds: 120
+  intervalSeconds: 45
   # Number of load-generator replicas (keep at 1 for a demo).
   replicas: 1
 
