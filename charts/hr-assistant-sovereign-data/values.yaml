@@ -17,10 +17,25 @@ otlpEndpoint: 'http://opentelemetry-collector.opentelemetry-collector.svc.cluste
 ollamaEndpoint: 'http://my-hr-assistant-soveregin-data-ollama:11434'
 collectGpuStats: 'false'  # Enable GPU metrics for demo
 
-# CronJob schedule for automated requests (demo traffic generation)
-schedule: '*/5 * * * *'
+# Persistent load generator. Replaces the old CronJob approach, which created a
+# new pod every cycle and let it terminate — that churn made the load-gen pod
+# flap offline/online in the SUSE AI topology view every few minutes.
+# The new design runs a single long-lived Deployment instead, so the pod is
+# created once and stays up for the lifetime of the release.
+#
+# The pod polls the app /ask endpoints on this interval. The interval must
+# stay comfortably under the topology exporter's TTL (components expire ~2 min
+# after their last telemetry) so the SUSE AI view never goes empty; 120s keeps
+# everything continuously lit.
+loadGenerator:
+  # Set false to remove the persistent load-generator pod entirely.
+  enabled: true
+  # Seconds between polling cycles for the app /ask endpoints.
+  intervalSeconds: 120
+  # Number of load-generator replicas (keep at 1 for a demo).
+  replicas: 1
 
-# Job cleanup settings
+# Job cleanup settings (still used by the Ollama model-puller Job)
 jobs:
   # Time in seconds after which completed jobs are deleted
   ttlSecondsAfterFinished: 300  # 5 minutes

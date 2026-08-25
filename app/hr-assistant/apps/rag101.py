@@ -1,5 +1,6 @@
 import json
 import os
+import threading
 
 import ollama
 import openlit
@@ -31,10 +32,40 @@ OPENSEARCH_INDEX = "hr_policies"
 # production telemetry store.
 _rag_stats = {"qdrant_searches": 0, "opensearch_searches": 0, "seeds": 0}
 
+# One-shot datastore init. Seed the collections once at module import so that
+# every /ask only does real searches (qdrant_searches/opensearch_searches) and
+# never re-seeds the stores. Seeding on every request made the "Store Seeds"
+# counter climb by 2 per request while searches only climbed by 1 — the
+# dashboard's "2 seeds but 1 rag / 1 search" was this. Guarded so re-imports
+# and repeated /ask calls never re-seed.
+_init_lock = threading.Lock()
+_init_done = False
+
 
 def get_rag_stats() -> dict:
     """Snapshot of RAG activity for the /stats endpoint."""
     return dict(_rag_stats)
+
+
+def ensure_datastores_seeded() -> None:
+    """Seed Qdrant + OpenSearch once per process (idempotent, retried lazily).
+
+    Call this from /ask (or at startup) instead of seeding inline. On first
+    call it upserts the HR policy documents; any failure is swallowed so a
+    transient datastore outage at boot doesn't 500 the request — the next /ask
+    retries the seed. Successful seed increments `seeds` exactly once.
+    """
+    global _init_done
+    with _init_lock:
+        if _init_done:
+            return
+        try:
+            seed_qdrant()
+            seed_opensearch()
+            _init_done = True
+            print("RAG datastores seeded (qdrant + opensearch)")
+        except Exception as e:
+            print(f"RAG datastore seeding failed, will retry on next request: {e}")
 
 
 embedding_fn = model.DefaultEmbeddingFunction()
@@ -381,14 +412,11 @@ def handle_hr_inquiry(question: str):
 def start_hr_policy_system():
     try:
         build_policy_vault()
-        # Seed the Qdrant vector store and OpenSearch index (idempotent).
-        # These make SUSE Observability show hr-policy-db -> qdrant and
-        # hr-policy-db -> opensearch in the topology.
-        try:
-            seed_qdrant()
-            seed_opensearch()
-        except Exception as e:
-            print(f"Datastore seeding failed (will retry next cycle): {e}")
+        # Seed the datastores once (first call only).
+        # This keeps SUSE Observability showing hr-policy-db -> qdrant and
+        # hr-policy-db -> opensearch in the topology without re-seeding on
+        # every single request.
+        ensure_datastores_seeded()
 
         question = "What are the vacation benefits for senior employees?"
         handle_hr_inquiry(question)

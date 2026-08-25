@@ -18,7 +18,7 @@ A backend service that provides structured access to HR policies and procedures,
 - **Intelligent Document Retrieval**: Uses LangChain with Milvus vector database to index and search HR documents
 - **Multi-Model Support**: Leverages Ollama for running local LLM models (llama3.2:1b for generation, bge-large for embeddings)
 - **Comprehensive Observability**: Full OpenTelemetry instrumentation to monitor and trace all LLM interactions
-- **CronJob Automation**: Scheduled testing of all services to ensure continuous availability
+- **Load Generator (Deployment)**: Persistent pod that polls all app /ask endpoints on a fixed interval to keep topology fresh (replaces the old per-cycle CronJob that caused pod churn)
 - **Production-Ready**: Deployed on Kubernetes with proper health checks and resource management
 
 ## Observability with SUSE Observability

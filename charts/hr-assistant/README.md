@@ -7,8 +7,8 @@ and the **token usage + cost** attached to each LLM call.
 
 Everything the demo needs is deployed by this chart: three OpenLIT-instrumented
 apps, an Ollama inference engine with models, Qdrant (vector DB) and OpenSearch
-(search engine), plus a CronJob load generator that calls the apps every couple
-of minutes so the topology stays alive.
+(search engine), plus a persistent load-generator Deployment that polls the
+apps every 2 minutes so the topology stays alive.
 
 > The application code and its observability mapping are documented in
 > [`app/hr-assistant/README.md`](../../app/hr-assistant/README.md). This file is
@@ -82,7 +82,7 @@ kubectl exec -n <your-namespace> deploy/<release>-hr-policy-db -- \
         │ hr-policy-db    │   │  llama3.2│  │        │  │            │
         └─────────────────┘   └─────────┘  └────────┘  └────────────┘
               ▲                                                   
-              └── CronJob load generator (calls /ask every 2 min) ──┐
+              └── Load-Generator Deployment (polls /ask every 120s) ──┐
                                                                     │
         The three apps also talk to qdrant/opensearch (RAG) so the  │
         topology shows app → vectordb and app → search-engine edges.│
@@ -149,9 +149,10 @@ Via Rancher UI: **Apps → Charts → hr-assistant → Install**, fill in the fo
 Key questions:
 
 - **OTLP Endpoint** (Observability group) — the collector URL from §1.
-- **Schedule** (General) — keep `*/2` (or faster). The topology exporter
-  expires components ~2 minutes after their last telemetry, so a slower
-  schedule leaves the SUSE AI view empty most of the time.
+- **Schedule** (General) — how often the load-generator polls the apps, in
+  seconds (default 120). Keep it at 120 or lower: the topology exporter
+  expires components ~2 minutes after their last telemetry, so a longer
+  interval leaves the SUSE AI view empty between polls.
 - **Service Type / NodePort** (Dashboard / Service Access) — `NodePort` +
   `30080` exposes the built-in dashboard at
   `http://<node-ip>:30080/dashboard` (served by `hr-policy-db`).
@@ -175,8 +176,9 @@ helm install hr-assistant ai-demos/hr-assistant -n hr-assistant --create-namespa
 # 1. All pods Running (incl. qdrant, opensearch, ollama)
 kubectl get pods -n hr-assistant
 
-# 2. Load generator is firing (new Completed/Running jobs every 2 min)
-kubectl get cronjobs,jobs -n hr-assistant
+# 2. Load generator pod is running and generating traffic
+kubectl get pods -n hr-assistant -l app.component=load-generator
+kubectl logs -n hr-assistant deploy/<release>-load-gen --tail=20
 
 # 3. Collector is pushing topology to SUSE Observability
 kubectl logs deploy/open-telemetry-collector-opentelemetry-collector -n observability \
@@ -204,7 +206,7 @@ topology sent components=5 relations=4 status=200
 |---|---|
 | Apps log `NameResolutionError ... opentelemetry-collector...` | Wrong OTLP endpoint — run §1 and set the real collector FQDN |
 | Collector logs `no such host ... qdrant/opensearch.hr-assistant...` | Release name != `hr-assistant`; the collector template's `SUSE_AI_RELEASE` env must match your release name (services are `<release>-qdrant`, `<release>-opensearch`) |
-| `topology sent components=0` permanently | No app traffic — check the CronJob ran; or `SUSE_AI_NAMESPACE` in the collector points at the wrong namespace |
+| `topology sent components=0` permanently | No app traffic — check the load-generator pod is running; or `SUSE_AI_NAMESPACE` in the collector points at the wrong namespace |
 | Empty SUSE AI view after install | Wait for 1–2 load cycles; check §1 endpoint resolves; check the collector's `infer-*` transforms exist in its relay config |
 | Image pull `NotFound` | ghcr tag typo or private package — verify the tag exists: `curl -s https://ghcr.io/token?scope=repository:wiredquill/ai-demos/genai-demo:pull ...` then list tags |
 
@@ -212,6 +214,9 @@ topology sent components=5 relations=4 status=200
 
 ## 7. Chart versions
 
+- **1.9.0** — Load generator changed from CronJob (ephemeral pod per cycle,
+  caused topology flap) to a persistent Deployment that stays running and
+  polls the apps on a fixed interval. No more pod create/destroy churn.
 - **1.7.0** — OTLP collector auto-discovery (Helm lookup) + pre-install
   connectivity-check hook that aborts the install with the correct URL if the
   collector is unreachable; otlpEndpoint question now optional (blank =

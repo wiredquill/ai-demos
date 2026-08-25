@@ -1,0 +1,115 @@
+# Persistent load generator.
+#
+# Replaces the old CronJob approach, which spawned a pod every cycle and let
+# it terminate afterwards. That pod churn showed up in the SUSE AI topology as
+# components going offline/online every couple of minutes.
+#
+# Instead, this Deployment runs a single long-lived pod with a small shell
+# loop that polls the app endpoints at the configured interval. The pod is
+# created once at install time and stays up for the lifetime of the release,
+# so the topology stays stable: components never flap offline.
+#
+# The pod does no work of its own beyond the HTTP calls; it exists purely to
+# keep generating telemetry so the SUSE AI topology exporter sees fresh
+# activity. The interval must stay under the topology exporter's TTL
+# (components expire ~2 minutes after their last telemetry), so the default
+# of 120s keeps everything continuously lit.
+{{- $fullname := include "hr-assistant.fullname" . }}
+{{- $generator := .Values.loadGenerator | default dict -}}
+{{- $enabled := $generator.enabled | default true -}}
+{{- if $enabled }}
+{{- $interval := $generator.intervalSeconds | default 120 -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-load-gen
+  labels:
+    {{- include "hr-assistant.labels" . | nindent 4 }}
+    app.component: load-generator
+spec:
+  replicas: {{ $generator.replicas | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "hr-assistant.selectorLabels" . | nindent 6 }}
+      app.component: load-generator
+  template:
+    metadata:
+      labels:
+        {{- include "hr-assistant.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        app.component: load-generator
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "hr-assistant.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: load-gen
+          image: registry.suse.com/bci/python:3.11
+          # Poll the three app /ask endpoints (GET) on the configured interval. Python is
+          # already in the BCI image so no package install at start; requests
+          # are fire-and-forget with a 60s timeout so a hung endpoint can
+          # never wedge the loop (120s is generous — /ask makes multiple LLM calls). The apps instrument their /ask endpoints;
+          # this pod just keeps telemetry flowing.
+          env:
+            - name: GENAI_HR_ASSISTANT_URL
+              value: "http://{{ $fullname }}-hr-assistant:{{ .Values.service.port }}"
+            - name: GENAI_EMPLOYEE_HANDBOOK_URL
+              value: "http://{{ $fullname }}-employee-handbook:{{ .Values.service.port }}"
+            - name: GENAI_HR_POLICY_DB_URL
+              value: "http://{{ $fullname }}-hr-policy-db:{{ .Values.service.port }}"
+            - name: LOAD_GEN_INTERVAL
+              value: "{{ $interval }}"
+          command:
+            - /usr/bin/python3
+            - -u
+            - -c
+            - |
+              import json, os, time, urllib.request, datetime
+              def ts():
+                  return datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M:%S")
+              def call(url):
+                  try:
+                      with urllib.request.urlopen(url, timeout=120) as r:
+                          data = r.read(4096)
+                          print(f"[{ts()}] {url} -> {r.status} ({len(data)} bytes)", flush=True)
+                  except Exception as e:
+                      print(f"[{ts()}] {url} -> ERROR {e}", flush=True)
+              interval = int(os.environ.get("LOAD_GEN_INTERVAL", "120"))
+              apps = [
+                  ("HR Assistant", os.environ["GENAI_HR_ASSISTANT_URL"] + "/ask"),
+                  ("Employee Handbook", os.environ["GENAI_EMPLOYEE_HANDBOOK_URL"] + "/ask"),
+                  ("HR Policy DB", os.environ["GENAI_HR_POLICY_DB_URL"] + "/ask"),
+              ]
+              print(f"[{ts()}] load-generator started (interval={interval}s)")
+              print(f"[{ts()}] targets:")
+              for n, u in apps:
+                  print(f"[{ts()}]   {n}: {u}")
+              rnd = 0
+              while True:
+                  for n, u in apps:
+                      call(u)
+                  rnd += 1
+                  print(f"[{ts()}] round {rnd} complete; sleeping {interval}s", flush=True)
+                  time.sleep(interval)
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

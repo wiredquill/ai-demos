@@ -237,10 +237,10 @@ questions:
   show_if: "ollama.enabled=true && ollama.persistence.enabled=true"
 
 
-- variable: schedule
-  label: "Schedule"
-  type: string
-  default: "*/5 * * * *"
-  description: "Cron schedule for user simulation request to apps"
+- variable: loadGenerator.intervalSeconds
+  label: "Load Generation Interval (seconds)"
+  type: int
+  default: 120
+  description: "How often (in seconds) the persistent load-generator pod polls the app /ask endpoints. Keep it at 120 or lower: the SUSE AI topology exporter expires components ~2 minutes after their last telemetry, so a longer interval leaves the SUSE AI view empty between polls. The generator now runs as an always-on Deployment, so the pod no longer flaps offline/online in the topology."
   required: true
   group: General

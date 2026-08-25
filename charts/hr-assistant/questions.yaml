@@ -76,11 +76,11 @@ questions:
     - "nvidia"
     - "amd"
 
-- variable: schedule
-  label: "Load Generation Schedule"
-  type: string
-  default: "*/2 * * * *"
-  description: "Cron schedule for the load generator that calls the apps. Keep it at */2 or faster: the SUSE AI topology exporter expires components ~2 minutes after their last telemetry, so */5 leaves the SUSE AI view empty most of the time. Use '*/1 * * * *' or even '*/2' for quick demo data."
+- variable: loadGenerator.intervalSeconds
+  label: "Load Generation Interval (seconds)"
+  type: int
+  default: 120
+  description: "How often (in seconds) the persistent load-generator pod polls the app /ask endpoints. Keep it at 120 or lower: the SUSE AI topology exporter expires components ~2 minutes after their last telemetry, so a longer interval leaves the SUSE AI view empty between polls. The generator now runs as an always-on Deployment, so the pod no longer flaps offline/online in the topology."
   required: true
   group: General
 

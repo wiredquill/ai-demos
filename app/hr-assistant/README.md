@@ -75,9 +75,10 @@ helm upgrade --install hr-assistant charts/hr-assistant -n hr-assistant \
 ```
 
 The `qdrant.enabled` and `opensearch.enabled` questions toggle the Vector
-Database and Search Engine components. The CronJob (`schedule: */2 * * * *`)
-hits `/ask` every two minutes so telemetry keeps flowing — the topology TTL
-expires components ~2 minutes after the last signal.
+Database and Search Engine components. The load-generator Deployment (default
+`loadGenerator.intervalSeconds: 120`) hits `/ask` every two minutes so
+telemetry keeps flowing — the topology TTL expires components ~2 minutes after
+the last signal.
 
 ## Files
 
@@ -93,7 +94,8 @@ charts/hr-assistant/
     deployment-qdrant.yaml      Vector DB component
     deployment-opensearch.yaml  Search Engine component
     deployment-hr-policy-db.yaml  RAG app (envs point at qdrant/opensearch)
-  values.yaml        qdrant / opensearch toggle + images
+    deployment-load-generator.yaml  Persistent load-gen Deployment
+  values.yaml        qdrant / opensearch toggle + images + loadGenerator config
 templates/otel-collector-values-suse-ai.yaml   shared collector reference:
     transform/qdrant, resource/opensearch, elasticsearch receiver, qdrant job
 ```
