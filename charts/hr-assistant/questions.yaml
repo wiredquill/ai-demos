@@ -1,14 +1,9 @@
 questions:
-# Dashboard / Service Access
-#
-# The dashboard is served by the hr-policy-db app at /dashboard (and each app
-# exposes /stats and /logs). Pick how the app services are published so you can
-# reach the dashboard from a browser. NodePort is the default so the dashboard
-# is reachable right after install without port-forwarding.
+# --- Dashboard / Service Access (Form Page) ---
 - variable: service.type
   group: "Dashboard / Service Access"
-  label: "App Service Type (Dashboard Access)"
-  description: "How to expose the app services (the dashboard lives at /dashboard on the hr-policy-db service). 'NodePort' (default) or 'LoadBalancer' expose it for direct browser access; 'ClusterIP' is fine when you will port-forward."
+  label: "App Service Type"
+  description: "How the app services are exposed. The dashboard lives at `/dashboard` on the hr-policy-db service.<br><br><b>Options:</b><br>• NodePort (default) — direct browser access<br>• LoadBalancer — external load balancer<br>• ClusterIP — for port-forwarding"
   type: "enum"
   required: true
   default: "NodePort"
@@ -20,21 +15,15 @@ questions:
 - variable: service.nodePort
   group: "Dashboard / Service Access"
   label: "Dashboard NodePort"
-  description: "NodePort for the hr-policy-db service (dashboard). Only used when the service type is NodePort. Must be 30000-32767."
+  description: "NodePort for the hr-policy-db service.<br>Used only when service type is NodePort.<br>Range: 30000-32767."
   type: "int"
   default: 30080
   show_if: "service.type=NodePort"
 
-# Observability Configuration
-#
-# A single shared collector serves every namespace: each release declares its own
-# service.namespace, so SUSE Observability groups its components correctly without
-# a collector of its own. Installing a per-release collector via the OpenTelemetry
-# Operator is still supported, but it is a values-level option rather than a
-# question - see observability.mode in values.yaml.
+# --- Observability (Form Page) ---
 - variable: otlpEndpoint
   label: "OTLP Endpoint"
-  description: "Address of the OpenTelemetry collector the applications report to (scheme://host:port). LEAVE BLANK TO AUTO-DISCOVER: on install the chart looks up the collector Service in the Collector Namespace below (it checks both observability and suse-observability) and uses it automatically. If you enter a value, a pre-install check tests connectivity and ABORTS the install with the correct URL in the helm log if it cannot be reached. Find it manually with: kubectl get svc -n <collector-namespace> | grep opentelemetry. EXAMPLE (fill this in yourself): http://open-telemetry-collector-opentelemetry-collector.suse-observability.svc.cluster.local:4318. A bad or unreachable endpoint means the apps deploy but report NO telemetry/token costing."
+  description: "OpenTelemetry collector address (scheme://host:port).<br><br><b>Leave blank to auto-discover:</b> the chart looks up the collector Service in the Collector Namespace below and uses it automatically.<br><br>Find it manually:<br><code>kubectl get svc -n &lt;namespace&gt; | grep opentelemetry</code>"
   type: string
   required: false
   default: ""
@@ -42,18 +31,17 @@ questions:
 
 - variable: observability.collectorNamespace
   label: "Collector Namespace"
-  description: "Namespace that holds the shared OpenTelemetry collector Service. Used to auto-discover the collector when OTLP Endpoint is left blank, and by the pre-install connectivity check. Default: observability. If your collector lives in suse-observability instead, enter suse-observability here (or just leave it blank and the chart checks both)."
+  description: "Namespace holding the shared OpenTelemetry collector Service.<br><br>Used to auto-discover the collector when OTLP Endpoint is blank, and by the pre-install connectivity check.<br><br>Default: <code>observability</code>. If your collector is in <code>suse-observability</code>, enter it here — or leave this field as-is and the chart checks both namespaces."
   type: string
   required: false
   default: "observability"
   group: Observability
 
-# General Configuration
-
+# --- General Configuration (Form Page) ---
 - variable: ollama.enabled
   group: General
   label: "Enable Ollama Deployment"
-  description: "If true, Ollama will be deployed as part of this chart."
+  description: "Deploy Ollama as part of this chart."
   type: "boolean"
   default: true
 
@@ -68,7 +56,7 @@ questions:
 - variable: ollama.ollama.gpu.type
   group: General
   label: "GPU Vendor"
-  description: "Select the GPU vendor. NVIDIA requires the NVIDIA device plugin and runtimeClass. AMD requires the AMD ROCm device plugin (amd.com/gpu)."
+  description: "NVIDIA requires the NVIDIA device plugin and runtimeClass.<br>AMD requires the AMD ROCm device plugin (amd.com/gpu)."
   type: "enum"
   default: "nvidia"
   show_if: "ollama.enabled=true && ollama.ollama.gpu.enabled=true"
@@ -80,15 +68,15 @@ questions:
   label: "Load Generation Interval (seconds)"
   type: int
   default: 120
-  description: "How often (in seconds) the persistent load-generator pod polls the app /ask endpoints. Keep it at 120 or lower: the SUSE AI topology exporter expires components ~2 minutes after their last telemetry, so a longer interval leaves the SUSE AI view empty between polls. The generator now runs as an always-on Deployment, so the pod no longer flaps offline/online in the topology."
+  description: "How often the load-generator pod polls the app /ask endpoints.<br><br>Keep at 120 or lower: the SUSE AI topology exporter expires components ~2 minutes after last telemetry. A longer interval leaves the SUSE AI view empty between polls.<br><br>The generator runs as an always-on Deployment, so the pod no longer flaps offline/online in the topology."
   required: true
   group: General
 
-# Ollama Deployment Configuration
+# --- Ollama Deployment Configuration ---
 - variable: ollama.models.pull.main
   group: "Ollama Deployment"
   label: "Primary AI Model"
-  description: "The primary AI model to pull for HR queries (e.g., 'llama3.2:1b')."
+  description: "The primary AI model to pull for HR queries.<br>Example: <code>llama3.2:1b</code>"
   type: "string"
   default: "llama3.2:latest"
   show_if: "ollama.enabled=true"
@@ -104,7 +92,7 @@ questions:
 - variable: ollama.models.pull.embeddings
   group: "Ollama Deployment"
   label: "Embeddings Model"
-  description: "Model used for embedding lookups (e.g., 'bge-large:latest')."
+  description: "Model used for embedding lookups.<br>Example: <code>bge-large:latest</code>"
   type: "string"
   default: "bge-large:latest"
   show_if: "ollama.enabled=true"
@@ -112,7 +100,7 @@ questions:
 - variable: ollama.service.type
   group: "Ollama Deployment"
   label: "Ollama Service Type"
-  description: "Method to expose the Ollama service. 'ClusterIP' is recommended."
+  description: "Method to expose the Ollama service. <b>ClusterIP</b> is recommended."
   type: "enum"
   required: true
   default: "ClusterIP"
@@ -125,7 +113,7 @@ questions:
 - variable: ollamaEndpoint
   label: "Ollama Server URL"
   type: string
-  description: "URL for your existing Ollama Server. Make sure it has llama3.2:1b and bge-large:latest models available."
+  description: "URL for your existing Ollama Server.<br>Make sure it has <code>llama3.2:1b</code> and <code>bge-large:latest</code> models available."
   required: true
   default: "http://ollama.example.com:11434"
   group: "Ollama Deployment"
@@ -134,7 +122,7 @@ questions:
 - variable: ollama.persistence.enabled
   group: "Ollama Deployment"
   label: "Enable Ollama Model Persistence"
-  description: "If true, a PersistentVolumeClaim will be created to store Ollama models so they are not re-downloaded on restart."
+  description: "Create a PersistentVolumeClaim to store Ollama models so they are not re-downloaded on restart."
   type: "boolean"
   default: false
   show_if: "ollama.enabled=true"
@@ -142,7 +130,7 @@ questions:
 - variable: ollama.persistence.size
   group: "Ollama Deployment"
   label: "Ollama Model Storage Size"
-  description: "The size of the PersistentVolumeClaim for Ollama models (e.g., '10Gi', '50Gi')."
+  description: "Size of the PVC for Ollama models. Example: <code>10Gi</code>"
   type: "string"
   default: "10Gi"
   show_if: "ollama.enabled=true && ollama.persistence.enabled=true"
@@ -150,7 +138,7 @@ questions:
 - variable: ollama.persistence.storageClassName
   group: "Ollama Deployment"
   label: "Ollama Model Storage Class Name"
-  description: "The storage class name for the Ollama models PVC. Leave empty to use the default storage class."
+  description: "Storage class name for the Ollama models PVC. Leave empty to use the default storage class."
   type: "string"
   default: ""
   show_if: "ollama.enabled=true && ollama.persistence.enabled=true"
@@ -174,12 +162,12 @@ questions:
 - variable: ollama.modelCache.nfs.path
   group: "Ollama Deployment"
   label: "NFS Share Path"
-  description: "Path on the NFS server to use for caching models (e.g., '/data/ai-models')."
+  description: "Path on the NFS server to use for caching models. Example: <code>/data/ai-models</code>"
   type: "string"
   default: "/data/ai-models"
   show_if: "ollama.enabled=true && ollama.modelCache.nfs.enabled=true"
 
-# Ollama Resources - GPU mode (CPU drops to 1 when GPU selected on General page)
+# --- Ollama Resources - GPU mode ---
 - variable: ollama.resources.requests.cpu
   group: "Ollama Resources"
   label: "Ollama CPU Request"
@@ -212,7 +200,7 @@ questions:
   default: "4Gi"
   show_if: "ollama.enabled=true && ollama.ollama.gpu.enabled=true"
 
-# Ollama Resources - CPU-only mode
+# --- Ollama Resources - CPU-only mode ---
 - variable: ollama.resources.requests.cpu
   group: "Ollama Resources"
   label: "Ollama CPU Request"
@@ -245,20 +233,7 @@ questions:
   default: "8Gi"
   show_if: "ollama.enabled=true && ollama.ollama.gpu.enabled=false"
 
-# Vector Database + Search Engine components
-#
-# These deploy alongside the app so the SUSE AI section in SUSE Observability
-# shows a "Vector Databases" component (Qdrant) and a "Search Engines"
-# component (OpenSearch). They are demo data sources: the hr-policy-db app
-# seeds and queries both on every load-gen cycle, so the topology shows the
-# app depending on them. Disable either to remove the component.
-#
-# TOKEN USAGE + COST: every /ask that hits the LLM emits gen_ai.client.token.usage
-# and gen_ai.usage.cost from OpenLIT. In SUSE Observability -> SUSE AI, click any
-# component (e.g. inference-engine ollama) and open its GenAI tab to see tokens
-# and cost; the GenAI Token Usage / GenAI Cost dashboards aggregate them. If the
-# view is empty, first check the OTLP Endpoint question (above) resolves from
-# inside the cluster — a bad endpoint means zero telemetry, zero costing.
+# --- Vector Database + Search Engine components ---
 - variable: qdrant.enabled
   group: "Observability Demo Components"
   label: "Deploy Qdrant (Vector Database)"
