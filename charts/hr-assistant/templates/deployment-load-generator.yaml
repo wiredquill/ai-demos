@@ -51,7 +51,7 @@ spec:
             - name: LOAD_GEN_INTERVAL
               value: "{{ $interval }}"
           command:
-            - /usr/bin/python3
+            - /usr/local/bin/python3
             - -u
             - -c
             - |
