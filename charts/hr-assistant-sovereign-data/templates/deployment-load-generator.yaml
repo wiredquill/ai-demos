@@ -1,24 +1,9 @@
-# Persistent load generator.
-#
-# Replaces the old CronJob approach, which spawned a pod every cycle and let
-# it terminate afterwards. That pod churn showed up in the SUSE AI topology as
-# components going offline/online every couple of minutes.
-#
-# Instead, this Deployment runs a single long-lived pod with a small shell
-# loop that polls the app endpoints at the configured interval. The pod is
-# created once at install time and stays up for the lifetime of the release,
-# so the topology stays stable: components never flap offline.
-#
-# The pod does no work of its own beyond the HTTP calls; it exists purely to
-# keep generating telemetry so the SUSE AI topology exporter sees fresh
-# activity. The interval must stay under the topology exporter's TTL
-# (components expire ~2 minutes after their last telemetry), so the default
-# of 120s keeps everything continuously lit.
 {{- $fullname := include "hr-assistant.fullname" . }}
 {{- $generator := .Values.loadGenerator | default dict -}}
 {{- $enabled := $generator.enabled | default true -}}
 {{- if $enabled }}
 {{- $interval := $generator.intervalSeconds | default 120 -}}
+# Persistent load generator (replaces ephemeral CronJob).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -77,7 +62,7 @@ spec:
                   try:
                       with urllib.request.urlopen(url, timeout=120) as r:
                           data = r.read(4096)
-                          print(f"[{ts()}] {url} -> {r.status} ({len(data)} bytes)", flush=True)
+                          print(f"[{ts()}] {url} -> {r.getcode()} ({len(data)} bytes)", flush=True)
                   except Exception as e:
                       print(f"[{ts()}] {url} -> ERROR {e}", flush=True)
               interval = int(os.environ.get("LOAD_GEN_INTERVAL", "120"))
