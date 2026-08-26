@@ -249,17 +249,17 @@ config:
               kubernetes_namespace: ${env:SUSE_AI_NAMESPACE}
             targets:
             - ${env:SUSE_AI_RELEASE}-qdrant.${env:SUSE_AI_NAMESPACE}.svc.cluster.local:6333
-          metric_relabel_configs:
-          - action: keep
-            # Qdrant 1.19.0 exposes app_info/collections_total/collection_* with
-            # no "qdrant_" prefix at all (confirmed against the running server's
-            # /metrics output) - the old regex here never matched anything,
-            # silently dropping every scraped datapoint via the keep filter,
-            # which is why Qdrant never got a health state in SUSE Observability
-            # despite the collector reaching it successfully.
-            regex: 'app_info|collections?_.*'
-            source_labels:
-            - __name__
+          # No keep filter: the real SUSE AI StackPack (2.1.0, extracted from
+          # dp.apps.rancher.io/containers/suse-ai-observability-extension-setup:2.1.0-7.25's
+          # bundled suse-ai.sts, provisioning/templates/metric-bindings/qdrant-metrics.sty
+          # and monitors/qdrant/monitor.sty - NOT the stale 1.5.0 tarball this
+          # repo's earlier "app_info|collections?_.*" regex was based on) needs
+          # rest_responses_total, rest_responses_fail_total,
+          # rest_responses_avg_duration_seconds, grpc_responses_*,
+          # memory_active_bytes, collections_total, collections_vector_total.
+          # A keep-regex here has to be kept in lockstep with every StackPack
+          # update or health silently goes back to unknown - this repo hit
+          # that twice already. Demo-scale cardinality; not worth it.
   service:
     pipelines:
       logs:
