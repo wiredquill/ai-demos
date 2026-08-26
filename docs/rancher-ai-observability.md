@@ -91,27 +91,29 @@ percentiles; the `_sum`/`_count` series are what you use for rates.
 
 ## Collector configuration delta
 
-The repo's collector values template (`templates/otel-collector-values-suse-ai.yaml`)
-includes the `vllm` scrape job:
+> **Note:** `templates/otel-collector-values-suse-ai.yaml` was rewritten as a
+> close adaptation of SUSE's own maintained reference config
+> ([`suse-ai-observability-extension`](https://github.com/SUSE/suse-ai-observability-extension/blob/main/integrations/otel-collector/otel-values.yaml))
+> and no longer includes a `vllm` scrape job — the `rancher-ai-ollama` /
+> `rancher-ai-vllm` charts this doc describes were also moved out of this repo
+> (see the "Trim standalone Helm charts" commit). The rest of this doc predates
+> both changes and may be stale for a cluster running only the current
+> `hr-assistant` demo.
 
-- matches Services labelled `app.kubernetes.io/part-of=vllm` **or** legacy
-  `app=vllm` (one keep rule over the joined label pair)
-- honors `prometheus.io/port` annotations (`<release>-engine-scrape` sets port 80)
-- renames `vllm:*` → `vllm_*` via `metric_relabel_configs`
-
-Deploying the collector values:
+Deploying the collector values (standard upstream chart, not a SUSE-branded one):
 
 ```bash
-helm upgrade --install opentelemetry-collector oci://registry.suse.com/ai/charts/suse-ai-opentelemetry-collector \
+helm upgrade open-telemetry-collector open-telemetry/opentelemetry-collector \
   --namespace observability \
-  --reset-values \
+  --version 0.165.0 \
   --values templates/otel-collector-values-suse-ai.yaml \
-  --set extraEnvsFrom[0].secretRef.name=<your collector secret>
+  --wait
 ```
 
-> The template carries dev-ai-specific bits (cluster name, `ac3` namespace,
-> DCGM node labels, `mort.dna-42.com` backend). Edit `extraEnvs`/`extraEnvsFrom`
-> and the topology exporter endpoint per cluster.
+> The template carries dev-ai/hr-assistant-specific bits (cluster name,
+> namespace, qdrant/opensearch service names, DCGM node labels,
+> `mort.dna-42.com` backend). Edit `extraEnvs`/`extraEnvsFrom`, the scrape
+> targets, and the topology exporter endpoint per cluster.
 
 ## Gotchas
 

@@ -1,409 +1,56 @@
+# Adapted from SUSE's own maintained reference config:
+# https://github.com/SUSE/suse-ai-observability-extension/blob/main/integrations/otel-collector/otel-values.yaml
+# (fetched 2026-08-26, upstream last updated 2026-08-15). Kept as close to
+# upstream as possible - naming, processor/pipeline structure, the image tag -
+# so this stays diffable against SUSE's own reference instead of drifting into
+# another hand-rolled bridge, which is what happened to the version of this
+# file that predates this rewrite (custom keep-regexes, an extra
+# transform/topology-provider step upstream doesn't have, no spanmetrics
+# connector - the last of which is why the plain "Open Telemetry > Services"
+# view showed pod/service names with no health, error-rate, duration, or rate
+# data for anything).
+#
+# Deployed with the standard upstream Helm chart, not a SUSE-branded one:
+#   helm upgrade open-telemetry-collector open-telemetry/opentelemetry-collector \
+#     -n observability -f templates/otel-collector-values-suse-ai.yaml \
+#     --version 0.165.0 --wait
+# (an older doc in this repo, docs/rancher-ai-observability.md, references
+# installing via oci://registry.suse.com/ai/charts/suse-ai-opentelemetry-collector
+# instead - that path requires registry.suse.com credentials to even inspect,
+# and the current upstream reference above doesn't use it either, so this
+# file assumes the generic chart until that's confirmed to be the actively
+# maintained path too.)
+#
+# Namespace, cluster name, and the qdrant/opensearch/gpu-metrics scrape
+# targets below are specific to this repo's hr-assistant demo on the dev-ai
+# cluster - update them for a different release name or cluster the same way
+# upstream's own comments describe for its placeholder values.
+global:
+  imagePullSecrets:
+  - application-collection
+  - suse-registry
+extraEnvs:
+  - name: K8S_CLUSTER_NAME
+    value: "dev-ai"
+  - name: SUSE_AI_NAMESPACE
+    value: "hr-assistant"
+extraEnvsFrom:
+  - secretRef:
+      name: open-telemetry-collector
+mode: deployment
 clusterRole:
   create: true
   rules:
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    - nodes
-    - endpoints
-    - services
-    - namespaces
-    verbs:
-    - get
-    - list
-    - watch
-config:
-  connectors:
-    routing/traces:
-      error_mode: ignore
-      table:
-      - action: copy
-        condition: "true"
-        pipelines:
-        - traces/sampling
-        - traces/model-relations
-        - traces/provider-relations
-        - traces/topology
-  exporters:
-    debug:
-      verbosity: basic
-    otlp_grpc:
-      endpoint: otlp-observability.mort.dna-42.com:443
-      headers:
-        Authorization: SUSEObservability ${env:API_KEY}
-      tls:
-        insecure: false
-    topology:
-      api_key: ${env:API_KEY}
-      endpoint: https://observability.mort.dna-42.com
-      namespace: ${env:SUSE_AI_NAMESPACE}
-      tls:
-        insecure_skip_verify: true
-  processors:
-    filter/exclude-already-tagged:
-      error_mode: ignore
-      metrics:
-        resource:
-        - attributes["suse.ai.component.name"] != nil
-    filter/genai-metrics-only:
-      error_mode: ignore
-      metrics:
-        metric:
-        - not(IsMatch(name, "gen_ai\\..*"))
-    filter/genai-spans:
-      error_mode: ignore
-      traces:
-        span:
-        - attributes["gen_ai.request.model"] == nil
-    groupbyattrs/infer-models:
-      keys:
-      - gen_ai.request.model
-      - gen_ai.provider.name
-    groupbyattrs/infer-providers:
-      keys:
-      - gen_ai.provider.name
-    groupbyattrs/model-relations:
-      keys:
-      - gen_ai.provider.name
-    transform/infer-applications:
-      error_mode: ignore
-      metric_statements:
-      - context: resource
-        statements:
-        - set(attributes["suse.ai.managed"], "true")
-        - set(attributes["suse.ai.component.type"], "application")
-        - set(attributes["suse.ai.component.name"], attributes["service.name"])
-        - set(attributes["k8s.namespace.name"], attributes["service.namespace"]) where attributes["service.namespace"] != nil
-        - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["service.namespace"] == nil
-    transform/infer-models:
-      error_mode: ignore
-      metric_statements:
-      - context: resource
-        statements:
-        - set(attributes["service.name"], attributes["gen_ai.request.model"]) where
-          attributes["gen_ai.request.model"] != nil
-        - set(attributes["service.instance.id"], attributes["gen_ai.request.model"])
-          where attributes["gen_ai.request.model"] != nil
-        - set(attributes["suse.ai.managed"], "true") where attributes["gen_ai.request.model"]
-          != nil
-        - set(attributes["suse.ai.component.name"], attributes["gen_ai.request.model"])
-          where attributes["gen_ai.request.model"] != nil
-        - set(attributes["suse.ai.component.type"], "llm-model") where attributes["gen_ai.request.model"]
-          != nil
-        - set(attributes["k8s.namespace.name"], attributes["service.namespace"]) where attributes["gen_ai.request.model"] != nil and attributes["service.namespace"] != nil
-        - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["gen_ai.request.model"] != nil and attributes["service.namespace"] == nil
-    transform/infer-providers:
-      error_mode: ignore
-      metric_statements:
-      - context: resource
-        statements:
-        - set(attributes["service.name"], attributes["gen_ai.provider.name"]) where
-          attributes["gen_ai.provider.name"] != nil
-        - set(attributes["service.instance.id"], attributes["gen_ai.provider.name"])
-          where attributes["gen_ai.provider.name"] != nil
-        - set(attributes["suse.ai.managed"], "true") where attributes["gen_ai.provider.name"]
-          != nil
-        - set(attributes["suse.ai.component.name"], attributes["gen_ai.provider.name"])
-          where attributes["gen_ai.provider.name"] != nil
-        - set(attributes["suse.ai.component.type"], "inference-engine") where attributes["gen_ai.provider.name"]
-          != nil
-        - set(attributes["k8s.namespace.name"], attributes["service.namespace"]) where attributes["gen_ai.provider.name"] != nil and attributes["service.namespace"] != nil
-        - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["gen_ai.provider.name"] != nil and attributes["service.namespace"] == nil
-    transform/topology-provider:
-      error_mode: ignore
-      trace_statements:
-      - context: span
-        statements:
-        - set(attributes["gen_ai.provider.name"], resource.attributes["gen_ai.provider.name"]) where resource.attributes["gen_ai.provider.name"] != nil
-        - set(attributes["gen_ai.request.model"], resource.attributes["gen_ai.request.model"]) where resource.attributes["gen_ai.request.model"] != nil
-    transform/model-relations:
-      error_mode: ignore
-      trace_statements:
-      - context: resource
-        statements:
-        - set(attributes["service.name"], attributes["gen_ai.provider.name"]) where
-          attributes["gen_ai.provider.name"] != nil
-        - set(attributes["service.instance.id"], attributes["gen_ai.provider.name"])
-          where attributes["gen_ai.provider.name"] != nil
-      - context: span
-        statements:
-        - set(attributes["peer.service"], attributes["gen_ai.request.model"]) where
-          attributes["gen_ai.request.model"] != nil
-    transform/provider-relations:
-      error_mode: ignore
-      trace_statements:
-      - context: span
-        statements:
-        - set(attributes["peer.service"], resource.attributes["gen_ai.provider.name"])
-          where resource.attributes["gen_ai.provider.name"] != nil
-    # Qdrant scrape -> vector database component. The prometheus receiver sets
-    # service.name to the job name ("qdrant"); this transform tags every metric
-    # from that job with the SUSE AI component attributes so SUSE Observability
-    # renders the component under "Vector Databases".
-    transform/qdrant:
-      error_mode: ignore
-      metric_statements:
-      - context: resource
-        statements:
-        - set(attributes["suse.ai.managed"], "true") where attributes["service.name"] == "qdrant"
-        - set(attributes["suse.ai.component.name"], "qdrant") where attributes["service.name"] == "qdrant"
-        - set(attributes["suse.ai.component.type"], "vectordb") where attributes["service.name"] == "qdrant"
-        - set(attributes["service.instance.id"], "qdrant") where attributes["service.name"] == "qdrant"
-        - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["service.name"] == "qdrant" and attributes["k8s.namespace.name"] == nil
-    # OpenSearch receiver -> search engine component. The elasticsearch receiver
-    # emits metrics with service.name=elasticsearch; this resource processor
-    # renames the component to opensearch and tags it as a search engine so
-    # SUSE Observability renders it under "Search Engines".
-    resource/opensearch:
-      attributes:
-      - key: suse.ai.managed
-        value: "true"
-        action: insert
-      - key: suse.ai.component.name
-        value: "opensearch"
-        action: insert
-      - key: suse.ai.component.type
-        value: "search-engine"
-        action: insert
-      - key: service.name
-        value: "opensearch"
-        action: insert
-      - key: service.instance.id
-        value: "opensearch"
-        action: insert
-      - key: k8s.namespace.name
-        value: "${env:SUSE_AI_NAMESPACE}"
-        action: insert
-  receivers:
-    # OpenSearch — search engine component. The elasticsearch receiver polls the
-    # OpenSearch REST API (_cluster/health, _nodes/stats) and emits
-    # elasticsearch.* metrics; the resource/opensearch processor tags them with
-    # suse.ai.component.type=search-engine so SUSE Observability renders the
-    # component under "Search Engines".
-    elasticsearch:
-      endpoint: http://${env:SUSE_AI_RELEASE}-opensearch.${env:SUSE_AI_NAMESPACE}.svc.cluster.local:9200
-      collection_interval: 15s
-      # Demo OpenSearch runs with security disabled (single-node, no auth).
-      tls:
-        insecure_skip_verify: true
-    prometheus:
-      config:
-        scrape_configs:
-        - job_name: gpu-metrics
-          scheme: http
-          scrape_interval: 10s
-          static_configs:
-          - labels:
-              host: dev-ai-pool1-9tjr7-6d2rk
-              hostname: dev-ai-pool1-9tjr7-6d2rk
-              k8s_node_name: dev-ai-pool1-9tjr7-6d2rk
-              kubernetes_namespace: gpu-operator
-              kubernetes_node: dev-ai-pool1-9tjr7-6d2rk
-              node: dev-ai-pool1-9tjr7-6d2rk
-              service: nvidia-dcgm-exporter
-            targets:
-            - nvidia-dcgm-exporter.gpu-operator.svc:9400
-        - job_name: vllm
-          kubernetes_sd_configs:
-          - role: service
-          relabel_configs:
-          # Keep Services labelled app.kubernetes.io/part-of=vllm (rancher-ai-vllm
-          # chart: engine service + engine-scrape service) OR legacy app=vllm
-          # (dev-ai original deployment). Single keep rule over the joined pair.
-          - action: keep
-            regex: (vllm;.*)|(.*;vllm)
-            separator: ";"
-            source_labels:
-            - __meta_kubernetes_service_label_app_kubernetes_io_part_of
-            - __meta_kubernetes_service_label_app
-          - regex: ([^:]+)(?::\d+)?;(\d+)
-            replacement: $1:$2
-            source_labels:
-            - __address__
-            - __meta_kubernetes_service_annotation_prometheus_io_port
-            target_label: __address__
-          - action: keep
-            regex: 'true'
-            source_labels:
-            - __meta_kubernetes_service_annotation_prometheus_io_scrape
-          metric_relabel_configs:
-          # SUSE Observability expects underscores in metric names:
-          # vllm:prompt_tokens_total -> vllm_prompt_tokens_total
-          - action: replace
-            regex: vllm:(.*)
-            replacement: vllm_$1
-            source_labels:
-            - __name__
-            target_label: __name__
-          scrape_interval: 10s
-        # Qdrant — vector database component. The scrape job name becomes
-        # service.name on the collected metrics, and transform/qdrant below
-        # tags those metrics with suse.ai.component.type=vectordb so the
-        # component shows up under "Vector Databases" in the SUSE AI section.
-        - job_name: qdrant
-          scheme: http
-          scrape_interval: 10s
-          static_configs:
-          - labels:
-              kubernetes_namespace: ${env:SUSE_AI_NAMESPACE}
-            targets:
-            - ${env:SUSE_AI_RELEASE}-qdrant.${env:SUSE_AI_NAMESPACE}.svc.cluster.local:6333
-          # No keep filter: the real SUSE AI StackPack (2.1.0, extracted from
-          # dp.apps.rancher.io/containers/suse-ai-observability-extension-setup:2.1.0-7.25's
-          # bundled suse-ai.sts, provisioning/templates/metric-bindings/qdrant-metrics.sty
-          # and monitors/qdrant/monitor.sty - NOT the stale 1.5.0 tarball this
-          # repo's earlier "app_info|collections?_.*" regex was based on) needs
-          # rest_responses_total, rest_responses_fail_total,
-          # rest_responses_avg_duration_seconds, grpc_responses_*,
-          # memory_active_bytes, collections_total, collections_vector_total.
-          # A keep-regex here has to be kept in lockstep with every StackPack
-          # update or health silently goes back to unknown - this repo hit
-          # that twice already. Demo-scale cardinality; not worth it.
-  service:
-    pipelines:
-      logs:
-        exporters:
-        - otlp_grpc
-        - debug
-        processors:
-        - k8s_attributes
-        - memory_limiter
-        - batch
-        receivers:
-        - otlp
-      metrics:
-        exporters:
-        - otlp_grpc
-        - debug
-        processors:
-        - k8s_attributes
-        - transform/qdrant
-        - memory_limiter
-        - batch
-        receivers:
-        - prometheus
-        - otlp
-      # OpenSearch metrics: elasticsearch receiver -> resource/opensearch tags
-      # the component as a search engine, then the shared resource + batch
-      # processors normalize before export.
-      metrics/opensearch:
-        exporters:
-        - otlp_grpc
-        - debug
-        processors:
-        - resource/opensearch
-        - memory_limiter
-        - batch
-        receivers:
-        - elasticsearch
-      metrics/infer-applications:
-        exporters:
-        - otlp_grpc
-        processors:
-        - filter/genai-metrics-only
-        - filter/exclude-already-tagged
-        - transform/infer-applications
-        - k8s_attributes
-        - batch
-        receivers:
-        - otlp
-      metrics/infer-models:
-        exporters:
-        - otlp_grpc
-        processors:
-        - filter/genai-metrics-only
-        - groupbyattrs/infer-models
-        - transform/infer-models
-        - k8s_attributes
-        - batch
-        receivers:
-        - otlp
-      metrics/infer-providers:
-        exporters:
-        - otlp_grpc
-        processors:
-        - filter/genai-metrics-only
-        - groupbyattrs/infer-providers
-        - transform/infer-providers
-        - k8s_attributes
-        - batch
-        receivers:
-        - otlp
-      traces:
-        exporters:
-        - routing/traces
-        processors:
-        - k8s_attributes
-        - memory_limiter
-        - batch
-        receivers:
-        - otlp
-        - jaeger
-        - zipkin
-      traces/model-relations:
-        exporters:
-        - otlp_grpc
-        - debug
-        processors:
-        - filter/genai-spans
-        - groupbyattrs/model-relations
-        - transform/model-relations
-        - batch
-        receivers:
-        - routing/traces
-      traces/provider-relations:
-        exporters:
-        - otlp_grpc
-        - debug
-        processors:
-        - filter/genai-spans
-        - transform/provider-relations
-        - batch
-        receivers:
-        - routing/traces
-      traces/sampling:
-        exporters:
-        - otlp_grpc
-        - debug
-        processors:
-        - batch
-        receivers:
-        - routing/traces
-      traces/topology:
-        exporters:
-        - topology
-        processors:
-        - transform/topology-provider
-        - batch
-        receivers:
-        - routing/traces
-extraEnvs:
-- name: K8S_CLUSTER_NAME
-  value: dev-ai
-- name: SUSE_AI_NAMESPACE
-  value: hr-assistant
-# Release name prefix of the hr-assistant Helm release, used to reach the
-# qdrant/opensearch services. Set to the release name you used in Rancher
-# (e.g. hr-assistant-1-1787597048). The chart names its services
-# <release-name>-qdrant / <release-name>-opensearch.
-- name: SUSE_AI_RELEASE
-  value: hr-assistant-1-1787597048
-extraEnvsFrom:
-- secretRef:
-    name: open-telemetry-collector
-global:
-  imagePullSecrets:
-  - name: application-collection
-  - name: suse-registry
+    - apiGroups: [""]
+      resources: ["pods", "nodes", "endpoints", "services"]
+      verbs: ["get", "list", "watch"]
+# Upstream's own comment: the productized registry.suse.com image isn't
+# published at this collector version yet - ghcr.io/suse is the current
+# official source.
 image:
+  repository: ghcr.io/suse/suse-ai-opentelemetry-collector
+  tag: "0.156.0"
   pullPolicy: IfNotPresent
-  registry: registry.suse.com
-  repository: ai/containers/suse-ai-opentelemetry-collector
-  tag: 0.149.0
-imagePullSecrets:
-- name: suse-registry
-mode: deployment
 ports:
   metrics:
     enabled: true
@@ -411,3 +58,275 @@ presets:
   kubernetesAttributes:
     enabled: true
     extractAllPodLabels: true
+config:
+  receivers:
+    elasticsearch:
+      # Real deviation from upstream: our OpenSearch has security disabled (no
+      # username/password) and runs at this release's actual service name,
+      # not upstream's placeholder "opensearch-cluster-master-headless".
+      endpoint: "http://hr-assistant-opensearch.hr-assistant.svc.cluster.local:9200"
+      tls:
+        insecure_skip_verify: true
+      collection_interval: 10s
+    prometheus:
+      config:
+        scrape_configs:
+          # Serves GPU dashboards for other releases on this cluster;
+          # hr-assistant itself doesn't enable GPU stats by default. Out of
+          # scope for this file's own reconciliation against upstream.
+          - job_name: 'gpu-metrics'
+            scheme: http
+            scrape_interval: 10s
+            static_configs:
+              - labels:
+                  host: dev-ai-pool1-9tjr7-6d2rk
+                  hostname: dev-ai-pool1-9tjr7-6d2rk
+                  k8s_node_name: dev-ai-pool1-9tjr7-6d2rk
+                  kubernetes_namespace: gpu-operator
+                  kubernetes_node: dev-ai-pool1-9tjr7-6d2rk
+                  node: dev-ai-pool1-9tjr7-6d2rk
+                  service: nvidia-dcgm-exporter
+                targets:
+                  - nvidia-dcgm-exporter.gpu-operator.svc:9400
+          - job_name: 'qdrant'
+            scrape_interval: 10s
+            metrics_path: '/metrics'
+            # No keep filter: matches upstream exactly. The SUSE AI StackPack
+            # actually deployed (2.1.0, not the older 1.5.0 tarball an earlier
+            # version of this file was built against) reads specific metric
+            # names (rest_responses_total, memory_active_bytes, etc.) whose
+            # exact set has already changed across StackPack versions once -
+            # this is demo-scale cardinality, not worth chasing a keep-regex
+            # in lockstep with every future StackPack release.
+            static_configs:
+              - targets: ['hr-assistant-qdrant.hr-assistant.svc.cluster.local:6333']
+  exporters:
+    topology:
+      # Real deviation from upstream: SUSE Observability runs on a separate
+      # cluster (mort), not co-located with dev-ai, so this points at the
+      # real external endpoint instead of upstream's in-cluster placeholder.
+      endpoint: https://observability.mort.dna-42.com
+      api_key: ${env:API_KEY}
+      namespace: ${env:SUSE_AI_NAMESPACE}
+      cluster_name: ${env:K8S_CLUSTER_NAME}
+      tls:
+        insecure_skip_verify: true
+    otlp:
+      endpoint: otlp-observability.mort.dna-42.com:443
+      headers:
+        Authorization: "SUSEObservability ${env:API_KEY}"
+      tls:
+        insecure: false
+    debug:
+      verbosity: basic
+  processors:
+    resource/opensearch:
+      attributes:
+        - key: suse.ai.managed
+          value: "true"
+          action: insert
+        - key: suse.ai.component.name
+          value: "opensearch"
+          action: insert
+        - key: suse.ai.component.type
+          value: "search-engine"
+          action: insert
+        - key: service.name
+          value: "opensearch"
+          action: insert
+        - key: service.namespace
+          value: ${env:SUSE_AI_NAMESPACE}
+          action: insert
+        - key: k8s.namespace.name
+          value: ${env:SUSE_AI_NAMESPACE}
+          action: upsert
+        - key: service.instance.id
+          value: "opensearch-cluster"
+          action: insert
+    transform/qdrant:
+      error_mode: ignore
+      metric_statements:
+        - context: resource
+          statements:
+            - set(attributes["suse.ai.managed"], "true") where attributes["service.name"] == "qdrant"
+            - set(attributes["suse.ai.component.name"], "qdrant") where attributes["service.name"] == "qdrant"
+            - set(attributes["suse.ai.component.type"], "vectordb") where attributes["service.name"] == "qdrant"
+            - set(attributes["k8s.namespace.name"], attributes["service.namespace"]) where attributes["service.name"] == "qdrant" and attributes["service.namespace"] != nil
+            - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["service.name"] == "qdrant" and attributes["service.namespace"] == nil
+    tail_sampling:
+      decision_wait: 10s
+      policies:
+      - name: rate-limited-composite
+        type: composite
+        composite:
+          max_total_spans_per_second: 500
+          policy_order: [errors, slow-traces, rest]
+          composite_sub_policy:
+          - name: errors
+            type: status_code
+            status_code:
+              status_codes: [ ERROR ]
+          - name: slow-traces
+            type: latency
+            latency:
+              threshold_ms: 1000
+          - name: rest
+            type: always_sample
+          rate_allocation:
+          - policy: errors
+            percent: 33
+          - policy: slow-traces
+            percent: 33
+          - policy: rest
+            percent: 34
+    resource:
+      attributes:
+      - key: k8s.cluster.name
+        action: insert
+        value: ${env:K8S_CLUSTER_NAME}
+      - key: service.instance.id
+        from_attribute: k8s.pod.uid
+        action: insert
+    filter/genai-metrics-only:
+      error_mode: ignore
+      metrics:
+        metric:
+          - not(IsMatch(name, "gen_ai\\..*"))
+    groupbyattrs/infer-providers:
+      keys:
+        - gen_ai.provider.name
+    transform/infer-providers:
+      error_mode: ignore
+      metric_statements:
+        - context: resource
+          statements:
+            - set(attributes["service.name"], attributes["gen_ai.provider.name"]) where attributes["gen_ai.provider.name"] != nil
+            - set(attributes["service.instance.id"], attributes["gen_ai.provider.name"]) where attributes["gen_ai.provider.name"] != nil
+            - set(attributes["suse.ai.managed"], "true") where attributes["gen_ai.provider.name"] != nil
+            - set(attributes["suse.ai.component.name"], attributes["gen_ai.provider.name"]) where attributes["gen_ai.provider.name"] != nil
+            - set(attributes["suse.ai.component.type"], "inference-engine") where attributes["gen_ai.provider.name"] != nil
+            - set(attributes["k8s.namespace.name"], attributes["service.namespace"]) where attributes["gen_ai.provider.name"] != nil and attributes["service.namespace"] != nil
+            - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["gen_ai.provider.name"] != nil and attributes["service.namespace"] == nil
+    groupbyattrs/infer-models:
+      keys:
+        - gen_ai.request.model
+        - gen_ai.provider.name
+    transform/infer-models:
+      error_mode: ignore
+      metric_statements:
+        - context: resource
+          statements:
+            - set(attributes["service.name"], attributes["gen_ai.request.model"]) where attributes["gen_ai.request.model"] != nil
+            - set(attributes["service.instance.id"], attributes["gen_ai.request.model"]) where attributes["gen_ai.request.model"] != nil
+            - set(attributes["suse.ai.managed"], "true") where attributes["gen_ai.request.model"] != nil
+            - set(attributes["suse.ai.component.name"], attributes["gen_ai.request.model"]) where attributes["gen_ai.request.model"] != nil
+            - set(attributes["suse.ai.component.type"], "llm-model") where attributes["gen_ai.request.model"] != nil
+            - set(attributes["k8s.namespace.name"], attributes["service.namespace"]) where attributes["gen_ai.request.model"] != nil and attributes["service.namespace"] != nil
+            - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["gen_ai.request.model"] != nil and attributes["service.namespace"] == nil
+    filter/exclude-already-tagged:
+      error_mode: ignore
+      metrics:
+        resource:
+          - attributes["suse.ai.component.name"] != nil
+    transform/infer-applications:
+      error_mode: ignore
+      metric_statements:
+        - context: resource
+          statements:
+            - set(attributes["suse.ai.managed"], "true")
+            - set(attributes["suse.ai.component.type"], "application")
+            - set(attributes["suse.ai.component.name"], attributes["service.name"])
+            - set(attributes["k8s.namespace.name"], attributes["service.namespace"]) where attributes["service.namespace"] != nil
+            - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["service.namespace"] == nil
+    filter/genai-spans:
+      error_mode: ignore
+      traces:
+        span:
+          - attributes["gen_ai.request.model"] == nil
+    groupbyattrs/model-relations:
+      keys:
+        - gen_ai.provider.name
+    transform/model-relations:
+      error_mode: ignore
+      trace_statements:
+        - context: resource
+          statements:
+            - set(attributes["service.name"], attributes["gen_ai.provider.name"]) where attributes["gen_ai.provider.name"] != nil
+            - set(attributes["service.instance.id"], attributes["gen_ai.provider.name"]) where attributes["gen_ai.provider.name"] != nil
+        - context: span
+          statements:
+            - set(attributes["peer.service"], attributes["gen_ai.request.model"]) where attributes["gen_ai.request.model"] != nil
+    transform/provider-relations:
+      error_mode: ignore
+      trace_statements:
+        - context: span
+          statements:
+            - set(attributes["peer.service"], resource.attributes["gen_ai.provider.name"]) where resource.attributes["gen_ai.provider.name"] != nil
+    filter/dropMissingK8sAttributes:
+      error_mode: ignore
+      traces:
+        span:
+          - resource.attributes["k8s.node.name"] == nil
+          - resource.attributes["k8s.pod.uid"] == nil
+          - resource.attributes["k8s.namespace.name"] == nil
+          - resource.attributes["k8s.pod.name"] == nil
+  connectors:
+    # Feeds the plain "Open Telemetry > Services" view's Span error %/
+    # duration/rate columns - the one thing upstream has that this repo's
+    # config was missing entirely before this rewrite.
+    spanmetrics:
+      metrics_expiration: 5m
+      namespace: otel_span
+    routing/traces:
+      error_mode: ignore
+      table:
+      - statement: route()
+        pipelines: [traces/sampling, traces/spanmetrics, traces/model-relations, traces/provider-relations, traces/topology]
+  service:
+    extensions:
+      - health_check
+    pipelines:
+      traces:
+        receivers: [otlp, jaeger]
+        processors: [filter/dropMissingK8sAttributes, memory_limiter, resource]
+        exporters: [routing/traces]
+      traces/spanmetrics:
+        receivers: [routing/traces]
+        processors: []
+        exporters: [spanmetrics]
+      traces/sampling:
+        receivers: [routing/traces]
+        processors: [tail_sampling, batch]
+        exporters: [debug, otlp]
+      metrics:
+        receivers: [otlp, spanmetrics, prometheus]
+        processors: [memory_limiter, transform/qdrant, resource, batch]
+        exporters: [debug, otlp]
+      metrics/infer-providers:
+        receivers: [otlp]
+        processors: [filter/genai-metrics-only, groupbyattrs/infer-providers, transform/infer-providers, resource, batch]
+        exporters: [otlp]
+      metrics/infer-models:
+        receivers: [otlp]
+        processors: [filter/genai-metrics-only, groupbyattrs/infer-models, transform/infer-models, resource, batch]
+        exporters: [otlp]
+      metrics/infer-applications:
+        receivers: [otlp]
+        processors: [filter/genai-metrics-only, filter/exclude-already-tagged, transform/infer-applications, resource, batch]
+        exporters: [otlp]
+      traces/model-relations:
+        receivers: [routing/traces]
+        processors: [filter/genai-spans, groupbyattrs/model-relations, transform/model-relations, batch]
+        exporters: [otlp]
+      traces/provider-relations:
+        receivers: [routing/traces]
+        processors: [filter/genai-spans, transform/provider-relations, batch]
+        exporters: [otlp]
+      traces/topology:
+        receivers: [routing/traces]
+        processors: [batch]
+        exporters: [topology]
+      metrics/opensearch:
+        receivers: [elasticsearch]
+        processors: [memory_limiter, resource/opensearch, resource, batch]
+        exporters: [debug, otlp]
