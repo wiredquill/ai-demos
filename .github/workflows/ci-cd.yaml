@@ -185,8 +185,6 @@ jobs:
           UPSTREAM_CHART_PATH="charts/ai-compare/Chart.yaml"
           SUSE_CHART_PATH="charts/ai-compare-suse/Chart.yaml"
           OPENTELEMETRY_CHART_PATH="charts/ai-compare-opentelemetry/Chart.yaml"
-          RANCHER_AI_OLLAMA_CHART_PATH="charts/rancher-ai-ollama/Chart.yaml"
-          RANCHER_AI_VLLM_CHART_PATH="charts/rancher-ai-vllm/Chart.yaml"
 
           increment_version() {
             local chart_path=$1
@@ -202,15 +200,13 @@ jobs:
           increment_version "$UPSTREAM_CHART_PATH"
           increment_version "$SUSE_CHART_PATH"
           increment_version "$OPENTELEMETRY_CHART_PATH"
-          increment_version "$RANCHER_AI_OLLAMA_CHART_PATH"
-          increment_version "$RANCHER_AI_VLLM_CHART_PATH"
 
       - name: Commit and push updated Helm chart files
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-          git add "charts/ai-compare/values.yaml" "charts/ai-compare-suse/values.yaml" "charts/ai-compare-opentelemetry/values.yaml" "charts/ai-compare/Chart.yaml" "charts/ai-compare-suse/Chart.yaml" "charts/ai-compare-opentelemetry/Chart.yaml" "charts/rancher-ai-ollama/Chart.yaml" "charts/rancher-ai-vllm/Chart.yaml"
+          git add "charts/ai-compare/values.yaml" "charts/ai-compare-suse/values.yaml" "charts/ai-compare-opentelemetry/values.yaml" "charts/ai-compare/Chart.yaml" "charts/ai-compare-suse/Chart.yaml" "charts/ai-compare-opentelemetry/Chart.yaml"
 
           if git diff --staged --quiet; then
             echo "No changes to commit in Helm chart files."

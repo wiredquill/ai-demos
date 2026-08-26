@@ -1,6 +1,0 @@
-dependencies:
-- name: ollama
-  repository: oci://dp.apps.rancher.io/charts
-  version: 1.55.0
-digest: sha256:ad75f934c067e963d8bcec0cf66e9c418223736a66dfd5801d8981b8f2ad7eab
-generated: "2026-08-03T12:04:28.827319087-07:00"
