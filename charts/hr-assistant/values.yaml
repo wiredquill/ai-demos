@@ -198,7 +198,20 @@ image:
   # This sets the pull policy for images.
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "3f435cd"
+  # Carries the HRAssistant cross-service orchestration + FastAPI server-span
+  # instrumentation fix (main.py, apps/simple.py) so the SUSE AI topology shows
+  # a connected app -> app -> {ollama, qdrant, opensearch} picture, plus the
+  # SUSE AI cost/request metrics fix for the native ollama and langchain call
+  # paths (patch/suse_ai_metrics.py), the dashboard move to / (main.py), and
+  # the EmployeeHandbook vectorstore connection-lifecycle fix (build once per
+  # process, and removed the vestigial second MilvusClient connection to the
+  # same embedded file that was fighting langchain_milvus's own connection -
+  # apps/rag102.py), health_check_emitter.py (used by the load-generator's
+  # second container to give Qdrant/OpenSearch a trace presence), and the
+  # qdrant-client SDK migration (apps/rag101.py) so OpenLIT's native qdrant
+  # instrumentor emits the db_requests metric the SUSE AI vectordb health
+  # monitor actually requires.
+  tag: "topology-orchestration-8"
 
 # The RAG app (hr-policy-db) runs a different image than the chat apps:
 # app/hr-assistant is built to ghcr.io/wiredquill/ai-demos/genai-demo by
@@ -209,10 +222,12 @@ policyDb:
   image:
     repository: ghcr.io/wiredquill/ai-demos/genai-demo
     pullPolicy: Always
-    # Built from main@e290e823 (build run 15) — carries the Qdrant/OpenSearch
-    # RAG paths, /stats, /logs, the Apple-design dashboard, and the _RingTee
-    # isatty fix so the app boots under fastapi-cli.
-    tag: "main-e290e82"
+    # Carries the same FastAPIInstrumentor fix as image.tag above, plus the
+    # Milvus idempotency fix (build_policy_vault() was throwing "collection
+    # already exists" on every request after the first, silently falling back
+    # to a plain LLM answer instead of the RAG/tool-calling flow) and the SUSE
+    # AI cost/request metrics fix for the native ollama call path.
+    tag: "topology-orchestration-8"
 
 # Qdrant — vector database component.
 #
@@ -273,6 +288,18 @@ opensearch:
       value: "false"
     - name: ES_JAVA_OPTS
       value: "-Xms512m -Xmx512m"
+    # The SUSE AI StackPack's opensearch metric bindings and health monitor
+    # (extracted and read from the suse-ai-observability-extension-setup
+    # image: stackpack/metrics/opensearch.yaml) hardcode
+    # elasticsearch_cluster_name="opensearch-cluster" in every one of their
+    # PromQL queries. OpenSearch's default cluster.name is "docker-cluster" -
+    # confirmed against our own /_cluster/health - so every binding query
+    # (health color, pending tasks, free space, operations) silently matched
+    # nothing no matter how much data flowed, which is why OpenSearch stayed
+    # "unknown" even with 160k+ metric points successfully reaching SUSE
+    # Observability. Naming the cluster to match is the actual fix.
+    - name: cluster.name
+      value: "opensearch-cluster"
 
 # This is to override the chart name.
 nameOverride: ""
@@ -316,7 +343,7 @@ service:
   type: NodePort
   # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
   port: 8000
-  # Optional NodePort for the hr-policy-db service (dashboard at /dashboard).
+  # Optional NodePort for the hr-policy-db service (dashboard at /).
   # Only applied when service.type is NodePort.
   nodePort: 30080
 

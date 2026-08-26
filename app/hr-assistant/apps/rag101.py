@@ -5,11 +5,39 @@ import threading
 import ollama
 import openlit
 import requests
-from pymilvus import MilvusClient, model
+from openlit.__helpers import get_chat_model_cost
+from patch.suse_ai_metrics import record_suse_ai_metrics
+from pymilvus import model
+from qdrant_client import QdrantClient
+from qdrant_client.models import Distance, PointStruct, VectorParams
 
-MILVUS_URL = "./rag101.db"
 MODEL = os.getenv("MODEL", "llama3.2")
-EMBEDDING_MODEL = "bge-large"
+
+# openlit's native ollama instrumentor already sets gen_ai.usage.cost as a span
+# attribute correctly (confirmed by reading openlit/instrumentation/ollama/utils.py),
+# but never records it as a metric, and never records the gen_ai.total.requests
+# counter the SUSE AI StackPack uses as its "is this a GenAI app" gate - see
+# patch/suse_ai_metrics.py. This wraps every raw ollama.Client().chat() call here
+# so HRPolicyDatabase gets the same cost/request charts HRAssistant already has.
+_openlit_conf = openlit.OpenlitConfig()
+
+
+def ollama_chat(messages, tools=None):
+    """ollama.Client().chat() plus the SUSE AI metrics openlit's native instrumentor omits."""
+    client = ollama.Client()
+    kwargs = {"model": MODEL, "messages": messages}
+    if tools is not None:
+        kwargs["tools"] = tools
+    response = client.chat(**kwargs)
+    try:
+        input_tokens = response.get("prompt_eval_count", 0)
+        output_tokens = response.get("eval_count", 0)
+        cost = get_chat_model_cost(MODEL, _openlit_conf.pricing_info, input_tokens, output_tokens)
+        record_suse_ai_metrics(_openlit_conf.application_name, _openlit_conf.environment, "ollama", MODEL, cost)
+    except Exception as e:
+        print(f"SUSE AI metrics recording failed (non-fatal): {e}")
+    return response
+
 
 # Vector Database (Qdrant) and Search Engine (OpenSearch) endpoints.
 #
@@ -70,22 +98,6 @@ def ensure_datastores_seeded() -> None:
 
 embedding_fn = model.DefaultEmbeddingFunction()
 
-# Keep a single MilvusClient for the lifetime of the process. milvus-lite's
-# embedded server is bound to the client that started it; creating a fresh
-# MilvusClient per request (the pymilvus 2.x pattern) lets the old embedded
-# server on 127.0.0.1:<port> die, and the next request fails with
-# "Fail connecting to server ... server unavailable". A module-level client
-# keeps the server alive across /ask calls.
-_milvus_client = None
-
-
-def get_milvus_client():
-    global _milvus_client
-    if _milvus_client is None:
-        _milvus_client = MilvusClient(MILVUS_URL)
-    return _milvus_client
-
-
 documents = [
     "Employees are entitled to 20 days of paid vacation per year after one year of service.",
     "Remote work policy allows up to 3 days per week with manager approval.",
@@ -114,84 +126,49 @@ tools = [
             },
         },
     },
-    {
-        "type": "function",
-        "function": {
-            "name": "search_policy_database",
-            "description": "Search HR policies and employee guidelines in the policy database",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "The search query",
-                    },
-                },
-                "required": ["query"],
-            },
-        },
-    },
 ]
-
-
-@openlit.trace
-def initialize_policy_database():
-    vectors = embedding_fn.encode_documents(documents)
-    # The output vector has 768 dimensions, matching the collection that we just created.
-    print("Dim:", embedding_fn.dim, vectors[0].shape)  # Dim: 768 (768,)
-
-    # Each entity has id, vector representation, raw text, and a subject label.
-    data = [{"id": i, "vector": vectors[i], "text": documents[i], "subject": "history"} for i in range(len(vectors))]
-    print("Data has", len(data), "entities, each with fields: ", data[0].keys())
-    print("Vector dim:", len(data[0]["vector"]))
-    return data
-
-
-@openlit.trace
-def build_policy_vault():
-    data = initialize_policy_database()
-    # Create a collection and insert the data
-    client = get_milvus_client()
-    client.create_collection(
-        collection_name="demo_collection",
-        dimension=768,
-    )
-    client.insert(collection_name="demo_collection", data=data)
 
 
 # --- Vector Database (Qdrant) -----------------------------------------------
 #
-# Qdrant is the "Vector Databases" component in SUSE Observability. The
-# collector's transform/qdrant tags its scraped metrics
-# suse.ai.component.type=vectordb. These calls make the topology show
-# hr-policy-db -> qdrant. All wrapped in @openlit.trace so every upsert and
-# search produces a span (and gen_ai metrics when the embedding model runs).
+# Qdrant is the "Vector Databases" component in SUSE Observability. Health for
+# this category comes from OpenLIT's own vectordb instrumentation - the SUSE
+# AI StackPack's health monitor (extracted from the
+# suse-ai-observability-extension-setup image: stackpack/monitors/monitors.yaml)
+# queries sum(db_requests_total{}) by (db_system), which is exactly the metric
+# OpenLIT's native qdrant_client instrumentor emits automatically on
+# create_collection/upsert/query_points - but only when the official
+# qdrant-client SDK is used. The collector's own Prometheus scrape of
+# Qdrant's /metrics never feeds that monitor at all (different metric
+# entirely); it's kept below (see transform/qdrant in the collector config)
+# for utilization numbers, not health. Using QdrantClient here instead of raw
+# requests calls is what actually makes hr-policy-db -> qdrant get a health
+# state, the same way every GenAI app already gets one.
+_qdrant_client = None
+
+
+def get_qdrant_client():
+    global _qdrant_client
+    if _qdrant_client is None:
+        _qdrant_client = QdrantClient(url=QDRANT_URL)
+    return _qdrant_client
 
 
 @openlit.trace
 def seed_qdrant():
     """Upsert the HR policy documents into Qdrant (idempotent)."""
+    client = get_qdrant_client()
     vectors = embedding_fn.encode_documents(documents)
     points = [
-        {
-            "id": i,
-            "vector": vectors[i].tolist(),
-            "payload": {"text": documents[i], "subject": "policy"},
-        }
+        PointStruct(id=i, vector=vectors[i].tolist(), payload={"text": documents[i], "subject": "policy"})
         for i in range(len(documents))
     ]
-    # Create collection if it does not exist (ignore "already exists").
-    requests.put(
-        f"{QDRANT_URL}/collections/{QDRANT_COLLECTION}",
-        json={"vectors": {"size": 768, "distance": "Cosine"}},
-        timeout=5,
-    )
-    # Upsert points (idempotent).
-    requests.put(
-        f"{QDRANT_URL}/collections/{QDRANT_COLLECTION}/points",
-        json={"points": points},
-        timeout=5,
-    )
+    if not client.collection_exists(QDRANT_COLLECTION):
+        client.create_collection(
+            collection_name=QDRANT_COLLECTION,
+            vectors_config=VectorParams(size=768, distance=Distance.COSINE),
+        )
+    client.upsert(collection_name=QDRANT_COLLECTION, points=points)
     _rag_stats["seeds"] += 1
     return {"points": len(points)}
 
@@ -200,13 +177,10 @@ def seed_qdrant():
 def search_qdrant(query: str) -> str:
     """Vector search over HR policies; returns the top 2 matching documents."""
     _rag_stats["qdrant_searches"] += 1
+    client = get_qdrant_client()
     query_vector = embedding_fn.encode_queries([query])[0].tolist()
-    res = requests.post(
-        f"{QDRANT_URL}/collections/{QDRANT_COLLECTION}/points/search",
-        json={"vector": query_vector, "limit": 2, "with_payload": True},
-        timeout=5,
-    )
-    return json.dumps(res.json())
+    res = client.query_points(collection_name=QDRANT_COLLECTION, query=query_vector, limit=2, with_payload=True)
+    return json.dumps([{"id": p.id, "score": p.score, "payload": p.payload} for p in res.points])
 
 
 # --- Search Engine (OpenSearch) ---------------------------------------------
@@ -220,6 +194,17 @@ def search_qdrant(query: str) -> str:
 @openlit.trace
 def seed_opensearch():
     """Index the HR policy documents into OpenSearch (idempotent)."""
+    # Explicitly create the index with 0 replicas before the first doc PUT
+    # auto-creates it with OpenSearch's default (1 replica): a single-node
+    # cluster can never assign that replica shard, which permanently reports
+    # cluster health "yellow" - DEVIATING under the SUSE AI health monitor -
+    # even though everything is actually fine. No unassigned shards possible
+    # with 0 replicas, so a single healthy node reports "green".
+    requests.put(
+        f"{OPENSEARCH_URL}/{OPENSEARCH_INDEX}",
+        json={"settings": {"index": {"number_of_replicas": 0}}},
+        timeout=5,
+    )
     created = 0
     for i, doc in enumerate(documents):
         res = requests.put(
@@ -291,33 +276,10 @@ def get_benefits_information(benefit_type: str, employee_level: str) -> str:
     return json.dumps(benefits.get(key, {"error": "Benefit information not found"}))
 
 
-# Search data related to Artificial Intelligence in a vector database
-
-
-@openlit.trace
-def search_policy_database(query: str) -> str:
-    query_vectors = embedding_fn.encode_queries([query])
-    client = get_milvus_client()
-    res = client.search(
-        collection_name="demo_collection",
-        data=query_vectors,
-        limit=2,
-        output_fields=["text", "subject"],  # specifies fields to be returned
-    )
-    print(res)
-    return json.dumps(res)
-
-
 @openlit.trace
 def send_query_to_hr_ai(messages):
     # First API call: Send the query and function description to the model
-    client = ollama.Client()
-    response = client.chat(
-        model=MODEL,
-        messages=messages,
-        tools=tools,
-    )
-    return response
+    return ollama_chat(messages, tools=tools)
 
 
 @openlit.trace
@@ -326,7 +288,6 @@ def process_hr_ai_response(messages, response):
     if response["message"].get("tool_calls"):
         available_functions = {
             "get_benefits_information": get_benefits_information,
-            "search_policy_database": search_policy_database,
         }
 
         for tool in response["message"]["tool_calls"]:
@@ -378,8 +339,7 @@ def process_hr_ai_response(messages, response):
                 }
             )
     # Second API call: Get final response from the model
-    client = ollama.Client()
-    final_response = client.chat(model=MODEL, messages=messages)
+    final_response = ollama_chat(messages)
     print(final_response["message"]["content"])
     return final_response
 
@@ -411,7 +371,6 @@ def handle_hr_inquiry(question: str):
 @openlit.trace
 def start_hr_policy_system():
     try:
-        build_policy_vault()
         # Seed the datastores once (first call only).
         # This keeps SUSE Observability showing hr-policy-db -> qdrant and
         # hr-policy-db -> opensearch in the topology without re-seeding on
@@ -435,9 +394,5 @@ def start_hr_policy_system():
         # Keeps /ask returning 200 (and telemetry flowing) during vector-store
         # outages instead of surfacing a 500 to the load generator.
         print(f"RAG unavailable, falling back to plain LLM: {e}")
-        client = ollama.Client()
-        response = client.chat(
-            model=MODEL,
-            messages=[{"role": "user", "content": "What is our remote work policy?"}],
-        )
+        response = ollama_chat([{"role": "user", "content": "What is our remote work policy?"}])
         return response

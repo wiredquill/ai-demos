@@ -49,6 +49,10 @@ spec:
             value: {{ include "hr-assistant.ollamaEndpoint" . }}
           - name: OLLAMA_BASE_URL
             value: {{ include "hr-assistant.ollamaEndpoint" . }}
+          - name: GENAI_HR_POLICY_DB_URL
+            value: "http://{{ include "hr-assistant.fullname" . }}-hr-policy-db:{{ .Values.service.port }}"
+          - name: GENAI_EMPLOYEE_HANDBOOK_URL
+            value: "http://{{ include "hr-assistant.fullname" . }}-employee-handbook:{{ .Values.service.port }}"
           - name: OBSERVABILITY_ENABLED
             value: "true"
           - name: OTLP_ENDPOINT

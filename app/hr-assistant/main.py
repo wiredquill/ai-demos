@@ -10,6 +10,7 @@ import patch
 from apps import rag101, rag102, simple
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 app = FastAPI()
 
@@ -32,10 +33,30 @@ openlit.init(
     # openai instrumentor would report gen_ai.provider.name=openai, which puts a
     # bogus OpenAI inference engine in the SUSE AI topology, so patch_openlit()
     # owns that path instead and reports Ollama.
+    #
+    # requests/fastapi/httpx are deliberately left enabled (not listed here):
+    # HRAssistant's cross-service calls to HRPolicyDatabase/EmployeeHandbook, and
+    # rag101's existing Qdrant/OpenSearch calls, need the requests instrumentor to
+    # inject traceparent headers and the FastAPI instrumentor (below) to extract
+    # them, or every /ask stays a disconnected trace instead of one connected one.
     disabled_instrumentors=["openai"],
 )
 
 patch.patch_openlit()
+
+# `app = FastAPI()` above runs at import time, before openlit.init() executes -
+# so openlit's own global FastAPI auto-instrumentor (which patches FastAPI.__init__
+# for apps constructed *after* it runs) never touches this specific app object.
+# Instrument this instance explicitly so every /ask becomes a real incoming SERVER
+# span: it lets this app extract a caller's traceparent (when HRAssistant calls in)
+# and lets every @openlit.trace-decorated function below nest into it, giving SUSE
+# Observability one connected trace instead of a disconnected one per app.
+#
+# excluded_urls is matched with re.search against the full request URL
+# (scheme+host+path), not anchored - "/$" matches a trailing bare "/" (the
+# dashboard's own root path) without matching "/ask" or "/health" (no
+# trailing slash), which a bare "/" pattern would (it'd match every URL).
+FastAPIInstrumentor.instrument_app(app, excluded_urls="/$,health,stats,logs")
 
 # --- Dashboard support: in-memory stats + log ring buffer -------------------
 #
@@ -47,7 +68,7 @@ patch.patch_openlit()
 
 _start_time = datetime.now(timezone.utc)
 _stats = {"requests": 0, "errors": 0, "last_answer": ""}
-_log_ring = deque(maxlen=200)
+_log_ring: deque[str] = deque(maxlen=200)
 
 
 class _RingTee:
@@ -75,21 +96,26 @@ class _RingTee:
         return self._stream.fileno()
 
 
-sys.stdout = _RingTee(sys.stdout)
+sys.stdout = _RingTee(sys.stdout)  # type: ignore[assignment]
 
 
-@app.get("/")
-def read_root():
+@app.get("/health")
+def health():
     return {"Status": "Ready"}
 
 
-@app.get("/dashboard", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse)
 def dashboard():
     """Apple-design live dashboard (see dashboard.html).
 
     Served by the app itself so the browser polls /stats and /logs same-origin
     — no extra deployment, no CORS. The dashboard exists purely to show the
     demo processing data; SUSE Observability is the real monitoring surface.
+
+    Lives at / (not /dashboard) so it's the landing page at the Service's
+    NodePort/URL. hr-policy-db's chart httpGet probes hit / expecting any
+    2xx-399 response - probes don't care about body content-type, so serving
+    HTML here instead of the old {"Status": "Ready"} JSON doesn't break them.
     """
     html = Path(__file__).parent / "dashboard.html"
     if html.exists():

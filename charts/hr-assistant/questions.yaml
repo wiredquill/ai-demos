@@ -3,7 +3,7 @@ questions:
 - variable: service.type
   group: "Dashboard / Service Access"
   label: "App Service Type"
-  description: "How the app services are exposed. The dashboard lives at `/dashboard` on the hr-policy-db service.<br><br><b>Options:</b><br>• NodePort (default) — direct browser access<br>• LoadBalancer — external load balancer<br>• ClusterIP — for port-forwarding"
+  description: "How the app services are exposed. The dashboard lives at `/` on the hr-policy-db service.<br><br><b>Options:</b><br>• NodePort (default) — direct browser access<br>• LoadBalancer — external load balancer<br>• ClusterIP — for port-forwarding"
   type: "enum"
   required: true
   default: "NodePort"

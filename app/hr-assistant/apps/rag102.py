@@ -7,119 +7,55 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 import os
 
 import openlit
-import patch
-from langchain import hub
+from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain.chains import RetrievalQA
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_milvus import Milvus
 from langchain_ollama import OllamaLLM
-from pymilvus import MilvusClient
-
-#### Constant For PDF Downloads, If You Change This, Change in Section Below As Well
-path_pdfs = "hr-documents/"
-
-#### Initialize Our Documents
-documents = []
+from openlit.__helpers import get_chat_model_cost
+from patch.suse_ai_metrics import record_suse_ai_metrics
 
 ollama_url = os.getenv("OLLAMA_ENDPOINT")
 
-MILVUS_URL = "./employee_handbook.db"
 MODEL = os.getenv("MODEL", "llama3.2")
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "bge-large")
 
-# Keep a single MilvusClient for the lifetime of the process (see rag101.py).
-_milvus_client = None
+_openlit_conf = openlit.OpenlitConfig()
 
 
-def get_milvus_client():
-    global _milvus_client
-    if _milvus_client is None:
-        _milvus_client = MilvusClient(MILVUS_URL)
-    return _milvus_client
+class SuseAiMetricsCallback(BaseCallbackHandler):
+    """Records the SUSE AI gen_ai.total.requests/cost metrics openlit's native
+    langchain instrumentor doesn't (see patch/suse_ai_metrics.py). langchain_ollama
+    passes Ollama's raw response straight through as generation_info, so
+    prompt_eval_count/eval_count are available the same way as the native
+    ollama client in rag101.py.
+    """
 
-
-@openlit.trace
-def load_hr_documents():
-    for file in os.listdir(path_pdfs):
-        if file.endswith(".pdf"):
-            pdf_path = os.path.join(path_pdfs, file)
-            print(pdf_path)
-            loader = PyPDFLoader(pdf_path)
-            documents.extend(loader.load())
-
-
-@openlit.trace
-def build_handbook_vault():
-    # Create a collection to get relation to db.
-    client = get_milvus_client()
-    client.create_collection(
-        collection_name="demo_collection",
-        dimension=768,
-    )
-
-
-def chunk_policy_documents(alldocs):
-    with openlit.start_trace(name="chunk_policy_documents") as trace:
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
-        trace.set_metadata({"ravmeta": "this is data"})
-        trace.set_result("")
-        return text_splitter.split_documents(alldocs)
-
-
-def build_hr_knowledge_base():
-    with openlit.start_trace(name="build_hr_knowledge_base") as trace:
-        build_handbook_vault()
-        embeddings = patch.OllamaEmbeddings(model=EMBEDDING_MODEL)
-        vectorstore = Milvus.from_documents(
-            documents=chunk_policy_documents(documents),
-            embedding=embeddings,
-            connection_args={
-                "uri": MILVUS_URL,
-            },
-            collection_name="hr_handbook",
-            drop_old=True,
-        )
-        trace.set_result("")
-        return vectorstore
-
-
-@openlit.trace
-def query_handbook_system(query, vectorstore) -> str:
-    llm = OllamaLLM(
-        model=MODEL,
-        callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
-        stop=["<|eot_id|>"],
-    )
-
-    prompt = hub.pull("rlm/rag-prompt")
-
-    qa_chain = RetrievalQA.from_chain_type(llm, retriever=vectorstore.as_retriever(), chain_type_kwargs={"prompt": prompt})
-
-    result = qa_chain.invoke({"query": query})
-    return result["result"]
+    def on_llm_end(self, response, **kwargs):
+        try:
+            generation_info = response.generations[0][0].generation_info or {}
+            input_tokens = generation_info.get("prompt_eval_count", 0)
+            output_tokens = generation_info.get("eval_count", 0)
+            cost = get_chat_model_cost(MODEL, _openlit_conf.pricing_info, input_tokens, output_tokens)
+            record_suse_ai_metrics(_openlit_conf.application_name, _openlit_conf.environment, "ollama", MODEL, cost)
+        except Exception as e:
+            print(f"SUSE AI metrics recording failed (non-fatal): {e}")
 
 
 @openlit.trace
 def start_handbook_system():
-    try:
-        load_hr_documents()
-        vectorstore = build_hr_knowledge_base()
-        result = query_handbook_system("What are the employee onboarding procedures?", vectorstore)
-        print(result)
-        return result
-    except Exception as e:
-        # Fall back to a plain LLM answer if the vector store is unavailable
-        # (same rationale as rag101.start_hr_policy_system).
-        print(f"RAG unavailable, falling back to plain LLM: {e}")
-        llm = OllamaLLM(
-            model=MODEL,
-            callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
-            stop=["<|eot_id|>"],
-        )
-        return llm.invoke("What are the employee onboarding procedures?")
+    # EmployeeHandbook previously answered from a Milvus-backed (milvus-lite,
+    # embedded-only - no real deployed service) vectorstore built from the HR
+    # PDFs. Milvus was dropped from the demo (redundant with Qdrant, which is
+    # a real separately-deployed service and already the vectordb HRPolicyDatabase
+    # uses) rather than migrating this app onto Qdrant too, so it answers
+    # directly from the model now.
+    llm = OllamaLLM(
+        model=MODEL,
+        callback_manager=CallbackManager([StreamingStdOutCallbackHandler(), SuseAiMetricsCallback()]),
+        stop=["<|eot_id|>"],
+    )
+    result = llm.invoke("What are the employee onboarding procedures?")
+    print(result)
+    return result
 
 
 if __name__ == "__main__":

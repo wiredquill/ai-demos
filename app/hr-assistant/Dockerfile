@@ -34,6 +34,13 @@ FROM registry.suse.com/bci/python:3.11 AS runtime
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH"
 
+# qdrant-client unconditionally imports the stdlib dbm module at import time
+# (qdrant_client/local/persistence.py, part of its embedded/local-mode support
+# that this app never uses - we only ever connect to a remote Qdrant server),
+# but SUSE's BCI Python image ships a stub that raises ImportError instead of
+# providing it, to keep the base image minimal.
+RUN zypper -n install python311-dbm && zypper -n clean --all
+
 # Container metadata
 LABEL org.opencontainers.image.source=https://github.com/wiredquill/llm-experiments
 LABEL org.opencontainers.image.description="GenAI Demo Application with LLM experiments (SUSE BCI)"
@@ -48,6 +55,7 @@ COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # Copy application files
 COPY main.py ./main.py
+COPY health_check_emitter.py ./health_check_emitter.py
 COPY pricing.json ./pricing.json
 COPY dashboard.html ./dashboard.html
 COPY apps ./apps

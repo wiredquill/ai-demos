@@ -9,22 +9,29 @@ readme = "README.md"
 python = "^3.11"
 openlit = "^1.44.0"
 openai = "^1.53.0"
-requests = "^2.32.0"  # direct dep: rag101 talks to Qdrant + OpenSearch over REST
+# Already resolved transitively via openlit; declared directly because main.py
+# now imports FastAPIInstrumentor by name to fix instrumentation ordering (see
+# main.py comment) rather than relying on an undeclared transitive dep.
+opentelemetry-instrumentation-fastapi = "^0.65b0"
+requests = "^2.32.0"  # direct dep: rag101 talks to OpenSearch over REST
+# rag101's Qdrant calls go through the official SDK (not raw requests) so
+# openlit's native qdrant_client instrumentor emits the db_requests metric the
+# SUSE AI StackPack's vectordb health monitor requires (see apps/rag101.py).
+qdrant-client = "^1.16.0"
+# pymilvus itself is only used for its bundled embedding helper
+# (model.DefaultEmbeddingFunction, used to vectorize documents for Qdrant) -
+# Milvus the database was dropped from the demo (redundant with Qdrant, a
+# real deployed service; Milvus here was only ever embedded/milvus-lite).
 pymilvus = {extras = ["model"], version = "^2.4.9"}
 sentence-transformers = "^3.2.1"
 langchain = "^0.3.6"
-langchain-milvus = "^0.1.6"
-langchain-huggingface = "^0.1.2"
 ollama = "^0.6.2"
 langchain-ollama = "^0.2.0"
-pypdf = "^5.1.0"
-langchainhub = "^0.1.21"
 # transformers >= 4.42 calls torch.utils._pytree.register_pytree_node, which only
 # exists from torch 2.2 on. Pinning torch at 2.1.2 against the current
 # transformers made the image fail at import.
 torch = "^2.6.0"
 fastapi = {extras = ["standard"], version = "^0.115.4"}
-langchain-community = "^0.3.5"
 
 
 [build-system]

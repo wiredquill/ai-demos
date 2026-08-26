@@ -89,6 +89,39 @@ spec:
             limits:
               cpu: 100m
               memory: 128Mi
+        - name: health-check-emitter
+          # Qdrant and OpenSearch are plain scraped backends, not instrumented
+          # apps - they never produce trace spans, and the collector's
+          # dedicated "topology" exporter (the thing that actually computes
+          # SUSE AI component health) is only ever fed by the traces/topology
+          # pipeline, never by metrics. Without a span of their own, their
+          # components can exist (metrics create component identity) but can
+          # never get a health state. This emits a small periodic span per
+          # service - the same liveness check the collector itself polls -
+          # carrying the identical suse.ai.component.* identity the metrics
+          # pipeline already stamps on them, so the topology exporter has a
+          # real span to compute health from, the same way it does for every
+          # application. Reuses the hr-assistant image (already has the OTel
+          # SDK + the script baked in); overrides the entrypoint.
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/app/.venv/bin/python3", "-u", "health_check_emitter.py"]
+          env:
+            - name: OTLP_ENDPOINT
+              value: "{{ include "hr-assistant.otlpEndpoint" . }}"
+            - name: SUSE_AI_NAMESPACE
+              value: "{{ include "hr-assistant.serviceNamespace" . }}"
+            - name: QDRANT_URL
+              value: "http://{{ $fullname }}-qdrant:6333"
+            - name: OPENSEARCH_URL
+              value: "http://{{ $fullname }}-opensearch:9200"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

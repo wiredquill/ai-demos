@@ -54,15 +54,18 @@ call also bumps the `_rag_stats` counter surfaced on `/stats`.
 collector's `elasticsearch` receiver polls OpenSearch's `_cluster/health` and
 `_nodes/stats`, and `resource/opensearch` tags them `search-engine`.
 
-## Dashboard — `/dashboard`
+## Dashboard — `/`
 
-The app serves a single-file Apple-design dashboard at `/dashboard`. It polls
-`/stats` (request counters + RAG activity) and `/logs` (stdout ring buffer)
-same-origin. It is not a replacement for SUSE Observability — it just makes the
-demo feel alive and shows the same workload that appears in the SUSE AI view.
+The app serves a single-file Apple-design dashboard at `/` (the service's
+landing page). It polls `/stats` (request counters + RAG activity) and `/logs`
+(stdout ring buffer) same-origin. It is not a replacement for SUSE
+Observability — it just makes the demo feel alive and shows the same workload
+that appears in the SUSE AI view. `/health` serves the plain JSON status
+check that used to live at `/`.
 
-- `main.py` — `/stats` endpoint (requests, errors, uptime, RAG counters),
-  `/logs` endpoint (ring buffer fed by a stdout tee), `/dashboard` route
+- `main.py` — `/health` status endpoint, `/stats` endpoint (requests, errors,
+  uptime, RAG counters), `/logs` endpoint (ring buffer fed by a stdout tee),
+  `/` dashboard route
 - `dashboard.html` — self-contained HTML/CSS/JS, no build step
 
 ## Running it
@@ -84,7 +87,7 @@ the last signal.
 
 ```
 app/hr-assistant/
-  main.py            FastAPI app: OpenLIT init, /ask, /stats, /logs, /dashboard
+  main.py            FastAPI app: OpenLIT init, /ask, /health, /stats, /logs, / (dashboard)
   dashboard.html     Apple-design live dashboard (single file)
   apps/rag101.py     RAG app: Milvus (local) + Qdrant + OpenSearch traffic
   apps/rag102.py     Employee handbook RAG (LangChain + Milvus)

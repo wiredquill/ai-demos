@@ -81,7 +81,7 @@ kubectl exec -n <your-namespace> deploy/<release>-hr-policy-db -- \
         │ handbook        │   │  engine)│  │  DB)   │  │  engine)   │
         │ hr-policy-db    │   │  llama3.2│  │        │  │            │
         └─────────────────┘   └─────────┘  └────────┘  └────────────┘
-              ▲                                                   
+              ▲
               └── Load-Generator Deployment (polls /ask every 120s) ──┐
                                                                     │
         The three apps also talk to qdrant/opensearch (RAG) so the  │
@@ -155,7 +155,7 @@ Key questions:
   interval leaves the SUSE AI view empty between polls.
 - **Service Type / NodePort** (Dashboard / Service Access) — `NodePort` +
   `30080` exposes the built-in dashboard at
-  `http://<node-ip>:30080/dashboard` (served by `hr-policy-db`).
+  `http://<node-ip>:30080/` (served by `hr-policy-db`).
 - **Qdrant / OpenSearch** (Observability Demo Components) — enabled by default.
 
 Or via helm:
@@ -185,7 +185,7 @@ kubectl logs deploy/open-telemetry-collector-opentelemetry-collector -n observab
   --tail=100 | grep "topology sent"
 
 # 4. Dashboard responds (if NodePort enabled)
-curl -s -o /dev/null -w "%{http_code}\n" http://<node-ip>:30080/dashboard
+curl -s -o /dev/null -w "%{http_code}\n" http://<node-ip>:30080/
 
 # 5. App answers /ask
 curl -s http://<node-ip>:30080/ask | head -c 200

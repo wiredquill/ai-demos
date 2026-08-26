@@ -251,7 +251,13 @@ config:
             - ${env:SUSE_AI_RELEASE}-qdrant.${env:SUSE_AI_NAMESPACE}.svc.cluster.local:6333
           metric_relabel_configs:
           - action: keep
-            regex: 'qdrant_collection.*|qdrant_grpc.*|qdrant_app_info.*'
+            # Qdrant 1.19.0 exposes app_info/collections_total/collection_* with
+            # no "qdrant_" prefix at all (confirmed against the running server's
+            # /metrics output) - the old regex here never matched anything,
+            # silently dropping every scraped datapoint via the keep filter,
+            # which is why Qdrant never got a health state in SUSE Observability
+            # despite the collector reaching it successfully.
+            regex: 'app_info|collections?_.*'
             source_labels:
             - __name__
   service:
