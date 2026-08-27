@@ -25,6 +25,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/python-ollama-open-webui.py .
 COPY app/ollama_openai_client.py .
 COPY app/openlit_init.py .
+COPY app/suse_ai_metrics.py .
+COPY app/health_check_emitter.py .
 COPY frontend ./frontend
 # Expose the ports for Gradio and HTTP API
 EXPOSE 7860 8080

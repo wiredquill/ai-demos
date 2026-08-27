@@ -183,11 +183,14 @@ frontend:
   # HTTP Load Simulator (enabled by default for OpenTelemetry edition)
   loadSimulator:
     enabled: true # Enabled by default for comprehensive observability traffic generation
-    image:
-      repository: ghcr.io/wiredquill/ai-demos-load-simulator
-      tag: "latest"
-      pullPolicy: Always
-    intervalSeconds: 30
+    # NOTE: this block now drives the PERSISTENT load-gen Deployment (templates/70-
+    # load-generator.yaml) instead of the old */2 CronJob. image.* is unused by
+    # the new template (it runs curlimages/curl + the app image's
+    # health-check-emitter sidecar). intervalSeconds MUST stay < topology-TTL/2
+    # (~2min TTL on the SUSE Observability backend): 45s keeps the SUSE AI view
+    # + topology populated; the old */2 cadence left the view empty most of the
+    # time (verified against the hr-assistant stack on dev-ai, 2026-08-26).
+    intervalSeconds: 45
     requestTimeout: 30
     resources:
       limits:

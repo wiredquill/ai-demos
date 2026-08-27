@@ -1,0 +1,113 @@
+{{- if .Values.frontend.loadSimulator.enabled }}
+{{- $fullname := include "ai-compare-opentelemetry.fullname" . }}
+{{- $interval := .Values.frontend.loadSimulator.intervalSeconds | default 45 -}}
+# Persistent load generator (replaces the former */2 CronJob).
+#
+# Why a Deployment instead of a CronJob: the SUSE Observability topology view
+# expires components ~2 minutes after their last telemetry (TTL), and the
+# health-check-emitter sidecar below is a long-running span producer. A
+# CronJob's pods only live for the duration of each run, so a span emitter
+# inside it could never feed the topology exporter continuously. The polling
+# interval MUST stay < TTL/2 (45s default keeps components populated; the old
+# */2 CronJob left the SUSE AI view empty most of the time - verified on dev-ai
+# against the hr-assistant stack).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-load-gen
+  labels:
+    {{- include "ai-compare-opentelemetry.labels" . | nindent 4 }}
+    app.kubernetes.io/component: load-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: load-generator
+  template:
+    metadata:
+      labels:
+        {{- include "ai-compare-opentelemetry.labels" . | nindent 8 }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: load-generator
+    spec:
+      restartPolicy: Always
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: load-gen
+          image: curlimages/curl:8.4.0
+          # Poll the app's /api/chat endpoint on the configured interval. The
+          # FlaskInstrumentor on the app turns each /api/chat into a SERVER
+          # span, which (with the app's outbound requests to pipelines/open-webui
+          # and ollama nested under it) is what keeps the topology view fresh.
+          env:
+            - name: LOAD_GEN_INTERVAL
+              value: "{{ $interval }}"
+            - name: TARGET_URL
+              value: "http://{{ $fullname }}-app-service:{{ .Values.aiCompare.httpApi.port }}/api/chat"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              interval="$LOAD_GEN_INTERVAL"
+              target="$TARGET_URL"
+              echo "[load-gen] started (interval=${interval}s, target=${target})"
+              while true; do
+                ts=$(date -u +%H:%M:%S)
+                code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$target" \
+                  -H "Content-Type: application/json" \
+                  -d '{"message": "Automated telemetry generation for SUSE Observability GenAI Apps visibility"}' || echo "000")
+                echo "[$ts] POST $target -> $code"
+                sleep "$interval"
+              done
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            fsGroup: 65532
+          resources:
+            limits:
+              cpu: 50m
+              memory: 64Mi
+            requests:
+              cpu: 25m
+              memory: 32Mi
+        - name: health-check-emitter
+          # Ollama / Open WebUI / Pipelines are scraped or instrumented on their
+          # own side, so they never produce a SUSE-AI-identified SERVER span of
+          # their own. The collector's topology exporter (the thing that computes
+          # SUSE AI component HEALTH STATE) is fed exclusively by the
+          # traces/topology pipeline - metrics create component identity but can
+          # never create a health state. This sidecar emits a small periodic span
+          # per service carrying the identical suse.ai.component.* identity, so
+          # the topology exporter has a real span to compute health from. Reuses
+          # the ai-compare app image (OTel SDK + script baked in); the venv lives
+          # at /opt/venv in Dockerfile.suse.
+          image: "{{ .Values.aiCompare.image.repository }}:{{ .Values.aiCompare.image.tag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          command: ["/opt/venv/bin/python3", "-u", "health_check_emitter.py"]
+          env:
+            - name: OTLP_ENDPOINT
+              value: "{{ include "ai-compare-opentelemetry.otlpHttpEndpoint" . }}"
+            - name: SUSE_AI_NAMESPACE
+              value: "{{ .Release.Namespace }}"
+            - name: OLLAMA_URL
+              value: "http://ollama-service:{{ .Values.ollama.service.port }}"
+            - name: OPEN_WEBUI_URL
+              value: "http://open-webui-service:{{ .Values.openWebui.service.port }}"
+            - name: PIPELINES_URL
+              value: "http://pipelines-service:{{ .Values.pipelines.service.port }}"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

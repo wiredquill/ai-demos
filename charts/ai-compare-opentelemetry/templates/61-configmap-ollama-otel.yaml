@@ -47,9 +47,11 @@ data:
           - key: deployment.environment
             value: "{{ .Release.Namespace }}"
             action: upsert
-          - key: k8s.cluster.name
-            value: "ai-compare-cluster"
-            action: upsert
+          # NOTE: k8s.cluster.name is deliberately NOT stamped by the sidecar.
+          # The shared collector's global resource processor sets it from its
+          # K8S_CLUSTER_NAME env (dev-ai on this cluster). An earlier version
+          # hardcoded "ai-compare-cluster", leaking a wrong cluster label into
+          # the OTEL service view (and overriding the collector's insert).
           - key: k8s.namespace.name
             value: "{{ .Release.Namespace }}"
             action: upsert

@@ -98,6 +98,15 @@ COPY app/openlit_init.py /app/openlit_init.py
 # Ollama OpenAI client module (essential for OpenAI pattern client)
 COPY app/ollama_openai_client.py /app/ollama_openai_client.py
 
+# SUSE AI StackPack acceptance-gate metrics helper (gen_ai.total.requests +
+# gen_ai.client.operation.cost) - required by ollama_openai_client.py
+COPY app/suse_ai_metrics.py /app/suse_ai_metrics.py
+
+# Synthetic health-check span emitter (SUSE AI component health for
+# ollama/open-webui/pipelines) - runs as the health-check-emitter sidecar
+# container in the load-generator deployment
+COPY app/health_check_emitter.py /app/health_check_emitter.py
+
 # Main application code (changes most frequently - keep last)
 COPY app/python-ollama-open-webui.py /app/python-ollama-open-webui.py
 
