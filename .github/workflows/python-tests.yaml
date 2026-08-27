@@ -175,8 +175,12 @@ jobs:
         cd app
         python -c "
         import sys
-        sys.modules['gradio'] = __import__('unittest.mock').mock.MagicMock()
-        sys.modules['openlit'] = __import__('unittest.mock').mock.MagicMock()
+        m = __import__('unittest.mock').mock.MagicMock
+        sys.modules['gradio'] = m()
+        _ol = m()
+        sys.modules['openlit'] = _ol
+        sys.modules['openlit.__helpers'] = m()
+        sys.modules['openlit.semcov'] = m()
 
         try:
             import importlib.util
@@ -201,8 +205,12 @@ jobs:
         cd app
         python -c "
         import sys, tempfile, json, os
-        sys.modules['gradio'] = __import__('unittest.mock').mock.MagicMock()
-        sys.modules['openlit'] = __import__('unittest.mock').mock.MagicMock()
+        m = __import__('unittest.mock').mock.MagicMock
+        sys.modules['gradio'] = m()
+        _ol = m()
+        sys.modules['openlit'] = _ol
+        sys.modules['openlit.__helpers'] = m()
+        sys.modules['openlit.semcov'] = m()
 
         import importlib.util
         spec = importlib.util.spec_from_file_location('app', 'python-ollama-open-webui.py')
