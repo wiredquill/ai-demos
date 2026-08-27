@@ -23,7 +23,10 @@ gradio_mock.ChatInterface = MagicMock()
 gradio_mock.Blocks = MagicMock()
 gradio_mock.State = MagicMock()
 sys.modules["gradio"] = gradio_mock
-sys.modules["openlit"] = MagicMock()
+openlit_mock = MagicMock()
+sys.modules["openlit"] = openlit_mock
+sys.modules["openlit.__helpers"] = MagicMock()
+sys.modules["openlit.semcov"] = MagicMock()
 
 # Import main app as module
 import importlib.util
