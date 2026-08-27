@@ -8,3 +8,10 @@ psutil
 opentelemetry-api
 opentelemetry-sdk
 opentelemetry-instrumentation-requests
+# FlaskInstrumentor: explicit SERVER span on /api/chat + /ask so the topology
+# exporter sees connected ai-compare -> pipelines/open-webui/ollama edges
+# (openlit's auto-instrumentor misses this app, built before openlit.init()).
+opentelemetry-instrumentation-flask
+# OTLP HTTP span exporter: used by health_check_emitter.py (SUSE AI component
+# health spans for ollama/open-webui/pipelines) to push spans to the collector.
+opentelemetry-exporter-otlp-proto-http

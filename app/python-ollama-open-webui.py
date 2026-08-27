@@ -559,6 +559,31 @@ class ObservableAPIServer:
     def start_server(self):
         """Start the HTTP API server in background thread."""
         try:
+            # --- SUSE Observability: connected topology ---
+            # Instrument the Flask app EXPLICITLY. openlit.init() already ran in
+            # ChatInterface.__init__ (before this server object was built), and
+            # its global Flask auto-instrumentor only patches apps constructed
+            # AFTER init - so without this, /api/chat and /ask would never get
+            # an incoming SERVER span. With one, the outbound requests calls in
+            # chat_with_open_webui (pipelines/open-webui) and the ollama calls
+            # nest under it, and the collector's topology exporter sees real
+            # ai-compare -> pipelines / open-webui / ollama edges instead of
+            # disconnected traces. Same explicit-instrumentation fix hr-assistant
+            # made with FastAPIInstrumentor (2026-08-26).
+            #
+            # excluded_urls is matched with re.search against the full request URL
+            # (scheme+host+path): "health" is a substring of both /health and
+            # /healthz, so probes never create spans; /api/metrics and /static/
+            # are excluded as noise. The real API endpoints (/api/chat, /ask,
+            # /api/status, ...) stay instrumented.
+            try:
+                from opentelemetry.instrumentation.flask import FlaskInstrumentor
+
+                FlaskInstrumentor.instrument_app(self.app, excluded_urls="health|/api/metrics|/static/")
+                logger.info("FlaskInstrumentor enabled on Observable HTTP API server")
+            except Exception as flask_instr_error:
+                logger.warning(f"Could not enable FlaskInstrumentor: {flask_instr_error}")
+
             self.server = make_server("0.0.0.0", self.port, self.app)
             self.server_thread = threading.Thread(target=self.server.serve_forever, daemon=True)
             self.server_thread.start()
