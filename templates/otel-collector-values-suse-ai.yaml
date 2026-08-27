@@ -262,6 +262,23 @@ config:
         - context: span
           statements:
             - set(attributes["peer.service"], resource.attributes["gen_ai.provider.name"]) where resource.attributes["gen_ai.provider.name"] != nil
+    # The topology exporter (traces/topology, below) has native, built-in
+    # understanding of gen_ai.* resource attributes for the app -> engine ->
+    # model chain - no relation transform is needed for that (confirmed:
+    # traces/topology runs no gen_ai transform at all, yet those edges still
+    # render). It has no equivalent built-in understanding of db.* semantic
+    # convention attributes, so hr-policy-db's own Qdrant/OpenSearch calls
+    # never produced an edge even though both components exist and are
+    # healthy. This must run inside traces/topology's own processor list
+    # (not a separate pipeline exporting elsewhere, e.g. to otlp) to actually
+    # reach the topology exporter.
+    transform/db-topology-relations:
+      error_mode: ignore
+      trace_statements:
+        - context: span
+          statements:
+            - set(attributes["peer.service"], "qdrant") where attributes["db.system.name"] == "qdrant"
+            - set(attributes["peer.service"], "opensearch") where IsMatch(attributes["server.address"], ".*opensearch.*") or IsMatch(attributes["net.peer.name"], ".*opensearch.*") or IsMatch(attributes["url.full"], ".*opensearch.*") or IsMatch(attributes["http.url"], ".*opensearch.*")
     filter/dropMissingK8sAttributes:
       error_mode: ignore
       traces:
@@ -324,7 +341,7 @@ config:
         exporters: [otlp]
       traces/topology:
         receivers: [routing/traces]
-        processors: [batch]
+        processors: [transform/db-topology-relations, batch]
         exporters: [topology]
       metrics/opensearch:
         receivers: [elasticsearch]

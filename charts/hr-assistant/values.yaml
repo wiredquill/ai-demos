@@ -210,8 +210,14 @@ image:
   # second container to give Qdrant/OpenSearch a trace presence), and the
   # qdrant-client SDK migration (apps/rag101.py) so OpenLIT's native qdrant
   # instrumentor emits the db_requests metric the SUSE AI vectordb health
-  # monitor actually requires.
-  tag: "topology-orchestration-8"
+  # monitor actually requires. Also carries: HRAssistant's downstream calls
+  # to HRPolicyDatabase/EmployeeHandbook now run concurrently instead of
+  # sequentially (apps/simple.py), cutting its own end-to-end latency roughly
+  # in half; and a background loop in HRPolicyDatabase that re-runs real
+  # Qdrant/OpenSearch searches every 10s (apps/rag101.py) so their topology
+  # edges stay lit continuously instead of flickering in and out between
+  # /ask calls.
+  tag: "topology-orchestration-10"
 
 # The RAG app (hr-policy-db) runs a different image than the chat apps:
 # app/hr-assistant is built to ghcr.io/wiredquill/ai-demos/genai-demo by
@@ -225,9 +231,10 @@ policyDb:
     # Carries the same FastAPIInstrumentor fix as image.tag above, plus the
     # Milvus idempotency fix (build_policy_vault() was throwing "collection
     # already exists" on every request after the first, silently falling back
-    # to a plain LLM answer instead of the RAG/tool-calling flow) and the SUSE
-    # AI cost/request metrics fix for the native ollama call path.
-    tag: "topology-orchestration-8"
+    # to a plain LLM answer instead of the RAG/tool-calling flow), the SUSE
+    # AI cost/request metrics fix for the native ollama call path, and the
+    # background Qdrant/OpenSearch relation-refresh loop described above.
+    tag: "topology-orchestration-10"
 
 # Qdrant — vector database component.
 #

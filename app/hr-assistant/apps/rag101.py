@@ -1,6 +1,7 @@
 import json
 import os
 import threading
+import time
 
 import ollama
 import openlit
@@ -92,8 +93,46 @@ def ensure_datastores_seeded() -> None:
             seed_opensearch()
             _init_done = True
             print("RAG datastores seeded (qdrant + opensearch)")
+            _start_datastore_relation_refresher()
         except Exception as e:
             print(f"RAG datastore seeding failed, will retry on next request: {e}")
+
+
+# SUSE Observability's topology view only renders the hr-policy-db -> qdrant /
+# hr-policy-db -> opensearch edges for a moment right after a real search
+# span, then drops them - unlike components (which persist ~2 minutes after
+# their last telemetry), relations appear to need a much tighter, near-
+# continuous stream of matching spans to stay rendered. /ask only touches
+# these datastores once per ~45s load-generator cycle, far too infrequent.
+# This background loop re-runs the real, properly-instrumented search calls
+# on a fast interval so the topology edges stay lit continuously instead of
+# flickering in and out between /ask calls.
+_refresher_started = False
+_refresher_lock = threading.Lock()
+DATASTORE_REFRESH_INTERVAL_SECONDS = int(os.getenv("DATASTORE_REFRESH_INTERVAL_SECONDS", "10"))
+
+
+def _datastore_relation_refresh_loop():
+    query = "vacation benefits"
+    while True:
+        time.sleep(DATASTORE_REFRESH_INTERVAL_SECONDS)
+        try:
+            search_qdrant(query)
+        except Exception as e:
+            print(f"Datastore relation refresh (qdrant) failed: {e}")
+        try:
+            search_opensearch(query)
+        except Exception as e:
+            print(f"Datastore relation refresh (opensearch) failed: {e}")
+
+
+def _start_datastore_relation_refresher():
+    global _refresher_started
+    with _refresher_lock:
+        if _refresher_started:
+            return
+        threading.Thread(target=_datastore_relation_refresh_loop, daemon=True).start()
+        _refresher_started = True
 
 
 embedding_fn = model.DefaultEmbeddingFunction()

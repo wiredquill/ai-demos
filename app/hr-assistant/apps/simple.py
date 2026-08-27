@@ -1,4 +1,6 @@
+import contextvars
 import os
+from concurrent.futures import ThreadPoolExecutor
 
 import openai
 import openlit
@@ -113,12 +115,28 @@ def log_interaction_for_compliance():
 @openlit.trace
 def hr_assistance_workflow():
     hr_inquiry = receive_hr_inquiry()
-    # Sequential, not concurrent: the OTel span context lives in a contextvar
-    # that does not cross into a new thread without explicitly copying it, so
-    # a naive thread pool here would silently orphan these two calls from the
-    # parent trace. Sequential is correct-by-construction for this demo.
-    policy_answer = consult_hr_policy_database()
-    handbook_answer = consult_employee_handbook()
+    # HRPolicyDatabase and EmployeeHandbook are independent downstream calls -
+    # run them concurrently instead of back-to-back, since each is itself a
+    # multi-step LLM chain and dominates this app's own end-to-end latency
+    # (its SERVER span duration is what SUSE Observability's span-duration
+    # monitor evaluates). A plain ThreadPoolExecutor would silently orphan
+    # these two calls from the parent trace: the OTel span context lives in a
+    # contextvar, which a new thread does not inherit on its own. Explicitly
+    # copying the current context into each submitted call is what keeps them
+    # nested under this span and keeps their outgoing requests.* calls
+    # carrying this trace's traceparent header, exactly as the sequential
+    # version did.
+    #
+    # Each submission needs its OWN copy_context() call: a single captured
+    # Context object can only be entered (via ctx.run) by one thread at a
+    # time - reusing the same copy for both concurrent submissions raises
+    # "RuntimeError: cannot enter context: ... is already entered" as soon as
+    # both threads try to run it at once.
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        policy_future = executor.submit(contextvars.copy_context().run, consult_hr_policy_database)
+        handbook_future = executor.submit(contextvars.copy_context().run, consult_employee_handbook)
+        policy_answer = policy_future.result()
+        handbook_answer = handbook_future.result()
     professional_response = generate_professional_response(hr_inquiry, policy_answer, handbook_answer)
     # signature = generate_signature(professional_response)
     signature = ""
