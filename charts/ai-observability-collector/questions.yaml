@@ -28,10 +28,10 @@ questions:
 - variable: collector.clusterName
   group: Collector
   label: "Cluster Name (k8s.cluster.name)"
-  description: "Stamped on all telemetry. MUST match the kubernetes-v2 StackPack instance name in SUSE Observability, otherwise telemetry appears under the wrong cluster."
+  description: "Stamped on all telemetry as k8s.cluster.name. MUST match the kubernetes-v2 StackPack instance name in SUSE Observability (e.g. 4090 — the friendly name shown in Observability, NOT the Rancher cluster ID like c-m-sn9w96qb). Wrong value puts telemetry in the wrong cluster view."
   type: string
   required: true
-  default: "dev-ai"
+  default: ""
 
 - variable: collector.backendEndpoint
   group: Collector
@@ -97,14 +97,14 @@ questions:
 - variable: discovery.vllm.enabled
   group: Auto-Discovery
   label: "Scrape vLLM (cluster-wide)"
-  description: "Discover vLLM services by label app=vllm across all namespaces and apply the SUSE AI metric renames (vllm: -> vllm_, etc)."
+  description: "Discover vLLM services by label app.kubernetes.io/part-of=vllm across all namespaces and apply the SUSE AI metric renames (vllm: -> vllm_, etc)."
   type: boolean
   default: true
 
 - variable: discovery.qdrant.enabled
   group: Auto-Discovery
   label: "Scrape Qdrant (cluster-wide)"
-  description: "Discover Qdrant services by label app=qdrant across all namespaces."
+  description: "Discover Qdrant services by label app-component=qdrant across all namespaces."
   type: boolean
   default: true
 
@@ -164,7 +164,7 @@ questions:
   description: "Image for the demo app. Must provide python3."
   type: string
   required: true
-  default: "registry.suse.com/bci/python3.12"
+  default: "python"
   show_if: "sampleApp.enabled=true"
 
 - variable: sampleApp.tag
@@ -172,5 +172,5 @@ questions:
   label: "Demo App Image Tag"
   type: string
   required: true
-  default: "latest"
+  default: "3.12-slim"
   show_if: "sampleApp.enabled=true"

@@ -22,8 +22,10 @@ collector:
 
   # -- K8S_CLUSTER_NAME stamped on all telemetry as k8s.cluster.name.
   #    MUST match the kubernetes-v2 StackPack instance name in SUSE
-  #    Observability, otherwise telemetry shows in the wrong cluster view.
-  clusterName: dev-ai
+  #    Observability (e.g. "4090", not the Rancher cluster ID like
+  #    c-m-sn9w96qb), otherwise telemetry shows in the wrong cluster view.
+  #    Required — no safe default; set it at install time.
+  clusterName: ""
 
   # -- SUSE Observability topology exporter endpoint (HTTP).
   backendEndpoint: https://observability.mort.dna-42.com

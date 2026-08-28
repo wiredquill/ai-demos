@@ -88,7 +88,7 @@ kubectl logs deploy/ai-observability-collector -n ai-observability -c otc-contai
 
 | Value | Default | Purpose |
 |-------|---------|---------|
-| `collector.clusterName` | `dev-ai` | `k8s.cluster.name`; must match the StackPack instance |
+| `collector.clusterName` | (required) | `k8s.cluster.name`; must match the StackPack instance (e.g. `4090`), not the Rancher ID |
 | `collector.image` / `.tag` | SUSE AI `0.156.0` | SUSE AI collector image (has `topology` exporter) |
 | `collector.backendEndpoint` | `https://observability.mort.dna-42.com` | Topology exporter endpoint |
 | `collector.otlpEndpoint` | `otlp-observability.mort.dna-42.com:443` | OTLP gRPC ingest |
