@@ -91,6 +91,7 @@ spec:
         instrumentation.opentelemetry.io/inject-python: "true"
         instrumentation.opentelemetry.io/otel-python-package-name: "ai-observability-demo"
     spec:
+      serviceAccountName: {{ include "aiobs.collectorService" . }}
       containers:
       - name: app
         image: {{ printf "%s:%s" .Values.sampleApp.image .Values.sampleApp.tag }}

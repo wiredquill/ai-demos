@@ -253,6 +253,14 @@ spec:
               - set(attributes["suse.ai.managed"], "true") where attributes["service.name"] == "vllm"
               - set(attributes["suse.ai.component.name"], "vllm") where attributes["service.name"] == "vllm"
               - set(attributes["suse.ai.component.type"], "inference-engine") where attributes["service.name"] == "vllm"
+      transform/qdrant:
+        error_mode: ignore
+        metric_statements:
+          - context: resource
+            statements:
+              - set(attributes["suse.ai.managed"], "true") where attributes["service.name"] == "qdrant"
+              - set(attributes["suse.ai.component.name"], "qdrant") where attributes["service.name"] == "qdrant"
+              - set(attributes["suse.ai.component.type"], "vectordb") where attributes["service.name"] == "qdrant"
       transform/db-topology-relations:
         error_mode: ignore
         trace_statements:
