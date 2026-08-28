@@ -191,7 +191,31 @@ config:
               - source_labels: [__name__]
                 regex: 'vllm:(.*)'
                 target_label: __name__
-                replacement: 'vllm_${1}'
+                # $1 (no braces) - not $${1}: the OTel Collector's own config
+                # resolver treats ${...} as an environment-variable reference
+                # globally across the whole YAML (confirmed live: "${1}" here
+                # crashed the collector with `environment variable "1" has
+                # invalid name`), so this must stay in the same brace-less form
+                # the qdrant job's own $1:6333 replacement above already uses.
+                replacement: 'vllm_$1'
+              # SUSE Observability's built-in vLLM dashboard panels ("GPU Cache
+              # Usage", "Time Per Output Token Latency") query pre-rename vLLM
+              # metric names. vLLM 0.19 (the version this chart runs) renamed
+              # both: gpu_cache_usage_perc -> kv_cache_usage_perc, and
+              # time_per_output_token_seconds split into inter_token_latency_seconds
+              # (engine-wide) and request_time_per_output_token_seconds
+              # (per-request - aliased here since it matches the panel's intent).
+              # Alias the new names back to what the dashboard expects (chained
+              # after the rule above, which already applied the vllm_ prefix)
+              # rather than waiting on a SUSE-side dashboard update.
+              - source_labels: [__name__]
+                regex: 'vllm_kv_cache_usage_perc(.*)'
+                target_label: __name__
+                replacement: 'vllm_gpu_cache_usage_perc$1'
+              - source_labels: [__name__]
+                regex: 'vllm_request_time_per_output_token_seconds(.*)'
+                target_label: __name__
+                replacement: 'vllm_time_per_output_token_seconds$1'
   exporters:
     topology:
       # Real deviation from upstream: SUSE Observability runs on a separate
