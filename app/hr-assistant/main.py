@@ -7,7 +7,27 @@ from typing import Union
 
 import openlit
 import patch
-from apps import rag101, rag102, simple
+
+# LLM_PROVIDER selects both which endpoint env var to read and which OpenLit
+# patch module (patch/openlit_ollama.py vs patch/openlit_vllm.py) owns the
+# chat-completions telemetry — see patch/__init__.py below. Defaults to
+# "ollama" so the existing hr-assistant (Ollama) chart, which never sets
+# LLM_PROVIDER, keeps working unchanged.
+#
+# This MUST run before `from apps import ...` below: apps/simple.py,
+# apps/rag101.py and apps/rag102.py all read os.getenv("LLM_ENDPOINT") at
+# module import time, not inside a function, so LLM_ENDPOINT has to already
+# be in os.environ before those modules are imported or they capture None.
+_llm_provider = os.getenv("LLM_PROVIDER", "ollama")
+_llm_endpoint = os.getenv("VLLM_ENDPOINT") if _llm_provider == "vllm" else os.getenv("OLLAMA_ENDPOINT")
+os.environ["LLM_ENDPOINT"] = _llm_endpoint
+if _llm_provider == "ollama":
+    # The native `ollama` client (used by apps/rag101.py) and langchain_ollama
+    # (apps/rag102.py) both read these instead of taking the URL as an argument.
+    os.environ["OLLAMA_SERVER_URL"] = _llm_endpoint
+    os.environ["OLLAMA_HOST"] = _llm_endpoint
+
+from apps import rag101, rag102, simple  # noqa: E402  (see LLM_ENDPOINT comment above)
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
@@ -15,20 +35,6 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 app = FastAPI()
 
 otlp_endpoint = os.getenv("OTLP_ENDPOINT")
-
-# LLM_PROVIDER selects both which endpoint env var to read and which OpenLit
-# patch module (patch/openlit_ollama.py vs patch/openlit_vllm.py) owns the
-# chat-completions telemetry — see patch/__init__.py. Defaults to "ollama" so
-# the existing hr-assistant (Ollama) chart, which never sets LLM_PROVIDER,
-# keeps working unchanged.
-llm_provider = os.getenv("LLM_PROVIDER", "ollama")
-llm_endpoint = os.getenv("VLLM_ENDPOINT") if llm_provider == "vllm" else os.getenv("OLLAMA_ENDPOINT")
-os.environ["LLM_ENDPOINT"] = llm_endpoint
-if llm_provider == "ollama":
-    # The native `ollama` client (used by apps/rag101.py) and langchain_ollama
-    # (apps/rag102.py) both read these instead of taking the URL as an argument.
-    os.environ["OLLAMA_SERVER_URL"] = llm_endpoint
-    os.environ["OLLAMA_HOST"] = llm_endpoint
 ollama_api_key = os.getenv("OLLAMA_API_KEY")
 app_name = os.getenv("APP_NAME")
 collect_gpu_stats = os.getenv("COLLECT_GPU_STATS", "false") == "true"
