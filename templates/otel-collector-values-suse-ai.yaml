@@ -35,8 +35,15 @@ global:
 extraEnvs:
   - name: K8S_CLUSTER_NAME
     value: "dev-ai"
+  # Fallback namespace for telemetry with no service.namespace of its own
+  # (qdrant/opensearch/vllm Prometheus scrapes, opensearch's elasticsearch
+  # receiver) - not used by app-level gen_ai.* telemetry, which sets its own
+  # service.namespace via OTEL_RESOURCE_ATTRIBUTES regardless of this value.
+  # Currently the vLLM demo (hr-assistant-vllm namespace); update this the
+  # same time as the qdrant job's namespaces.names and the elasticsearch
+  # receiver's endpoint below whenever the active demo namespace changes.
   - name: SUSE_AI_NAMESPACE
-    value: "hr-assistant"
+    value: "hr-assistant-vllm"
 extraEnvsFrom:
   - secretRef:
       name: open-telemetry-collector
@@ -83,8 +90,11 @@ config:
       #   2. Set `fullnameOverride` in the hr-assistant chart's own values so
       #      its subresource names are stable regardless of release name.
       # If neither is possible, this line is the one thing that must be
-      # updated by hand after every hr-assistant reinstall.
-      endpoint: "http://hr-assistant-opensearch.hr-assistant.svc.cluster.local:9200"
+      # updated by hand after every hr-assistant reinstall. Currently points
+      # at the hr-assistant-vllm demo's actual release name
+      # (hr-assistant-vllm-0-1787880707) - the old hr-assistant (Ollama)
+      # release this comment originally described has been uninstalled.
+      endpoint: "http://hr-assistant-vllm-0-1787880707-opensearch.hr-assistant-vllm.svc.cluster.local:9200"
       tls:
         insecure_skip_verify: true
       collection_interval: 10s
@@ -131,15 +141,18 @@ config:
             # app.component=qdrant label regardless of release name, so
             # discover it dynamically instead of hardcoding the hostname. This
             # requires the collector's ClusterRole to include "services" (it
-            # already does, above) and, if hr-assistant is ever installed
-            # outside the "hr-assistant" namespace, add that namespace to
-            # `namespaces.names` below (or drop the `namespaces:` key entirely
-            # to discover across all namespaces, matching only on the label).
+            # already does, above). hr-assistant-vllm was added below the same
+            # way when that chart's qdrant instance needed discovering; add any
+            # further namespace here too (or drop the `namespaces:` key
+            # entirely to discover across all namespaces, matching only on the
+            # label - simplest long-term fix once more than one or two demo
+            # namespaces are in play).
             kubernetes_sd_configs:
               - role: service
                 namespaces:
                   names:
                     - hr-assistant
+                    - hr-assistant-vllm
             relabel_configs:
               - action: keep
                 source_labels: [__meta_kubernetes_service_label_app_component]

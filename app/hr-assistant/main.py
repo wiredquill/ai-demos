@@ -52,12 +52,24 @@ openlit.init(
     # bogus OpenAI inference engine in the SUSE AI topology, so patch_openlit()
     # owns that path instead and reports the real provider (LLM_PROVIDER above).
     #
+    # langchain is disabled too, for the same reason on the vLLM path: openlit's
+    # native langchain instrumentor tags provider by LangChain integration class
+    # name, so apps/rag102.py's ChatOpenAI (langchain_openai — the vLLM chat
+    # model) gets tagged gen_ai.provider.name=openai regardless of base_url,
+    # producing the same bogus OpenAI component. ChatOpenAI's calls go through
+    # the same openai.resources.chat.completions.Completions.create path
+    # patch/openlit_vllm.py already wraps (LangChain's OpenAI integration is
+    # itself built on the openai SDK client), so no telemetry is lost by
+    # disabling openlit's separate langchain wrapper — patch/suse_ai_metrics.py's
+    # SuseAiMetricsCallback in rag102.py still covers the Ollama (OllamaLLM) path,
+    # which this doesn't touch.
+    #
     # requests/fastapi/httpx are deliberately left enabled (not listed here):
     # HRAssistant's cross-service calls to HRPolicyDatabase/EmployeeHandbook, and
     # rag101's existing Qdrant/OpenSearch calls, need the requests instrumentor to
     # inject traceparent headers and the FastAPI instrumentor (below) to extract
     # them, or every /ask stays a disconnected trace instead of one connected one.
-    disabled_instrumentors=["openai"],
+    disabled_instrumentors=["openai", "langchain"],
 )
 
 patch.patch_openlit()

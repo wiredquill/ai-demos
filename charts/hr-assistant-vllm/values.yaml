@@ -188,6 +188,17 @@ vllm:
         # Model cache: vLLM downloads weights into a PVC so restarts are fast.
         pvcStorage: "100Gi"
         storageClass: "Default"
+        # apps/rag101.py (HRPolicyDatabase) calls chat.completions.create with
+        # tools= and no explicit tool_choice, which the OpenAI SDK defaults to
+        # "auto" — vLLM rejects that with a 400 ("auto tool choice requires
+        # --enable-auto-tool-choice and --tool-call-parser to be set") unless
+        # the engine is started with both flags. hermes is vLLM's documented
+        # tool-call parser for the Qwen2.5-Instruct family.
+        vllmConfig:
+          extraArgs:
+            - "--enable-auto-tool-choice"
+            - "--tool-call-parser"
+            - "hermes"
   # Shared NFS-backed model cache, disabled by default (per-instance PVC
   # above is enough for a single demo install). Enable + point at a real NFS
   # share to reuse downloaded weights across reinstalls/clusters.
