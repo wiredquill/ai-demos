@@ -256,28 +256,27 @@ replicaCount: 1
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 #
-# Same image as the hr-assistant (Ollama) chart — the app is provider-aware
-# (LLM_PROVIDER env var, see values above and app/hr-assistant/main.py) rather
-# than forked per backend. IMPORTANT: the vLLM code path (apps/simple.py,
-# apps/rag101.py, apps/rag102.py OpenAI-compatible/tool-calling changes,
-# patch/openlit_vllm.py) must be built into a new image tag via
-# .github/workflows/build-hr-assistant.yml before this chart is installed —
-# "topology-orchestration-10" below predates those changes and has no vLLM
-# support.
+# app/hr-assistant is one shared source tree for all three app roles
+# (HRAssistant/EmployeeHandbook/HRPolicyDatabase, dispatched by APP_NAME —
+# see main.py) built to a single image, ghcr.io/wiredquill/ai-demos/genai-demo,
+# by .github/workflows/build-hr-assistant.yml. Unlike the Ollama hr-assistant
+# chart (which historically split a separate ghcr.io/wiredquill/ai-demos-suse
+# image for the chat apps), this chart points every app role at that one
+# built image — there is no vLLM-specific reason for two images.
+#
+# main-1c8df79: first image build carrying the vLLM code path (LLM_PROVIDER
+# branching in main.py/apps/simple.py/apps/rag101.py/apps/rag102.py,
+# patch/openlit_vllm.py). Built from commit 1c8df793.
 image:
-  repository: ghcr.io/wiredquill/ai-demos-suse
+  repository: ghcr.io/wiredquill/ai-demos/genai-demo
   pullPolicy: Always
-  tag: "topology-orchestration-10"  # TODO: bump once vLLM app changes are built
+  tag: "main-1c8df79"
 
-# The RAG app (hr-policy-db) runs a different image than the chat apps:
-# app/hr-assistant is built to ghcr.io/wiredquill/ai-demos/genai-demo by
-# .github/workflows/build-hr-assistant.yml and contains main.py + apps/ (rag101,
-# rag102), which the chat-app ai-demos-suse image does NOT ship.
 policyDb:
   image:
     repository: ghcr.io/wiredquill/ai-demos/genai-demo
     pullPolicy: Always
-    tag: "topology-orchestration-10"  # TODO: bump once vLLM app changes are built
+    tag: "main-1c8df79"
 
 # Qdrant — vector database component.
 #

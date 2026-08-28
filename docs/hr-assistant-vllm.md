@@ -107,11 +107,11 @@ every release reports to — not something either chart installs itself):
   `patch/openlit_vllm.py` already wraps with full span + SUSE AI metric
   recording. Both files skip their own manual `record_suse_ai_metrics()` call
   when `LLM_PROVIDER=vllm` for exactly this reason.
-- **A new image tag is required** — the vLLM code paths above didn't exist in
-  the image tag `charts/hr-assistant-vllm/values.yaml` currently pins
-  (`topology-orchestration-10`). Rebuild via
-  `.github/workflows/build-hr-assistant.yml` and bump `image.tag`/
-  `policyDb.image.tag` before installing this chart for real.
+- **Image tag** — `charts/hr-assistant-vllm/values.yaml` pins
+  `ghcr.io/wiredquill/ai-demos/genai-demo:main-1c8df79`, the first build
+  carrying the vLLM code path (built by
+  `.github/workflows/build-hr-assistant.yml` from commit `1c8df793`). Bump
+  `image.tag`/`policyDb.image.tag` together after future app changes land.
 - **GPU VRAM is not managed by Kubernetes device-plugin time-slicing** — if
   vLLM shares a physical GPU with another workload (e.g. the Ollama demo's
   model), vLLM's `vllmConfig.gpuMemoryUtilization` (fraction of *total* device
