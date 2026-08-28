@@ -275,22 +275,20 @@ replicaCount: 1
 # image for the chat apps), this chart points every app role at that one
 # built image — there is no vLLM-specific reason for two images.
 #
-# main-986f090: fixes main.py setting os.environ["LLM_ENDPOINT"] AFTER
-# `from apps import ...` had already run (apps/simple.py, rag101.py, rag102.py
-# read it at module import time) — every app captured None and built an
-# OpenAI(base_url="None/v1") client, found live on the 4090 install of
-# main-1c8df79 (HRAssistant: 12/12 requests failed with APIConnectionError).
-# Built from commit 986f0905.
+# main-be07471: disables openlit's langchain instrumentor (was tagging
+# apps/rag102.py's ChatOpenAI gen_ai.provider.name=openai, a spurious second
+# inference-engine alongside vllm in the SUSE AI topology). Built from
+# commit be074713.
 image:
   repository: ghcr.io/wiredquill/ai-demos/genai-demo
   pullPolicy: Always
-  tag: "main-986f090"
+  tag: "main-be07471"
 
 policyDb:
   image:
     repository: ghcr.io/wiredquill/ai-demos/genai-demo
     pullPolicy: Always
-    tag: "main-986f090"
+    tag: "main-be07471"
 
 # Qdrant — vector database component.
 #
