@@ -1,0 +1,125 @@
+# Default values for ai-observability-collector
+
+# =====================================================================
+# Collector (OpenTelemetryCollector CR, managed by the OpenTelemetry
+# Operator). The operator must be installed in the cluster first:
+#   helm install opentelemetry-operator oci://dp.apps.rancher.io/charts/opentelemetry-operator \
+#     --namespace <obs-ns> --version <pin> \
+#     --set global.imagePullSecrets={application-collection} \
+#     --set manager.autoInstrumentation.python.enabled=true
+# =====================================================================
+collector:
+  # -- Name of the OpenTelemetryCollector CR. The operator creates the
+  #    collector Service as <name>-collector.<namespace>.svc.cluster.local
+  name: ai-observability
+
+  # -- Collector image. MUST be a SUSE AI image: it ships the proprietary
+  #    `topology` exporter that populates the SUSE AI topology view.
+  #    appco/opentelemetry-collector images do NOT have it.
+  image: ghcr.io/suse/suse-ai-opentelemetry-collector
+  tag: "0.156.0"
+  pullPolicy: IfNotPresent
+
+  # -- K8S_CLUSTER_NAME stamped on all telemetry as k8s.cluster.name.
+  #    MUST match the kubernetes-v2 StackPack instance name in SUSE
+  #    Observability, otherwise telemetry shows in the wrong cluster view.
+  clusterName: dev-ai
+
+  # -- SUSE Observability topology exporter endpoint (HTTP).
+  backendEndpoint: https://observability.mort.dna-42.com
+  # -- SUSE Observability OTLP gRPC ingest endpoint.
+  otlpEndpoint: otlp-observability.mort.dna-42.com:443
+  # -- Set true if the OTLP endpoint is plaintext (http, no TLS).
+  otlpInsecure: false
+
+  # -- Namespace that holds the API_KEY secret (copied into the release
+  #    namespace by a pre-install hook if missing there).
+  sourceNamespace: observability
+  # -- Name of the secret (key: API_KEY) used to auth to SUSE Observability.
+  apiKeySecret: open-telemetry-collector
+
+  # -- Pull secrets attached to the collector ServiceAccount. SUSE AI / Rancher
+  #    AI clusters auto-create these in every namespace.
+  imagePullSecrets:
+    - application-collection
+    - suse-registry
+
+  # -- Number of collector replicas.
+  replicas: 1
+
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+# =====================================================================
+# Prometheus auto-discovery (label/annotation driven — the core feature).
+# Any pod/service carrying these markers is picked up automatically:
+#   labels:      observability/enabled: "true"
+#   annotations: prometheus.io/scrape: "true"
+#                prometheus.io/port: "<port>"
+#                prometheus.io/path: "/metrics"   (default /metrics)
+# =====================================================================
+discovery:
+  # -- Prometheus scrape interval for auto-discovered targets.
+  scrapeInterval: 10s
+  # -- Only discover pods in these namespaces (empty list = all namespaces).
+  namespaces: []
+
+  # -- Scrape NVIDIA DCGM exporter for GPU metrics.
+  gpu:
+    enabled: true
+    # -- Namespace the dcgm-exporter pods run in (GPU Operator default).
+    namespace: gpu-operator
+
+# -- Extra Prometheus scrape_config entries (free-form YAML list).
+extraJobs: []
+
+# =====================================================================
+# Trace tail-sampling (matches the verified SUSE AI sampling policy:
+# keep errors + slow traces, rate-limit the rest).
+# =====================================================================
+traces:
+  sampling:
+    # -- Max total spans/second the sampler admits to the backend.
+    maxSpansPerSecond: 500
+
+# =====================================================================
+# Auto-instrumentation (Instrumentation CRs created by the operator).
+# Apps opt in per-workload by adding the annotation:
+#   instrumentation.opentelemetry.io/inject-python: "true"
+# (or -nodejs / -java). Requires the operator chart to be installed with the
+# corresponding manager.autoInstrumentation.<lang>.enabled=true.
+#
+# NOTE: do NOT add these annotations to apps that already bundle an OTel SDK
+# (e.g. OpenLIT apps) — that produces duplicate spans.
+# =====================================================================
+instrumentation:
+  python:
+    enabled: true
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python
+    tag: "0.43b0"
+  nodejs:
+    enabled: false
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs
+    tag: "0.52.1"
+  java:
+    enabled: false
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java
+    tag: "1.20.1"
+
+# =====================================================================
+# Demo app: a tiny stdlib-Python service exposing /metrics on :8000.
+# Carries the discovery labels + auto-instrumentation annotations so you can
+# verify the whole pipeline end-to-end with one deploy.
+# =====================================================================
+sampleApp:
+  enabled: false
+  image: registry.suse.com/bci/python3.12
+  tag: "latest"
+  pullPolicy: IfNotPresent
+  port: 8000
+  replicaCount: 1

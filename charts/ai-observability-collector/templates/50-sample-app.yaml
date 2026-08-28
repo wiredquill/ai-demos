@@ -1,0 +1,125 @@
+{{- if .Values.sampleApp.enabled }}
+# Demo app to verify the whole pipeline end-to-end.
+# - Carries the discovery label (observability/enabled=true) + prometheus.io
+#   annotations, so the collector auto-scrapes its /metrics.
+# - Carries the auto-instrumentation annotation, so the operator injects the
+#   Python SDK (emits OTLP traces/metrics to the collector).
+# A stdlib-only Python service (no framework): /metrics + a small background
+# worker that touches the endpoint periodically.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aiobs.collectorService" . }}-sample-app
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "aiobs.labels" . | nindent 4 }}
+data:
+  app.py: |
+    import http.server
+    import http.client
+    import threading
+    import time
+    import random
+
+    COUNTER = 0
+    START = time.time()
+
+    class H(http.server.BaseHTTPRequestHandler):
+        def log_message(self, *a):
+            pass
+        def _send(self, code, body=b""):
+            self.send_response(code)
+            self.send_header("Content-Type", "text/plain")
+            self.end_headers()
+            self.wfile.write(body)
+        def do_GET(self):
+            global COUNTER
+            if self.path == "/metrics":
+                up = "ai_demo_uptime_seconds %.1f\n" % (time.time() - START)
+                cnt = "ai_demo_requests_total %d\n" % COUNTER
+                val = "ai_demo_work_items %d\n" % random.randint(1, 50)
+                body = ("# HELP ai_demo_uptime_seconds demo uptime\n"
+                        "# TYPE ai_demo_uptime_seconds gauge\n" + up +
+                        "# HELP ai_demo_requests_total demo requests\n"
+                        "# TYPE ai_demo_requests_total counter\n" + cnt +
+                        "# HELP ai_demo_work_items demo work\n"
+                        "# TYPE ai_demo_work_items gauge\n" + val).encode()
+                self._send(200, body)
+            else:
+                COUNTER += 1
+                self._send(200, b"ai-observability-collector demo app")
+
+    def worker():
+        while True:
+            time.sleep(15)
+            try:
+                c = http.client.HTTPConnection("localhost", {{ .Values.sampleApp.port }})
+                c.request("GET", "/work")
+                c.close()
+            except Exception:
+                pass
+
+    if __name__ == "__main__":
+        threading.Thread(target=worker, daemon=True).start()
+        http.server.HTTPServer(("0.0.0.0", {{ .Values.sampleApp.port }}), H).serve_forever()
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aiobs.collectorService" . }}-sample-app
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "aiobs.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.sampleApp.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "aiobs.collectorService" . }}-sample-app
+  template:
+    metadata:
+      labels:
+        app: {{ include "aiobs.collectorService" . }}-sample-app
+        # --- label-driven auto-discovery ---
+        observability/enabled: "true"
+        app.kubernetes.io/name: ai-observability-demo
+      annotations:
+        # --- prometheus.io scrape conventions (auto-discovery) ---
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.sampleApp.port }}"
+        prometheus.io/path: "/metrics"
+        # --- OpenTelemetry auto-instrumentation (operator injects the SDK) ---
+        instrumentation.opentelemetry.io/inject-python: "true"
+        instrumentation.opentelemetry.io/otel-python-package-name: "ai-observability-demo"
+    spec:
+      containers:
+      - name: app
+        image: {{ printf "%s:%s" .Values.sampleApp.image .Values.sampleApp.tag }}
+        imagePullPolicy: {{ .Values.sampleApp.pullPolicy }}
+        command: ["python3", "/app/app.py"]
+        ports:
+        - containerPort: {{ .Values.sampleApp.port }}
+        env:
+        - name: OTEL_SERVICE_NAME
+          value: ai-observability-demo
+        volumeMounts:
+        - name: app
+          mountPath: /app
+      volumes:
+      - name: app
+        configMap:
+          name: {{ include "aiobs.collectorService" . }}-sample-app
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aiobs.collectorService" . }}-sample-app
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "aiobs.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: {{ include "aiobs.collectorService" . }}-sample-app
+  ports:
+  - port: {{ .Values.sampleApp.port }}
+    targetPort: {{ .Values.sampleApp.port }}
+{{- end }}
