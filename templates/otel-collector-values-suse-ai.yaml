@@ -21,10 +21,13 @@
 # file assumes the generic chart until that's confirmed to be the actively
 # maintained path too.)
 #
-# Namespace, cluster name, and the qdrant/opensearch/gpu-metrics scrape
-# targets below are specific to this repo's hr-assistant demo on the dev-ai
-# cluster - update them for a different release name or cluster the same way
-# upstream's own comments describe for its placeholder values.
+# Namespace and cluster name below are specific to this repo's hr-assistant
+# demo - update K8S_CLUSTER_NAME and SUSE_AI_NAMESPACE for a different cluster
+# or app namespace. The gpu-metrics and qdrant Prometheus jobs discover their
+# targets dynamically (by pod/service label), so they need no per-install
+# editing. The opensearch `elasticsearch` receiver endpoint is the one
+# remaining static value that must be updated per install/reinstall - see the
+# comment on it below for why and what to do about it.
 global:
   imagePullSecrets:
   - application-collection
@@ -64,6 +67,23 @@ config:
       # Real deviation from upstream: our OpenSearch has security disabled (no
       # username/password) and runs at this release's actual service name,
       # not upstream's placeholder "opensearch-cluster-master-headless".
+      #
+      # UNLIKE the qdrant Prometheus job above, this endpoint CANNOT be made
+      # dynamic - the elasticsearch receiver type takes one static URL, it has
+      # no Kubernetes service-discovery support. Rancher's catalog install
+      # gives hr-assistant a release name with a random/timestamp suffix
+      # (e.g. hr-assistant-1-1787865324) that changes on every reinstall, so
+      # this hostname WILL silently go stale (collector keeps running, just
+      # stops reaching OpenSearch, no error) the next time hr-assistant is
+      # redeployed under a new release name. Two ways to actually fix this,
+      # neither of which is "remember to edit this file every time":
+      #   1. (Recommended) Install hr-assistant with a fixed, predictable
+      #      release name every time (e.g. always `hr-assistant`, not
+      #      Rancher's auto-generated one) - then this hostname never changes.
+      #   2. Set `fullnameOverride` in the hr-assistant chart's own values so
+      #      its subresource names are stable regardless of release name.
+      # If neither is possible, this line is the one thing that must be
+      # updated by hand after every hr-assistant reinstall.
       endpoint: "http://hr-assistant-opensearch.hr-assistant.svc.cluster.local:9200"
       tls:
         insecure_skip_verify: true
@@ -91,15 +111,74 @@ config:
           - job_name: 'qdrant'
             scrape_interval: 10s
             metrics_path: '/metrics'
-            # No keep filter: matches upstream exactly. The SUSE AI StackPack
-            # actually deployed (2.1.0, not the older 1.5.0 tarball an earlier
-            # version of this file was built against) reads specific metric
-            # names (rest_responses_total, memory_active_bytes, etc.) whose
-            # exact set has already changed across StackPack versions once -
-            # this is demo-scale cardinality, not worth chasing a keep-regex
-            # in lockstep with every future StackPack release.
-            static_configs:
-              - targets: ['hr-assistant-qdrant.hr-assistant.svc.cluster.local:6333']
+            # No keep filter on metric names: matches upstream exactly. The
+            # SUSE AI StackPack actually deployed (2.1.0, not the older 1.5.0
+            # tarball an earlier version of this file was built against) reads
+            # specific metric names (rest_responses_total, memory_active_bytes,
+            # etc.) whose exact set has already changed across StackPack
+            # versions once - this is demo-scale cardinality, not worth
+            # chasing a keep-regex in lockstep with every future StackPack
+            # release.
+            #
+            # Real deviation from upstream (which uses a static_configs target
+            # naming one specific release's Service): Rancher's catalog install
+            # gives the hr-assistant release a name with a random/timestamp
+            # suffix (e.g. hr-assistant-1-1787865324), which changes on every
+            # reinstall. A hardcoded Service hostname here silently breaks
+            # qdrant discovery the next time hr-assistant gets redeployed - the
+            # collector keeps running with no errors, it just stops finding
+            # the target. The qdrant Service always carries a stable
+            # app.component=qdrant label regardless of release name, so
+            # discover it dynamically instead of hardcoding the hostname. This
+            # requires the collector's ClusterRole to include "services" (it
+            # already does, above) and, if hr-assistant is ever installed
+            # outside the "hr-assistant" namespace, add that namespace to
+            # `namespaces.names` below (or drop the `namespaces:` key entirely
+            # to discover across all namespaces, matching only on the label).
+            kubernetes_sd_configs:
+              - role: service
+                namespaces:
+                  names:
+                    - hr-assistant
+            relabel_configs:
+              - action: keep
+                source_labels: [__meta_kubernetes_service_label_app_component]
+                regex: qdrant
+              - action: replace
+                source_labels: [__address__]
+                regex: '([^:]+)(?::\d+)?'
+                replacement: '$1:6333'
+                target_label: __address__
+          - job_name: 'vllm'
+            scrape_interval: 10s
+            metrics_path: '/metrics'
+            # vLLM's native metrics (vllm:prompt_tokens_total, vllm:generation_tokens_total,
+            # vllm:time_to_first_token_seconds, vllm:gpu_cache_usage_perc, ...) are
+            # scraped straight off the engine, no proxy/sidecar required. The
+            # hr-assistant-vllm chart's vendored vllm subchart renders a dedicated
+            # `<release>-engine-scrape` Service (extraObjects in
+            # charts/hr-assistant-vllm/values.yaml) carrying the stable
+            # app.kubernetes.io/part-of=vllm label and already exposing port 80
+            # (the engine's OpenAI-compatible + /metrics port) - same
+            # release-name-independent discovery approach as the qdrant job above,
+            # and for the same reason (Rancher's catalog install gives the release
+            # a random/timestamp suffix that changes on every reinstall).
+            kubernetes_sd_configs:
+              - role: service
+                namespaces:
+                  names:
+                    - hr-assistant-vllm
+            relabel_configs:
+              - action: keep
+                source_labels: [__meta_kubernetes_service_label_app_kubernetes_io_part_of]
+                regex: vllm
+            # vllm: -> vllm_ so SUSE Observability accepts the names (metric names
+            # with colons are rejected/silently dropped by some backends).
+            metric_relabel_configs:
+              - source_labels: [__name__]
+                regex: 'vllm:(.*)'
+                target_label: __name__
+                replacement: 'vllm_${1}'
   exporters:
     topology:
       # Real deviation from upstream: SUSE Observability runs on a separate
@@ -153,6 +232,23 @@ config:
             - set(attributes["suse.ai.component.type"], "vectordb") where attributes["service.name"] == "qdrant"
             - set(attributes["k8s.namespace.name"], attributes["service.namespace"]) where attributes["service.name"] == "qdrant" and attributes["service.namespace"] != nil
             - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["service.name"] == "qdrant" and attributes["service.namespace"] == nil
+    # Tags the vLLM engine's own native /metrics scrape (job "vllm" above) as
+    # the same suse.ai.component.type=inference-engine the app-level gen_ai.*
+    # path (transform/infer-providers, below) already creates for it, so both
+    # sources of vLLM telemetry overlay one topology node instead of two. The
+    # Prometheus receiver maps the scrape job's `job` label to the service.name
+    # resource attribute automatically (same mechanism transform/qdrant relies
+    # on above), so no relabeling is needed to get service.name=="vllm" here.
+    transform/vllm:
+      error_mode: ignore
+      metric_statements:
+        - context: resource
+          statements:
+            - set(attributes["suse.ai.managed"], "true") where attributes["service.name"] == "vllm"
+            - set(attributes["suse.ai.component.name"], "vllm") where attributes["service.name"] == "vllm"
+            - set(attributes["suse.ai.component.type"], "inference-engine") where attributes["service.name"] == "vllm"
+            - set(attributes["k8s.namespace.name"], attributes["service.namespace"]) where attributes["service.name"] == "vllm" and attributes["service.namespace"] != nil
+            - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["service.name"] == "vllm" and attributes["service.namespace"] == nil
     tail_sampling:
       decision_wait: 10s
       policies:
@@ -317,7 +413,7 @@ config:
         exporters: [debug, otlp]
       metrics:
         receivers: [otlp, spanmetrics, prometheus]
-        processors: [memory_limiter, transform/qdrant, resource, batch]
+        processors: [memory_limiter, transform/qdrant, transform/vllm, resource, batch]
         exporters: [debug, otlp]
       metrics/infer-providers:
         receivers: [otlp]

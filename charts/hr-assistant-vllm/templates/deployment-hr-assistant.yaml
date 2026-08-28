@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hr-assistant.fullname" . }}-hr-assistant
+  labels:
+    {{- include "hr-assistant.labels" . | nindent 4 }}
+    app.component: hr-assistant
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "hr-assistant.selectorLabels" . | nindent 6 }}
+      app.component: hr-assistant
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "hr-assistant.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        app.component: hr-assistant
+        genai: hr-assistant
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "hr-assistant.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          env:
+          - name: APP_NAME
+            value: HRAssistant
+          - name: OTEL_SERVICE_NAME
+            value: HRAssistant
+          - name: OTEL_SERVICE_VERSION
+            value: "1.0.0"
+          - name: DEPLOYMENT_ENVIRONMENT
+            value: "{{ .Values.deploymentEnvironment }}"
+          - name: MODEL
+            value: "{{ include "hr-assistant.model" . }}"
+          - name: LLM_PROVIDER
+            value: "{{ .Values.llmProvider }}"
+          - name: VLLM_ENDPOINT
+            value: {{ include "hr-assistant.vllmEndpoint" . }}
+          - name: GENAI_HR_POLICY_DB_URL
+            value: "http://{{ include "hr-assistant.fullname" . }}-hr-policy-db:{{ .Values.service.port }}"
+          - name: GENAI_EMPLOYEE_HANDBOOK_URL
+            value: "http://{{ include "hr-assistant.fullname" . }}-employee-handbook:{{ .Values.service.port }}"
+          - name: OBSERVABILITY_ENABLED
+            value: "true"
+          - name: OTLP_ENDPOINT
+            value: "{{ include "hr-assistant.otlpEndpoint" . }}"
+          - name: COLLECT_GPU_STATS
+            value: "{{ .Values.collectGpuStats }}"
+          - name: HTTP_API_PORT
+            value: "8000"
+          - name: OTEL_RESOURCE_ATTRIBUTES
+            value: "{{ include "hr-assistant.otelResourceAttributes" (dict "ctx" . "componentName" "hr-assistant") }}"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory | quote }}
+              cpu: {{ .Values.resources.requests.cpu | quote }}
+            limits:
+              memory: {{ .Values.resources.limits.memory | quote }}
+              cpu: {{ .Values.resources.limits.cpu | quote }}
+              {{- if .Values.gpu.enabled }}
+              nvidia.com/gpu: {{ .Values.gpu.count }}
+              {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

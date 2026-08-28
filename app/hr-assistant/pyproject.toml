@@ -27,6 +27,10 @@ sentence-transformers = "^3.2.1"
 langchain = "^0.3.6"
 ollama = "^0.6.2"
 langchain-ollama = "^0.2.0"
+# vLLM's OpenAI-compatible router speaks the same /v1 API as OpenAI itself, so
+# EmployeeHandbook (apps/rag102.py) uses this LangChain integration instead of
+# langchain-ollama when LLM_PROVIDER=vllm.
+langchain-openai = "^0.2.9"
 # transformers >= 4.42 calls torch.utils._pytree.register_pytree_node, which only
 # exists from torch 2.2 on. Pinning torch at 2.1.2 against the current
 # transformers made the image fail at import.

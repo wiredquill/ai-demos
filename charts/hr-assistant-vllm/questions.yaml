@@ -1,0 +1,166 @@
+questions:
+# --- Dashboard / Service Access (Form Page) ---
+- variable: service.type
+  group: "Dashboard / Service Access"
+  label: "App Service Type"
+  description: "How the app services are exposed. The dashboard lives at `/` on the hr-policy-db service.<br><br><b>Options:</b><br>• NodePort (default) — direct browser access<br>• LoadBalancer — external load balancer<br>• ClusterIP — for port-forwarding"
+  type: "enum"
+  required: true
+  default: "NodePort"
+  options:
+    - "NodePort"
+    - "LoadBalancer"
+    - "ClusterIP"
+
+- variable: service.nodePort
+  group: "Dashboard / Service Access"
+  label: "Dashboard NodePort"
+  description: "NodePort for the hr-policy-db service.<br>Used only when service type is NodePort.<br>Range: 30000-32767."
+  type: "int"
+  default: 30081
+  show_if: "service.type=NodePort"
+
+# --- Observability (Form Page) ---
+- variable: otlpEndpoint
+  label: "OTLP Endpoint"
+  description: "OpenTelemetry collector address (scheme://host:port).<br><br><b>Leave blank to auto-discover:</b> the chart looks up the collector Service in the Collector Namespace below and uses it automatically.<br><br>Find it manually:<br><code>kubectl get svc -n &lt;namespace&gt; | grep opentelemetry</code>"
+  type: string
+  required: false
+  default: ""
+  group: Observability
+
+- variable: observability.collectorNamespace
+  label: "Collector Namespace"
+  description: "Namespace holding the shared OpenTelemetry collector Service.<br><br>Used to auto-discover the collector when OTLP Endpoint is blank, and by the pre-install connectivity check.<br><br>Default: <code>observability</code>. If your collector is in <code>suse-observability</code>, enter it here — or leave this field as-is and the chart checks both namespaces."
+  type: string
+  required: false
+  default: "observability"
+  group: Observability
+
+# --- vLLM Configuration (Form Page) ---
+- variable: vllm.enabled
+  group: "vLLM Deployment"
+  label: "Enable vLLM Deployment"
+  description: "Deploy the SUSE Application Collection vLLM engine + router as part of this chart."
+  type: "boolean"
+  default: true
+
+- variable: loadGenerator.intervalSeconds
+  label: "Load Generation Interval (seconds)"
+  type: int
+  default: 120
+  description: "How often the load-generator pod polls the app /ask endpoints.<br><br>Keep at 120 or lower: the SUSE AI topology exporter expires components ~2 minutes after last telemetry. A longer interval leaves the SUSE AI view empty between polls.<br><br>The generator runs as an always-on Deployment, so the pod no longer flaps offline/online in the topology."
+  required: true
+  group: "vLLM Deployment"
+
+# --- Model Selection ---
+- variable: vllm.servingEngineSpec.modelSpec.main.modelURL
+  group: "vLLM Deployment"
+  label: "Model (by GPU VRAM class)"
+  description: "Choose the model that fits your GPU (Hugging Face model ID).<br><br>VRAM depends on quantization: 16GB → Qwen2.5-7B (fp16); 24GB → Qwen3.6-35B-A3B (AWQ/GPTQ); 64GB → Qwen3.6-35B-A3B (fp8) or Llama-3.3-70B (AWQ); 100GB → gpt-oss-120b or Qwen3.6-35B-A3B (bf16)."
+  type: "enum"
+  default: "Qwen/Qwen2.5-7B-Instruct"
+  required: true
+  show_if: "vllm.enabled=true"
+  options:
+    - "Qwen/Qwen2.5-7B-Instruct"
+    - "Qwen/Qwen3.6-35B-A3B"
+    - "meta-llama/Llama-3.3-70B-Instruct"
+    - "openai/gpt-oss-120b"
+
+- variable: vllm.servingEngineSpec.modelSpec.main.requestGPU
+  group: "vLLM Resources"
+  label: "GPU Request (per replica)"
+  description: "Number of GPUs the serving engine requests. 1 full GPU per replica unless the model needs tensor parallelism."
+  type: "int"
+  default: 1
+  show_if: "vllm.enabled=true"
+
+- variable: vllm.servingEngineSpec.modelSpec.main.requestCPU
+  group: "vLLM Resources"
+  label: "CPU Request (cores)"
+  description: "CPU cores requested for the serving engine. The GPU does the matmuls; CPU handles tokenization, scheduling and Python overhead."
+  type: "int"
+  default: 8
+  show_if: "vllm.enabled=true"
+
+- variable: vllm.servingEngineSpec.modelSpec.main.requestMemory
+  group: "vLLM Resources"
+  label: "Memory Request"
+  description: "vLLM streams model weights through CPU RAM before moving them to the GPU, so this must comfortably EXCEED the model size: 7B fp16 ~16GB → 16Gi; 35B AWQ ~19GB → 32Gi; 70B AWQ ~40GB → 64Gi."
+  type: "string"
+  default: "16Gi"
+  show_if: "vllm.enabled=true"
+
+- variable: vllm.servingEngineSpec.modelSpec.main.limitMemory
+  group: "vLLM Resources"
+  label: "Memory Limit"
+  description: "Hard memory ceiling. Must exceed the model size for the load phase. A too-low limit OOM-kills the pod during model load."
+  type: "string"
+  default: "24Gi"
+  show_if: "vllm.enabled=true"
+
+# --- Storage ---
+- variable: vllm.servingEngineSpec.modelSpec.main.pvcStorage
+  group: "vLLM Storage"
+  label: "Model Cache PVC Size"
+  description: "vLLM downloads model weights into a PVC so restarts are fast. Set generous size (e.g. 100Gi-500Gi)."
+  type: "string"
+  default: "100Gi"
+  show_if: "vllm.enabled=true"
+
+- variable: vllm.servingEngineSpec.modelSpec.main.storageClass
+  group: "vLLM Storage"
+  label: "Storage Class"
+  description: "Storage class for the model cache PVC. 'Default' uses the cluster's default storage class."
+  type: "string"
+  default: "Default"
+  show_if: "vllm.enabled=true"
+
+- variable: vllm.sharedPvcStorage.enabled
+  group: "vLLM Storage"
+  label: "Enable Shared NFS Model Cache (skip re-downloads)"
+  description: "Cache model weights ONCE on a shared NFS volume; every new instance/release reuses them instead of re-downloading. Requires TCP 2049 from cluster nodes to the NFS server."
+  type: "boolean"
+  default: false
+  show_if: "vllm.enabled=true"
+
+- variable: vllm.sharedPvcStorage.nfs.server
+  group: "vLLM Storage"
+  label: "Shared NFS Model Cache — Server"
+  description: "NFS server hosting the shared cache, e.g. 10.0.9.10."
+  type: "string"
+  default: ""
+  show_if: "vllm.enabled=true && vllm.sharedPvcStorage.enabled=true"
+
+- variable: vllm.sharedPvcStorage.nfs.path
+  group: "vLLM Storage"
+  label: "Shared NFS Model Cache — Path"
+  description: "Directory on the NFS server for the model cache, e.g. /data/ai-models."
+  type: "string"
+  default: "/data/ai-models"
+  show_if: "vllm.enabled=true && vllm.sharedPvcStorage.enabled=true"
+
+- variable: vllmEndpoint
+  label: "Existing vLLM Router URL"
+  type: string
+  description: "URL for an existing, externally-managed vLLM OpenAI-compatible router.<br>Leave blank to use the router this chart deploys."
+  required: false
+  default: ""
+  group: "vLLM Deployment"
+  show_if: "vllm.enabled=false"
+
+# --- Vector Database + Search Engine components ---
+- variable: qdrant.enabled
+  group: "Observability Demo Components"
+  label: "Deploy Qdrant (Vector Database)"
+  description: "Deploys Qdrant and wires the collector to tag it as a Vector Databases component. The RAG app seeds and searches it for topology data."
+  type: "boolean"
+  default: true
+
+- variable: opensearch.enabled
+  group: "Observability Demo Components"
+  label: "Deploy OpenSearch (Search Engine)"
+  description: "Deploys OpenSearch and wires the collector to tag it as a Search Engines component. The RAG app indexes and searches it for topology data."
+  type: "boolean"
+  default: true

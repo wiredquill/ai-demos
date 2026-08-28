@@ -9,11 +9,14 @@ from openai import OpenAI
 
 MODEL = os.getenv("MODEL", "llama3.2")
 
-ollama_url = os.getenv("OLLAMA_ENDPOINT")
+# Ollama and vLLM both speak the OpenAI-compatible /v1 API, so this client
+# construction is provider-agnostic — main.py sets LLM_ENDPOINT from whichever
+# of OLLAMA_ENDPOINT/VLLM_ENDPOINT is active for this deployment.
+llm_endpoint = os.getenv("LLM_ENDPOINT")
 
 client = OpenAI(
-    base_url=f"{ollama_url}/v1",
-    api_key="ollama",  # required, but unused
+    base_url=f"{llm_endpoint}/v1",
+    api_key="unused",  # required by the SDK, ignored by both Ollama and vLLM
 )
 
 # --- Cross-service orchestration --------------------------------------------

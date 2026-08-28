@@ -1,0 +1,42 @@
+apiVersion: v0
+kind: ImagesLock
+metadata:
+  generatedAt: "2026-05-29T21:28:14.25217493Z"
+  generatedBy: SUSE LLC
+chart:
+  name: vllm
+  version: 0.1.10
+  appVersion: 0.19.0
+images:
+  - name: bci-busybox
+    image: dp.apps.rancher.io/containers/bci-busybox:15.7-19.10
+    chart: vllm
+    digests:
+      - digest: sha256:4314d397acbe5cdba88181b8b61c5747550f610bcca92a2ec994b0cdb7943f89
+        arch: linux/amd64
+      - digest: sha256:a036d331a06462978aa8de1a9220d20948a63c070b70471228e1396946d548e4
+        arch: linux/arm64
+  - name: lmcache-lmstack-router
+    image: dp.apps.rancher.io/containers/lmcache-lmstack-router:0.1.10-3.60
+    chart: vllm
+    digests:
+      - digest: sha256:b3468b1c434d59586491f266a936646be7b348e67a0d4711294caab256ac6b37
+        arch: linux/amd64
+      - digest: sha256:ae138b5dc707078c7999778b9ac882fad46016acff9e6c5b15690f18588044ad
+        arch: linux/arm64
+  - name: lmcache-vllm-openai
+    image: dp.apps.rancher.io/containers/lmcache-vllm-openai:0.3.9-4.17
+    chart: vllm
+    digests:
+      - digest: sha256:cc2835b957a202d38105ebc197d3a59431ea4b423dff9a912b966689b639ac17
+        arch: linux/amd64
+      - digest: sha256:f5a3a6fc040b0c9cdbe288dd821d9ee15735b65ae734d3ffae22b0f4049ad8ab
+        arch: linux/arm64
+  - name: vllm-openai
+    image: dp.apps.rancher.io/containers/vllm-openai:0.19.0-5.20
+    chart: vllm
+    digests:
+      - digest: sha256:6274673090ca22e55f3073a2a1d7a90b6e9e2d877a7c8619906e1bd5da81058f
+        arch: linux/amd64
+      - digest: sha256:205f19693f5e963457be56443ed5eb9a6eadd031cdc2f3d339eba6cfb608a1f3
+        arch: linux/arm64

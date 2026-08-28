@@ -3,7 +3,6 @@ import os
 import threading
 import time
 
-import ollama
 import openlit
 import requests
 from openlit.__helpers import get_chat_model_cost
@@ -12,19 +11,84 @@ from pymilvus import model
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
 
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama")
+LLM_ENDPOINT = os.getenv("LLM_ENDPOINT")
 MODEL = os.getenv("MODEL", "llama3.2")
 
 # openlit's native ollama instrumentor already sets gen_ai.usage.cost as a span
 # attribute correctly (confirmed by reading openlit/instrumentation/ollama/utils.py),
 # but never records it as a metric, and never records the gen_ai.total.requests
 # counter the SUSE AI StackPack uses as its "is this a GenAI app" gate - see
-# patch/suse_ai_metrics.py. This wraps every raw ollama.Client().chat() call here
-# so HRPolicyDatabase gets the same cost/request charts HRAssistant already has.
+# patch/suse_ai_metrics.py. This wraps every raw chat call here so
+# HRPolicyDatabase gets the same cost/request charts HRAssistant already has.
 _openlit_conf = openlit.OpenlitConfig()
+
+# vLLM's OpenAI-compatible endpoint is instrumented by patch/openlit_vllm.py
+# (wrapping openai.resources.chat.completions.Completions.create, the same
+# path apps/simple.py and apps/rag102.py use for vLLM) — imported lazily so
+# the ollama package stays optional when LLM_PROVIDER=vllm.
+_openai_client = None
+
+
+def _get_openai_client():
+    global _openai_client
+    if _openai_client is None:
+        from openai import OpenAI
+
+        _openai_client = OpenAI(base_url=f"{LLM_ENDPOINT}/v1", api_key="unused")
+    return _openai_client
+
+
+def _vllm_chat(messages, tools=None):
+    """Calls vLLM's OpenAI-compatible chat endpoint and normalizes the reply
+    into the same dict shape ollama.Client().chat() returns, so every
+    downstream consumer in this file (which expects Ollama's native
+    response["message"]["tool_calls"]/["content"] shape) works unchanged
+    regardless of provider.
+    """
+    client = _get_openai_client()
+    kwargs = {"model": MODEL, "messages": messages}
+    if tools is not None:
+        kwargs["tools"] = tools
+    completion = client.chat.completions.create(**kwargs)
+    message = completion.choices[0].message
+    tool_calls = None
+    if message.tool_calls:
+        tool_calls = [
+            {
+                # id + type are needed when this assistant message is replayed
+                # back in the second ollama_chat(messages) call below — vLLM's
+                # OpenAI-compatible schema validates both (Ollama's native API
+                # requires neither, so they're simply absent on that path).
+                "id": tc.id,
+                "type": "function",
+                "function": {"name": tc.function.name, "arguments": tc.function.arguments},
+            }
+            for tc in message.tool_calls
+        ]
+    usage = completion.usage
+    return {
+        "message": {"role": "assistant", "content": message.content or "", "tool_calls": tool_calls},
+        "prompt_eval_count": usage.prompt_tokens if usage else 0,
+        "eval_count": usage.completion_tokens if usage else 0,
+    }
 
 
 def ollama_chat(messages, tools=None):
-    """ollama.Client().chat() plus the SUSE AI metrics openlit's native instrumentor omits."""
+    """Chat call (Ollama native client, or vLLM's OpenAI-compatible endpoint
+    when LLM_PROVIDER=vllm) plus the SUSE AI metrics openlit's native
+    instrumentors omit. Named ollama_chat for the Ollama path's history;
+    provider-branched internally so callers don't need to know which backend
+    is active.
+    """
+    if LLM_PROVIDER == "vllm":
+        # _vllm_chat() goes through openai.chat.completions.create, which
+        # patch/openlit_vllm.py already wraps with full span + SUSE AI metric
+        # recording — recording again here would double-count requests/cost.
+        return _vllm_chat(messages, tools=tools)
+
+    import ollama
+
     client = ollama.Client()
     kwargs = {"model": MODEL, "messages": messages}
     if tools is not None:
@@ -34,7 +98,7 @@ def ollama_chat(messages, tools=None):
         input_tokens = response.get("prompt_eval_count", 0)
         output_tokens = response.get("eval_count", 0)
         cost = get_chat_model_cost(MODEL, _openlit_conf.pricing_info, input_tokens, output_tokens)
-        record_suse_ai_metrics(_openlit_conf.application_name, _openlit_conf.environment, "ollama", MODEL, cost)
+        record_suse_ai_metrics(_openlit_conf.application_name, _openlit_conf.environment, LLM_PROVIDER, MODEL, cost)
     except Exception as e:
         print(f"SUSE AI metrics recording failed (non-fatal): {e}")
     return response
@@ -370,13 +434,14 @@ def process_hr_ai_response(messages, response):
             except Exception as e:
                 print(f"Tool call {function_name} failed: {e}")
                 continue
-            # Add function response to the conversation
-            messages.append(
-                {
-                    "role": "tool",
-                    "content": function_response,
-                }
-            )
+            # Add function response to the conversation. vLLM's OpenAI-compatible
+            # schema requires tool_call_id to correlate this reply with the call
+            # above; Ollama's native API doesn't need it (tool.get("id") is None
+            # there, so the key is simply omitted).
+            tool_message = {"role": "tool", "content": function_response}
+            if tool.get("id"):
+                tool_message["tool_call_id"] = tool["id"]
+            messages.append(tool_message)
     # Second API call: Get final response from the model
     final_response = ollama_chat(messages)
     print(final_response["message"]["content"])
@@ -385,8 +450,6 @@ def process_hr_ai_response(messages, response):
 
 @openlit.trace
 def handle_hr_inquiry(question: str):
-    client = ollama.Client()
-
     # Initialize conversation with a user query
 
     messages = [{"role": "user", "content": question}]

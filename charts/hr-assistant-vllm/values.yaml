@@ -1,0 +1,415 @@
+# SUSE AI HR Assistant Demo Configuration (vLLM variant)
+# Showcases comprehensive LLM observability with OpenLit integration, PLUS the
+# native engine-level GenAI metrics SUSE's vLLM exposes on /metrics that
+# Ollama cannot (KV-cache utilization, engine-side TTFT/per-token latency).
+# See docs/hr-assistant-vllm.md for the full comparison against hr-assistant.
+
+# Global configuration
+imagePullSecrets:
+  - name: application-collection
+
+# Observability endpoints
+# Used when observability.mode=existing. A single shared collector can serve every
+# namespace in the cluster; each release names itself via observability.serviceNamespace.
+otlpEndpoint: ''  # empty = auto-discover the collector Service at install time (see observability.collectorNamespace)
+# empty = the vLLM router Service this release creates (see hr-assistant.vllmEndpoint
+# in _helpers.tpl); set only to point at an existing, externally-managed vLLM router.
+vllmEndpoint: ''
+collectGpuStats: 'false'  # Enable GPU metrics for demo
+
+# Reported as deployment.environment on every signal.
+deploymentEnvironment: production
+
+# Primary model used by the apps. Defaults to the first vLLM modelSpec entry's modelURL.
+model: ''
+
+# GenAI semantic-convention identity reported to SUSE Observability.
+#
+# SUSE Observability builds the SUSE AI topology from the *resource* attribute
+# gen_ai.provider.name: it is what makes the inference engine appear as a
+# component and what links the application to the models it calls. OpenLIT only
+# emits the older gen_ai.system span attribute, so the chart sets this explicitly
+# via OTEL_RESOURCE_ATTRIBUTES.
+genai:
+  providerName: vllm
+
+# Selects which app/hr-assistant code path + OpenLit patch module handles LLM
+# calls (see app/hr-assistant/main.py and patch/openlit_vllm.py). Keep in
+# sync with genai.providerName above.
+llmProvider: vllm
+
+# How the applications ship telemetry.
+#
+#   existing  - send to a collector that already runs in the cluster, named by
+#               otlpEndpoint above. Nothing extra is installed.
+#   operator  - ask the OpenTelemetry Operator to create a SUSE AI collector in
+#               this namespace, pre-wired with the GenAI topology pipeline. The
+#               applications are pointed at it automatically. Requires the
+#               OpenTelemetry Operator to be installed in the cluster.
+observability:
+  mode: existing
+
+  # Namespace that holds the shared OpenTelemetry collector Service. Used by the
+  # chart's install-time auto-discovery (Helm lookup) to find the collector when
+  # otlpEndpoint is left empty, and by the pre-install connectivity-check hook.
+  collectorNamespace: observability
+
+  # Image used by the pre-install OTLP connectivity-check hook Job.
+  checkImage: curlimages/curl:8.5.0
+
+  # Reported as the service.namespace resource attribute, and the primary source
+  # SUSE Observability uses to group this release's SUSE AI components.
+  #
+  # SUSE's collector pipeline reads service.namespace first and only falls back to
+  # the collector's own SUSE_AI_NAMESPACE when an application does not declare one.
+  # Because each application names its own namespace, one shared collector can
+  # serve the whole cluster and still group every app correctly - a collector per
+  # namespace is not required. Defaults to the release namespace.
+  serviceNamespace: ''
+
+opentelemetry:
+  operator:
+    # Set by observability.mode; kept for callers that set it directly.
+    enabled: false
+    mode: deployment
+    replicas: 1
+    # Set true to also log telemetry to the collector's stdout for debugging.
+    debug: false
+    image:
+      repository: registry.suse.com/ai/containers/suse-ai-opentelemetry-collector
+      tag: '0.149.0'
+      pullPolicy: IfNotPresent
+    # registry.suse.com/ai is authenticated; the collector pod needs these.
+    imagePullSecrets:
+      - name: application-collection
+      - name: suse-registry
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: '1'
+        memory: 1Gi
+    # Cluster name recorded on the telemetry. Defaults to the Rancher-injected
+    # global.cattle.clusterName, so it rarely needs setting by hand.
+    clusterName: ''
+
+    # SUSE_AI_NAMESPACE on the collector: the fallback applied only to telemetry
+    # that carries no service.namespace of its own (Milvus, OpenSearch, vLLM
+    # scraped over Prometheus). Defaults to the release namespace when empty.
+    suseAiNamespace: ''
+
+    suseObservability:
+      # Base URL of the SUSE Observability server, used by the topology exporter.
+      apiUrl: ''
+      # OTLP gRPC ingestion endpoint as host:port, with no scheme.
+      otlpEndpoint: ''
+      # Plaintext gRPC. Leave false for a TLS ingestion endpoint.
+      otlpInsecure: false
+      # Skip TLS verification, for demo clusters with self-signed certificates.
+      skipTlsVerify: true
+
+      # API key resolution, in order:
+      #   1. existingSecret, if set
+      #   2. apiKey, if set - the chart creates a secret holding it
+      #   3. otherwise a pre-install hook copies apiKeySecret out of
+      #      sourceNamespace, so nobody has to paste a token at install time
+      apiKey: ''
+      existingSecret: ''
+      existingSecretKey: API_KEY
+      # Where to copy the API key secret from when neither of the above is set.
+      copySecret:
+        enabled: true
+        sourceNamespace: observability
+        name: open-telemetry-collector
+        image: curlimages/curl:8.5.0
+
+# Persistent load generator. Replaces the old CronJob approach, which created a
+# new pod every cycle and let it terminate — that churn made the load-gen pod
+# flap offline/online in the SUSE AI topology view every few minutes.
+# The new design runs a single long-lived Deployment instead, so the pod is
+# created once and stays up for the lifetime of the release.
+#
+# The pod polls the app /ask endpoints on this interval. The interval must
+# stay comfortably under the topology exporter's TTL (components expire ~2 min
+# after their last telemetry) so the SUSE AI view never goes empty; 120s keeps
+# everything continuously lit.
+loadGenerator:
+  # Set false to remove the persistent load-generator pod entirely.
+  enabled: true
+  # Seconds between polling cycles for the app /ask endpoints.
+  intervalSeconds: 45
+  # Number of load-generator replicas (keep at 1 for a demo).
+  replicas: 1
+
+# Job cleanup settings
+jobs:
+  # Time in seconds after which completed jobs are deleted
+  ttlSecondsAfterFinished: 300  # 5 minutes
+
+# SUSE Application Collection `vllm` chart, vendored locally at
+# charts/vllm (v0.1.10, dp.apps.rancher.io images) — see Chart.yaml
+# dependencies. Thin wrapper values below are carried over from the
+# historical rancher-ai-vllm chart (origin/feat/rancher-ai-vllm-storage-options),
+# which already solved GPU/model/router/scrape wiring for this exact chart.
+#
+# IMPORTANT: modelSpec is a MAP (keyed by model name), NOT a list — Rancher's
+# questions.yaml cannot write list elements (paths like modelSpec[0].modelURL
+# are stored as a literal map key and silently ignored), but dotted map paths
+# (modelSpec.main.modelURL) work fine. The vendored subchart's templates range
+# over modelSpec with a single-var range, so a map iterates its values exactly
+# like a list would.
+vllm:
+  enabled: true
+  global:
+    imagePullSecrets:
+      - name: application-collection
+  servingEngineSpec:
+    enableEngine: true
+    labels:
+      environment: production
+    servicePort: 80
+    modelSpec:
+      main:
+        # UI anchor only; the `name` field below is what resource names use.
+        name: hr-assistant-llm
+        registry: dp.apps.rancher.io
+        repository: containers/vllm-openai
+        tag: "0.19.0"
+        modelURL: Qwen/Qwen2.5-7B-Instruct
+        requestGPU: 1
+        requestGPUType: nvidia.com/gpu
+        requestCPU: 8
+        requestMemory: "16Gi"
+        # vLLM loads weights through CPU RAM before moving to GPU; limitMemory
+        # must comfortably exceed the model size (7B fp16 ~16GB -> 24Gi).
+        limitCPU: 8
+        limitMemory: "24Gi"
+        # Model cache: vLLM downloads weights into a PVC so restarts are fast.
+        pvcStorage: "100Gi"
+        storageClass: "Default"
+  # Shared NFS-backed model cache, disabled by default (per-instance PVC
+  # above is enough for a single demo install). Enable + point at a real NFS
+  # share to reuse downloaded weights across reinstalls/clusters.
+  sharedPvcStorage:
+    enabled: false
+    nfs:
+      server: ""
+      path: "/data/ai-models"
+    size: "200Gi"
+    storageClass: "Default"
+    accessModes:
+      - ReadWriteMany
+  routerSpec:
+    enableRouter: true
+    # Internal router Service. ALWAYS ClusterIP — external exposure (if
+    # needed) is the dedicated Service in routerExposure below, since the
+    # packaged subchart's own router Service cannot render nodePort/LB.
+    serviceType: ClusterIP
+    otel:
+      endpoint: "http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4317"
+      serviceName: hr-assistant-vllm-router
+    ingress:
+      enabled: false
+      className: nginx
+      annotations: {}
+      hosts:
+        main:
+          host: hr-assistant-vllm.example.com
+          paths:
+            - path: /
+              pathType: Prefix
+      tls: []
+  routerExposure:
+    type: ClusterIP
+    nodePort: ""
+    loadBalancerIP: ""
+  extraObjects:
+    # Prometheus scrape target for the engine: a Service selecting the same
+    # pods as the chart's engine Service, labelled for the shared collector's
+    # part-of=vllm scrape job (see templates/otel-collector-values-suse-ai.yaml).
+    - |-
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: {{ .Release.Name }}-engine-scrape
+        labels:
+          app.kubernetes.io/part-of: vllm
+          app.kubernetes.io/managed-by: helm
+        annotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "80"
+          prometheus.io/path: /metrics
+      spec:
+        selector:
+          model: {{ (first (values .Values.servingEngineSpec.modelSpec)).name }}
+          helm-release-name: {{ .Release.Name }}
+        ports:
+        - name: http
+          port: 80
+          targetPort: container-port
+
+
+
+# This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+replicaCount: 1
+
+# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+#
+# Same image as the hr-assistant (Ollama) chart — the app is provider-aware
+# (LLM_PROVIDER env var, see values above and app/hr-assistant/main.py) rather
+# than forked per backend. IMPORTANT: the vLLM code path (apps/simple.py,
+# apps/rag101.py, apps/rag102.py OpenAI-compatible/tool-calling changes,
+# patch/openlit_vllm.py) must be built into a new image tag via
+# .github/workflows/build-hr-assistant.yml before this chart is installed —
+# "topology-orchestration-10" below predates those changes and has no vLLM
+# support.
+image:
+  repository: ghcr.io/wiredquill/ai-demos-suse
+  pullPolicy: Always
+  tag: "topology-orchestration-10"  # TODO: bump once vLLM app changes are built
+
+# The RAG app (hr-policy-db) runs a different image than the chat apps:
+# app/hr-assistant is built to ghcr.io/wiredquill/ai-demos/genai-demo by
+# .github/workflows/build-hr-assistant.yml and contains main.py + apps/ (rag101,
+# rag102), which the chat-app ai-demos-suse image does NOT ship.
+policyDb:
+  image:
+    repository: ghcr.io/wiredquill/ai-demos/genai-demo
+    pullPolicy: Always
+    tag: "topology-orchestration-10"  # TODO: bump once vLLM app changes are built
+
+# Qdrant — vector database component.
+#
+# Deployed so the SUSE AI section in SUSE Observability shows a component under
+# "Vector Databases". The shared collector scrapes qdrant:6333/metrics with the
+# "qdrant" Prometheus job; its transform/qdrant processor tags every metric with
+# suse.ai.component.type=vectordb (see templates/otel-collector-values-suse-ai.yaml).
+# The hr-policy-db app upserts HR policy embeddings and searches them, so the
+# topology shows hr-policy-db -> qdrant as a dependency.
+qdrant:
+  enabled: true
+  image:
+    repository: qdrant/qdrant
+    tag: "v1.19.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  service:
+    type: ClusterIP
+    port: 6333
+
+# OpenSearch — search engine component.
+#
+# Deployed so the SUSE AI section shows a component under "Search Engines".
+# The shared collector polls the OpenSearch REST API with the elasticsearch
+# receiver; its resource/opensearch processor tags the metrics with
+# suse.ai.component.type=search-engine. The hr-policy-db app indexes HR policy
+# documents and queries them, so the topology shows hr-policy-db -> opensearch.
+opensearch:
+  enabled: true
+  image:
+    repository: opensearchproject/opensearch
+    tag: "2.19.6"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 250m
+      memory: 1Gi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+  service:
+    type: ClusterIP
+    port: 9200
+  # Single-node demo: security plugin disabled, no auth. The collector's
+  # elasticsearch receiver connects over plain HTTP.
+  env:
+    - name: discovery.type
+      value: single-node
+    - name: DISABLE_SECURITY_PLUGIN
+      value: "true"
+    - name: bootstrap.memory_lock
+      value: "false"
+    - name: ES_JAVA_OPTS
+      value: "-Xms512m -Xmx512m"
+    # The SUSE AI StackPack's opensearch metric bindings and health monitor
+    # (extracted and read from the suse-ai-observability-extension-setup
+    # image: stackpack/metrics/opensearch.yaml) hardcode
+    # elasticsearch_cluster_name="opensearch-cluster" in every one of their
+    # PromQL queries. OpenSearch's default cluster.name is "docker-cluster" -
+    # confirmed against our own /_cluster/health - so every binding query
+    # (health color, pending tasks, free space, operations) silently matched
+    # nothing no matter how much data flowed, which is why OpenSearch stayed
+    # "unknown" even with 160k+ metric points successfully reaching SUSE
+    # Observability. Naming the cluster to match is the actual fix.
+    - name: cluster.name
+      value: "opensearch-cluster"
+
+# This is to override the chart name.
+nameOverride: ""
+fullnameOverride: ""
+
+
+
+# This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# This is for setting Kubernetes Annotations to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+podAnnotations: {}
+# This is for setting Kubernetes Labels to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
+service:
+  # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+  type: NodePort
+  # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
+  port: 8000
+  # Optional NodePort for the hr-policy-db service (dashboard at /).
+  # Only applied when service.type is NodePort. 30081, not 30080, so this
+  # chart can run alongside the Ollama hr-assistant demo on the same cluster.
+  nodePort: 30081
+
+gpu:
+  enabled: false
+  count: 1
+
+resources:
+  requests:
+    memory: '800Mi'
+    cpu: '400m'
+  limits:
+    memory: '1000Mi'
+    cpu: '600m'
+
+nodeSelector: {}
+
+tolerations: []

@@ -15,9 +15,20 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 app = FastAPI()
 
 otlp_endpoint = os.getenv("OTLP_ENDPOINT")
-ollama_url = os.getenv("OLLAMA_ENDPOINT")
-os.environ["OLLAMA_SERVER_URL"] = ollama_url
-os.environ["OLLAMA_HOST"] = ollama_url
+
+# LLM_PROVIDER selects both which endpoint env var to read and which OpenLit
+# patch module (patch/openlit_ollama.py vs patch/openlit_vllm.py) owns the
+# chat-completions telemetry — see patch/__init__.py. Defaults to "ollama" so
+# the existing hr-assistant (Ollama) chart, which never sets LLM_PROVIDER,
+# keeps working unchanged.
+llm_provider = os.getenv("LLM_PROVIDER", "ollama")
+llm_endpoint = os.getenv("VLLM_ENDPOINT") if llm_provider == "vllm" else os.getenv("OLLAMA_ENDPOINT")
+os.environ["LLM_ENDPOINT"] = llm_endpoint
+if llm_provider == "ollama":
+    # The native `ollama` client (used by apps/rag101.py) and langchain_ollama
+    # (apps/rag102.py) both read these instead of taking the URL as an argument.
+    os.environ["OLLAMA_SERVER_URL"] = llm_endpoint
+    os.environ["OLLAMA_HOST"] = llm_endpoint
 ollama_api_key = os.getenv("OLLAMA_API_KEY")
 app_name = os.getenv("APP_NAME")
 collect_gpu_stats = os.getenv("COLLECT_GPU_STATS", "false") == "true"
@@ -29,10 +40,11 @@ openlit.init(
     application_name=app_name,
     pricing_json="./pricing.json",
     collect_gpu_stats=collect_gpu_stats,
-    # The OpenAI SDK here only ever talks to Ollama's /v1 endpoint. openlit's own
-    # openai instrumentor would report gen_ai.provider.name=openai, which puts a
+    # The OpenAI SDK here only ever talks to Ollama's /v1 endpoint or vLLM's
+    # OpenAI-compatible router (never real OpenAI). openlit's own openai
+    # instrumentor would report gen_ai.provider.name=openai, which puts a
     # bogus OpenAI inference engine in the SUSE AI topology, so patch_openlit()
-    # owns that path instead and reports Ollama.
+    # owns that path instead and reports the real provider (LLM_PROVIDER above).
     #
     # requests/fastapi/httpx are deliberately left enabled (not listed here):
     # HRAssistant's cross-service calls to HRPolicyDatabase/EmployeeHandbook, and

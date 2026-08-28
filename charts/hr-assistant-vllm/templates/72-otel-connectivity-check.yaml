@@ -1,0 +1,102 @@
+{{- if not (include "hr-assistant.collectorEnabled" .) }}
+{{- $endpoint := include "hr-assistant.otlpEndpoint" . }}
+{{- $discovered := include "hr-assistant.discoveredCollectorEndpoint" . }}
+{{/*
+Pre-install / pre-upgrade connectivity check for the OTLP collector.
+
+Runs a small Job BEFORE the application deployments are created. It resolves and
+TCP-connects to the OTLP endpoint the apps will export to; if that fails, the
+hook Job fails and Helm aborts the install with a message in the Rancher helm
+log, including the auto-discovered collector URL so the user can fix the value
+and retry. This prevents the classic silent failure mode where the apps deploy
+but report no telemetry because the collector address was wrong.
+
+The check only runs in shared-collector mode (observability.mode=existing).
+When the chart provisions its own collector via the operator, there is nothing
+external to validate.
+*/}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "hr-assistant.fullname" . }}-otel-check
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    {{- include "hr-assistant.labels" . | nindent 4 }}
+spec:
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        {{- include "hr-assistant.selectorLabels" . | nindent 8 }}
+        app.component: otel-connectivity-check
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: otel-check
+          image: {{ .Values.observability.checkImage | default "curlimages/curl:8.5.0" | quote }}
+          env:
+            - name: OTLP_ENDPOINT
+              value: {{ $endpoint | quote }}
+            - name: DISCOVERED_ENDPOINT
+              value: {{ $discovered | quote }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              echo "==> OTLP collector connectivity check"
+              echo "    endpoint: ${OTLP_ENDPOINT}"
+
+              # Normalise: strip scheme, then take host:port
+              HOSTPORT="${OTLP_ENDPOINT#http://}"
+              HOSTPORT="${HOSTPORT#https://}"
+              HOSTPORT="${HOSTPORT%%/*}"
+              HOST="${HOSTPORT%%:*}"
+              PORT="${HOSTPORT##*:}"
+
+              echo "    host: ${HOST}  port: ${PORT}"
+
+              # Resolve + TCP connect with a short timeout. curl exits 0 if it
+              # gets any HTTP response (even 4xx); non-zero on DNS failure,
+              # connection refused, or timeout.
+              CODE=$(curl -sS -o /dev/null -m 10 -w "%{http_code}" \
+                -X POST -H "Content-Type: application/x-protobuf" --data-binary "" \
+                "http://${HOST}:${PORT}/v1/traces" || true)
+              echo "    HTTP probe returned: ${CODE:-no response}"
+
+              if [ -n "${CODE}" ] && [ "${CODE}" != "000" ]; then
+                echo "==> OK: collector reachable at ${OTLP_ENDPOINT}"
+                exit 0
+              fi
+
+              echo
+              echo "ERROR: could not reach the OpenTelemetry collector at ${OTLP_ENDPOINT}" >&2
+              echo "       The applications will not be able to report telemetry, so" >&2
+              echo "       this install is being ABORTED." >&2
+              echo >&2
+              if [ -n "${DISCOVERED_ENDPOINT}" ] && [ "${DISCOVERED_ENDPOINT}" != "${OTLP_ENDPOINT}" ]; then
+                echo "       Auto-discovered collector on this cluster:" >&2
+                echo "         ${DISCOVERED_ENDPOINT}" >&2
+                echo "       Set the OTLP Endpoint question to that value and retry." >&2
+              else
+                echo "       Find the collector on your cluster with:" >&2
+                echo "         kubectl get svc -n observability | grep opentelemetry" >&2
+                echo "       and set the OTLP Endpoint question to:" >&2
+                echo "         http://<service>.observability.svc.cluster.local:4318" >&2
+              fi
+              echo >&2
+              echo "       Verify manually from the cluster:" >&2
+              echo "         kubectl run curl-check --rm -i --restart=Never --image=curlimages/curl -- \\" >&2
+              echo "           curl -v -m 5 http://${HOST}:${PORT}/v1/traces" >&2
+              exit 1
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+{{- end }}

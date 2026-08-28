@@ -407,6 +407,22 @@
         "llama3.1": {
             "promptPrice": 0.00005,
             "completionPrice": 0.0001
+        },
+        "Qwen/Qwen2.5-7B-Instruct": {
+            "promptPrice": 0.00005,
+            "completionPrice": 0.0001
+        },
+        "Qwen/Qwen3.6-35B-A3B": {
+            "promptPrice": 0.0002,
+            "completionPrice": 0.0004
+        },
+        "meta-llama/Llama-3.3-70B-Instruct": {
+            "promptPrice": 0.0004,
+            "completionPrice": 0.0008
+        },
+        "openai/gpt-oss-120b": {
+            "promptPrice": 0.0006,
+            "completionPrice": 0.0012
         }
     }
 }
