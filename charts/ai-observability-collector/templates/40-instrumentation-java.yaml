@@ -1,0 +1,32 @@
+{{- if .Values.instrumentation.java.enabled }}
+# Instrumentation CR for Java auto-instrumentation.
+# Apps opt in per-workload by adding the annotation:
+#   instrumentation.opentelemetry.io/inject-java: "true"
+# (or "default" to use this as the namespace-wide default).
+# The injected SDK exports traces to the collector over OTLP HTTP.
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: {{ printf "%s-%s" .Values.collector.name "java" }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "aiobs.labels" . | nindent 4 }}
+spec:
+  exporter:
+    endpoint: {{ include "aiobs.otlpHttpEndpoint" . }}
+  propagators:
+    - tracecontext
+    - baggage
+  sampler:
+    type: parentbased_traceidratio
+    argument: "1"
+  java:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:1.20.1
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 50m
+        memory: 32Mi
+{{- end }}

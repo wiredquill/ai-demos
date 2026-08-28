@@ -1,0 +1,136 @@
+questions:
+# ============================================================
+# Collector (OpenTelemetry Operator)
+# ============================================================
+- variable: collector.name
+  group: Collector
+  label: "Collector CR Name"
+  description: "Name of the OpenTelemetryCollector CR. The operator creates the collector service as <name>-collector.<namespace>.svc.cluster.local (OTLP on 4317/4318)."
+  type: string
+  required: true
+  default: "ai-observability"
+
+- variable: collector.image
+  group: Collector
+  label: "Collector Image Repository"
+  description: "MUST be a SUSE AI collector image. It ships the proprietary 'topology' exporter that populates the SUSE AI topology view; appco/opentelemetry-collector images do NOT have it."
+  type: string
+  required: true
+  default: "ghcr.io/suse/suse-ai-opentelemetry-collector"
+
+- variable: collector.tag
+  group: Collector
+  label: "Collector Image Tag"
+  type: string
+  required: true
+  default: "0.156.0"
+
+- variable: collector.clusterName
+  group: Collector
+  label: "Cluster Name (k8s.cluster.name)"
+  description: "Stamped on all telemetry. MUST match the kubernetes-v2 StackPack instance name in SUSE Observability, otherwise telemetry appears under the wrong cluster."
+  type: string
+  required: true
+  default: "dev-ai"
+
+- variable: collector.backendEndpoint
+  group: Collector
+  label: "SUSE Observability Backend URL"
+  description: "Base URL of the SUSE Observability backend used by the topology exporter (HTTP POST)."
+  type: string
+  required: true
+  default: "https://observability.mort.dna-42.com"
+
+- variable: collector.otlpEndpoint
+  group: Collector
+  label: "SUSE Observability OTLP gRPC Endpoint"
+  description: "OTLP gRPC ingest endpoint (host:port) for metrics/traces/logs."
+  type: string
+  required: true
+  default: "otlp-observability.mort.dna-42.com:443"
+
+- variable: collector.sourceNamespace
+  group: Collector
+  label: "API Key Source Namespace"
+  description: "Namespace holding the SUSE Observability API_KEY secret (open-telemetry-collector). Copied into the release namespace by a pre-install hook if not already present there."
+  type: string
+  required: true
+  default: "observability"
+
+- variable: collector.apiKeySecret
+  group: Collector
+  label: "API Key Secret Name"
+  description: "Name of the secret (key: API_KEY) used to authenticate to SUSE Observability. Must exist in the source namespace."
+  type: string
+  required: true
+  default: "open-telemetry-collector"
+
+# ============================================================
+# Auto-Discovery
+# ============================================================
+- variable: discovery.gpu.enabled
+  group: Auto-Discovery
+  label: "Scrape GPU (DCGM) Metrics"
+  description: "Scrape NVIDIA DCGM exporter metrics from the gpu-operator namespace."
+  type: boolean
+  default: true
+
+- variable: discovery.gpu.namespace
+  group: Auto-Discovery
+  label: "DCGM Exporter Namespace"
+  description: "Namespace the dcgm-exporter pods run in."
+  type: string
+  required: true
+  default: "gpu-operator"
+  show_if: "discovery.gpu.enabled=true"
+
+# ============================================================
+# Auto-Instrumentation (OpenTelemetry Operator)
+# ============================================================
+- variable: instrumentation.python.enabled
+  group: Auto-Instrumentation
+  label: "Enable Python Auto-Instrumentation"
+  description: "Create an Instrumentation CR so apps can opt in to zero-code Python tracing via the annotation instrumentation.opentelemetry.io/inject-python: \"true\". Requires the operator chart to be installed with manager.autoInstrumentation.python.enabled=true."
+  type: boolean
+  default: true
+
+- variable: instrumentation.nodejs.enabled
+  group: Auto-Instrumentation
+  label: "Enable Node.js Auto-Instrumentation"
+  description: "Enable zero-code Node.js tracing via instrumentation.opentelemetry.io/inject-nodejs: \"true\". Requires operator manager.autoInstrumentation.nodejs.enabled=true."
+  type: boolean
+  default: false
+
+- variable: instrumentation.java.enabled
+  group: Auto-Instrumentation
+  label: "Enable Java Auto-Instrumentation"
+  description: "Enable zero-code Java tracing via instrumentation.opentelemetry.io/inject-java: \"true\". Requires operator manager.autoInstrumentation.java.enabled=true."
+  type: boolean
+  default: false
+
+# ============================================================
+# Sample App
+# ============================================================
+- variable: sampleApp.enabled
+  group: Sample App
+  label: "Deploy Demo App"
+  description: "Deploy a tiny stdlib-Python service (image below) that exposes /metrics on :8000 and carries the discovery labels + Python auto-instrumentation annotations, so you can verify the whole pipeline end-to-end with one deploy."
+  type: boolean
+  default: false
+
+- variable: sampleApp.image
+  group: Sample App
+  label: "Demo App Image Repository"
+  description: "Image for the demo app. Must provide python3."
+  type: string
+  required: true
+  default: "registry.suse.com/bci/python3.12"
+  show_if: "sampleApp.enabled=true"
+
+- variable: sampleApp.tag
+  group: Sample App
+  label: "Demo App Image Tag"
+  type: string
+  required: true
+  default: "latest"
+  show_if: "sampleApp.enabled=true"

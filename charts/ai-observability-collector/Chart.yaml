@@ -1,0 +1,25 @@
+annotations:
+  category: Observability
+  suse.com/certified: "false"
+apiVersion: v2
+appVersion: "0.156.0"
+description: SUSE AI Observability collector with zero-maintenance, label-driven auto-discovery and OpenTelemetry auto-instrumentation. Deploys an OpenTelemetryCollector CR (SUSE AI image with topology exporter) and Instrumentation CRs, managed by the OpenTelemetry Operator. New apps that carry the standard discovery labels/annotations are collected automatically — no collector re-deploy needed.
+home: https://github.com/wiredquill/ai-demos
+keywords:
+  - observability
+  - opentelemetry
+  - otel
+  - auto-instrumentation
+  - auto-discovery
+  - suse-observability
+  - suse-ai
+  - topology
+maintainers:
+  - email: noreply@suse.com
+    name: WiredQuill AI Demos
+name: ai-observability-collector
+sources:
+  - https://documentation.suse.com/suse-ai-factory/latest/html/AI-monitoring/ai-monitoring-otel-operator.html
+  - https://documentation.suse.com/cloudnative/suse-observability/latest/en/setup/otel/getting-started/getting-started-k8s-operator.html
+type: application
+version: 0.1.0
