@@ -264,19 +264,22 @@ replicaCount: 1
 # image for the chat apps), this chart points every app role at that one
 # built image — there is no vLLM-specific reason for two images.
 #
-# main-1c8df79: first image build carrying the vLLM code path (LLM_PROVIDER
-# branching in main.py/apps/simple.py/apps/rag101.py/apps/rag102.py,
-# patch/openlit_vllm.py). Built from commit 1c8df793.
+# main-986f090: fixes main.py setting os.environ["LLM_ENDPOINT"] AFTER
+# `from apps import ...` had already run (apps/simple.py, rag101.py, rag102.py
+# read it at module import time) — every app captured None and built an
+# OpenAI(base_url="None/v1") client, found live on the 4090 install of
+# main-1c8df79 (HRAssistant: 12/12 requests failed with APIConnectionError).
+# Built from commit 986f0905.
 image:
   repository: ghcr.io/wiredquill/ai-demos/genai-demo
   pullPolicy: Always
-  tag: "main-1c8df79"
+  tag: "main-986f090"
 
 policyDb:
   image:
     repository: ghcr.io/wiredquill/ai-demos/genai-demo
     pullPolicy: Always
-    tag: "main-1c8df79"
+    tag: "main-986f090"
 
 # Qdrant — vector database component.
 #
