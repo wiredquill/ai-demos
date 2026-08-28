@@ -49,6 +49,13 @@ questions:
   required: true
   default: "otlp-observability.mort.dna-42.com:443"
 
+- variable: collector.topologyNamespace
+  group: Collector
+  label: "Topology Namespace (optional)"
+  description: "Namespace stamped on topology exporter components. Leave empty to be fully namespace-agnostic (k8s.namespace.name is derived per-app by the k8sattributes processor, never forged from a single pin)."
+  type: string
+  default: ""
+
 - variable: collector.sourceNamespace
   group: Collector
   label: "API Key Source Namespace"
@@ -83,6 +90,39 @@ questions:
   required: true
   default: "gpu-operator"
   show_if: "discovery.gpu.enabled=true"
+
+# ============================================================
+# Cluster-wide SUSE AI Factory scrapers
+# ============================================================
+- variable: discovery.vllm.enabled
+  group: Auto-Discovery
+  label: "Scrape vLLM (cluster-wide)"
+  description: "Discover vLLM services by label app=vllm across all namespaces and apply the SUSE AI metric renames (vllm: -> vllm_, etc)."
+  type: boolean
+  default: true
+
+- variable: discovery.qdrant.enabled
+  group: Auto-Discovery
+  label: "Scrape Qdrant (cluster-wide)"
+  description: "Discover Qdrant services by label app=qdrant across all namespaces."
+  type: boolean
+  default: true
+
+- variable: opensearch.enabled
+  group: Auto-Discovery
+  label: "Collect OpenSearch Metrics"
+  description: "Collect OpenSearch metrics via its native metrics API (not Prometheus, so not covered by label discovery). Set collector.opensearch.endpoint below if enabled."
+  type: boolean
+  default: false
+
+- variable: opensearch.endpoint
+  group: Auto-Discovery
+  label: "OpenSearch Metrics Endpoint"
+  description: "HTTP endpoint of the OpenSearch cluster metrics API (port 9200), e.g. http://opensearch.svc.cluster.local:9200."
+  type: string
+  required: true
+  default: "http://opensearch.svc.cluster.local:9200"
+  show_if: "opensearch.enabled=true"
 
 # ============================================================
 # Auto-Instrumentation (OpenTelemetry Operator)

@@ -32,6 +32,11 @@ collector:
   # -- Set true if the OTLP endpoint is plaintext (http, no TLS).
   otlpInsecure: false
 
+  # -- Namespace stamped on the topology exporter components. Leave empty to
+  #    be fully namespace-agnostic (k8s.namespace.name comes from the
+  #    k8sattributes processor per app, not from a single forged pin).
+  topologyNamespace: ""
+
   # -- Namespace that holds the API_KEY secret (copied into the release
   #    namespace by a pre-install hook if missing there).
   sourceNamespace: observability
@@ -73,10 +78,30 @@ discovery:
   gpu:
     enabled: true
     # -- Namespace the dcgm-exporter pods run in (GPU Operator default).
+    #    Empty string = discover cluster-wide by label.
     namespace: gpu-operator
+
+  # -- Cluster-wide vLLM scrape (discovered by service label app=vllm).
+  #    Applies the SUSE AI metric renames (vllm: -> vllm_, etc).
+  vllm:
+    enabled: true
+
+  # -- Cluster-wide Qdrant scrape (discovered by service label app=qdrant).
+  qdrant:
+    enabled: true
 
 # -- Extra Prometheus scrape_config entries (free-form YAML list).
 extraJobs: []
+
+# =====================================================================
+# OpenSearch metrics collection (SUSE AI search-engine component).
+# Not part of label auto-discovery: OpenSearch exposes its own ES/OpenSearch
+# metrics API (not Prometheus). Opt-in — set the actual service endpoint.
+# =====================================================================
+opensearch:
+  enabled: false
+  # -- HTTP endpoint of the OpenSearch cluster's metrics API (port 9200).
+  endpoint: http://opensearch.svc.cluster.local:9200
 
 # =====================================================================
 # Trace tail-sampling (matches the verified SUSE AI sampling policy:

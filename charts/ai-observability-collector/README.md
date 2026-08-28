@@ -93,6 +93,10 @@ kubectl logs deploy/ai-observability-collector -n ai-observability -c otc-contai
 | `collector.backendEndpoint` | `https://observability.mort.dna-42.com` | Topology exporter endpoint |
 | `collector.otlpEndpoint` | `otlp-observability.mort.dna-42.com:443` | OTLP gRPC ingest |
 | `discovery.gpu.enabled` | `true` | Scrape DCGM GPU metrics |
+| `discovery.vllm.enabled` | `true` | Cluster-wide vLLM scrape (service label `app.kubernetes.io/part-of=vllm`) + SUSE AI renames |
+| `discovery.qdrant.enabled` | `true` | Cluster-wide Qdrant scrape (service label `app-component=qdrant`) |
+| `opensearch.enabled` | `false` | Collect OpenSearch via its ES metrics API (not Prometheus; set `opensearch.endpoint`) |
+| `collector.topologyNamespace` | `` (empty) | Namespace stamped on topology. Empty = derive per-app from k8sattributes (namespace-agnostic) |
 | `instrumentation.python/nodejs/java.enabled` | py `true` | Create the matching Instrumentation CR |
 | `sampleApp.enabled` | `false` | Deploy the demo app to verify the pipeline |
 

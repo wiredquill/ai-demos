@@ -1,9 +1,13 @@
 # OpenTelemetryCollector CR deployed by the OpenTelemetry Operator.
+# Cluster-wide and namespace-agnostic: it discovers telemetry across ALL
+# namespaces via standard labels/annotations, instead of being pinned to one
+# release/SUSE_AI_NAMESPACE (the failure mode of the previous helm-deployed
+# collector on the 4090 cluster).
+#
 # Uses the SUSE AI collector image (ships the proprietary `topology` exporter
 # that populates the SUSE AI topology view; appco collector images do NOT have
-# it). Prometheus receivers use dynamic Kubernetes SD driven by standard
-# labels/annotations, so new apps are discovered automatically without editing
-# this config.
+# it). k8s.namespace.name / k8s.pod.* metadata come from the k8sattributes
+# processor (cluster-wide), never from a single forged env var.
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
@@ -25,8 +29,6 @@ spec:
           fieldPath: status.podIP
     - name: K8S_CLUSTER_NAME
       value: {{ .Values.collector.clusterName | quote }}
-    - name: SUSE_AI_NAMESPACE
-      value: {{ .Release.Namespace | quote }}
     - name: API_KEY
       valueFrom:
         secretKeyRef:
@@ -41,9 +43,13 @@ spec:
             condition: "true"
             pipelines:
               - traces/sampling
+              - traces/spanmetrics
               - traces/model-relations
               - traces/provider-relations
               - traces/topology
+      spanmetrics:
+        metrics_expiration: 5m
+        namespace: otel_span
     exporters:
       debug:
         verbosity: basic
@@ -56,7 +62,9 @@ spec:
       topology:
         api_key: ${env:API_KEY}
         endpoint: {{ .Values.collector.backendEndpoint }}
-        namespace: ${env:SUSE_AI_NAMESPACE}
+        {{- if .Values.collector.topologyNamespace }}
+        namespace: {{ .Values.collector.topologyNamespace | quote }}
+        {{- end }}
         tls:
           insecure_skip_verify: true
     extensions:
@@ -169,6 +177,23 @@ spec:
               percent: 33
             - policy: rest
               percent: 34
+      resource/opensearch:
+        attributes:
+          - key: suse.ai.managed
+            value: "true"
+            action: insert
+          - key: suse.ai.component.name
+            value: "opensearch"
+            action: insert
+          - key: suse.ai.component.type
+            value: "search-engine"
+            action: insert
+          - key: service.name
+            value: "opensearch"
+            action: insert
+          - key: service.instance.id
+            value: "opensearch-cluster"
+            action: insert
       transform/infer-applications:
         error_mode: ignore
         metric_statements:
@@ -177,7 +202,6 @@ spec:
               - set(attributes["suse.ai.managed"], "true")
               - set(attributes["suse.ai.component.type"], "application")
               - set(attributes["suse.ai.component.name"], attributes["service.name"])
-              - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}")
       transform/infer-models:
         error_mode: ignore
         metric_statements:
@@ -188,7 +212,6 @@ spec:
               - set(attributes["suse.ai.managed"], "true") where attributes["gen_ai.request.model"] != nil
               - set(attributes["suse.ai.component.name"], attributes["gen_ai.request.model"]) where attributes["gen_ai.request.model"] != nil
               - set(attributes["suse.ai.component.type"], "llm-model") where attributes["gen_ai.request.model"] != nil
-              - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["gen_ai.request.model"] != nil
       transform/infer-providers:
         error_mode: ignore
         metric_statements:
@@ -199,7 +222,6 @@ spec:
               - set(attributes["suse.ai.managed"], "true") where attributes["gen_ai.provider.name"] != nil
               - set(attributes["suse.ai.component.name"], attributes["gen_ai.provider.name"]) where attributes["gen_ai.provider.name"] != nil
               - set(attributes["suse.ai.component.type"], "inference-engine") where attributes["gen_ai.provider.name"] != nil
-              - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["gen_ai.provider.name"] != nil
       transform/model-relations:
         error_mode: ignore
         trace_statements:
@@ -223,6 +245,29 @@ spec:
             statements:
               - set(attributes["gen_ai.provider.name"], resource.attributes["gen_ai.provider.name"]) where resource.attributes["gen_ai.provider.name"] != nil
               - set(attributes["gen_ai.request.model"], resource.attributes["gen_ai.request.model"]) where resource.attributes["gen_ai.request.model"] != nil
+      transform/vllm:
+        error_mode: ignore
+        metric_statements:
+          - context: resource
+            statements:
+              - set(attributes["suse.ai.managed"], "true") where attributes["service.name"] == "vllm"
+              - set(attributes["suse.ai.component.name"], "vllm") where attributes["service.name"] == "vllm"
+              - set(attributes["suse.ai.component.type"], "inference-engine") where attributes["service.name"] == "vllm"
+      transform/db-topology-relations:
+        error_mode: ignore
+        trace_statements:
+          - context: span
+            statements:
+              - set(attributes["peer.service"], "qdrant") where attributes["db.system.name"] == "qdrant"
+              - set(attributes["peer.service"], "opensearch") where IsMatch(attributes["server.address"], ".*opensearch.*") or IsMatch(attributes["net.peer.name"], ".*opensearch.*") or IsMatch(attributes["url.full"], ".*opensearch.*") or IsMatch(attributes["http.url"], ".*opensearch.*")
+      filter/dropMissingK8sAttributes:
+        error_mode: ignore
+        traces:
+          span:
+            - resource.attributes["k8s.node.name"] == nil
+            - resource.attributes["k8s.pod.uid"] == nil
+            - resource.attributes["k8s.namespace.name"] == nil
+            - resource.attributes["k8s.pod.name"] == nil
     receivers:
       jaeger:
         protocols:
@@ -240,19 +285,13 @@ spec:
             endpoint: ${env:MY_POD_IP}:4318
       prometheus:
         config:
+          global:
+            scrape_interval: {{ .Values.discovery.scrapeInterval }}
           scrape_configs:
             # --- Dynamic auto-discovery: any pod with the standard markers ---
             - job_name: ai-auto-discovery
-              scrape_interval: {{ .Values.discovery.scrapeInterval }}
               kubernetes_sd_configs:
                 - role: pod
-                  {{- if .Values.discovery.namespaces }}
-                  namespaces:
-                    names:
-                      {{- range .Values.discovery.namespaces }}
-                      - {{ . }}
-                      {{- end }}
-                  {{- end }}
               relabel_configs:
                 # keep pods that opt in via label observability/enabled=true
                 # OR the standard prometheus.io/scrape=true annotation
@@ -279,13 +318,14 @@ spec:
                 - action: labelmap
                   regex: __meta_kubernetes_pod_label_(.+)
             {{- if .Values.discovery.gpu.enabled }}
-            # --- GPU metrics (DCGM exporter, dynamic discovery by pod label) ---
+            # --- GPU metrics (DCGM exporter, cluster-wide discovery by label) ---
             - job_name: gpu-metrics
-              scrape_interval: {{ .Values.discovery.scrapeInterval }}
               kubernetes_sd_configs:
                 - role: pod
+                  {{- if .Values.discovery.gpu.namespace }}
                   namespaces:
                     names: [{{ .Values.discovery.gpu.namespace }}]
+                  {{- end }}
               relabel_configs:
                 - action: keep
                   source_labels: [__meta_kubernetes_pod_label_app]
@@ -307,9 +347,51 @@ spec:
                   source_labels: [__meta_kubernetes_pod_node_name]
                   target_label: node
             {{- end }}
+            {{- if .Values.discovery.vllm.enabled }}
+            # --- vLLM: cluster-wide discovery by label, metric renames for SUSE AI ---
+            - job_name: vllm
+              metrics_path: /metrics
+              kubernetes_sd_configs:
+                - role: service
+              relabel_configs:
+                - action: keep
+                  source_labels: [__meta_kubernetes_service_label_app_kubernetes_io_part_of]
+                  regex: vllm
+              metric_relabel_configs:
+                - regex: "vllm:(.*)"
+                  replacement: vllm_$1
+                  source_labels: [__name__]
+                  target_label: __name__
+                - regex: "vllm_kv_cache_usage_perc(.*)"
+                  replacement: vllm_gpu_cache_usage_perc$1
+                  source_labels: [__name__]
+                  target_label: __name__
+                - regex: vllm_request_time_per_output_token_seconds(.*)
+                  replacement: vllm_time_per_output_token_seconds$1
+                  source_labels: [__name__]
+                  target_label: __name__
+            {{- end }}
+            {{- if .Values.discovery.qdrant.enabled }}
+            # --- Qdrant: cluster-wide discovery by label ---
+            - job_name: qdrant
+              metrics_path: /metrics
+              kubernetes_sd_configs:
+                - role: service
+              relabel_configs:
+                - action: keep
+                  source_labels: [__meta_kubernetes_service_label_app_component]
+                  regex: qdrant
+            {{- end }}
             {{- if .Values.extraJobs }}
             {{- toYaml .Values.extraJobs | nindent 12 }}
             {{- end }}
+      {{- if .Values.opensearch.enabled }}
+      elasticsearch:
+        endpoint: {{ .Values.opensearch.endpoint }}
+        tls:
+          insecure_skip_verify: true
+        collection_interval: 10s
+      {{- end }}
       zipkin:
         endpoint: ${env:MY_POD_IP}:9411
     service:
@@ -322,8 +404,8 @@ spec:
           receivers: [otlp]
         metrics:
           exporters: [otlp_grpc, debug]
-          processors: [k8s_attributes, resource, memory_limiter, batch]
-          receivers: [prometheus, otlp]
+          processors: [k8s_attributes, transform/vllm, transform/qdrant, resource, memory_limiter, batch]
+          receivers: [prometheus, spanmetrics, otlp]
         metrics/infer-applications:
           exporters: [otlp_grpc]
           processors: [filter/genai-metrics-only, filter/exclude-already-tagged, transform/infer-applications, k8s_attributes, resource, batch]
@@ -336,10 +418,20 @@ spec:
           exporters: [otlp_grpc]
           processors: [filter/genai-metrics-only, groupbyattrs/infer-providers, transform/infer-providers, k8s_attributes, resource, batch]
           receivers: [otlp]
+        {{- if .Values.opensearch.enabled }}
+        metrics/opensearch:
+          exporters: [otlp_grpc, debug]
+          processors: [memory_limiter, resource/opensearch, resource, batch]
+          receivers: [elasticsearch]
+        {{- end }}
         traces:
           exporters: [routing/traces]
           processors: [k8s_attributes, resource, memory_limiter, batch]
           receivers: [otlp, jaeger, zipkin]
+        traces/spanmetrics:
+          exporters: [spanmetrics]
+          processors: []
+          receivers: [routing/traces]
         traces/model-relations:
           exporters: [otlp_grpc, debug]
           processors: [filter/genai-spans, groupbyattrs/model-relations, transform/model-relations, batch]
@@ -354,7 +446,7 @@ spec:
           receivers: [routing/traces]
         traces/topology:
           exporters: [topology]
-          processors: [transform/topology-provider, batch]
+          processors: [filter/dropMissingK8sAttributes, transform/topology-provider, transform/db-topology-relations, batch]
           receivers: [routing/traces]
     telemetry:
       metrics:
