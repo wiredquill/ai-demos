@@ -23,7 +23,7 @@ questions:
 # --- Observability (Form Page) ---
 - variable: otlpEndpoint
   label: "OTLP Endpoint"
-  description: "OpenTelemetry collector address (scheme://host:port).<br><br><b>Leave blank to auto-discover:</b> the chart looks up the collector Service in the Collector Namespace below and uses it automatically.<br><br>Find it manually:<br><code>kubectl get svc -n &lt;namespace&gt; | grep opentelemetry</code>"
+  description: "OpenTelemetry collector address (scheme://host:port).<br><br><b>Leave blank to auto-discover:</b> the chart looks for a collector Service in the Collector Namespace below (then <code>observability</code> and <code>suse-observability</code>) — any Service named <code>*otel*collector*</code> or carrying the <code>opentelemetry-collector</code> label that exposes port 4318 wins; a unique <code>*-collector</code> base service is preferred over its <code>-headless</code>/<code>-monitoring</code> twins. If none is found the chart uses the stable convention <code>http://opentelemetry-collector.&lt;namespace&gt;.svc.cluster.local:4318</code>.<br><br>Find it manually:<br><code>kubectl get svc -n &lt;namespace&gt; | grep -iE 'otel|collector'</code>"
   type: string
   required: false
   default: ""

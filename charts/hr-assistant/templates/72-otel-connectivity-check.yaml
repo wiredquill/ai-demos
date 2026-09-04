@@ -43,6 +43,8 @@ spec:
               value: {{ $endpoint | quote }}
             - name: DISCOVERED_ENDPOINT
               value: {{ $discovered | quote }}
+            - name: COLLECTOR_NAMESPACE
+              value: {{ (include "hr-assistant.collectorNamespace" .) | quote }}
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -83,9 +85,9 @@ spec:
                 echo "       Set the OTLP Endpoint question to that value and retry." >&2
               else
                 echo "       Find the collector on your cluster with:" >&2
-                echo "         kubectl get svc -n observability | grep opentelemetry" >&2
+                echo "         kubectl get svc -n ${COLLECTOR_NAMESPACE} | grep -iE 'otel|collector'" >&2
                 echo "       and set the OTLP Endpoint question to:" >&2
-                echo "         http://<service>.observability.svc.cluster.local:4318" >&2
+                echo "         http://<service>.${COLLECTOR_NAMESPACE}.svc.cluster.local:4318" >&2
               fi
               echo >&2
               echo "       Verify manually from the cluster:" >&2

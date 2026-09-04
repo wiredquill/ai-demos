@@ -123,8 +123,22 @@ Find the shared OpenTelemetry collector Service in the cluster at install time.
 
 Helm's `lookup` runs against the live API server during install/upgrade (it
 returns nothing during `helm template`), so this auto-discovers the collector
-instead of asking the user to type it. Matches a Service whose name contains
-"opentelemetry-collector" or that carries the app.kubernetes.io/name label.
+instead of asking the user to type it.
+
+Candidate namespaces, in order: observability.collectorNamespace (if set),
+"observability", "suse-observability". A Service is a candidate when ANY of:
+  - its name contains "collector" and also "otel" or "opentelemetry"
+  - app.kubernetes.io/component == "opentelemetry-collector"
+  - app.kubernetes.io/name == "opentelemetry-collector"
+and it exposes TCP port 4318 (the OTLP/HTTP ingestion port). The 4318 filter
+matters: operator-managed collectors spawn -headless, -monitoring and
+-extension twins in the same namespace, and unordered lookup results used to
+let a twin win the "first match" race.
+
+Among all candidates the deterministic winner is: (1) a name that ends in
+"-collector" (the operator's base service) if exactly one does, otherwise
+(2) the shortest name. Output is JSON {"found":true|false,"namespace":...,"service":...}
+so callers can detect a miss instead of receiving a silent fallback.
 */}}
 {{- define "hr-assistant.collectorService" -}}
 {{- $explicit := .Values.observability.collectorNamespace | default "" -}}
@@ -134,75 +148,102 @@ instead of asking the user to type it. Matches a Service whose name contains
 {{- end -}}
 {{- $candidates = append $candidates "observability" -}}
 {{- $candidates = append $candidates "suse-observability" -}}
-{{- $svc := "" -}}
+{{- $seen := dict -}}
+{{- $hits := list -}}
 {{- range $ns := $candidates -}}
-  {{- if not $svc -}}
-    {{- $found := lookup "v1" "Service" $ns "" -}}
-    {{- range $item := ($found.items | default list) -}}
-      {{- if not $svc -}}
-        {{- $lbl := dig "app.kubernetes.io/name" "" ($item.metadata.labels | default dict) -}}
-        {{- if or (contains "opentelemetry-collector" $item.metadata.name) (eq $lbl "opentelemetry-collector") -}}
-          {{- $svc = $item.metadata.name -}}
+  {{- $lookup := lookup "v1" "Service" $ns "" -}}
+  {{- if $lookup -}}
+    {{- range $item := $lookup.items | default list -}}
+      {{- $labels := $item.metadata.labels | default dict -}}
+      {{- $comp := dig "app.kubernetes.io/component" "" $labels -}}
+      {{- $nameLbl := dig "app.kubernetes.io/name" "" $labels -}}
+      {{- $nameMatch := and (contains "collector" $item.metadata.name) (or (contains "otel" $item.metadata.name) (contains "opentelemetry" $item.metadata.name)) -}}
+      {{- $matches := or $nameMatch (eq $comp "opentelemetry-collector") (eq $nameLbl "opentelemetry-collector") -}}
+      {{- $has4318 := false -}}
+      {{- range $item.spec.ports | default list -}}
+        {{- if eq (toString .port) "4318" -}}
+          {{- $has4318 = true -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if and $matches $has4318 -}}
+        {{- $key := printf "%s/%s" $ns $item.metadata.name -}}
+        {{- if not (hasKey $seen $key) -}}
+          {{- $seen = set $seen $key true -}}
+          {{- $hits = append $hits (dict "namespace" $ns "service" $item.metadata.name) -}}
         {{- end -}}
       {{- end -}}
     {{- end -}}
   {{- end -}}
 {{- end -}}
-{{- $svc -}}
+{{- $best := dict "found" false "namespace" "" "service" "" -}}
+{{- if $hits -}}
+  {{- $base := list -}}
+  {{- range $h := $hits -}}
+    {{- if hasSuffix "-collector" (get $h "service") -}}
+      {{- $base = append $base $h -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if eq (len $base) 1 -}}
+    {{- $h := first $base -}}
+    {{- $best = merge $best (dict "found" true "namespace" (get $h "namespace") "service" (get $h "service")) -}}
+  {{- else -}}
+    {{- $shortest := list -}}
+    {{- range $h := $hits -}}
+      {{- if or (not $shortest) (lt (len (get $h "service")) (len (get (first $shortest) "service"))) -}}
+        {{- $shortest = list $h -}}
+      {{- end -}}
+    {{- end -}}
+    {{- $h := first $shortest -}}
+    {{- $best = merge $best (dict "found" true "namespace" (get $h "namespace") "service" (get $h "service")) -}}
+  {{- end -}}
+{{- end -}}
+{{- $best | toJson -}}
 {{- end }}
 
 {{/*
-The namespace the auto-discovered collector was found in (or the explicitly
-configured one). Used to build the endpoint when the collector lives somewhere
-other than the default (observability or suse-observability).
+The namespace of the auto-discovered collector (or the explicitly configured
+one). Resolved by the same lookup as hr-assistant.collectorService, so the two
+can never disagree. Returns the candidate namespace only when no service was
+found - callers use it to build the stable-convention endpoint in that case.
 */}}
 {{- define "hr-assistant.collectorNamespace" -}}
-{{- $explicit := .Values.observability.collectorNamespace | default "" -}}
-{{- $candidates := list -}}
-{{- if $explicit -}}
-  {{- $candidates = append $candidates $explicit -}}
+{{- $discovery := (include "hr-assistant.collectorService" .) | fromJson -}}
+{{- if (get $discovery "found") -}}
+  {{- get $discovery "namespace" -}}
+{{- else -}}
+  {{- .Values.observability.collectorNamespace | default "observability" -}}
 {{- end -}}
-{{- $candidates = append $candidates "observability" -}}
-{{- $candidates = append $candidates "suse-observability" -}}
-{{- $ns := "" -}}
-{{- range $cand := $candidates -}}
-  {{- if not $ns -}}
-    {{- $found := lookup "v1" "Service" $cand "" -}}
-    {{- range $item := ($found.items | default list) -}}
-      {{- if not $ns -}}
-        {{- $lbl := dig "app.kubernetes.io/name" "" ($item.metadata.labels | default dict) -}}
-        {{- if or (contains "opentelemetry-collector" $item.metadata.name) (eq $lbl "opentelemetry-collector") -}}
-          {{- $ns = $cand -}}
-        {{- end -}}
-      {{- end -}}
-    {{- end -}}
-  {{- end -}}
-{{- end -}}
-{{- default "observability" $ns -}}
 {{- end }}
 
 {{/*
-OTLP endpoint the applications export to. When the OpenTelemetry Operator option is
-enabled the apps talk to the collector this chart provisions in its own namespace;
-otherwise the endpoint resolves as follows:
+OTLP endpoint the applications export to. When the OpenTelemetry Operator option
+is enabled the apps talk to the collector this chart provisions in its own
+namespace; otherwise the endpoint resolves as follows:
 
 1. .Values.otlpEndpoint if explicitly set (used verbatim; the pre-install hook
-   validates connectivity and fails the install with the proper URL if wrong).
-2. Auto-discovered collector Service in observability.collectorNamespace
-   (Helm lookup at install time) - the "right collector" without typing anything.
-3. The conventional shared-collector FQDN as a last resort.
+   validates connectivity and fails the install with the discovered URL if
+   wrong).
+2. Auto-discovered collector Service (Helm lookup at install/upgrade time) in
+   observability.collectorNamespace or one of the well-known namespaces - the
+   "right collector" without typing anything.
+3. If discovery finds nothing: the stable SUSE convention FQDN
+   http://opentelemetry-collector.<namespace>.svc.cluster.local:4318 in the
+   configured Collector Namespace. This used to be a hardcoded dev-ai FQDN that
+   silently black-holed telemetry on any cluster whose collector had a
+   different name. The pre-install connectivity hook still gates the install,
+   so a wrong convention endpoint fails loudly instead of silently.
 */}}
 {{- define "hr-assistant.otlpEndpoint" -}}
 {{- if include "hr-assistant.collectorEnabled" . -}}
 http://{{ include "hr-assistant.collectorName" . }}-collector.{{ .Release.Namespace }}.svc.cluster.local:4318
 {{- else -}}
 {{- $endpoint := .Values.otlpEndpoint -}}
+{{- $discovery := (include "hr-assistant.collectorService" .) | fromJson -}}
 {{- if not $endpoint -}}
-  {{- $svc := include "hr-assistant.collectorService" . -}}
-  {{- if $svc -}}
-    {{- $endpoint = printf "http://%s.%s.svc.cluster.local:4318" $svc (include "hr-assistant.collectorNamespace" .) -}}
+  {{- if (get $discovery "found") -}}
+    {{- $endpoint = printf "http://%s.%s.svc.cluster.local:4318" (get $discovery "service") (get $discovery "namespace") -}}
   {{- else -}}
-    {{- $endpoint = "http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4318" -}}
+    {{- $endpoint = printf "http://opentelemetry-collector.%s.svc.cluster.local:4318" (include "hr-assistant.collectorNamespace" .) -}}
   {{- end -}}
 {{- end -}}
 {{- $endpoint -}}
@@ -211,12 +252,14 @@ http://{{ include "hr-assistant.collectorName" . }}-collector.{{ .Release.Namesp
 
 {{/*
 The auto-discovered collector endpoint, used by the connectivity-check hook to
-suggest the correct URL when the user-supplied one is unreachable.
+suggest the correct URL when the user-supplied one is unreachable. Empty when
+nothing was discovered (in which case the hook falls back to its generic
+"look in observability.collectorNamespace" guidance).
 */}}
 {{- define "hr-assistant.discoveredCollectorEndpoint" -}}
-{{- $svc := include "hr-assistant.collectorService" . -}}
-{{- if $svc -}}
-http://{{ $svc }}.{{ include "hr-assistant.collectorNamespace" . }}.svc.cluster.local:4318
+{{- $discovery := (include "hr-assistant.collectorService" .) | fromJson -}}
+{{- if (get $discovery "found") -}}
+http://{{ get $discovery "service" }}.{{ get $discovery "namespace" }}.svc.cluster.local:4318
 {{- end -}}
 {{- end }}
 

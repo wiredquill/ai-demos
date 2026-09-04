@@ -8,7 +8,17 @@ imagePullSecrets:
 # Observability endpoints
 # Used when observability.mode=existing. A single shared collector can serve every
 # namespace in the cluster; each release names itself via observability.serviceNamespace.
-otlpEndpoint: ''  # empty = auto-discover the collector Service at install time (see observability.collectorNamespace)
+#
+# Empty = auto-discovery at install/upgrade time: Helm looks for a Service in
+# observability.collectorNamespace (then "observability", "suse-observability")
+# whose name contains "collector" + "otel"/"opentelemetry" or carrying
+# app.kubernetes.io/{component,name}=opentelemetry-collector, and that exposes
+# port 4318. The deterministic winner is a unique *-collector base service,
+# else the shortest match. If nothing is found, the chart falls back to the
+# stable convention http://opentelemetry-collector.<collectorNamespace>.svc:4318
+# — and the pre-install connectivity hook still aborts the install if that
+# endpoint is unreachable, so a wrong name can never silently black-hole telemetry.
+otlpEndpoint: ''  # empty = auto-discover (see above); set an explicit FQDN to override
 ollamaEndpoint: 'http://my-hr-assistant-ollama:11434'
 collectGpuStats: 'false'  # Enable GPU metrics for demo
 
@@ -42,6 +52,8 @@ observability:
   # Namespace that holds the shared OpenTelemetry collector Service. Used by the
   # chart's install-time auto-discovery (Helm lookup) to find the collector when
   # otlpEndpoint is left empty, and by the pre-install connectivity-check hook.
+  # Discovery also checks "observability" and "suse-observability" regardless of
+  # this value, so it rarely needs changing.
   collectorNamespace: observability
 
   # Image used by the pre-install OTLP connectivity-check hook Job.
