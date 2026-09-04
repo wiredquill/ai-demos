@@ -19,9 +19,9 @@ questions:
 - variable: otlpEndpoint
   label: "OTLP Endpoint"
   type: string
-  description: "Open Telemetry Endpoint - Include http:// and port. Apps are pointed at the shared cluster collector, which groups telemetry by service.namespace (set to the release namespace)."
-  required: true
-  default: "http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4318"
+  description: "OpenTelemetry collector address (scheme://host:port).<br><br><b>Leave blank to auto-discover:</b> the chart looks for a collector Service in <code>observability</code> / <code>suse-observability</code> at install/upgrade time — any Service named <code>*otel*collector*</code> or carrying the <code>opentelemetry-collector</code> label that exposes port 4318 wins; a unique <code>*-collector</code> base service is preferred over its <code>-headless</code>/<code>-monitoring</code> twins. If none is found the chart uses the stable convention <code>http://opentelemetry-collector.observability.svc.cluster.local:4318</code> (the pre-install config-validation test still checks the resolved value).<br><br>Find it manually:<br><code>kubectl get svc -n observability | grep -iE 'otel|collector'</code>"
+  required: false
+  default: ""
   group: General
 
 - variable: ollama.gpu.enabled

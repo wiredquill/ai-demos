@@ -584,7 +584,12 @@ class ObservableAPIServer:
             except Exception as flask_instr_error:
                 logger.warning(f"Could not enable FlaskInstrumentor: {flask_instr_error}")
 
-            self.server = make_server("0.0.0.0", self.port, self.app)
+            # threaded=True: a single-threaded werkzeug server serializes every
+            # request, so a long-running /api/chat (30-50s on time-sliced GPUs)
+            # sat the liveness probe in the queue until the kubelet SIGKILLed
+            # the pod (exit 137 crash loop on the 4090 install). Threading
+            # keeps /health responsive while chat requests are in flight.
+            self.server = make_server("0.0.0.0", self.port, self.app, threaded=True)
             self.server_thread = threading.Thread(target=self.server.serve_forever, daemon=True)
             self.server_thread.start()
             logger.info(f"Observable HTTP API server started on port {self.port}")
@@ -611,6 +616,18 @@ class ChatInterface:
         # Initialize availability demo state tracking
         self.availability_demo_last_check = 0
         self.availability_demo_auto_off_timer = None
+
+        # TTL cache for _check_configmap_demo_state: the /health liveness probe
+        # (and the auto-off timer) call this method, and each call spawned a
+        # `kubectl get configmap` subprocess. Even at ~35ms/call that blocked
+        # the (now threaded) request loop on every probe hit and added churn;
+        # the demo state only changes when a user toggles it, so a short TTL is
+        # safe and keeps probe latency bounded.
+        self._configmap_demo_state_cache = None
+        self._configmap_demo_state_cache_ts = 0.0
+        self._configmap_demo_state_ttl = float(
+            os.getenv("DEMO_CONFIGMAP_TTL_SECONDS", "30")
+        )
 
         # Initialize provider status with pre-drawn boxes (default offline)
         # CRITICAL: Always guarantee all 9 providers are present from startup
@@ -946,6 +963,9 @@ class ChatInterface:
 
             if result1.returncode == 0 and result2.returncode == 0:
                 logger.info("✅ ConfigMap manipulation successful - app should start failing!")
+                # State changed: drop the cached demo state so the next probe
+                # reads the real (now broken) ConfigMap.
+                self._invalidate_configmap_demo_state_cache()
                 logger.info(
                     '🔧 To fix externally: kubectl patch configmap <name> -n <namespace> --type=json -p=\'[{"op": "remove", "path": "/data/models_latest"}, {"op": "add", "path": "/data/models-latest", "value": "llama3.2:latest"}]\''
                 )
@@ -961,8 +981,39 @@ class ChatInterface:
             logger.error(f"ConfigMap failure simulation error: {e}")
             return False
 
-    def _check_configmap_demo_state(self) -> tuple:
-        """Check current ConfigMap state to determine availability demo status."""
+    def _check_configmap_demo_state(self, force: bool = False) -> tuple:
+        """Check current ConfigMap state to determine availability demo status.
+
+        Results are cached for a short TTL (DEMO_CONFIGMAP_TTL_SECONDS, default
+        30s) so the /health liveness probe and /healthz do not spawn a
+        `kubectl get configmap` subprocess on every probe hit. The demo state
+        only changes when the availability demo is toggled, and both mutation
+        paths invalidate the cache. Pass force=True to bypass the cache (used
+        immediately after a mutation).
+        """
+        import time
+
+        now = time.time()
+        if (
+            not force
+            and self._configmap_demo_state_cache is not None
+            and now - self._configmap_demo_state_cache_ts
+            < self._configmap_demo_state_ttl
+        ):
+            return self._configmap_demo_state_cache
+
+        result = self._check_configmap_demo_state_live()
+        self._configmap_demo_state_cache = result
+        self._configmap_demo_state_cache_ts = time.time()
+        return result
+
+    def _invalidate_configmap_demo_state_cache(self):
+        """Drop the cached demo state (call after mutating the ConfigMap)."""
+        self._configmap_demo_state_cache = None
+        self._configmap_demo_state_cache_ts = 0.0
+
+    def _check_configmap_demo_state_live(self) -> tuple:
+        """Read the demo ConfigMap directly (one kubectl call, no cache)."""
         try:
             import json
             import os
@@ -1122,6 +1173,9 @@ class ChatInterface:
 
             if result1.returncode == 0 and result2.returncode == 0:
                 logger.info("✅ ConfigMap restoration successful - app should start working!")
+                # State changed: drop the cached demo state so the next probe
+                # reads the real (now healthy) ConfigMap.
+                self._invalidate_configmap_demo_state_cache()
                 return True
             else:
                 logger.error(f"ConfigMap restoration failed: {result1.stderr} {result2.stderr}")
@@ -1857,8 +1911,9 @@ class ChatInterface:
         try:
             logger.info("Running availability demo - simulating service failure for SUSE Observability")
 
-            # Check current ConfigMap state to determine action
-            is_demo_on, state, config_value = self._check_configmap_demo_state()
+            # Check current ConfigMap state to determine action (fresh read:
+            # the cache could hold a stale state from before the last toggle)
+            is_demo_on, state, config_value = self._check_configmap_demo_state(force=True)
 
             if is_demo_on:
                 # Demo is ON, turn it OFF
@@ -1964,7 +2019,8 @@ class ChatInterface:
             logger.info(f"Availability demo executed successfully. Status: {status}")
 
             # Check current ConfigMap state to get accurate status and config value
-            is_demo_on, state, config_value = self._check_configmap_demo_state()
+            # (fresh read: the toggle just above may have changed the ConfigMap)
+            is_demo_on, state, config_value = self._check_configmap_demo_state(force=True)
 
             # Create enhanced status message with ConfigMap value when demo is ON
             if is_demo_on:
@@ -2911,11 +2967,12 @@ def create_interface():
             _, message, status = chat_instance.run_availability_demo()
 
             # Check current ConfigMap state to get accurate status and config value
+            # (fresh read: the toggle just above may have changed the ConfigMap)
             (
                 is_demo_on,
                 state,
                 config_value,
-            ) = chat_instance._check_configmap_demo_state()
+            ) = chat_instance._check_configmap_demo_state(force=True)
 
             # Create enhanced status message with ConfigMap value when demo is ON
             if is_demo_on:

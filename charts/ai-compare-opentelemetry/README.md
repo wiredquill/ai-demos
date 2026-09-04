@@ -103,7 +103,10 @@ This chart deploys a complete AI comparison stack optimized for SUSE environment
 aiCompare:
   observability:
     enabled: true
-    otlpEndpoint: "http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4318"
+    # Leave empty (the default) to auto-discover the collector Service at
+    # install/upgrade time, or set an explicit FQDN to point at a specific
+    # collector:
+    # otlpEndpoint: "http://ai-observability-collector.observability.svc.cluster.local:4318"
     collectGpuStats: true
 ```
 
