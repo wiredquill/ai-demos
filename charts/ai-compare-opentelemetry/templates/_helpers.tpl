@@ -158,16 +158,39 @@ fallback.
 
 {{/*
 Compute the OTLP HTTP endpoint (4318) for app telemetry.
-Apps point at the shared cluster collector, which groups telemetry by
-service.namespace (set to the release namespace by each app).
+
+Use the explicitly-configured endpoint if set; otherwise auto-discover the
+shared cluster collector at install time (see collectorService). Auto-discovery
+keeps this demo chart portable: a fresh install on any cluster points at that
+cluster's OTel collector instead of a cluster-specific hardcoded FQDN that
+silently black-holes telemetry elsewhere.
 */}}
 {{- define "ai-compare-opentelemetry.otlpHttpEndpoint" -}}
-{{ .Values.aiCompare.observability.otlpEndpoint }}
+{{- $endpoint := .Values.aiCompare.observability.otlpEndpoint -}}
+{{- if not $endpoint -}}
+  {{- $discovery := (include "ai-compare-opentelemetry.collectorService" .) | fromJson -}}
+  {{- if (get $discovery "found") -}}
+    {{- $endpoint = printf "http://%s.%s.svc.cluster.local:4318" (get $discovery "service") (get $discovery "namespace") -}}
+  {{- else -}}
+    {{- $endpoint = "http://opentelemetry-collector.observability.svc.cluster.local:4318" -}}
+  {{- end -}}
+{{- end -}}
+{{- $endpoint -}}
 {{- end -}}
 
 {{/*
 Compute the OTLP gRPC endpoint (4317) for Open WebUI telemetry.
+Same rules as the HTTP endpoint, on port 4317.
 */}}
 {{- define "ai-compare-opentelemetry.otlpGrpcEndpoint" -}}
-{{ .Values.openWebui.observability.otlpEndpoint }}
+{{- $endpoint := .Values.openWebui.observability.otlpEndpoint -}}
+{{- if not $endpoint -}}
+  {{- $discovery := (include "ai-compare-opentelemetry.collectorService" .) | fromJson -}}
+  {{- if (get $discovery "found") -}}
+    {{- $endpoint = printf "http://%s.%s.svc.cluster.local:4317" (get $discovery "service") (get $discovery "namespace") -}}
+  {{- else -}}
+    {{- $endpoint = "http://opentelemetry-collector.observability.svc.cluster.local:4317" -}}
+  {{- end -}}
+{{- end -}}
+{{- $endpoint -}}
 {{- end -}}
