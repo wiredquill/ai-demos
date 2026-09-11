@@ -6,6 +6,7 @@ metadata:
   annotations:
     description: "Service for React-based modern dashboard frontend"
     service.type: "frontend-ui"
+    {{- include "ai-compare-opentelemetry.spanDurationServiceAnnotations" . | nindent 4 }}
   labels:
     {{- include "ai-compare-opentelemetry.labels" . | nindent 4 }}
     app.kubernetes.io/component: frontend-react

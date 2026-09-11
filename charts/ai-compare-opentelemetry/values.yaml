@@ -1,5 +1,30 @@
 # Default values for ai-compare-suse chart
 
+# -- SUSE Observability span-duration monitor overrides for THIS app only.
+# The SUSE Observability StackPacks ship three "Span duration" health monitors
+# with a default 5 s threshold:
+#   - "Span duration for Kubernetes services"   (kubernetes-v2 stackpack)
+#   - "Span duration for pods"                  (kubernetes-v2 stackpack)
+#   - "Span duration for OpenTelemetry service instances" (open-telemetry stackpack)
+# This stack's LLM inference spans routinely exceed 5 s, which produces
+# false-positive DEVIATING alerts. SUSE Observability supports overriding a
+# monitor's arguments per watched Kubernetes object via annotations on that
+# object (docs: documentation.suse.com/.../use/alerting/k8s-override-monitor-arguments.html).
+# Because the annotations are rendered on this app's Services/Pods only, the
+# 15 s threshold applies to this app alone; the stock 5 s monitors remain in
+# force for every other workload in the cluster. No global monitor config is
+# changed.
+# NOTE: the OpenTelemetry service-instance monitor targets telemetry URNs
+# (urn:opentelemetry:...) rather than Kubernetes objects, so per-object
+# annotations cannot override it. For that check, see scripts/
+# suse-obs-otel-instance-monitor.sh (optional app-scoped 15 s monitor).
+observability:
+  spanDuration:
+    # Set false to leave all three checks at the stock 5 s threshold.
+    enabled: true
+    # Threshold in milliseconds for the k8s service and pod span-duration
+    # monitors (stock default is 5000 ms).
+    thresholdMilliseconds: 15000
 # -- Global image pull policy
 imagePullPolicy: Always
 # -- Correctly formatted list for imagePullSecrets

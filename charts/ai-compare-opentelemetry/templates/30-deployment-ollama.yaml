@@ -17,6 +17,8 @@ spec:
       app: ollama
   template:
     metadata:
+      annotations:
+        {{- include "ai-compare-opentelemetry.spanDurationPodAnnotations" . | nindent 8 }}
       labels:
         app: ollama
         app.kubernetes.io/name: ai-compare

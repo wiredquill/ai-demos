@@ -35,6 +35,7 @@ spec:
         configmap.dependency/required: "true"
         suse.observability/monitor-configmap: "{{ include "ai-compare-opentelemetry.fullname" . }}-demo-config"
         pod.description: "Pod requires demo-config ConfigMap for availability demo - monitor ConfigMap changes"
+        {{- include "ai-compare-opentelemetry.spanDurationPodAnnotations" . | nindent 8 }}
       labels:
         app: {{ include "ai-compare-opentelemetry.fullname" . }}-app
         configmap.dependency: "demo-config-critical"

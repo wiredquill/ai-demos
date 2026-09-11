@@ -17,6 +17,8 @@ spec:
       app: open-webui
   template:
     metadata:
+      annotations:
+        {{- include "ai-compare-opentelemetry.spanDurationPodAnnotations" . | nindent 8 }}
       labels:
         app: open-webui
         app.kubernetes.io/name: ai-compare

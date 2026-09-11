@@ -54,6 +54,109 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
 {{/*
+SUSE Observability per-object monitor-override annotations (span duration).
+
+Rendered onto this release's Services and Pods so the stock "Span duration"
+stackpack monitors evaluate them at the configured threshold (default 15 s,
+stock default 5 s) instead of flagging normal LLM-inference latency. The
+override is per-object (docs: SUSE Observability "Overriding monitor
+arguments"), so only this app's objects are affected; every other workload in
+the cluster keeps the stock 5 s threshold.
+*/}}
+{{- define "ai-compare-opentelemetry.spanDurationServiceAnnotations" -}}
+{{- $obs := .Values.observability | default (dict) -}}
+{{- $sd := dig "spanDuration" (dict) $obs -}}
+{{- if and $sd (get $sd "enabled") -}}
+monitor.kubernetes-v2.stackstate.io/k8s-service-span-duration: '{{ dict "threshold" ($sd.thresholdMilliseconds | default 15000) | toJson }}'
+{{- end -}}
+{{- end -}}
+{{- define "ai-compare-opentelemetry.spanDurationPodAnnotations" -}}
+{{- $obs := .Values.observability | default (dict) -}}
+{{- $sd := dig "spanDuration" (dict) $obs -}}
+{{- if and $sd (get $sd "enabled") -}}
+monitor.kubernetes-v2.stackstate.io/pod-span-duration: '{{ dict "threshold" ($sd.thresholdMilliseconds | default 15000) | toJson }}'
+{{- end -}}
+{{- end -}}
+
+{{/*
+Find the shared OpenTelemetry collector Service in the cluster at install time.
+
+Helm's `lookup` runs against the live API server during install/upgrade (it
+returns nothing during `helm template`), so an empty otlpEndpoint value
+auto-discovers the collector instead of shipping a cluster-specific default
+FQDN that silently black-holes telemetry on any other cluster.
+
+Candidate namespaces, in order: "observability", "suse-observability".
+A Service is a candidate when ANY of:
+  - its name contains "collector" and also "otel" or "opentelemetry"
+  - app.kubernetes.io/component == "opentelemetry-collector"
+  - app.kubernetes.io/name == "opentelemetry-collector"
+and it exposes TCP port 4318 (the OTLP/HTTP ingestion port). The 4318 filter
+matters: operator-managed collectors spawn -headless, -monitoring and
+-extension twins in the same namespace, and unordered lookup results used to
+let a twin win the "first match" race.
+
+Among all candidates the deterministic winner is: (1) a name that ends in
+"-collector" (the operator's base service) if exactly one does, otherwise
+(2) the shortest name. Output is JSON {"found":true|false,"namespace":...,
+"service":...} so callers can detect a miss instead of receiving a silent
+fallback.
+*/}}
+{{- define "ai-compare-opentelemetry.collectorService" -}}
+{{- $candidates := list "observability" "suse-observability" -}}
+{{- $seen := dict -}}
+{{- $hits := list -}}
+{{- range $ns := $candidates -}}
+  {{- $lookup := lookup "v1" "Service" $ns "" -}}
+  {{- if $lookup -}}
+    {{- range $item := $lookup.items | default list -}}
+      {{- $labels := $item.metadata.labels | default dict -}}
+      {{- $comp := dig "app.kubernetes.io/component" "" $labels -}}
+      {{- $nameLbl := dig "app.kubernetes.io/name" "" $labels -}}
+      {{- $nameMatch := and (contains "collector" $item.metadata.name) (or (contains "otel" $item.metadata.name) (contains "opentelemetry" $item.metadata.name)) -}}
+      {{- $matches := or $nameMatch (eq $comp "opentelemetry-collector") (eq $nameLbl "opentelemetry-collector") -}}
+      {{- $has4318 := false -}}
+      {{- range $item.spec.ports | default list -}}
+        {{- if eq (toString .port) "4318" -}}
+          {{- $has4318 = true -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if and $matches $has4318 -}}
+        {{- $key := printf "%s/%s" $ns $item.metadata.name -}}
+        {{- if not (hasKey $seen $key) -}}
+          {{- $seen = set $seen $key true -}}
+          {{- $hits = append $hits (dict "namespace" $ns "service" $item.metadata.name) -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- $best := dict "found" false "namespace" "" "service" "" -}}
+{{- if $hits -}}
+  {{- $base := list -}}
+  {{- range $h := $hits -}}
+    {{- if hasSuffix "-collector" (get $h "service") -}}
+      {{- $base = append $base $h -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if eq (len $base) 1 -}}
+    {{- $h := first $base -}}
+    {{- $best = merge $best (dict "found" true "namespace" (get $h "namespace") "service" (get $h "service")) -}}
+  {{- else -}}
+    {{- $shortest := list -}}
+    {{- range $h := $hits -}}
+      {{- if or (not $shortest) (lt (len (get $h "service")) (len (get (first $shortest) "service"))) -}}
+        {{- $shortest = list $h -}}
+      {{- end -}}
+    {{- end -}}
+    {{- $h := first $shortest -}}
+    {{- $best = merge $best (dict "found" true "namespace" (get $h "namespace") "service" (get $h "service")) -}}
+  {{- end -}}
+{{- end -}}
+{{- $best | toJson -}}
+{{- end }}
+
+{{/*
 Compute the OTLP HTTP endpoint (4318) for app telemetry.
 Apps point at the shared cluster collector, which groups telemetry by
 service.namespace (set to the release namespace by each app).

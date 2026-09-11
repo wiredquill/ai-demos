@@ -17,6 +17,7 @@ metadata:
     genai.observability/framework: "ollama"
     observability.suse.com/genai-app: "true"
     ai.application.category: "conversational-ai"
+    {{- include "ai-compare-opentelemetry.spanDurationServiceAnnotations" . | nindent 4 }}
 spec:
   selector:
     app: {{ include "ai-compare-opentelemetry.fullname" . }}-app

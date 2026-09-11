@@ -12,6 +12,8 @@ spec:
       app: pipelines
   template:
     metadata:
+      annotations:
+        {{- include "ai-compare-opentelemetry.spanDurationPodAnnotations" . | nindent 8 }}
       labels:
         app: pipelines
     spec:

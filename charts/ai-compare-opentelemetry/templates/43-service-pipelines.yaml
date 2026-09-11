@@ -5,6 +5,8 @@ metadata:
   name: pipelines-service
   labels:
     app: pipelines
+  annotations:
+    {{- include "ai-compare-opentelemetry.spanDurationServiceAnnotations" . | nindent 4 }}
 spec:
   selector:
     app: pipelines

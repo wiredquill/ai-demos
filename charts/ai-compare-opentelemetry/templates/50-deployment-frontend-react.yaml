@@ -22,6 +22,7 @@ spec:
         frontend.framework: "react-19-typescript"
         ui.description: "Enterprise-grade React dashboard with real-time updates"
         deployment.strategy: "nginx-spa-proxy"
+        {{- include "ai-compare-opentelemetry.spanDurationPodAnnotations" . | nindent 8 }}
       labels:
         app: {{ include "ai-compare-opentelemetry.fullname" . }}-frontend-react
         ui.type: "react-dashboard"
