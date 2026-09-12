@@ -103,9 +103,49 @@ This chart deploys a complete AI comparison stack optimized for SUSE environment
 aiCompare:
   observability:
     enabled: true
-    otlpEndpoint: "http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4318"
+    # Leave empty to auto-discover the shared OpenTelemetry collector at
+    # install time (Helm lookup in the 'observability'/'suse-observability'
+    # namespaces). Set an explicit URL only to override discovery.
+    otlpEndpoint: ""
     collectGpuStats: true
 ```
+
+The OTLP endpoint is **auto-discovered** rather than hardcoded, so the chart
+works on any cluster: a fresh install points telemetry at that cluster's own
+collector. Discovery matches the OpenTelemetry operator's standard labels
+(`app.kubernetes.io/component=opentelemetry-collector`) and the OTLP ports, so
+it works whether the collector is named `ai-observability-collector`,
+`opentelemetry-collector`, or anything else. If discovery finds nothing, the
+chart falls back to the conventional
+`opentelemetry-collector.observability.svc.cluster.local` name rather than
+silently pointing at a cluster that no longer exists.
+
+#### Span-duration health checks (optional, per-app)
+
+SUSE Observability ships "Span duration" monitors with a **5 s** default
+threshold. LLM inference routinely exceeds 5 s, which raises false-positive
+DEVIATING states. This chart can override the threshold **for this app's
+objects only**, leaving the stock 5 s threshold in force for every other
+workload on the cluster:
+
+```yaml
+observability:
+  spanDuration:
+    enabled: true
+    thresholdMilliseconds: 15000   # default 5000
+```
+
+This works by rendering SUSE Observability's per-object monitor-override
+annotations (`monitor.kubernetes-v2.stackstate.io/k8s-service-span-duration`
+and `.../pod-span-duration`) onto this release's Services and Pod templates,
+so the override travels with the install and cannot affect other apps. Set
+`enabled: false` to keep the stock 5 s threshold.
+
+**Not covered:** "Span duration for OpenTelemetry service instances". That
+monitor targets a telemetry URN (`urn:opentelemetry:...`), not a Kubernetes
+object, so no per-object annotation can reach it; tune it globally in SUSE
+Observability if needed.
+
 
 ### NeuVector Security Integration
 ```yaml

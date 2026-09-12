@@ -16,12 +16,12 @@ questions:
   group: General
   show_if: "ollama.enabled=false"
 
-- variable: otlpEndpoint
-  label: "OTLP Endpoint"
+- variable: aiCompare.observability.otlpEndpoint
+  label: "OTLP Endpoint (optional)"
   type: string
-  description: "Open Telemetry Endpoint - Include http:// and port. Apps are pointed at the shared cluster collector, which groups telemetry by service.namespace (set to the release namespace)."
-  required: true
-  default: "http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4318"
+  description: "Leave blank to auto-discover the shared OpenTelemetry collector at install time. Set an explicit URL (e.g. http://my-collector.observability.svc.cluster.local:4318) only to override discovery."
+  required: false
+  default: ""
   group: General
 
 - variable: ollama.gpu.enabled
