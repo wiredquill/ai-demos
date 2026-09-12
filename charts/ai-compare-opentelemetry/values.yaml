@@ -25,6 +25,14 @@ observability:
     # Threshold in milliseconds for the k8s service and pod span-duration
     # monitors (stock default is 5000 ms).
     thresholdMilliseconds: 15000
+  # Fail the install/upgrade early if telemetry is enabled but no OTLP
+  # collector can be discovered (and no explicit otlpEndpoint is set).
+  # This prevents the app from silently exporting spans to a host that does
+  # not exist - the exact failure mode where everything looks healthy but no
+  # telemetry ever arrives and span-duration monitors go stale.
+  # Set false to install anyway; NOTES.txt will print a warning.
+  # (Offline renders - helm template - skip the check automatically.)
+  requireCollector: true
 # -- Global image pull policy
 imagePullPolicy: Always
 # -- Correctly formatted list for imagePullSecrets

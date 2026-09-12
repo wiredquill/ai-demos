@@ -1,0 +1,6 @@
+{{/*
+Runs the collector-discovery guard. Renders no Kubernetes objects; the
+include only exists so the validation executes during install/upgrade (and
+during --dry-run=server). See ai-compare-opentelemetry.validateCollector.
+*/}}
+{{- include "ai-compare-opentelemetry.validateCollector" . -}}

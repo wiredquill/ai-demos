@@ -120,6 +120,35 @@ chart falls back to the conventional
 `opentelemetry-collector.observability.svc.cluster.local` name rather than
 silently pointing at a cluster that no longer exists.
 
+#### Pre-install check: "can we even find a collector?"
+
+Installing with telemetry enabled but no reachable collector is a silent
+failure: the app looks healthy while every span is dropped and the
+span-duration monitors quietly go stale. To catch that **before** the install
+rather than days later, the chart validates discovery during
+install/upgrade:
+
+```bash
+helm install ai-compare ./charts/ai-compare-opentelemetry -n ai-compare --dry-run=server
+```
+
+If no collector can be found (and no explicit `otlpEndpoint` is set), the
+install **stops** with an actionable message explaining the three ways out —
+install the collector first, set `aiCompare.observability.otlpEndpoint`, or
+accept degraded telemetry via `observability.requireCollector=false`.
+
+When discovery succeeds (or an explicit endpoint is set), `NOTES.txt` reports
+the resolved endpoint after install, so the operator can see at a glance which
+collector telemetry is going to.
+
+Notes:
+- Use `--dry-run=server` (not plain `--dry-run`) — only the server-side
+  dry-run executes `lookup`, so it is the true pre-install test.
+- Offline renders (`helm template`, CI linting) skip the check automatically,
+  so pipelines keep working without a cluster.
+- Escape hatch: `--set observability.requireCollector=false` installs anyway
+  and prints a warning in `NOTES.txt` instead of failing.
+
 #### Span-duration health checks (optional, per-app)
 
 SUSE Observability ships "Span duration" monitors with a **5 s** default

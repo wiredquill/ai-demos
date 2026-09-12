@@ -194,3 +194,34 @@ Same rules as the HTTP endpoint, on port 4317.
 {{- end -}}
 {{- $endpoint -}}
 {{- end -}}
+
+{{/*
+Pre-install/upgrade guard: fail early, with an actionable message, when
+telemetry is enabled but no OTLP collector can be found.
+
+Guards against the silent failure mode where the app runs fine but exports
+every span to a hostname that does not resolve, so nothing ever reaches the
+observability backend and all span-duration monitors quietly go stale.
+
+The check is skipped when:
+  - telemetry is disabled, or
+  - an explicit otlpEndpoint is configured (the operator's choice wins), or
+  - we are rendering offline. Offline detection uses a lookup of the
+    always-present kube-system namespace: lookup returns nothing without a
+    reachable cluster, and failing then would break every `helm template`
+    render and CI pipeline.
+Set observability.requireCollector=false to install anyway (a warning is
+printed to NOTES.txt instead).
+*/}}
+{{- define "ai-compare-opentelemetry.validateCollector" -}}
+{{- if and .Values.aiCompare.observability.enabled (not .Values.aiCompare.observability.otlpEndpoint) -}}
+  {{- if lookup "v1" "Namespace" "" "kube-system" -}}
+    {{- $d := include "ai-compare-opentelemetry.collectorService" . | fromJson -}}
+    {{- if not (get $d "found") -}}
+      {{- if .Values.observability.requireCollector -}}
+        {{- fail "No OpenTelemetry collector discovered and no explicit endpoint set.\n\nLooked for a Service exposing the OTLP port 4318 (or labelled app.kubernetes.io/component=opentelemetry-collector) in namespaces 'observability' and 'suse-observability', and found none.\n\nWith aiCompare.observability.enabled=true and an empty otlpEndpoint, telemetry would be exported to a host that does not exist and silently dropped - the app would look healthy while no spans ever reach SUSE Observability.\n\nFix one of:\n  1. install the shared OpenTelemetry collector first, then retry;\n  2. set an explicit endpoint:  --set aiCompare.observability.otlpEndpoint=http://<collector-host>:4318\n  3. install without telemetry: --set observability.requireCollector=false (a warning is printed instead)." -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- end -}}
