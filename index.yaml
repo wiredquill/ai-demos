@@ -1,0 +1,240 @@
+apiVersion: v1
+entries:
+  ai-compare:
+  - annotations:
+      category: AI/ML
+      licenses: MIT
+    apiVersion: v2
+    appVersion: 1.0.0
+    created: "2026-09-12T15:00:38.282423525Z"
+    description: AI Compare - Side-by-side AI response comparison platform. Features
+      Ollama, Open WebUI, pipelines, and custom chat interface. Built on upstream
+      open-source components with GPU support, observability integration, and security
+      demonstrations. Showcases security differences between upstream and enterprise-hardened
+      container images.
+    digest: 4ea8cb662e2ad06e8b36ab88e57a6b62afd28a929aa0256746ae88e18cd283c7
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - ollama
+    - machine-learning
+    - opentelemetry
+    - observability
+    - demo
+    - comparison
+    maintainers:
+    - email: noreply@example.com
+      name: AI Compare Team
+    name: ai-compare
+    sources:
+    - https://github.com/wiredquill/ai-demos
+    type: application
+    urls:
+    - https://wiredquill.github.io/ai-demos/ai-compare-0.1.528.tgz
+    version: 0.1.528
+  ai-compare-opentelemetry:
+  - annotations:
+      category: AI/ML
+      licenses: MIT
+      observability.suse.com/compatible: "true"
+      opentelemetry.io/instrumented: "true"
+    apiVersion: v2
+    appVersion: 1.0.0
+    created: "2026-09-12T15:00:38.283575809Z"
+    description: AI Compare OpenTelemetry Edition - Advanced observability-focused
+      AI response comparison platform. Features comprehensive GenAI telemetry, token-level
+      cost tracking, model performance monitoring, and deep integration with SUSE
+      Observability.
+    digest: 3809980f584bc0692e00fb63de06f135bc6f0b30feb26d17e39613f29e93a2e3
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - ollama
+    - machine-learning
+    - opentelemetry
+    - observability
+    - telemetry
+    - monitoring
+    - genai
+    - tokens
+    - cost-tracking
+    - demo
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: ai-compare-opentelemetry
+    sources:
+    - https://github.com/wiredquill/ai-demos
+    type: application
+    urls:
+    - https://wiredquill.github.io/ai-demos/ai-compare-opentelemetry-0.1.536.tgz
+    version: 0.1.536
+  ai-compare-suse:
+  - annotations:
+      category: AI/ML
+      licenses: MIT
+      suse.com/bci-images: "true"
+      suse.com/certified: "true"
+    apiVersion: v2
+    appVersion: 1.0.0
+    created: "2026-09-12T15:00:38.284494277Z"
+    description: AI Compare SUSE Edition - Enterprise AI response comparison platform
+      optimized for SUSE environments. Features SUSE BCI images, native SUSE Observability
+      integration, NeuVector security demos, and full SUSE cloud-native stack compatibility.
+    digest: c021b73e04eacda540f97b4686c7b723bf8bd67752d05d0d3f659062b14b32ee
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - ollama
+    - machine-learning
+    - suse
+    - enterprise
+    - observability
+    - neuvector
+    - security
+    - demo
+    - bci
+    maintainers:
+    - email: noreply@suse.com
+      name: AI Compare SUSE Team
+    name: ai-compare-suse
+    sources:
+    - https://github.com/wiredquill/ai-demos
+    type: application
+    urls:
+    - https://wiredquill.github.io/ai-demos/ai-compare-suse-0.1.528.tgz
+    version: 0.1.528
+  ai-observability-collector:
+  - annotations:
+      category: Observability
+      suse.com/certified: "false"
+    apiVersion: v2
+    appVersion: 0.156.0
+    created: "2026-09-12T15:00:38.285065451Z"
+    description: SUSE AI Observability collector with zero-maintenance, label-driven
+      auto-discovery and OpenTelemetry auto-instrumentation. Deploys an OpenTelemetryCollector
+      CR (SUSE AI image with topology exporter) and Instrumentation CRs, managed by
+      the OpenTelemetry Operator. New apps that carry the standard discovery labels/annotations
+      are collected automatically — no collector re-deploy needed.
+    digest: e058fdc154638b9e04ae8c893f376fab7262d4bb02eb0d45194501fb09357219
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - observability
+    - opentelemetry
+    - otel
+    - auto-instrumentation
+    - auto-discovery
+    - suse-observability
+    - suse-ai
+    - topology
+    maintainers:
+    - email: noreply@suse.com
+      name: WiredQuill AI Demos
+    name: ai-observability-collector
+    sources:
+    - https://documentation.suse.com/suse-ai-factory/latest/html/AI-monitoring/ai-monitoring-otel-operator.html
+    - https://documentation.suse.com/cloudnative/suse-observability/latest/en/setup/otel/getting-started/getting-started-k8s-operator.html
+    type: application
+    urls:
+    - https://wiredquill.github.io/ai-demos/ai-observability-collector-0.1.0.tgz
+    version: 0.1.0
+  hr-assistant:
+  - apiVersion: v2
+    appVersion: latest
+    created: "2026-09-12T15:00:38.287491889Z"
+    dependencies:
+    - condition: ollama.enabled
+      name: ollama
+      repository: oci://dp.apps.rancher.io/charts
+      version: 1.55.0
+    description: SUSE AI HR Assistant - Intelligent Employee Support and Policy Management
+    digest: d70acfd76c5080a8142e7a817877d6ebdf0826a4af4388727a31dfb3fd2c9f16
+    home: https://www.suse.com/products/ai/
+    keywords:
+    - ai
+    - llm
+    - observability
+    - hr
+    - demo
+    - openlit
+    - ollama
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: hr-assistant
+    sources:
+    - https://github.com/openlit/openlit
+    - https://ollama.ai/
+    type: application
+    urls:
+    - https://wiredquill.github.io/ai-demos/hr-assistant-1.12.0.tgz
+    version: 1.12.0
+  hr-assistant-sovereign-data:
+  - apiVersion: v2
+    appVersion: latest
+    created: "2026-09-12T15:00:38.28895374Z"
+    dependencies:
+    - condition: ollama.enabled
+      name: ollama
+      repository: oci://dp.apps.rancher.io/charts
+      version: 1.55.0
+    description: SUSE AI HR Assistant with Sovereign Data Compliance - Intelligent
+      Employee Support with Regional Data Protection
+    digest: 4485319e8c66559cac68268be4b2d60e77810e003b05fc6078a9f2e65666688d
+    home: https://www.suse.com/products/ai/
+    keywords:
+    - ai
+    - llm
+    - observability
+    - hr
+    - demo
+    - openlit
+    - ollama
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: hr-assistant-sovereign-data
+    sources:
+    - https://github.com/openlit/openlit
+    - https://ollama.ai/
+    type: application
+    urls:
+    - https://wiredquill.github.io/ai-demos/hr-assistant-sovereign-data-1.5.0.tgz
+    version: 1.5.0
+  hr-assistant-vllm:
+  - apiVersion: v2
+    appVersion: latest
+    created: "2026-09-12T15:00:38.293217093Z"
+    dependencies:
+    - alias: vllm
+      condition: vllm.enabled
+      name: vllm
+      repository: file://charts/vllm
+      version: 0.1.10
+    description: SUSE AI HR Assistant (vLLM variant) - Intelligent Employee Support
+      and Policy Management served by SUSE vLLM, with native engine-level GenAI metrics
+    digest: 0e3739689cc016f28cb21ef0ab8af780e4510a795c3fcf93a0efff13ee677192
+    home: https://www.suse.com/products/ai/
+    keywords:
+    - ai
+    - llm
+    - observability
+    - hr
+    - demo
+    - openlit
+    - vllm
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: hr-assistant-vllm
+    sources:
+    - https://github.com/openlit/openlit
+    - https://github.com/vllm-project/vllm
+    type: application
+    urls:
+    - https://wiredquill.github.io/ai-demos/hr-assistant-vllm-0.1.0.tgz
+    version: 0.1.0
+generated: "2026-09-12T15:00:38.281368035Z"
