@@ -6,9 +6,10 @@ imagePullSecrets:
   - name: application-collection
 
 # Observability endpoints
-# Used when observability.mode=existing. A single shared collector can serve every
-# namespace in the cluster; each release names itself via observability.serviceNamespace.
-otlpEndpoint: ''  # empty = auto-discover the collector Service at install time (see observability.collectorNamespace)
+# Used when observability.mode=existing. Fixed, explicit address of the shared
+# SUSE AI OpenTelemetry collector (gRPC on 4317; this chart does NOT auto-discover
+# the collector on this cluster - the address is set here and used verbatim).
+otlpEndpoint: 'http://opentelemetry-collector.observability.svc.cluster.local:4317'
 ollamaEndpoint: 'http://my-hr-assistant-ollama:11434'
 collectGpuStats: 'false'  # Enable GPU metrics for demo
 
@@ -38,11 +39,6 @@ genai:
 #               OpenTelemetry Operator to be installed in the cluster.
 observability:
   mode: existing
-
-  # Namespace that holds the shared OpenTelemetry collector Service. Used by the
-  # chart's install-time auto-discovery (Helm lookup) to find the collector when
-  # otlpEndpoint is left empty, and by the pre-install connectivity-check hook.
-  collectorNamespace: observability
 
   # Image used by the pre-install OTLP connectivity-check hook Job.
   checkImage: curlimages/curl:8.5.0

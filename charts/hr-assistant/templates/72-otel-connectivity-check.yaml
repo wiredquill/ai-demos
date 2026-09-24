@@ -1,15 +1,15 @@
 {{- if not (include "hr-assistant.collectorEnabled" .) }}
 {{- $endpoint := include "hr-assistant.otlpEndpoint" . }}
-{{- $discovered := include "hr-assistant.discoveredCollectorEndpoint" . }}
 {{/*
 Pre-install / pre-upgrade connectivity check for the OTLP collector.
 
 Runs a small Job BEFORE the application deployments are created. It resolves and
 TCP-connects to the OTLP endpoint the apps will export to; if that fails, the
 hook Job fails and Helm aborts the install with a message in the Rancher helm
-log, including the auto-discovered collector URL so the user can fix the value
-and retry. This prevents the classic silent failure mode where the apps deploy
-but report no telemetry because the collector address was wrong.
+log. The collector here is plain gRPC (port 4317), so a TCP connect (nc -z) is
+the right probe - an HTTP GET would bounce off gRPC and falsely fail. This
+prevents the classic silent failure mode where the apps deploy but report no
+telemetry because the collector address was wrong.
 
 The check only runs in shared-collector mode (observability.mode=existing).
 When the chart provisions its own collector via the operator, there is nothing
@@ -41,8 +41,6 @@ spec:
           env:
             - name: OTLP_ENDPOINT
               value: {{ $endpoint | quote }}
-            - name: DISCOVERED_ENDPOINT
-              value: {{ $discovered | quote }}
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -59,16 +57,11 @@ spec:
 
               echo "    host: ${HOST}  port: ${PORT}"
 
-              # Resolve + TCP connect with a short timeout. curl exits 0 if it
-              # gets any HTTP response (even 4xx); non-zero on DNS failure,
-              # connection refused, or timeout.
-              CODE=$(curl -sS -o /dev/null -m 10 -w "%{http_code}" \
-                -X POST -H "Content-Type: application/x-protobuf" --data-binary "" \
-                "http://${HOST}:${PORT}/v1/traces" || true)
-              echo "    HTTP probe returned: ${CODE:-no response}"
-
-              if [ -n "${CODE}" ] && [ "${CODE}" != "000" ]; then
-                echo "==> OK: collector reachable at ${OTLP_ENDPOINT}"
+              # The collector exposes plain gRPC on 4317, so a raw TCP connect is
+              # the correct reachability probe - an HTTP request would be rejected
+              # by the gRPC server. nc ships in the curl image.
+              if timeout 10 nc -zvw 5 "${HOST}" "${PORT}" 2>&1; then
+                echo "==> OK: collector reachable at ${HOST}:${PORT}"
                 exit 0
               fi
 
@@ -77,20 +70,10 @@ spec:
               echo "       The applications will not be able to report telemetry, so" >&2
               echo "       this install is being ABORTED." >&2
               echo >&2
-              if [ -n "${DISCOVERED_ENDPOINT}" ] && [ "${DISCOVERED_ENDPOINT}" != "${OTLP_ENDPOINT}" ]; then
-                echo "       Auto-discovered collector on this cluster:" >&2
-                echo "         ${DISCOVERED_ENDPOINT}" >&2
-                echo "       Set the OTLP Endpoint question to that value and retry." >&2
-              else
-                echo "       Find the collector on your cluster with:" >&2
-                echo "         kubectl get svc -n observability | grep opentelemetry" >&2
-                echo "       and set the OTLP Endpoint question to:" >&2
-                echo "         http://<service>.observability.svc.cluster.local:4318" >&2
-              fi
-              echo >&2
-              echo "       Verify manually from the cluster:" >&2
-              echo "         kubectl run curl-check --rm -i --restart=Never --image=curlimages/curl -- \\" >&2
-              echo "           curl -v -m 5 http://${HOST}:${PORT}/v1/traces" >&2
+              echo "       Verify the collector exists and is up with:" >&2
+              echo "         kubectl get svc -n observability | grep opentelemetry" >&2
+              echo "       and make sure .Values.otlpEndpoint points at its gRPC" >&2
+              echo "       service (the chart default is port 4317)." >&2
               exit 1
           resources:
             requests:

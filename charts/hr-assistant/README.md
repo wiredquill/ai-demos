@@ -20,35 +20,34 @@ apps every 2 minutes so the topology stays alive.
 
 The apps must report to the cluster's OpenTelemetry collector.
 
-**You usually do not need to set this at all.** If the **OTLP Endpoint** question
-is left blank, the chart auto-discovers the collector at install time: it looks
-up Services in the `observability` namespace (configurable via the **Collector
-Namespace** question) for one whose name contains `opentelemetry-collector`, and
-uses `http://<service>.<ns>.svc.cluster.local:4318` automatically.
+**The chart ships with a fixed default that works on SUSE AI Factory clusters with
+the shared collector installed:** `http://opentelemetry-collector.observability.svc.cluster.local:4317`
+(the collector's gRPC OTLP port). No auto-discovery is performed at install time —
+the address is explicit and used verbatim. If your collector lives elsewhere,
+set the **OTLP Endpoint** question to its service FQDN.
 
-If you do supply a value, a **pre-install connectivity check** runs before the
-apps deploy: a small hook Job resolves and probes the endpoint. If the collector
-cannot be reached, the install **aborts with the auto-discovered correct URL in
-the Rancher helm log** — so a wrong collector address fails loudly at install
-time instead of silently deploying apps that report no telemetry.
+A **pre-install connectivity check** runs before the apps deploy: a small hook Job
+TCP-connects to the endpoint to confirm it is reachable. If it cannot be reached,
+the install **aborts** with a clear error in the Rancher helm log — so a wrong
+collector address fails loudly at install time instead of silently deploying apps
+that report no telemetry.
 
-To find the collector URL by hand (e.g. to verify what the chart discovered):
+To find the collector URL by hand:
 
 ```bash
 kubectl get svc -n observability -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | grep opentelemetry
 ```
 
 Then use the resulting service name (commonly
-`open-telemetry-collector-opentelemetry-collector`) in the OTLP endpoint:
+`opentelemetry-collector`) in the OTLP endpoint:
 
 ```bash
-OTLP_ENDPOINT="http://$(kubectl get svc -n observability -l app.kubernetes.io/name=opentelemetry-collector -o jsonpath='{.items[0].metadata.name}').observability.svc.cluster.local:4318"
-echo "Collector OTLP HTTP endpoint: $OTLP_ENDPOINT"
+OTLP_ENDPOINT="http://$(kubectl get svc -n observability -l app.kubernetes.io/name=opentelemetry-collector -o jsonpath='{.items[0].metadata.name}').observability.svc.cluster.local:4317"
+echo "Collector OTLP gRPC endpoint: $OTLP_ENDPOINT"
 ```
 
-That value (or the bare service name) is what you paste into the **OTLP
-Endpoint** question in the Rancher UI form, or set via `--set
-otlpEndpoint=$OTLP_ENDPOINT`.
+That value is what you paste into the **OTLP Endpoint** question in the Rancher UI
+form, or set via `--set otlpEndpoint=$OTLP_ENDPOINT`.
 
 Verify it resolves from inside the cluster before blaming telemetry:
 
@@ -163,7 +162,7 @@ Or via helm:
 ```bash
 helm repo add ai-demos https://wiredquill.github.io/ai-demos
 helm install hr-assistant ai-demos/hr-assistant -n hr-assistant --create-namespace \
-  --set otlpEndpoint=http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4318 \
+  --set otlpEndpoint=http://opentelemetry-collector.observability.svc.cluster.local:4317 \
   --set service.type=NodePort \
   --set service.nodePort=30080
 ```
@@ -214,6 +213,14 @@ topology sent components=5 relations=4 status=200
 
 ## 7. Chart versions
 
+- **1.13.0** — Removed the install-time OTLP collector auto-discovery (Helm
+  `lookup`) and the Collector Namespace question. The OTLP endpoint is now a fixed
+  explicit default `http://opentelemetry-collector.observability.svc.cluster.local:4317`
+  (collector gRPC port). The pre-install connectivity check was rewritten to probe
+  the endpoint with a raw TCP connect instead of an HTTP GET, which is the correct
+  probe for a gRPC (4317) collector — the old HTTP probe bounced off gRPC and
+  falsely aborted installs. Underlying app pricing.json rebuilt from the
+  suse-ai-observability-extension v2.0.0 reference (106 chat models).
 - **1.9.0** — Load generator changed from CronJob (ephemeral pod per cycle,
   caused topology flap) to a persistent Deployment that stays running and
   polls the apps on a fixed interval. No more pod create/destroy churn.

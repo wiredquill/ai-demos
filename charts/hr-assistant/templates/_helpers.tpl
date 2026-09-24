@@ -119,104 +119,18 @@ so each install shows up as its own SUSE AI namespace in the topology.
 {{- end }}
 
 {{/*
-Find the shared OpenTelemetry collector Service in the cluster at install time.
-
-Helm's `lookup` runs against the live API server during install/upgrade (it
-returns nothing during `helm template`), so this auto-discovers the collector
-instead of asking the user to type it. Matches a Service whose name contains
-"opentelemetry-collector" or that carries the app.kubernetes.io/name label.
-*/}}
-{{- define "hr-assistant.collectorService" -}}
-{{- $explicit := .Values.observability.collectorNamespace | default "" -}}
-{{- $candidates := list -}}
-{{- if $explicit -}}
-  {{- $candidates = append $candidates $explicit -}}
-{{- end -}}
-{{- $candidates = append $candidates "observability" -}}
-{{- $candidates = append $candidates "suse-observability" -}}
-{{- $svc := "" -}}
-{{- range $ns := $candidates -}}
-  {{- if not $svc -}}
-    {{- $found := lookup "v1" "Service" $ns "" -}}
-    {{- range $item := ($found.items | default list) -}}
-      {{- if not $svc -}}
-        {{- $lbl := dig "app.kubernetes.io/name" "" ($item.metadata.labels | default dict) -}}
-        {{- if or (contains "opentelemetry-collector" $item.metadata.name) (eq $lbl "opentelemetry-collector") -}}
-          {{- $svc = $item.metadata.name -}}
-        {{- end -}}
-      {{- end -}}
-    {{- end -}}
-  {{- end -}}
-{{- end -}}
-{{- $svc -}}
-{{- end }}
-
-{{/*
-The namespace the auto-discovered collector was found in (or the explicitly
-configured one). Used to build the endpoint when the collector lives somewhere
-other than the default (observability or suse-observability).
-*/}}
-{{- define "hr-assistant.collectorNamespace" -}}
-{{- $explicit := .Values.observability.collectorNamespace | default "" -}}
-{{- $candidates := list -}}
-{{- if $explicit -}}
-  {{- $candidates = append $candidates $explicit -}}
-{{- end -}}
-{{- $candidates = append $candidates "observability" -}}
-{{- $candidates = append $candidates "suse-observability" -}}
-{{- $ns := "" -}}
-{{- range $cand := $candidates -}}
-  {{- if not $ns -}}
-    {{- $found := lookup "v1" "Service" $cand "" -}}
-    {{- range $item := ($found.items | default list) -}}
-      {{- if not $ns -}}
-        {{- $lbl := dig "app.kubernetes.io/name" "" ($item.metadata.labels | default dict) -}}
-        {{- if or (contains "opentelemetry-collector" $item.metadata.name) (eq $lbl "opentelemetry-collector") -}}
-          {{- $ns = $cand -}}
-        {{- end -}}
-      {{- end -}}
-    {{- end -}}
-  {{- end -}}
-{{- end -}}
-{{- default "observability" $ns -}}
-{{- end }}
-
-{{/*
 OTLP endpoint the applications export to. When the OpenTelemetry Operator option is
 enabled the apps talk to the collector this chart provisions in its own namespace;
-otherwise the endpoint resolves as follows:
-
-1. .Values.otlpEndpoint if explicitly set (used verbatim; the pre-install hook
-   validates connectivity and fails the install with the proper URL if wrong).
-2. Auto-discovered collector Service in observability.collectorNamespace
-   (Helm lookup at install time) - the "right collector" without typing anything.
-3. The conventional shared-collector FQDN as a last resort.
+otherwise the endpoint is taken verbatim from .Values.otlpEndpoint (defaulted in
+values.yaml to the shared SUSE AI collector at
+http://opentelemetry-collector.observability.svc.cluster.local:4317). No
+install-time auto-discovery: the address is fixed and explicit.
 */}}
 {{- define "hr-assistant.otlpEndpoint" -}}
 {{- if include "hr-assistant.collectorEnabled" . -}}
 http://{{ include "hr-assistant.collectorName" . }}-collector.{{ .Release.Namespace }}.svc.cluster.local:4318
 {{- else -}}
-{{- $endpoint := .Values.otlpEndpoint -}}
-{{- if not $endpoint -}}
-  {{- $svc := include "hr-assistant.collectorService" . -}}
-  {{- if $svc -}}
-    {{- $endpoint = printf "http://%s.%s.svc.cluster.local:4318" $svc (include "hr-assistant.collectorNamespace" .) -}}
-  {{- else -}}
-    {{- $endpoint = "http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4318" -}}
-  {{- end -}}
-{{- end -}}
-{{- $endpoint -}}
-{{- end -}}
-{{- end }}
-
-{{/*
-The auto-discovered collector endpoint, used by the connectivity-check hook to
-suggest the correct URL when the user-supplied one is unreachable.
-*/}}
-{{- define "hr-assistant.discoveredCollectorEndpoint" -}}
-{{- $svc := include "hr-assistant.collectorService" . -}}
-{{- if $svc -}}
-http://{{ $svc }}.{{ include "hr-assistant.collectorNamespace" . }}.svc.cluster.local:4318
+{{- default "http://opentelemetry-collector.observability.svc.cluster.local:4317" .Values.otlpEndpoint -}}
 {{- end -}}
 {{- end }}
 
