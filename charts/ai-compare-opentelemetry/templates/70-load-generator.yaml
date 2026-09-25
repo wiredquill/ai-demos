@@ -34,6 +34,8 @@ spec:
         app.kubernetes.io/component: load-generator
     spec:
       restartPolicy: Always
+      securityContext:
+        fsGroup: 65532
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -68,7 +70,6 @@ spec:
           securityContext:
             runAsNonRoot: true
             runAsUser: 65532
-            fsGroup: 65532
           resources:
             limits:
               cpu: 50m
