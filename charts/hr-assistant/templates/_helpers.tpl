@@ -122,15 +122,14 @@ so each install shows up as its own SUSE AI namespace in the topology.
 OTLP endpoint the applications export to. When the OpenTelemetry Operator option is
 enabled the apps talk to the collector this chart provisions in its own namespace;
 otherwise the endpoint is taken verbatim from .Values.otlpEndpoint (defaulted in
-values.yaml to the shared SUSE AI collector at
-http://opentelemetry-collector.observability.svc.cluster.local:4317). No
-install-time auto-discovery: the address is fixed and explicit.
+values.yaml). The apps use the HTTP OTLP exporter (OpenLIT), so the default MUST
+be the collector's HTTP port 4318 - pointing at gRPC 4317 makes every export timeout.
 */}}
 {{- define "hr-assistant.otlpEndpoint" -}}
 {{- if include "hr-assistant.collectorEnabled" . -}}
 http://{{ include "hr-assistant.collectorName" . }}-collector.{{ .Release.Namespace }}.svc.cluster.local:4318
 {{- else -}}
-{{- default "http://opentelemetry-collector.observability.svc.cluster.local:4317" .Values.otlpEndpoint -}}
+{{- default "http://opentelemetry-collector.observability.svc.cluster.local:4318" .Values.otlpEndpoint -}}
 {{- end -}}
 {{- end }}
 

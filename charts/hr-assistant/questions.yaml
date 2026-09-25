@@ -23,10 +23,10 @@ questions:
 # --- Observability (Form Page) ---
 - variable: otlpEndpoint
   label: "OTLP Endpoint"
-  description: "OpenTelemetry collector address (scheme://host:port). Default is the shared SUSE AI collector's gRPC endpoint (port 4317).<br><br>Find it manually:<br><code>kubectl get svc -n &lt;namespace&gt; | grep opentelemetry</code>"
+  description: "OpenTelemetry collector address (scheme://host:port). Default is the shared SUSE AI collector's HTTP OTLP endpoint (port 4318). The apps use OpenLIT's HTTP exporter, so do NOT point this at the gRPC port 4317.<br><br>Find it manually:<br><code>kubectl get svc -n &lt;namespace&gt; | grep opentelemetry</code>"
   type: string
   required: false
-  default: "http://opentelemetry-collector.observability.svc.cluster.local:4317"
+  default: "http://opentelemetry-collector.observability.svc.cluster.local:4318"
   group: Observability
 
 # --- General Configuration (Form Page) ---

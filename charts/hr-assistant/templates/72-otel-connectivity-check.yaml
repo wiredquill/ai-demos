@@ -6,8 +6,8 @@ Pre-install / pre-upgrade connectivity check for the OTLP collector.
 Runs a small Job BEFORE the application deployments are created. It resolves and
 TCP-connects to the OTLP endpoint the apps will export to; if that fails, the
 hook Job fails and Helm aborts the install with a message in the Rancher helm
-log. The collector here is plain gRPC (port 4317), so a TCP connect (nc -z) is
-the right probe - an HTTP GET would bounce off gRPC and falsely fail. This
+log. The endpoint is the collector's HTTP OTLP port (4318), and a raw TCP
+connect (nc -z) is a reliable reachability probe regardless of protocol. This
 prevents the classic silent failure mode where the apps deploy but report no
 telemetry because the collector address was wrong.
 
@@ -57,9 +57,8 @@ spec:
 
               echo "    host: ${HOST}  port: ${PORT}"
 
-              # The collector exposes plain gRPC on 4317, so a raw TCP connect is
-              # the correct reachability probe - an HTTP request would be rejected
-              # by the gRPC server. nc ships in the curl image.
+              # A raw TCP connect is the correct reachability probe (nc ships in the
+              # curl image) - it works for both the HTTP OTLP port and any other.
               if timeout 10 nc -zvw 5 "${HOST}" "${PORT}" 2>&1; then
                 echo "==> OK: collector reachable at ${HOST}:${PORT}"
                 exit 0
@@ -72,8 +71,8 @@ spec:
               echo >&2
               echo "       Verify the collector exists and is up with:" >&2
               echo "         kubectl get svc -n observability | grep opentelemetry" >&2
-              echo "       and make sure .Values.otlpEndpoint points at its gRPC" >&2
-              echo "       service (the chart default is port 4317)." >&2
+              echo "       and make sure .Values.otlpEndpoint points at the" >&2
+              echo "       collector's HTTP OTLP port (the chart default is 4318)." >&2
               exit 1
           resources:
             requests:

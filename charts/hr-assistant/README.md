@@ -21,10 +21,12 @@ apps every 2 minutes so the topology stays alive.
 The apps must report to the cluster's OpenTelemetry collector.
 
 **The chart ships with a fixed default that works on SUSE AI Factory clusters with
-the shared collector installed:** `http://opentelemetry-collector.observability.svc.cluster.local:4317`
-(the collector's gRPC OTLP port). No auto-discovery is performed at install time —
-the address is explicit and used verbatim. If your collector lives elsewhere,
-set the **OTLP Endpoint** question to its service FQDN.
+the shared collector installed:** `http://opentelemetry-collector.observability.svc.cluster.local:4318`
+(the collector's HTTP OTLP port). No auto-discovery is performed at install time —
+the address is explicit and used verbatim. Note the apps use OpenLIT's **HTTP**
+exporter, so the endpoint points at 4318 (HTTP) — do NOT use the gRPC port 4317,
+which makes every export batch time out. If your collector lives elsewhere,
+set the **OTLP Endpoint** question to its service FQDN (HTTP port).
 
 A **pre-install connectivity check** runs before the apps deploy: a small hook Job
 TCP-connects to the endpoint to confirm it is reachable. If it cannot be reached,
@@ -42,8 +44,8 @@ Then use the resulting service name (commonly
 `opentelemetry-collector`) in the OTLP endpoint:
 
 ```bash
-OTLP_ENDPOINT="http://$(kubectl get svc -n observability -l app.kubernetes.io/name=opentelemetry-collector -o jsonpath='{.items[0].metadata.name}').observability.svc.cluster.local:4317"
-echo "Collector OTLP gRPC endpoint: $OTLP_ENDPOINT"
+OTLP_ENDPOINT="http://$(kubectl get svc -n observability -l app.kubernetes.io/name=opentelemetry-collector -o jsonpath='{.items[0].metadata.name}').observability.svc.cluster.local:4318"
+echo "Collector OTLP HTTP endpoint: $OTLP_ENDPOINT"
 ```
 
 That value is what you paste into the **OTLP Endpoint** question in the Rancher UI
@@ -162,7 +164,7 @@ Or via helm:
 ```bash
 helm repo add ai-demos https://wiredquill.github.io/ai-demos
 helm install hr-assistant ai-demos/hr-assistant -n hr-assistant --create-namespace \
-  --set otlpEndpoint=http://opentelemetry-collector.observability.svc.cluster.local:4317 \
+  --set otlpEndpoint=http://opentelemetry-collector.observability.svc.cluster.local:4318 \
   --set service.type=NodePort \
   --set service.nodePort=30080
 ```
@@ -213,14 +215,17 @@ topology sent components=5 relations=4 status=200
 
 ## 7. Chart versions
 
+- **1.13.1** — Corrected the OTLP endpoint default to the collector's HTTP port
+  **4318**. This chart's apps use OpenLIT's HTTP exporter; the earlier 4317 default
+  (gRPC-only port) made every export batch time out, so no gen_ai telemetry ever
+  reached SUSE Observability and nothing appeared under SUSE AI. Root cause
+  confirmed on ai-4090: app logs `Failed to export span batch due to timeout`,
+  collector counters showed zero OTLP data.
 - **1.13.0** — Removed the install-time OTLP collector auto-discovery (Helm
   `lookup`) and the Collector Namespace question. The OTLP endpoint is now a fixed
-  explicit default `http://opentelemetry-collector.observability.svc.cluster.local:4317`
-  (collector gRPC port). The pre-install connectivity check was rewritten to probe
-  the endpoint with a raw TCP connect instead of an HTTP GET, which is the correct
-  probe for a gRPC (4317) collector — the old HTTP probe bounced off gRPC and
-  falsely aborted installs. Underlying app pricing.json rebuilt from the
-  suse-ai-observability-extension v2.0.0 reference (106 chat models).
+  explicit default (collector HTTP port). The pre-install connectivity check was
+  rewritten to probe the endpoint with a raw TCP connect (`nc -z`) instead of an
+  HTTP GET — protocol-agnostic and reliable for both the HTTP and gRPC ports.
 - **1.9.0** — Load generator changed from CronJob (ephemeral pod per cycle,
   caused topology flap) to a persistent Deployment that stays running and
   polls the apps on a fixed interval. No more pod create/destroy churn.
