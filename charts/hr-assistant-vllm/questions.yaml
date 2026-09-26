@@ -23,18 +23,10 @@ questions:
 # --- Observability (Form Page) ---
 - variable: otlpEndpoint
   label: "OTLP Endpoint"
-  description: "OpenTelemetry collector address (scheme://host:port).<br><br><b>Leave blank to auto-discover:</b> the chart looks up the collector Service in the Collector Namespace below and uses it automatically.<br><br>Find it manually:<br><code>kubectl get svc -n &lt;namespace&gt; | grep opentelemetry</code>"
+  description: "OTLP/HTTP address (port 4318) of the cluster's shared SUSE AI OpenTelemetry collector, as <code>http://&lt;service&gt;.&lt;namespace&gt;.svc.cluster.local:4318</code>.<br><br>The default matches the standard SUSE AI collector install (Service <code>opentelemetry-collector</code> in namespace <code>observability</code>). Change it only if your collector uses a different name or namespace. Find it with:<br><code>kubectl get svc -A | grep opentelemetry</code><br><br>A pre-install check verifies the collector is reachable and aborts the install with instructions if it is not."
   type: string
-  required: false
-  default: ""
-  group: Observability
-
-- variable: observability.collectorNamespace
-  label: "Collector Namespace"
-  description: "Namespace holding the shared OpenTelemetry collector Service.<br><br>Used to auto-discover the collector when OTLP Endpoint is blank, and by the pre-install connectivity check.<br><br>Default: <code>observability</code>. If your collector is in <code>suse-observability</code>, enter it here — or leave this field as-is and the chart checks both namespaces."
-  type: string
-  required: false
-  default: "observability"
+  required: true
+  default: "http://opentelemetry-collector.observability.svc.cluster.local:4318"
   group: Observability
 
 # --- vLLM Configuration (Form Page) ---
@@ -67,6 +59,15 @@ questions:
     - "Qwen/Qwen3.6-35B-A3B"
     - "meta-llama/Llama-3.3-70B-Instruct"
     - "openai/gpt-oss-120b"
+
+- variable: vllm.servingEngineSpec.modelSpec.main.hf_token
+  group: "vLLM Deployment"
+  label: "Hugging Face Token"
+  description: "Hugging Face access token (hf_...). Required for gated models (e.g. meta-llama/Llama-3.3-70B-Instruct); recommended for all models to avoid anonymous rate limits and slow downloads.<br><br>Stored in a Kubernetes Secret and injected into the vLLM engine as HF_TOKEN. Leave blank for anonymous downloads."
+  type: "password"
+  default: ""
+  required: false
+  show_if: "vllm.enabled=true"
 
 - variable: vllm.servingEngineSpec.modelSpec.main.requestGPU
   group: "vLLM Resources"

@@ -11,7 +11,13 @@ imagePullSecrets:
 # Observability endpoints
 # Used when observability.mode=existing. A single shared collector can serve every
 # namespace in the cluster; each release names itself via observability.serviceNamespace.
-otlpEndpoint: ''  # empty = auto-discover the collector Service at install time (see observability.collectorNamespace)
+#
+# OTLP/HTTP endpoint (port 4318) of the cluster's shared SUSE AI OpenTelemetry
+# collector. The default is the standard SUSE AI install: Helm release
+# "opentelemetry-collector" (fullnameOverride opentelemetry-collector) in the
+# "observability" namespace. It is used verbatim - there is no auto-discovery.
+# Find yours with: kubectl get svc -A | grep opentelemetry
+otlpEndpoint: 'http://opentelemetry-collector.observability.svc.cluster.local:4318'
 # empty = the vLLM router Service this release creates (see hr-assistant.vllmEndpoint
 # in _helpers.tpl); set only to point at an existing, externally-managed vLLM router.
 vllmEndpoint: ''
@@ -48,11 +54,6 @@ llmProvider: vllm
 #               OpenTelemetry Operator to be installed in the cluster.
 observability:
   mode: existing
-
-  # Namespace that holds the shared OpenTelemetry collector Service. Used by the
-  # chart's install-time auto-discovery (Helm lookup) to find the collector when
-  # otlpEndpoint is left empty, and by the pre-install connectivity-check hook.
-  collectorNamespace: observability
 
   # Image used by the pre-install OTLP connectivity-check hook Job.
   checkImage: curlimages/curl:8.5.0
@@ -177,6 +178,9 @@ vllm:
         repository: containers/vllm-openai
         tag: "0.19.0"
         modelURL: Qwen/Qwen2.5-7B-Instruct
+        # Hugging Face token (set at install time; never commit a real token).
+        # The subchart stores it in a Secret and injects HF_TOKEN into vLLM.
+        hf_token: ""
         requestGPU: 1
         requestGPUType: nvidia.com/gpu
         requestCPU: 8
