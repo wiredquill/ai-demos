@@ -196,8 +196,11 @@ spec:
 >   token in a secret) to fetch charts from git-backed ClusterRepos at deploy
 >   time; on vimes set `url: https://rancher.cattle-system` (cert-valid name) and
 >   `insecureSkipVerify: true` (lab cluster).
-> - The operator creates a per-cluster child AIWorkload in the target namespace
->   and may delete the parent — that is normal; watch the child for status.
+> - The operator watches AIWorkloads in **all** namespaces (no namespace filter),
+>   so the CR can live in `aif-operator` or the target namespace. It does **not**
+>   create per-cluster child workloads or delete a healthy parent — if you see a
+>   workload named `<name>-<clusterID>` in the target namespace, it was created
+>   by you/the UI, not the operator.
 > - `Degraded` phase with the bundle in a `Modified` re-apply loop is Fleet
 >   re-patching `app.kubernetes.io/managed-by: helm` labels — cosmetic, the app
 >   runs fine. Check `kubectl top pods` to confirm resources are healthy.
