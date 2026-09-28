@@ -1,15 +1,14 @@
 {{- if not (include "hr-assistant.collectorEnabled" .) }}
 {{- $endpoint := include "hr-assistant.otlpEndpoint" . }}
-{{- $discovered := include "hr-assistant.discoveredCollectorEndpoint" . }}
 {{/*
 Pre-install / pre-upgrade connectivity check for the OTLP collector.
 
 Runs a small Job BEFORE the application deployments are created. It resolves and
 TCP-connects to the OTLP endpoint the apps will export to; if that fails, the
 hook Job fails and Helm aborts the install with a message in the Rancher helm
-log, including the auto-discovered collector URL so the user can fix the value
-and retry. This prevents the classic silent failure mode where the apps deploy
-but report no telemetry because the collector address was wrong.
+log explaining how to find the right URL. This prevents the classic silent
+failure mode where the apps deploy but report no telemetry because the
+collector address was wrong.
 
 The check only runs in shared-collector mode (observability.mode=existing).
 When the chart provisions its own collector via the operator, there is nothing
@@ -41,8 +40,6 @@ spec:
           env:
             - name: OTLP_ENDPOINT
               value: {{ $endpoint | quote }}
-            - name: DISCOVERED_ENDPOINT
-              value: {{ $discovered | quote }}
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -77,16 +74,10 @@ spec:
               echo "       The applications will not be able to report telemetry, so" >&2
               echo "       this install is being ABORTED." >&2
               echo >&2
-              if [ -n "${DISCOVERED_ENDPOINT}" ] && [ "${DISCOVERED_ENDPOINT}" != "${OTLP_ENDPOINT}" ]; then
-                echo "       Auto-discovered collector on this cluster:" >&2
-                echo "         ${DISCOVERED_ENDPOINT}" >&2
-                echo "       Set the OTLP Endpoint question to that value and retry." >&2
-              else
-                echo "       Find the collector on your cluster with:" >&2
-                echo "         kubectl get svc -n observability | grep opentelemetry" >&2
-                echo "       and set the OTLP Endpoint question to:" >&2
-                echo "         http://<service>.observability.svc.cluster.local:4318" >&2
-              fi
+              echo "       Find the collector on your cluster with:" >&2
+              echo "         kubectl get svc -A | grep opentelemetry" >&2
+              echo "       and set the OTLP Endpoint question to:" >&2
+              echo "         http://<service>.<namespace>.svc.cluster.local:4318" >&2
               echo >&2
               echo "       Verify manually from the cluster:" >&2
               echo "         kubectl run curl-check --rm -i --restart=Never --image=curlimages/curl -- \\" >&2
