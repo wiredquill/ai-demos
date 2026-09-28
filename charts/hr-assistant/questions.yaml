@@ -20,15 +20,6 @@ questions:
   default: 30080
   show_if: "service.type=NodePort"
 
-# --- Observability (Form Page) ---
-- variable: otlpEndpoint
-  label: "OTLP Endpoint"
-  description: "OpenTelemetry collector address (scheme://host:port). Default is the shared SUSE AI collector's HTTP OTLP endpoint (port 4318). The apps use OpenLIT's HTTP exporter, so do NOT point this at the gRPC port 4317.<br><br>Find it manually:<br><code>kubectl get svc -n &lt;namespace&gt; | grep opentelemetry</code>"
-  type: string
-  required: false
-  default: "http://opentelemetry-collector.observability.svc.cluster.local:4318"
-  group: Observability
-
 # --- General Configuration (Form Page) ---
 - variable: ollama.enabled
   group: General
@@ -55,14 +46,6 @@ questions:
   options:
     - "nvidia"
     - "amd"
-
-- variable: loadGenerator.intervalSeconds
-  label: "Load Generation Interval (seconds)"
-  type: int
-  default: 120
-  description: "How often the load-generator pod polls the app /ask endpoints.<br><br>Keep at 120 or lower: the SUSE AI topology exporter expires components ~2 minutes after last telemetry. A longer interval leaves the SUSE AI view empty between polls.<br><br>The generator runs as an always-on Deployment, so the pod no longer flaps offline/online in the topology."
-  required: true
-  group: General
 
 # --- Ollama Deployment Configuration ---
 - variable: ollama.models.pull.main
@@ -227,15 +210,15 @@ questions:
 
 # --- Vector Database + Search Engine components ---
 - variable: qdrant.enabled
-  group: "Observability Demo Components"
+  group: "Demo Components"
   label: "Deploy Qdrant (Vector Database)"
-  description: "Deploys Qdrant and wires the collector to tag it as a Vector Databases component. The RAG app seeds and searches it for topology data."
+  description: "Deploys Qdrant. The HRPolicyDatabase RAG app seeds it with HR policy embeddings and searches it."
   type: "boolean"
   default: true
 
 - variable: opensearch.enabled
-  group: "Observability Demo Components"
+  group: "Demo Components"
   label: "Deploy OpenSearch (Search Engine)"
-  description: "Deploys OpenSearch and wires the collector to tag it as a Search Engines component. The RAG app indexes and searches it for topology data."
+  description: "Deploys OpenSearch. The HRPolicyDatabase RAG app indexes and queries HR policy documents."
   type: "boolean"
   default: true

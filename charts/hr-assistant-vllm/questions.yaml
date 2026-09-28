@@ -88,17 +88,17 @@ questions:
 - variable: vllm.servingEngineSpec.modelSpec.main.requestCPU
   group: "vLLM Resources"
   label: "CPU Request (cores)"
-  description: "CPU cores requested for the serving engine. The GPU does the matmuls; CPU handles tokenization, scheduling and Python overhead. Measured on the 4090 demo: a Qwen2.5-7B serving pod averages ~1.2 cores, so 4 is a comfortable default."
+  description: "CPU cores requested for the serving engine. The GPU does the matmuls; CPU handles tokenization, scheduling and Python overhead. Measured on the 4090 demo: a Qwen2.5-7B serving pod averages ~0.45 cores, so 2 is a comfortable default."
   type: "int"
-  default: 4
+  default: 2
   show_if: "vllm.enabled=true"
 
 - variable: vllm.servingEngineSpec.modelSpec.main.requestMemory
   group: "vLLM Resources"
   label: "Memory Request"
-  description: "vLLM streams model weights through CPU RAM before moving them to the GPU, so this must comfortably EXCEED the model size: 7B fp16 ~16GB → 12Gi; 35B AWQ ~19GB → 24Gi; 70B AWQ ~40GB → 48Gi. Measured on the 4090 demo: a Qwen2.5-7B pod peaks ~3.5Gi, so 8Gi is a comfortable request."
+  description: "vLLM streams model weights through CPU RAM before moving them to the GPU, so this must comfortably EXCEED the model size: 7B fp16 ~16GB → 12Gi; 35B AWQ ~19GB → 24Gi; 70B AWQ ~40GB → 48Gi. Measured on the 4090 demo: a Qwen2.5-7B pod peaks ~3.3Gi, so 4Gi is a comfortable request."
   type: "string"
-  default: "8Gi"
+  default: "4Gi"
   show_if: "vllm.enabled=true"
 
 - variable: vllm.servingEngineSpec.modelSpec.main.limitMemory
@@ -106,7 +106,7 @@ questions:
   label: "Memory Limit"
   description: "Hard memory ceiling. Must exceed the model size for the load phase. A too-low limit OOM-kills the pod during model load."
   type: "string"
-  default: "24Gi"
+  default: "16Gi"
   show_if: "vllm.enabled=true"
 
 # --- Storage ---

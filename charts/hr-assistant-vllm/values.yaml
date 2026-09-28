@@ -179,12 +179,12 @@ vllm:
         modelURL: Qwen/Qwen2.5-7B-Instruct
         requestGPU: 1
         requestGPUType: nvidia.com/gpu
-        requestCPU: 8
-        requestMemory: "16Gi"
+        requestCPU: 2
+        requestMemory: "4Gi"
         # vLLM loads weights through CPU RAM before moving to GPU; limitMemory
-        # must comfortably exceed the model size (7B fp16 ~16GB -> 24Gi).
-        limitCPU: 8
-        limitMemory: "24Gi"
+        # must comfortably exceed the model size (7B fp16 ~16GB -> 16Gi).
+        limitCPU: 2
+        limitMemory: "16Gi"
         # Model cache: vLLM downloads weights into a PVC so restarts are fast.
         pvcStorage: "100Gi"
         storageClass: "Default"

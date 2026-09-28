@@ -56,10 +56,8 @@ COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 # Copy application files
 COPY main.py ./main.py
 COPY health_check_emitter.py ./health_check_emitter.py
-COPY pricing.json ./pricing.json
 COPY dashboard.html ./dashboard.html
 COPY apps ./apps
-COPY patch ./patch
 COPY hr-documents ./hr-documents
 
 # Application entrypoint
