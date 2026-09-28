@@ -3,16 +3,10 @@ import sys
 from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Union
 
-import openlit
-import patch
-
-# LLM_PROVIDER selects both which endpoint env var to read and which OpenLit
-# patch module (patch/openlit_ollama.py vs patch/openlit_vllm.py) owns the
-# chat-completions telemetry — see patch/__init__.py below. Defaults to
-# "ollama" so the existing hr-assistant (Ollama) chart, which never sets
-# LLM_PROVIDER, keeps working unchanged.
+# LLM_PROVIDER selects which endpoint env var to read: OLLAMA_ENDPOINT for
+# "ollama" (the default) or VLLM_ENDPOINT for "vllm". The result is published
+# as LLM_ENDPOINT for the app modules below.
 #
 # This MUST run before `from apps import ...` below: apps/simple.py,
 # apps/rag101.py and apps/rag102.py all read os.getenv("LLM_ENDPOINT") at
@@ -30,63 +24,10 @@ if _llm_provider == "ollama":
 from apps import rag101, rag102, simple  # noqa: E402  (see LLM_ENDPOINT comment above)
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 app = FastAPI()
 
-otlp_endpoint = os.getenv("OTLP_ENDPOINT")
-ollama_api_key = os.getenv("OLLAMA_API_KEY")
 app_name = os.getenv("APP_NAME")
-collect_gpu_stats = os.getenv("COLLECT_GPU_STATS", "false") == "true"
-
-openlit.init(
-    otlp_endpoint=otlp_endpoint,
-    disable_batch=True,
-    capture_message_content=True,
-    application_name=app_name,
-    pricing_json="./pricing.json",
-    collect_gpu_stats=collect_gpu_stats,
-    # The OpenAI SDK here only ever talks to Ollama's /v1 endpoint or vLLM's
-    # OpenAI-compatible router (never real OpenAI). openlit's own openai
-    # instrumentor would report gen_ai.provider.name=openai, which puts a
-    # bogus OpenAI inference engine in the SUSE AI topology, so patch_openlit()
-    # owns that path instead and reports the real provider (LLM_PROVIDER above).
-    #
-    # langchain is disabled too, for the same reason on the vLLM path: openlit's
-    # native langchain instrumentor tags provider by LangChain integration class
-    # name, so apps/rag102.py's ChatOpenAI (langchain_openai — the vLLM chat
-    # model) gets tagged gen_ai.provider.name=openai regardless of base_url,
-    # producing the same bogus OpenAI component. ChatOpenAI's calls go through
-    # the same openai.resources.chat.completions.Completions.create path
-    # patch/openlit_vllm.py already wraps (LangChain's OpenAI integration is
-    # itself built on the openai SDK client), so no telemetry is lost by
-    # disabling openlit's separate langchain wrapper — patch/suse_ai_metrics.py's
-    # SuseAiMetricsCallback in rag102.py still covers the Ollama (OllamaLLM) path,
-    # which this doesn't touch.
-    #
-    # requests/fastapi/httpx are deliberately left enabled (not listed here):
-    # HRAssistant's cross-service calls to HRPolicyDatabase/EmployeeHandbook, and
-    # rag101's existing Qdrant/OpenSearch calls, need the requests instrumentor to
-    # inject traceparent headers and the FastAPI instrumentor (below) to extract
-    # them, or every /ask stays a disconnected trace instead of one connected one.
-    disabled_instrumentors=["openai", "langchain"],
-)
-
-patch.patch_openlit()
-
-# `app = FastAPI()` above runs at import time, before openlit.init() executes -
-# so openlit's own global FastAPI auto-instrumentor (which patches FastAPI.__init__
-# for apps constructed *after* it runs) never touches this specific app object.
-# Instrument this instance explicitly so every /ask becomes a real incoming SERVER
-# span: it lets this app extract a caller's traceparent (when HRAssistant calls in)
-# and lets every @openlit.trace-decorated function below nest into it, giving SUSE
-# Observability one connected trace instead of a disconnected one per app.
-#
-# excluded_urls is matched with re.search against the full request URL
-# (scheme+host+path), not anchored - "/$" matches a trailing bare "/" (the
-# dashboard's own root path) without matching "/ask" or "/health" (no
-# trailing slash), which a bare "/" pattern would (it'd match every URL).
-FastAPIInstrumentor.instrument_app(app, excluded_urls="/$,health,stats,logs")
 
 # --- Dashboard support: in-memory stats + log ring buffer -------------------
 #
@@ -140,7 +81,7 @@ def dashboard():
 
     Served by the app itself so the browser polls /stats and /logs same-origin
     — no extra deployment, no CORS. The dashboard exists purely to show the
-    demo processing data; SUSE Observability is the real monitoring surface.
+    demo processing data.
 
     Lives at / (not /dashboard) so it's the landing page at the Service's
     NodePort/URL. hr-policy-db's chart httpGet probes hit / expecting any
