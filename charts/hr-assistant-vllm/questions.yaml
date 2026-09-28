@@ -1,4 +1,13 @@
 questions:
+# --- Hugging Face Access (Form Page 1) ---
+- variable: vllm.servingEngineSpec.modelSpec.main.hf_token
+  group: "Hugging Face Access"
+  label: "Hugging Face Access Token"
+  description: "Token for downloading gated models (e.g. meta-llama/*) from Hugging Face. Optional for public models; required for gated/Gated Repos. Stored in a generated Secret and mounted as HF_TOKEN. You can also pass an existing Secret by setting it in values (vllm.servingEngineSpec.modelSpec.main.hf_token.secretName/secretKey)."
+  type: password
+  required: false
+  default: ""
+
 # --- Dashboard / Service Access (Form Page) ---
 - variable: service.type
   group: "Dashboard / Service Access"
@@ -79,17 +88,17 @@ questions:
 - variable: vllm.servingEngineSpec.modelSpec.main.requestCPU
   group: "vLLM Resources"
   label: "CPU Request (cores)"
-  description: "CPU cores requested for the serving engine. The GPU does the matmuls; CPU handles tokenization, scheduling and Python overhead."
+  description: "CPU cores requested for the serving engine. The GPU does the matmuls; CPU handles tokenization, scheduling and Python overhead. Measured on the 4090 demo: a Qwen2.5-7B serving pod averages ~1.2 cores, so 4 is a comfortable default."
   type: "int"
-  default: 8
+  default: 4
   show_if: "vllm.enabled=true"
 
 - variable: vllm.servingEngineSpec.modelSpec.main.requestMemory
   group: "vLLM Resources"
   label: "Memory Request"
-  description: "vLLM streams model weights through CPU RAM before moving them to the GPU, so this must comfortably EXCEED the model size: 7B fp16 ~16GB → 16Gi; 35B AWQ ~19GB → 32Gi; 70B AWQ ~40GB → 64Gi."
+  description: "vLLM streams model weights through CPU RAM before moving them to the GPU, so this must comfortably EXCEED the model size: 7B fp16 ~16GB → 12Gi; 35B AWQ ~19GB → 24Gi; 70B AWQ ~40GB → 48Gi. Measured on the 4090 demo: a Qwen2.5-7B pod peaks ~3.5Gi, so 8Gi is a comfortable request."
   type: "string"
-  default: "16Gi"
+  default: "8Gi"
   show_if: "vllm.enabled=true"
 
 - variable: vllm.servingEngineSpec.modelSpec.main.limitMemory
