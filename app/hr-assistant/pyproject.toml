@@ -7,16 +7,8 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-openlit = "^1.44.0"
 openai = "^1.53.0"
-# Already resolved transitively via openlit; declared directly because main.py
-# now imports FastAPIInstrumentor by name to fix instrumentation ordering (see
-# main.py comment) rather than relying on an undeclared transitive dep.
-opentelemetry-instrumentation-fastapi = "^0.65b0"
 requests = "^2.32.0"  # direct dep: rag101 talks to OpenSearch over REST
-# rag101's Qdrant calls go through the official SDK (not raw requests) so
-# openlit's native qdrant_client instrumentor emits the db_requests metric the
-# SUSE AI StackPack's vectordb health monitor requires (see apps/rag101.py).
 qdrant-client = "^1.16.0"
 # pymilvus itself is only used for its bundled embedding helper
 # (model.DefaultEmbeddingFunction, used to vectorize documents for Qdrant) -

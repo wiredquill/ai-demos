@@ -1,134 +1,18 @@
 # SUSE AI HR Assistant Demo Configuration
-# Showcases comprehensive LLM observability with OpenLit integration
+# Clean application: three FastAPI services (HRAssistant orchestrator,
+# HRPolicyDatabase RAG app, EmployeeHandbook) plus Ollama, Qdrant and
+# OpenSearch. No observability telemetry is emitted by this branch - use the
+# feat/stackpack-v2 branch for the SUSE Observability StackPack v2 variant.
 
 # Global configuration
 imagePullSecrets:
   - name: application-collection
 
-# Observability endpoints
-# Used when observability.mode=existing. Fixed, explicit address of the shared
-# SUSE AI OpenTelemetry collector. THIS chart's apps use the HTTP OTLP exporter
-# (OpenLIT), so the endpoint MUST use the collector's HTTP port 4318 - the gRPC
-# port 4317 only accepts gRPC, so an HTTP exporter pointed at it times out with
-# zero telemetry reaching SUSE Observability.
-otlpEndpoint: 'http://opentelemetry-collector.observability.svc.cluster.local:4318'
 ollamaEndpoint: 'http://my-hr-assistant-ollama:11434'
 collectGpuStats: 'false'  # Enable GPU metrics for demo
 
-# Reported as deployment.environment on every signal.
-deploymentEnvironment: production
-
 # Primary model used by the apps. Defaults to the first model Ollama pulls.
 model: ''
-
-# GenAI semantic-convention identity reported to SUSE Observability.
-#
-# SUSE Observability builds the SUSE AI topology from the *resource* attribute
-# gen_ai.provider.name: it is what makes the inference engine appear as a
-# component and what links the application to the models it calls. OpenLIT only
-# emits the older gen_ai.system span attribute, so the chart sets this explicitly
-# via OTEL_RESOURCE_ATTRIBUTES.
-genai:
-  providerName: ollama
-
-# How the applications ship telemetry.
-#
-#   existing  - send to a collector that already runs in the cluster, named by
-#               otlpEndpoint above. Nothing extra is installed.
-#   operator  - ask the OpenTelemetry Operator to create a SUSE AI collector in
-#               this namespace, pre-wired with the GenAI topology pipeline. The
-#               applications are pointed at it automatically. Requires the
-#               OpenTelemetry Operator to be installed in the cluster.
-observability:
-  mode: existing
-
-  # Image used by the pre-install OTLP connectivity-check hook Job.
-  checkImage: curlimages/curl:8.5.0
-
-  # Reported as the service.namespace resource attribute, and the primary source
-  # SUSE Observability uses to group this release's SUSE AI components.
-  #
-  # SUSE's collector pipeline reads service.namespace first and only falls back to
-  # the collector's own SUSE_AI_NAMESPACE when an application does not declare one.
-  # Because each application names its own namespace, one shared collector can
-  # serve the whole cluster and still group every app correctly - a collector per
-  # namespace is not required. Defaults to the release namespace.
-  serviceNamespace: ''
-
-opentelemetry:
-  operator:
-    # Set by observability.mode; kept for callers that set it directly.
-    enabled: false
-    mode: deployment
-    replicas: 1
-    # Set true to also log telemetry to the collector's stdout for debugging.
-    debug: false
-    image:
-      repository: registry.suse.com/ai/containers/suse-ai-opentelemetry-collector
-      tag: '0.149.0'
-      pullPolicy: IfNotPresent
-    # registry.suse.com/ai is authenticated; the collector pod needs these.
-    imagePullSecrets:
-      - name: application-collection
-      - name: suse-registry
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: '1'
-        memory: 1Gi
-    # Cluster name recorded on the telemetry. Defaults to the Rancher-injected
-    # global.cattle.clusterName, so it rarely needs setting by hand.
-    clusterName: ''
-
-    # SUSE_AI_NAMESPACE on the collector: the fallback applied only to telemetry
-    # that carries no service.namespace of its own (Milvus, OpenSearch, vLLM
-    # scraped over Prometheus). Defaults to the release namespace when empty.
-    suseAiNamespace: ''
-
-    suseObservability:
-      # Base URL of the SUSE Observability server, used by the topology exporter.
-      apiUrl: ''
-      # OTLP gRPC ingestion endpoint as host:port, with no scheme.
-      otlpEndpoint: ''
-      # Plaintext gRPC. Leave false for a TLS ingestion endpoint.
-      otlpInsecure: false
-      # Skip TLS verification, for demo clusters with self-signed certificates.
-      skipTlsVerify: true
-
-      # API key resolution, in order:
-      #   1. existingSecret, if set
-      #   2. apiKey, if set - the chart creates a secret holding it
-      #   3. otherwise a pre-install hook copies apiKeySecret out of
-      #      sourceNamespace, so nobody has to paste a token at install time
-      apiKey: ''
-      existingSecret: ''
-      existingSecretKey: API_KEY
-      # Where to copy the API key secret from when neither of the above is set.
-      copySecret:
-        enabled: true
-        sourceNamespace: observability
-        name: open-telemetry-collector
-        image: curlimages/curl:8.5.0
-
-# Persistent load generator. Replaces the old CronJob approach, which created a
-# new pod every cycle and let it terminate — that churn made the load-gen pod
-# flap offline/online in the SUSE AI topology view every few minutes.
-# The new design runs a single long-lived Deployment instead, so the pod is
-# created once and stays up for the lifetime of the release.
-#
-# The pod polls the app /ask endpoints on this interval. The interval must
-# stay comfortably under the topology exporter's TTL (components expire ~2 min
-# after their last telemetry) so the SUSE AI view never goes empty; 120s keeps
-# everything continuously lit.
-loadGenerator:
-  # Set false to remove the persistent load-generator pod entirely.
-  enabled: true
-  # Seconds between polling cycles for the app /ask endpoints.
-  intervalSeconds: 45
-  # Number of load-generator replicas (keep at 1 for a demo).
-  replicas: 1
 
 # Job cleanup settings (still used by the Ollama model-puller Job)
 jobs:
@@ -185,63 +69,26 @@ replicaCount: 1
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 image:
-  # Published by .github/workflows/build-hr-assistant.yml from app/hr-assistant.
-  # The old llm-experiments repository is no longer built and is frozen on
-  # openlit 1.27, which predates the gen_ai.provider.name convention.
-  # SUSE Observability instrumented variant (OpenLIT + pricing.json bundled).
-  # The upstream ai-demos/genai-demo image has no OpenLIT init and ships zero
-  # gen_ai telemetry. 3f435cd carries openlit 1.28.0 whose underscore
-  # gen_ai_* counters are verified against the suse-ai StackPack on dev-ai.
+  # Published by .github/workflows/build-hr-assistant.yml from app/hr-assistant
+  # (this branch: the clean, no-observability build).
   repository: ghcr.io/wiredquill/ai-demos-suse
   # This sets the pull policy for images.
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  # Carries the HRAssistant cross-service orchestration + FastAPI server-span
-  # instrumentation fix (main.py, apps/simple.py) so the SUSE AI topology shows
-  # a connected app -> app -> {ollama, qdrant, opensearch} picture, plus the
-  # SUSE AI cost/request metrics fix for the native ollama and langchain call
-  # paths (patch/suse_ai_metrics.py), the dashboard move to / (main.py), and
-  # the EmployeeHandbook vectorstore connection-lifecycle fix (build once per
-  # process, and removed the vestigial second MilvusClient connection to the
-  # same embedded file that was fighting langchain_milvus's own connection -
-  # apps/rag102.py), health_check_emitter.py (used by the load-generator's
-  # second container to give Qdrant/OpenSearch a trace presence), and the
-  # qdrant-client SDK migration (apps/rag101.py) so OpenLIT's native qdrant
-  # instrumentor emits the db_requests metric the SUSE AI vectordb health
-  # monitor actually requires. Also carries: HRAssistant's downstream calls
-  # to HRPolicyDatabase/EmployeeHandbook now run concurrently instead of
-  # sequentially (apps/simple.py), cutting its own end-to-end latency roughly
-  # in half; and a background loop in HRPolicyDatabase that re-runs real
-  # Qdrant/OpenSearch searches every 10s (apps/rag101.py) so their topology
-  # edges stay lit continuously instead of flickering in and out between
-  # /ask calls.
-  tag: "topology-orchestration-10"
+  tag: "clean-1"
 
 # The RAG app (hr-policy-db) runs a different image than the chat apps:
 # app/hr-assistant is built to ghcr.io/wiredquill/ai-demos/genai-demo by
 # .github/workflows/build-hr-assistant.yml and contains main.py + apps/ (rag101,
-# rag102), which the chat-app ai-demos-suse image does NOT ship. The RAG apps
-# need milvus-lite (local-file Milvus) which is baked into this image.
+# rag102), which the chat-app ai-demos-suse image does NOT ship.
 policyDb:
   image:
     repository: ghcr.io/wiredquill/ai-demos/genai-demo
     pullPolicy: Always
-    # Carries the same FastAPIInstrumentor fix as image.tag above, plus the
-    # Milvus idempotency fix (build_policy_vault() was throwing "collection
-    # already exists" on every request after the first, silently falling back
-    # to a plain LLM answer instead of the RAG/tool-calling flow), the SUSE
-    # AI cost/request metrics fix for the native ollama call path, and the
-    # background Qdrant/OpenSearch relation-refresh loop described above.
-    tag: "topology-orchestration-10"
+    tag: "clean-1"
 
-# Qdrant — vector database component.
-#
-# Deployed so the SUSE AI section in SUSE Observability shows a component under
-# "Vector Databases". The shared collector scrapes qdrant:6333/metrics with the
-# "qdrant" Prometheus job; its transform/qdrant processor tags every metric with
-# suse.ai.component.type=vectordb (see templates/otel-collector-values-suse-ai.yaml).
-# The hr-policy-db app upserts HR policy embeddings and searches them, so the
-# topology shows hr-policy-db -> qdrant as a dependency.
+# Qdrant — vector database used by the HRPolicyDatabase RAG app
+# (upserts HR policy embeddings and searches them).
 qdrant:
   enabled: true
   image:
@@ -259,13 +106,8 @@ qdrant:
     type: ClusterIP
     port: 6333
 
-# OpenSearch — search engine component.
-#
-# Deployed so the SUSE AI section shows a component under "Search Engines".
-# The shared collector polls the OpenSearch REST API with the elasticsearch
-# receiver; its resource/opensearch processor tags the metrics with
-# suse.ai.component.type=search-engine. The hr-policy-db app indexes HR policy
-# documents and queries them, so the topology shows hr-policy-db -> opensearch.
+# OpenSearch — search engine used by the HRPolicyDatabase RAG app
+# (indexes and queries HR policy documents).
 opensearch:
   enabled: true
   image:
@@ -282,8 +124,7 @@ opensearch:
   service:
     type: ClusterIP
     port: 9200
-  # Single-node demo: security plugin disabled, no auth. The collector's
-  # elasticsearch receiver connects over plain HTTP.
+  # Single-node demo: security plugin disabled, no auth, plain HTTP.
   env:
     - name: discovery.type
       value: single-node
@@ -293,18 +134,6 @@ opensearch:
       value: "false"
     - name: ES_JAVA_OPTS
       value: "-Xms512m -Xmx512m"
-    # The SUSE AI StackPack's opensearch metric bindings and health monitor
-    # (extracted and read from the suse-ai-observability-extension-setup
-    # image: stackpack/metrics/opensearch.yaml) hardcode
-    # elasticsearch_cluster_name="opensearch-cluster" in every one of their
-    # PromQL queries. OpenSearch's default cluster.name is "docker-cluster" -
-    # confirmed against our own /_cluster/health - so every binding query
-    # (health color, pending tasks, free space, operations) silently matched
-    # nothing no matter how much data flowed, which is why OpenSearch stayed
-    # "unknown" even with 160k+ metric points successfully reaching SUSE
-    # Observability. Naming the cluster to match is the actual fix.
-    - name: cluster.name
-      value: "opensearch-cluster"
 
 # This is to override the chart name.
 nameOverride: ""
