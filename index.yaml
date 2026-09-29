@@ -8,7 +8,44 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-09-29T04:28:01.179417886+02:00"
+    created: "2026-09-29T04:46:53.349926229+02:00"
+    description: AI Compare OpenTelemetry Edition - Advanced observability-focused
+      AI response comparison platform. Features comprehensive GenAI telemetry, token-level
+      cost tracking, model performance monitoring, and deep integration with SUSE
+      Observability.
+    digest: 25b9db40a590e1c9fd52ef6503e629d11712f058c263db7cc65bb79508145596
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - ollama
+    - machine-learning
+    - opentelemetry
+    - observability
+    - telemetry
+    - monitoring
+    - genai
+    - tokens
+    - cost-tracking
+    - demo
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: ai-compare-opentelemetry
+    sources:
+    - https://github.com/wiredquill/ai-demos
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/ai-compare-opentelemetry-0.1.544.tgz
+    version: 0.1.544
+  - annotations:
+      category: AI/ML
+      licenses: MIT
+      observability.suse.com/compatible: "true"
+      opentelemetry.io/instrumented: "true"
+    apiVersion: v2
+    appVersion: 1.0.0
+    created: "2026-09-29T04:46:53.348186962+02:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -41,7 +78,7 @@ entries:
   hr-assistant-vllm:
   - apiVersion: v2
     appVersion: latest
-    created: "2026-09-29T04:28:01.19220473+02:00"
+    created: "2026-09-29T04:46:53.364186522+02:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -73,7 +110,7 @@ entries:
     version: 0.1.3
   - apiVersion: v2
     appVersion: latest
-    created: "2026-09-29T04:28:01.190162722+02:00"
+    created: "2026-09-29T04:46:53.362026975+02:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -105,7 +142,7 @@ entries:
     version: 0.1.2
   - apiVersion: v2
     appVersion: latest
-    created: "2026-09-29T04:28:01.186571656+02:00"
+    created: "2026-09-29T04:46:53.358459035+02:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -137,7 +174,7 @@ entries:
     version: 0.1.1
   - apiVersion: v2
     appVersion: latest
-    created: "2026-09-29T04:28:01.183258721+02:00"
+    created: "2026-09-29T04:46:53.353938886+02:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -167,4 +204,4 @@ entries:
     urls:
     - https://github.com/wiredquill/ai-demos/hr-assistant-vllm-0.1.0.tgz
     version: 0.1.0
-generated: "2026-09-29T04:28:01.178315373+02:00"
+generated: "2026-09-29T04:46:53.346317606+02:00"

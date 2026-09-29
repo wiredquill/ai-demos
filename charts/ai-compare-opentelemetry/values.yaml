@@ -167,7 +167,7 @@ aiCompare:
     enabled: true # Enabled by default for comprehensive GenAI telemetry and cost tracking
     # Empty = auto-discover the collector Service at install/upgrade time (Helm lookup in
     # 'observability' / 'suse-observability'); set an explicit FQDN to override.
-    otlpEndpoint: ""
+    otlpEndpoint: "http://opentelemetry-collector.observability.svc.cluster.local:4318"
     collectGpuStats: false # Disable GPU stats for AI Compare app (no GPU access) - Ollama handles GPU stats
     schedule: "*/5 * * * *"
     # Enhanced GenAI observability settings
