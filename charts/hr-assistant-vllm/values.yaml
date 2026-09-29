@@ -279,20 +279,19 @@ replicaCount: 1
 # image for the chat apps), this chart points every app role at that one
 # built image — there is no vLLM-specific reason for two images.
 #
-# main-be07471: disables openlit's langchain instrumentor (was tagging
-# apps/rag102.py's ChatOpenAI gen_ai.provider.name=openai, a spurious second
-# inference-engine alongside vllm in the SUSE AI topology). Built from
-# commit be074713.
+# chore-hr-assistant-clean-9dd5e28: rebuilt against current bci/python:3.11 base
+# (clears OS-level CVEs) with regenerated poetry.lock (openlit/otel deps removed).
+# Built from commit 9dd5e286 on chore/hr-assistant-clean.
 image:
   repository: ghcr.io/wiredquill/ai-demos/genai-demo
   pullPolicy: Always
-  tag: "main-be07471"
+  tag: "chore-hr-assistant-clean-9dd5e28"
 
 policyDb:
   image:
     repository: ghcr.io/wiredquill/ai-demos/genai-demo
     pullPolicy: Always
-    tag: "main-be07471"
+    tag: "chore-hr-assistant-clean-9dd5e28"
 
 # Qdrant — vector database component.
 #
