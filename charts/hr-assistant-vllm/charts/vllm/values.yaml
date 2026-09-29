@@ -347,7 +347,7 @@ routerSpec:
   # -- The docker image of the router. The following values are defaults:
   registry: dp.apps.rancher.io
   repository: "containers/lmcache-lmstack-router"
-  tag: "0.1.10-3.60"
+  tag: "0.1.10-3.108"
   imagePullPolicy: "Always"
   # -- Pod-level security context configuration. https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.32/#podsecuritycontext-v1-core
   securityContext: {}
