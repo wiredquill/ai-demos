@@ -279,19 +279,21 @@ replicaCount: 1
 # image for the chat apps), this chart points every app role at that one
 # built image — there is no vLLM-specific reason for two images.
 #
-# chore-hr-assistant-clean-9dd5e28: rebuilt against current bci/python:3.11 base
-# (clears OS-level CVEs) with regenerated poetry.lock (openlit/otel deps removed).
-# Built from commit 9dd5e286 on chore/hr-assistant-clean.
+# rebuild-observability-be07471: rebuilt from be074713 (the observability-enabled
+# source that built the original main-be07471) against the current bci/python:3.11
+# base to clear OS-level CVEs, KEEPING full openlit/OTel instrumentation. The
+# chore/hr-assistant-clean branch strips openlit and would break SUSE AI
+# observability — do not build the app image from it.
 image:
   repository: ghcr.io/wiredquill/ai-demos/genai-demo
   pullPolicy: Always
-  tag: "chore-hr-assistant-clean-9dd5e28"
+  tag: "rebuild-observability-be07471"
 
 policyDb:
   image:
     repository: ghcr.io/wiredquill/ai-demos/genai-demo
     pullPolicy: Always
-    tag: "chore-hr-assistant-clean-9dd5e28"
+    tag: "rebuild-observability-be07471"
 
 # Qdrant — vector database component.
 #
