@@ -185,16 +185,28 @@ function renderSpark() {
 
 async function poll() {
   try {
-    const [statsRes, logsRes] = await Promise.all([
+    const [statsRes, logsRes, statusRes] = await Promise.all([
       fetch("/stats"),
       fetch("/logs"),
+      fetch("/status"),
     ]);
     const stats = await statsRes.json();
     const logs = await logsRes.json();
+    let status = null;
+    try { status = await statusRes.json(); } catch (_) {}
 
-    // Status pill
-    $("statusText").textContent = `${stats.app || "app"} · live`;
-    $("statusDot").className = "status-dot";
+    // Status pill — real demo liveness from /status (LLM backend reachable),
+    // not just "this app pod is serving".
+    if (status && status.status === "live") {
+      $("statusText").textContent = `${status.app || "app"} · live`;
+      $("statusDot").className = "status-dot";
+    } else if (status) {
+      $("statusText").textContent = `${status.app || "app"} · starting (LLM warming up)`;
+      $("statusDot").className = "status-dot error";
+    } else {
+      $("statusText").textContent = "offline — retrying…";
+      $("statusDot").className = "status-dot error";
+    }
 
     // Counters
     $("statRequests").textContent = stats.requests ?? "–";

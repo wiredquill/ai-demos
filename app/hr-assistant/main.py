@@ -1,5 +1,6 @@
 import os
 import sys
+import urllib.request
 from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
@@ -132,6 +133,35 @@ sys.stdout = _RingTee(sys.stdout)  # type: ignore[assignment]
 @app.get("/health")
 def health():
     return {"Status": "Ready"}
+
+
+@app.get("/status")
+def status():
+    """Demo liveness: reports whether the LLM backend (vLLM router+engine) is
+    reachable, so the dashboard can show a real live/starting/degraded state
+    instead of assuming the demo is up just because this app pod is serving.
+
+    The LLM endpoint is the vLLM router service (VLLM_ENDPOINT); its /health
+    returns {"status":"healthy"} only once the router AND engine are serving.
+    """
+    llm_ok = False
+    llm_detail = "unknown"
+    try:
+        with urllib.request.urlopen(f"{_llm_endpoint}/health", timeout=5) as r:
+            llm_ok = r.getcode() == 200
+            llm_detail = r.read(200).decode("utf-8", "replace").strip()
+    except Exception as e:
+        llm_detail = f"unreachable: {e}"
+    state = "live" if llm_ok else "starting"
+    return {
+        "app": app_name,
+        "status": state,
+        "llm_ok": llm_ok,
+        "llm_detail": llm_detail,
+        "requests": _stats["requests"],
+        "errors": _stats["errors"],
+        "uptime_seconds": int((datetime.now(timezone.utc) - _start_time).total_seconds()),
+    }
 
 
 @app.get("/", response_class=HTMLResponse)
