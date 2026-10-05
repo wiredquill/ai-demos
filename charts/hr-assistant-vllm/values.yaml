@@ -140,6 +140,9 @@ loadGenerator:
   enabled: true
   # Seconds between polling cycles for the app /ask endpoints.
   intervalSeconds: 45
+  # Seconds between health-gate polls while waiting for the stack to come up
+  # (vLLM router+engine and the app /health endpoints) before load starts.
+  healthIntervalSeconds: 10
   # Number of load-generator replicas (keep at 1 for a demo).
   replicas: 1
 
@@ -287,13 +290,13 @@ replicaCount: 1
 image:
   repository: ghcr.io/wiredquill/ai-demos/genai-demo
   pullPolicy: Always
-  tag: "rebuild-observability-be07471"
+  tag: "rebuild-status-gate-e4488c8"
 
 policyDb:
   image:
     repository: ghcr.io/wiredquill/ai-demos/genai-demo
     pullPolicy: Always
-    tag: "rebuild-observability-be07471"
+    tag: "rebuild-status-gate-e4488c8"
 
 # Qdrant — vector database component.
 #

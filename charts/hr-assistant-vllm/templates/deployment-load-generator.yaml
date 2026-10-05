@@ -48,8 +48,18 @@ spec:
               value: "http://{{ $fullname }}-employee-handbook:{{ .Values.service.port }}"
             - name: GENAI_HR_POLICY_DB_URL
               value: "http://{{ $fullname }}-hr-policy-db:{{ .Values.service.port }}"
+            # Health gate: the vLLM router service (the same endpoint the apps
+            # use as VLLM_ENDPOINT). Its /health returns {"status":"healthy"}
+            # only once the router AND the engine are serving, so it is the
+            # single source of truth for "the LLM stack is up". The load-gen
+            # waits on this (plus each app's own /health) before it starts
+            # hitting /ask, so it never counts/500s during model warm-up.
+            - name: GENAI_LLM_HEALTH_URL
+              value: "http://{{ $fullname }}-router-service:80"
             - name: LOAD_GEN_INTERVAL
               value: "{{ $interval }}"
+            - name: LOAD_GEN_HEALTH_INTERVAL
+              value: "{{ $generator.healthIntervalSeconds | default 10 }}"
           command:
             - /usr/local/bin/python3
             - -u
@@ -58,23 +68,41 @@ spec:
               import json, os, time, urllib.request, datetime
               def ts():
                   return datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M:%S")
-              def call(url):
+              def call(url, timeout=120):
                   try:
-                      with urllib.request.urlopen(url, timeout=120) as r:
+                      with urllib.request.urlopen(url, timeout=timeout) as r:
                           data = r.read(4096)
                           print(f"[{ts()}] {url} -> {r.getcode()} ({len(data)} bytes)", flush=True)
+                          return r.getcode()
                   except Exception as e:
                       print(f"[{ts()}] {url} -> ERROR {e}", flush=True)
+                      return None
               interval = int(os.environ.get("LOAD_GEN_INTERVAL", "120"))
+              health_interval = int(os.environ.get("LOAD_GEN_HEALTH_INTERVAL", "10"))
               apps = [
                   ("HR Assistant", os.environ["GENAI_HR_ASSISTANT_URL"] + "/ask"),
                   ("Employee Handbook", os.environ["GENAI_EMPLOYEE_HANDBOOK_URL"] + "/ask"),
                   ("HR Policy DB", os.environ["GENAI_HR_POLICY_DB_URL"] + "/ask"),
               ]
+              # Health gate: wait until the LLM stack (router+engine) and every
+              # app are healthy before starting the round loop. This prevents
+              # the load-gen from hammering /ask (and counting 500s) while the
+              # vLLM engine is still downloading/loading the model on first boot.
+              llm_health = os.environ["GENAI_LLM_HEALTH_URL"] + "/health"
+              app_health = [u.replace("/ask", "/health") for _, u in apps]
               print(f"[{ts()}] load-generator started (interval={interval}s)")
-              print(f"[{ts()}] targets:")
+              print(f"[{ts()}] waiting for stack health before generating load...")
+              print(f"[{ts()}]   llm: {llm_health}")
               for n, u in apps:
                   print(f"[{ts()}]   {n}: {u}")
+              while True:
+                  checks = [("llm", llm_health)] + [(a[0], h) for a, h in zip(apps, app_health)]
+                  results = {n: call(u, timeout=5) for n, u in checks}
+                  if all(code == 200 for code in results.values()):
+                      print(f"[{ts()}] stack healthy; starting load generation", flush=True)
+                      break
+                  print(f"[{ts()}] not ready yet ({sum(1 for c in results.values() if c==200)}/{len(results)} healthy); retrying in {health_interval}s", flush=True)
+                  time.sleep(health_interval)
               rnd = 0
               while True:
                   for n, u in apps:
