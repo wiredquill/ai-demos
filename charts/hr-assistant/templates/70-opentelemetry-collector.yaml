@@ -1,0 +1,299 @@
+{{- if include "hr-assistant.collectorEnabled" . }}
+{{- $collector := include "hr-assistant.collectorName" . }}
+{{- $so := .Values.opentelemetry.operator.suseObservability }}
+{{- if not $so.apiUrl }}
+{{- fail "observability.mode=operator requires opentelemetry.operator.suseObservability.apiUrl (e.g. https://observability.example.com)" }}
+{{- end }}
+{{- if not $so.otlpEndpoint }}
+{{- fail "observability.mode=operator requires opentelemetry.operator.suseObservability.otlpEndpoint (host:port, no scheme)" }}
+{{- end }}
+{{- if and (not $so.existingSecret) (not $so.apiKey) (not $so.copySecret.enabled) }}
+{{- fail "observability.mode=operator needs an API key: set suseObservability.apiKey, .existingSecret, or leave .copySecret.enabled=true" }}
+{{- end }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $collector }}
+  labels:
+    {{- include "hr-assistant.labels" . | nindent 4 }}
+{{- with .Values.opentelemetry.operator.imagePullSecrets }}
+imagePullSecrets:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+---
+# k8s_attributes needs to read pod/namespace/node metadata cluster-wide so the
+# SUSE AI components it emits carry the right Kubernetes identity.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $collector }}-{{ .Release.Namespace }}
+  labels:
+    {{- include "hr-assistant.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "namespaces", "nodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $collector }}-{{ .Release.Namespace }}
+  labels:
+    {{- include "hr-assistant.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $collector }}-{{ .Release.Namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $collector }}
+    namespace: {{ .Release.Namespace }}
+{{- if and $so.apiKey (not $so.existingSecret) }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $collector }}
+  labels:
+    {{- include "hr-assistant.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  API_KEY: {{ $so.apiKey | quote }}
+{{- end }}
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: {{ $collector }}
+  labels:
+    {{- include "hr-assistant.labels" . | nindent 4 }}
+spec:
+  mode: {{ .Values.opentelemetry.operator.mode }}
+  replicas: {{ .Values.opentelemetry.operator.replicas }}
+  serviceAccount: {{ $collector }}
+  image: "{{ .Values.opentelemetry.operator.image.repository }}:{{ .Values.opentelemetry.operator.image.tag }}"
+  imagePullPolicy: {{ .Values.opentelemetry.operator.image.pullPolicy }}
+  {{- with .Values.opentelemetry.operator.resources }}
+  resources:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  env:
+    - name: MY_POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
+    - name: K8S_CLUSTER_NAME
+      value: {{ include "hr-assistant.clusterName" . | quote }}
+    - name: SUSE_AI_NAMESPACE
+      value: {{ include "hr-assistant.suseAiNamespace" . | quote }}
+    - name: API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: {{ include "hr-assistant.apiKeySecretName" . }}
+          key: {{ $so.existingSecretKey }}
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${env:MY_POD_IP}:4317
+          http:
+            endpoint: ${env:MY_POD_IP}:4318
+    extensions:
+      health_check:
+        endpoint: ${env:MY_POD_IP}:13133
+    processors:
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+      batch: {}
+      k8s_attributes:
+        auth_type: serviceAccount
+        passthrough: false
+        extract:
+          metadata:
+            - k8s.namespace.name
+            - k8s.pod.name
+            - k8s.pod.uid
+            - k8s.deployment.name
+            - k8s.node.name
+        pod_association:
+          - sources:
+              - from: resource_attribute
+                name: k8s.pod.ip
+          - sources:
+              - from: connection
+
+      # --- SUSE AI topology inference -------------------------------------
+      # Keep only GenAI signal on the inference pipelines.
+      filter/genai-metrics-only:
+        error_mode: ignore
+        metrics:
+          metric:
+            - not(IsMatch(name, "gen_ai\\..*"))
+      filter/genai-spans:
+        error_mode: ignore
+        traces:
+          span:
+            - attributes["gen_ai.request.model"] == nil
+      # The application pipeline must not re-tag telemetry that another
+      # inference pipeline already claimed.
+      filter/exclude-already-tagged:
+        error_mode: ignore
+        metrics:
+          resource:
+            - attributes["suse.ai.component.name"] != nil
+
+      # Promote the GenAI identity from datapoint/span attributes onto the
+      # resource, which is where the transforms below read it from.
+      groupbyattrs/infer-models:
+        keys:
+          - gen_ai.request.model
+          - gen_ai.provider.name
+      groupbyattrs/infer-providers:
+        keys:
+          - gen_ai.provider.name
+      groupbyattrs/model-relations:
+        keys:
+          - gen_ai.provider.name
+
+      transform/infer-applications:
+        error_mode: ignore
+        metric_statements:
+          - context: resource
+            statements:
+              - set(attributes["suse.ai.managed"], "true")
+              - set(attributes["suse.ai.component.type"], "application")
+              - set(attributes["suse.ai.component.name"], attributes["service.name"])
+              - set(attributes["k8s.namespace.name"], attributes["service.namespace"]) where attributes["service.namespace"] != nil
+              - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["service.namespace"] == nil
+      transform/infer-models:
+        error_mode: ignore
+        metric_statements:
+          - context: resource
+            statements:
+              - set(attributes["service.name"], attributes["gen_ai.request.model"]) where attributes["gen_ai.request.model"] != nil
+              - set(attributes["service.instance.id"], attributes["gen_ai.request.model"]) where attributes["gen_ai.request.model"] != nil
+              - set(attributes["suse.ai.managed"], "true") where attributes["gen_ai.request.model"] != nil
+              - set(attributes["suse.ai.component.name"], attributes["gen_ai.request.model"]) where attributes["gen_ai.request.model"] != nil
+              - set(attributes["suse.ai.component.type"], "llm-model") where attributes["gen_ai.request.model"] != nil
+              - set(attributes["k8s.namespace.name"], attributes["service.namespace"]) where attributes["gen_ai.request.model"] != nil and attributes["service.namespace"] != nil
+              - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["gen_ai.request.model"] != nil and attributes["service.namespace"] == nil
+      transform/infer-providers:
+        error_mode: ignore
+        metric_statements:
+          - context: resource
+            statements:
+              - set(attributes["service.name"], attributes["gen_ai.provider.name"]) where attributes["gen_ai.provider.name"] != nil
+              - set(attributes["service.instance.id"], attributes["gen_ai.provider.name"]) where attributes["gen_ai.provider.name"] != nil
+              - set(attributes["suse.ai.managed"], "true") where attributes["gen_ai.provider.name"] != nil
+              - set(attributes["suse.ai.component.name"], attributes["gen_ai.provider.name"]) where attributes["gen_ai.provider.name"] != nil
+              - set(attributes["suse.ai.component.type"], "inference-engine") where attributes["gen_ai.provider.name"] != nil
+              - set(attributes["k8s.namespace.name"], attributes["service.namespace"]) where attributes["gen_ai.provider.name"] != nil and attributes["service.namespace"] != nil
+              - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["gen_ai.provider.name"] != nil and attributes["service.namespace"] == nil
+      transform/model-relations:
+        error_mode: ignore
+        trace_statements:
+          - context: resource
+            statements:
+              - set(attributes["service.name"], attributes["gen_ai.provider.name"]) where attributes["gen_ai.provider.name"] != nil
+              - set(attributes["service.instance.id"], attributes["gen_ai.provider.name"]) where attributes["gen_ai.provider.name"] != nil
+          - context: span
+            statements:
+              - set(attributes["peer.service"], attributes["gen_ai.request.model"]) where attributes["gen_ai.request.model"] != nil
+      transform/provider-relations:
+        error_mode: ignore
+        trace_statements:
+          - context: span
+            statements:
+              - set(attributes["peer.service"], resource.attributes["gen_ai.provider.name"]) where resource.attributes["gen_ai.provider.name"] != nil
+      transform/topology-provider:
+        error_mode: ignore
+        trace_statements:
+          - context: span
+            statements:
+              - set(attributes["gen_ai.provider.name"], resource.attributes["gen_ai.provider.name"]) where resource.attributes["gen_ai.provider.name"] != nil
+              - set(attributes["gen_ai.request.model"], resource.attributes["gen_ai.request.model"]) where resource.attributes["gen_ai.request.model"] != nil
+
+    connectors:
+      # Fan the same trace stream out to sampling plus the three views SUSE
+      # Observability needs to draw app -> inference-engine -> model.
+      routing/traces:
+        error_mode: ignore
+        table:
+          - condition: "true"
+            action: copy
+            pipelines:
+              - traces/sampling
+              - traces/model-relations
+              - traces/provider-relations
+              - traces/topology
+
+    exporters:
+      otlp_grpc:
+        endpoint: {{ $so.otlpEndpoint | quote }}
+        headers:
+          Authorization: "SUSEObservability ${env:API_KEY}"
+        tls:
+          insecure: {{ $so.otlpInsecure }}
+          insecure_skip_verify: {{ $so.skipTlsVerify }}
+      topology:
+        api_key: ${env:API_KEY}
+        endpoint: {{ $so.apiUrl | quote }}
+        namespace: ${env:SUSE_AI_NAMESPACE}
+        tls:
+          insecure_skip_verify: {{ $so.skipTlsVerify }}
+      {{- if .Values.opentelemetry.operator.debug }}
+      debug:
+        verbosity: detailed
+      {{- end }}
+
+    service:
+      extensions: [health_check]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [k8s_attributes, memory_limiter, batch]
+          exporters: [routing/traces]
+        traces/sampling:
+          receivers: [routing/traces]
+          processors: [batch]
+          exporters: [otlp_grpc{{ if .Values.opentelemetry.operator.debug }}, debug{{ end }}]
+        traces/model-relations:
+          receivers: [routing/traces]
+          processors: [filter/genai-spans, groupbyattrs/model-relations, transform/model-relations, batch]
+          exporters: [otlp_grpc{{ if .Values.opentelemetry.operator.debug }}, debug{{ end }}]
+        traces/provider-relations:
+          receivers: [routing/traces]
+          processors: [filter/genai-spans, transform/provider-relations, batch]
+          exporters: [otlp_grpc{{ if .Values.opentelemetry.operator.debug }}, debug{{ end }}]
+        traces/topology:
+          receivers: [routing/traces]
+          processors: [transform/topology-provider, batch]
+          exporters: [topology]
+        metrics:
+          receivers: [otlp]
+          processors: [k8s_attributes, memory_limiter, batch]
+          exporters: [otlp_grpc{{ if .Values.opentelemetry.operator.debug }}, debug{{ end }}]
+        metrics/infer-applications:
+          receivers: [otlp]
+          processors: [filter/genai-metrics-only, filter/exclude-already-tagged, transform/infer-applications, k8s_attributes, batch]
+          exporters: [otlp_grpc{{ if .Values.opentelemetry.operator.debug }}, debug{{ end }}]
+        metrics/infer-models:
+          receivers: [otlp]
+          processors: [filter/genai-metrics-only, groupbyattrs/infer-models, transform/infer-models, k8s_attributes, batch]
+          exporters: [otlp_grpc{{ if .Values.opentelemetry.operator.debug }}, debug{{ end }}]
+        metrics/infer-providers:
+          receivers: [otlp]
+          processors: [filter/genai-metrics-only, groupbyattrs/infer-providers, transform/infer-providers, k8s_attributes, batch]
+          exporters: [otlp_grpc{{ if .Values.opentelemetry.operator.debug }}, debug{{ end }}]
+        logs:
+          receivers: [otlp]
+          processors: [k8s_attributes, memory_limiter, batch]
+          exporters: [otlp_grpc]
+{{- end }}

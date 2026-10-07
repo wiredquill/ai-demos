@@ -22,38 +22,39 @@ the topology stays alive.
 
 ---
 
-## 1. OTLP collector endpoint
+## 1. Find your OTLP collector endpoint
 
-The apps must report to the cluster's shared SUSE AI OpenTelemetry collector
-over OTLP/HTTP (port 4318). The **OTLP Endpoint** question defaults to:
+The apps must report to the cluster's OpenTelemetry collector.
 
-```
-http://opentelemetry-collector.observability.svc.cluster.local:4318
-```
+**You usually do not need to set this at all.** If the **OTLP Endpoint** question
+is left blank, the chart auto-discovers the collector at install time: it looks
+up Services in the `observability` namespace (configurable via the **Collector
+Namespace** question) for one whose name contains `opentelemetry-collector`, and
+uses `http://<service>.<ns>.svc.cluster.local:4318` automatically.
 
-That is the standard SUSE AI collector install: Helm release
-`opentelemetry-collector` with `fullnameOverride: opentelemetry-collector` in
-namespace `observability`. If your collector matches, leave the default.
+If you do supply a value, a **pre-install connectivity check** runs before the
+apps deploy: a small hook Job resolves and probes the endpoint. If the collector
+cannot be reached, the install **aborts with the auto-discovered correct URL in
+the Rancher helm log** — so a wrong collector address fails loudly at install
+time instead of silently deploying apps that report no telemetry.
 
-The value is used **verbatim** — the chart does not try to auto-discover the
-collector. (Earlier versions did a Helm `lookup` at install time; it returns
-nothing under `helm template`/GitOps renders and could pick the wrong Service,
-so it was removed.)
-
-A **pre-install connectivity check** runs before the apps deploy: a small hook
-Job resolves and probes the endpoint. If the collector cannot be reached, the
-install **aborts with instructions in the Rancher helm log** — so a wrong
-collector address fails loudly at install time instead of silently deploying
-apps that report no telemetry.
-
-If your collector has a different name or namespace, find it with:
+To find the collector URL by hand (e.g. to verify what the chart discovered):
 
 ```bash
-kubectl get svc -A | grep opentelemetry
+kubectl get svc -n observability -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | grep opentelemetry
 ```
 
-and set the **OTLP Endpoint** question (or `--set otlpEndpoint=...`) to
-`http://<service>.<namespace>.svc.cluster.local:4318`.
+Then use the resulting service name (commonly
+`open-telemetry-collector-opentelemetry-collector`) in the OTLP endpoint:
+
+```bash
+OTLP_ENDPOINT="http://$(kubectl get svc -n observability -l app.kubernetes.io/name=opentelemetry-collector -o jsonpath='{.items[0].metadata.name}').observability.svc.cluster.local:4318"
+echo "Collector OTLP HTTP endpoint: $OTLP_ENDPOINT"
+```
+
+That value (or the bare service name) is what you paste into the **OTLP
+Endpoint** question in the Rancher UI form, or set via `--set
+otlpEndpoint=$OTLP_ENDPOINT`.
 
 Verify it resolves from inside the cluster before blaming telemetry:
 
@@ -155,7 +156,7 @@ into the per-component **Token Usage** and **Cost** drill-downs:
      the view can briefly look empty between cycles. The collector log shows a
      healthy cadence of `topology sent components=N relations=N status=200`.
    - Check the collector is actually receiving app telemetry:
-     `kubectl exec -n observability deploy/opentelemetry-collector -- sh -c '...'`
+     `kubectl exec -n observability deploy/open-telemetry-collector-opentelemetry-collector -- sh -c '...'`
      (the otlp receiver counters `otelcol_receiver_accepted_metric_points_total`
      and `otelcol_receiver_accepted_spans_total` must grow when the load
      generator fires — see §1 for the endpoint check first).
@@ -170,8 +171,7 @@ into the per-component **Token Usage** and **Cost** drill-downs:
 Via Rancher UI: **Apps → Charts → hr-assistant-vllm → Install**, fill in the form.
 Key questions:
 
-- **OTLP Endpoint** (Observability group) — defaults to
-  `http://opentelemetry-collector.observability.svc.cluster.local:4318`; see §1.
+- **OTLP Endpoint** (Observability group) — the collector URL from §1.
 - **Hugging Face Token** (vLLM Deployment) — optional `hf_...` token, stored in a
   Secret and injected into vLLM as `HF_TOKEN`. Required for gated models (e.g.
   Llama-3.3); recommended for all models, since anonymous downloads are
@@ -189,7 +189,7 @@ Or via helm:
 ```bash
 helm dependency build charts/hr-assistant-vllm   # builds charts/vllm from the local file:// dependency
 helm install hr-assistant-vllm charts/hr-assistant-vllm -n hr-assistant-vllm --create-namespace \
-  --set otlpEndpoint=http://opentelemetry-collector.observability.svc.cluster.local:4318 \
+  --set otlpEndpoint=http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4318 \
   --set service.type=NodePort \
   --set service.nodePort=30081
 ```
@@ -211,7 +211,7 @@ kubectl get pods -n hr-assistant-vllm -l app.component=load-generator
 kubectl logs -n hr-assistant-vllm deploy/<release>-load-gen --tail=20
 
 # 4. Collector is pushing topology to SUSE Observability
-kubectl logs deploy/opentelemetry-collector -n observability \
+kubectl logs deploy/open-telemetry-collector-opentelemetry-collector -n observability \
   --tail=100 | grep "topology sent"
 
 # 5. Dashboard responds (if NodePort enabled)
@@ -221,7 +221,7 @@ curl -s -o /dev/null -w "%{http_code}\n" http://<node-ip>:30081/
 curl -s http://<node-ip>:30081/ask | head -c 200
 
 # 7. Native vLLM engine metrics are being scraped
-kubectl exec -n observability deploy/opentelemetry-collector -- \
+kubectl exec -n observability deploy/open-telemetry-collector-opentelemetry-collector -- \
   wget -qO- localhost:8888/metrics | grep vllm_generation_tokens_total
 ```
 
