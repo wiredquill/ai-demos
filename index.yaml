@@ -78,6 +78,38 @@ entries:
   hr-assistant-vllm:
   - apiVersion: v2
     appVersion: latest
+    created: "2026-10-08T16:34:14.63226-07:00"
+    dependencies:
+    - alias: vllm
+      condition: vllm.enabled
+      name: vllm
+      repository: file://charts/vllm
+      version: 0.1.10
+    description: SUSE AI HR Assistant (vLLM variant) - Intelligent Employee Support
+      and Policy Management served by SUSE vLLM, with native engine-level GenAI metrics
+    digest: b0c4132a4eaf561c3bd006aec9b0155a04c35f2d02bf97158a6394c1b0234847
+    home: https://www.suse.com/products/ai/
+    keywords:
+    - ai
+    - llm
+    - observability
+    - hr
+    - demo
+    - openlit
+    - vllm
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: hr-assistant-vllm
+    sources:
+    - https://github.com/openlit/openlit
+    - https://github.com/vllm-project/vllm
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/hr-assistant-vllm-0.1.8.tgz
+    version: 0.1.8
+  - apiVersion: v2
+    appVersion: latest
     created: "2026-10-08T14:21:07.004763-07:00"
     dependencies:
     - alias: vllm
@@ -236,4 +268,4 @@ entries:
     urls:
     - https://github.com/wiredquill/ai-demos/hr-assistant-vllm-0.1.0.tgz
     version: 0.1.0
-generated: "2026-10-08T14:21:07.002726-07:00"
+generated: "2026-10-08T16:34:14.629946-07:00"
