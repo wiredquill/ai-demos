@@ -1,8 +1,12 @@
 import json
 import os
 import threading
+import time
 
+import openlit
 import requests
+from openlit.__helpers import get_chat_model_cost
+from patch.suse_ai_metrics import record_suse_ai_metrics
 from pymilvus import model
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
@@ -11,8 +15,18 @@ LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama")
 LLM_ENDPOINT = os.getenv("LLM_ENDPOINT")
 MODEL = os.getenv("MODEL", "llama3.2")
 
-# vLLM's OpenAI-compatible endpoint is wrapped lazily so the ollama package
-# stays optional when LLM_PROVIDER=vllm.
+# openlit's native ollama instrumentor already sets gen_ai.usage.cost as a span
+# attribute correctly (confirmed by reading openlit/instrumentation/ollama/utils.py),
+# but never records it as a metric, and never records the gen_ai.total.requests
+# counter the SUSE AI StackPack uses as its "is this a GenAI app" gate - see
+# patch/suse_ai_metrics.py. This wraps every raw chat call here so
+# HRPolicyDatabase gets the same cost/request charts HRAssistant already has.
+_openlit_conf = openlit.OpenlitConfig()
+
+# vLLM's OpenAI-compatible endpoint is instrumented by patch/openlit_vllm.py
+# (wrapping openai.resources.chat.completions.Completions.create, the same
+# path apps/simple.py and apps/rag102.py use for vLLM) — imported lazily so
+# the ollama package stays optional when LLM_PROVIDER=vllm.
 _openai_client = None
 
 
@@ -62,11 +76,15 @@ def _vllm_chat(messages, tools=None):
 
 def ollama_chat(messages, tools=None):
     """Chat call (Ollama native client, or vLLM's OpenAI-compatible endpoint
-    when LLM_PROVIDER=vllm). Named ollama_chat for the Ollama path's history;
+    when LLM_PROVIDER=vllm) plus the SUSE AI metrics openlit's native
+    instrumentors omit. Named ollama_chat for the Ollama path's history;
     provider-branched internally so callers don't need to know which backend
     is active.
     """
     if LLM_PROVIDER == "vllm":
+        # _vllm_chat() goes through openai.chat.completions.create, which
+        # patch/openlit_vllm.py already wraps with full span + SUSE AI metric
+        # recording — recording again here would double-count requests/cost.
         return _vllm_chat(messages, tools=tools)
 
     import ollama
@@ -76,10 +94,26 @@ def ollama_chat(messages, tools=None):
     if tools is not None:
         kwargs["tools"] = tools
     response = client.chat(**kwargs)
+    try:
+        input_tokens = response.get("prompt_eval_count", 0)
+        output_tokens = response.get("eval_count", 0)
+        cost = get_chat_model_cost(MODEL, _openlit_conf.pricing_info, input_tokens, output_tokens)
+        record_suse_ai_metrics(_openlit_conf.application_name, _openlit_conf.environment, LLM_PROVIDER, MODEL, cost)
+    except Exception as e:
+        print(f"SUSE AI metrics recording failed (non-fatal): {e}")
     return response
 
 
 # Vector Database (Qdrant) and Search Engine (OpenSearch) endpoints.
+#
+# These are the "Vector Databases" and "Search Engines" components in the
+# SUSE AI section of SUSE Observability:
+#   - Qdrant is scraped by the shared collector (job "qdrant"), whose
+#     transform/qdrant tags the metrics suse.ai.component.type=vectordb.
+#   - OpenSearch is polled by the collector's elasticsearch receiver, whose
+#     resource/opensearch processor tags it suse.ai.component.type=search-engine.
+# Every request below generates spans + metrics, so the topology view shows
+# hr-policy-db depending on both.
 QDRANT_URL = os.getenv("QDRANT_URL", "http://hr-assistant-qdrant:6333")
 OPENSEARCH_URL = os.getenv("OPENSEARCH_URL", "http://hr-assistant-opensearch:9200")
 QDRANT_COLLECTION = "hr_policies"
@@ -94,8 +128,9 @@ _rag_stats = {"qdrant_searches": 0, "opensearch_searches": 0, "seeds": 0}
 # One-shot datastore init. Seed the collections once at module import so that
 # every /ask only does real searches (qdrant_searches/opensearch_searches) and
 # never re-seeds the stores. Seeding on every request made the "Store Seeds"
-# counter climb by 2 per request while searches only climbed by 1. Guarded so
-# re-imports and repeated /ask calls never re-seed.
+# counter climb by 2 per request while searches only climbed by 1 — the
+# dashboard's "2 seeds but 1 rag / 1 search" was this. Guarded so re-imports
+# and repeated /ask calls never re-seed.
 _init_lock = threading.Lock()
 _init_done = False
 
@@ -122,8 +157,46 @@ def ensure_datastores_seeded() -> None:
             seed_opensearch()
             _init_done = True
             print("RAG datastores seeded (qdrant + opensearch)")
+            _start_datastore_relation_refresher()
         except Exception as e:
             print(f"RAG datastore seeding failed, will retry on next request: {e}")
+
+
+# SUSE Observability's topology view only renders the hr-policy-db -> qdrant /
+# hr-policy-db -> opensearch edges for a moment right after a real search
+# span, then drops them - unlike components (which persist ~2 minutes after
+# their last telemetry), relations appear to need a much tighter, near-
+# continuous stream of matching spans to stay rendered. /ask only touches
+# these datastores once per ~45s load-generator cycle, far too infrequent.
+# This background loop re-runs the real, properly-instrumented search calls
+# on a fast interval so the topology edges stay lit continuously instead of
+# flickering in and out between /ask calls.
+_refresher_started = False
+_refresher_lock = threading.Lock()
+DATASTORE_REFRESH_INTERVAL_SECONDS = int(os.getenv("DATASTORE_REFRESH_INTERVAL_SECONDS", "10"))
+
+
+def _datastore_relation_refresh_loop():
+    query = "vacation benefits"
+    while True:
+        time.sleep(DATASTORE_REFRESH_INTERVAL_SECONDS)
+        try:
+            search_qdrant(query)
+        except Exception as e:
+            print(f"Datastore relation refresh (qdrant) failed: {e}")
+        try:
+            search_opensearch(query)
+        except Exception as e:
+            print(f"Datastore relation refresh (opensearch) failed: {e}")
+
+
+def _start_datastore_relation_refresher():
+    global _refresher_started
+    with _refresher_lock:
+        if _refresher_started:
+            return
+        threading.Thread(target=_datastore_relation_refresh_loop, daemon=True).start()
+        _refresher_started = True
 
 
 embedding_fn = model.DefaultEmbeddingFunction()
@@ -160,6 +233,20 @@ tools = [
 
 
 # --- Vector Database (Qdrant) -----------------------------------------------
+#
+# Qdrant is the "Vector Databases" component in SUSE Observability. Health for
+# this category comes from OpenLIT's own vectordb instrumentation - the SUSE
+# AI StackPack's health monitor (extracted from the
+# suse-ai-observability-extension-setup image: stackpack/monitors/monitors.yaml)
+# queries sum(db_requests_total{}) by (db_system), which is exactly the metric
+# OpenLIT's native qdrant_client instrumentor emits automatically on
+# create_collection/upsert/query_points - but only when the official
+# qdrant-client SDK is used. The collector's own Prometheus scrape of
+# Qdrant's /metrics never feeds that monitor at all (different metric
+# entirely); it's kept below (see transform/qdrant in the collector config)
+# for utilization numbers, not health. Using QdrantClient here instead of raw
+# requests calls is what actually makes hr-policy-db -> qdrant get a health
+# state, the same way every GenAI app already gets one.
 _qdrant_client = None
 
 
@@ -170,6 +257,7 @@ def get_qdrant_client():
     return _qdrant_client
 
 
+@openlit.trace
 def seed_qdrant():
     """Upsert the HR policy documents into Qdrant (idempotent)."""
     client = get_qdrant_client()
@@ -188,6 +276,7 @@ def seed_qdrant():
     return {"points": len(points)}
 
 
+@openlit.trace
 def search_qdrant(query: str) -> str:
     """Vector search over HR policies; returns the top 2 matching documents."""
     _rag_stats["qdrant_searches"] += 1
@@ -198,14 +287,22 @@ def search_qdrant(query: str) -> str:
 
 
 # --- Search Engine (OpenSearch) ---------------------------------------------
+#
+# OpenSearch is the "Search Engines" component in SUSE Observability. The
+# collector's elasticsearch receiver polls its REST API and
+# resource/opensearch tags the metrics suse.ai.component.type=search-engine.
+# These calls make the topology show hr-policy-db -> opensearch.
+
+
+@openlit.trace
 def seed_opensearch():
     """Index the HR policy documents into OpenSearch (idempotent)."""
     # Explicitly create the index with 0 replicas before the first doc PUT
     # auto-creates it with OpenSearch's default (1 replica): a single-node
     # cluster can never assign that replica shard, which permanently reports
-    # cluster health "yellow" even though everything is actually fine. No
-    # unassigned shards possible with 0 replicas, so a single healthy node
-    # reports "green".
+    # cluster health "yellow" - DEVIATING under the SUSE AI health monitor -
+    # even though everything is actually fine. No unassigned shards possible
+    # with 0 replicas, so a single healthy node reports "green".
     requests.put(
         f"{OPENSEARCH_URL}/{OPENSEARCH_INDEX}",
         json={"settings": {"index": {"number_of_replicas": 0}}},
@@ -224,6 +321,7 @@ def seed_opensearch():
     return {"indexed": created}
 
 
+@openlit.trace
 def search_opensearch(query: str) -> str:
     """Full-text search over HR policies; returns the top 2 hits."""
     _rag_stats["opensearch_searches"] += 1
@@ -243,6 +341,7 @@ def search_opensearch(query: str) -> str:
 
 # Simulates an API call to get flight times
 # In a real application, this would fetch data from a live database or API
+@openlit.trace
 def get_benefits_information(benefit_type: str, employee_level: str) -> str:
     benefits = {
         "vacation-junior": {
@@ -280,11 +379,13 @@ def get_benefits_information(benefit_type: str, employee_level: str) -> str:
     return json.dumps(benefits.get(key, {"error": "Benefit information not found"}))
 
 
+@openlit.trace
 def send_query_to_hr_ai(messages):
     # First API call: Send the query and function description to the model
     return ollama_chat(messages, tools=tools)
 
 
+@openlit.trace
 def process_hr_ai_response(messages, response):
     # Process function calls made by the model
     if response["message"].get("tool_calls"):
@@ -347,6 +448,7 @@ def process_hr_ai_response(messages, response):
     return final_response
 
 
+@openlit.trace
 def handle_hr_inquiry(question: str):
     # Initialize conversation with a user query
 
@@ -368,16 +470,19 @@ def handle_hr_inquiry(question: str):
     return process_hr_ai_response(messages, response)
 
 
+@openlit.trace
 def start_hr_policy_system():
     try:
-        # Seed the datastores once (first call only) so /ask only does
-        # real searches and never re-seeds on every request.
+        # Seed the datastores once (first call only).
+        # This keeps SUSE Observability showing hr-policy-db -> qdrant and
+        # hr-policy-db -> opensearch in the topology without re-seeding on
+        # every single request.
         ensure_datastores_seeded()
 
         question = "What are the vacation benefits for senior employees?"
         handle_hr_inquiry(question)
-        # Exercise the vector database and search engine so the RAG path
-        # runs even when the LLM decides not to call its search tools.
+        # Exercise the vector database and search engine so telemetry flows
+        # even when the LLM decides not to call its search tools.
         try:
             print("Qdrant search:", search_qdrant(question)[:120])
             print("OpenSearch search:", search_opensearch(question)[:120])
@@ -388,8 +493,8 @@ def start_hr_policy_system():
         return handle_hr_inquiry(question)
     except Exception as e:
         # Fall back to a plain LLM answer if the vector store is unavailable.
-        # Keeps /ask returning 200 during vector-store outages instead of
-        # surfacing a 500 to the caller.
+        # Keeps /ask returning 200 (and telemetry flowing) during vector-store
+        # outages instead of surfacing a 500 to the load generator.
         print(f"RAG unavailable, falling back to plain LLM: {e}")
         response = ollama_chat([{"role": "user", "content": "What is our remote work policy?"}])
         return response
