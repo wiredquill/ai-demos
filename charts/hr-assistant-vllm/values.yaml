@@ -5,8 +5,11 @@
 # See docs/hr-assistant-vllm.md for the full comparison against hr-assistant.
 
 # Global configuration
+# application-collection: dp.apps.rancher.io (OpenSearch, vLLM, router)
+# suse-registry: registry.suse.com/ai (Qdrant)
 imagePullSecrets:
   - name: application-collection
+  - name: suse-registry
 
 # Observability endpoints
 # Used when observability.mode=existing. A single shared collector can serve every
@@ -54,8 +57,9 @@ observability:
   # otlpEndpoint is left empty, and by the pre-install connectivity-check hook.
   collectorNamespace: observability
 
-  # Image used by the pre-install OTLP connectivity-check hook Job.
-  checkImage: curlimages/curl:8.5.0
+  # Image used by the pre-install OTLP connectivity-check hook Job (needs
+  # /bin/sh + curl; SUSE BCI base ships both).
+  checkImage: registry.suse.com/bci/bci-base:15.7
 
   # Reported as the service.namespace resource attribute, and the primary source
   # SUSE Observability uses to group this release's SUSE AI components.
@@ -75,11 +79,16 @@ opentelemetry:
     replicas: 1
     # Set true to also log telemetry to the collector's stdout for debugging.
     debug: false
+    # SUSE AI collector build: the only collector image that ships the
+    # topology exporter SUSE Observability needs for the SUSE AI view. The
+    # registry.suse.com/ai build is only published at 0.149.0, which lacks the
+    # otlp_grpc exporter and k8s_attributes processor this pipeline uses, so
+    # the SUSE-published ghcr.io/suse build is used, matched to the
+    # OpenTelemetry Operator version (0.156.0).
     image:
-      repository: registry.suse.com/ai/containers/suse-ai-opentelemetry-collector
-      tag: '0.149.0'
+      repository: ghcr.io/suse/suse-ai-opentelemetry-collector
+      tag: '0.156.0'
       pullPolicy: IfNotPresent
-    # registry.suse.com/ai is authenticated; the collector pod needs these.
     imagePullSecrets:
       - name: application-collection
       - name: suse-registry
@@ -122,7 +131,7 @@ opentelemetry:
         enabled: true
         sourceNamespace: observability
         name: open-telemetry-collector
-        image: curlimages/curl:8.5.0
+        image: registry.suse.com/bci/bci-base:15.7
 
 # Persistent load generator. Replaces the old CronJob approach, which created a
 # new pod every cycle and let it terminate — that churn made the load-gen pod
@@ -221,7 +230,9 @@ vllm:
     # packaged subchart's own router Service cannot render nodePort/LB.
     serviceType: ClusterIP
     otel:
-      endpoint: "http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4317"
+      # Service the OpenTelemetry Operator creates for an OpenTelemetryCollector
+      # named "opentelemetry-collector" (SUSE Observability's documented setup).
+      endpoint: "http://opentelemetry-collector-collector.observability.svc.cluster.local:4317"
       serviceName: hr-assistant-vllm-router
     ingress:
       enabled: false
@@ -303,8 +314,9 @@ policyDb:
 # topology shows hr-policy-db -> qdrant as a dependency.
 qdrant:
   enabled: true
+  # SUSE AI build of Qdrant (authenticated; needs the suse-registry pull secret).
   image:
-    repository: qdrant/qdrant
+    repository: registry.suse.com/ai/containers/qdrant
     tag: "v1.19.0"
     pullPolicy: IfNotPresent
   resources:
@@ -327,9 +339,10 @@ qdrant:
 # documents and queries them, so the topology shows hr-policy-db -> opensearch.
 opensearch:
   enabled: true
+  # SUSE Application Collection build (3.x line only).
   image:
-    repository: opensearchproject/opensearch
-    tag: "2.19.6"
+    repository: dp.apps.rancher.io/containers/opensearch
+    tag: "3.8.0"
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -350,7 +363,7 @@ opensearch:
       value: "true"
     - name: bootstrap.memory_lock
       value: "false"
-    - name: ES_JAVA_OPTS
+    - name: OPENSEARCH_JAVA_OPTS
       value: "-Xms512m -Xmx512m"
     # The SUSE AI StackPack's opensearch metric bindings and health monitor
     # (extracted and read from the suse-ai-observability-extension-setup

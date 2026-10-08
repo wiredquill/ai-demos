@@ -31,8 +31,12 @@ metadata:
   labels:
     {{- include "hr-assistant.labels" . | nindent 4 }}
 rules:
+  # services/endpoints: Kubernetes service discovery for the Qdrant scrape.
   - apiGroups: [""]
-    resources: ["pods", "namespaces", "nodes"]
+    resources: ["pods", "namespaces", "nodes", "services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["discovery.k8s.io"]
+    resources: ["endpointslices"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["apps"]
     resources: ["replicasets"]
@@ -103,6 +107,37 @@ spec:
             endpoint: ${env:MY_POD_IP}:4317
           http:
             endpoint: ${env:MY_POD_IP}:4318
+      {{- if .Values.qdrant.enabled }}
+      # Qdrant serves Prometheus metrics on its REST port. Discovered by label
+      # in the release namespace so the job survives release renames.
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: qdrant
+              scrape_interval: 10s
+              metrics_path: /metrics
+              kubernetes_sd_configs:
+                - role: service
+                  namespaces:
+                    names: [{{ .Release.Namespace | quote }}]
+              relabel_configs:
+                - action: keep
+                  source_labels: [__meta_kubernetes_service_label_app_component]
+                  regex: qdrant
+                - action: keep
+                  source_labels: [__meta_kubernetes_service_port_number]
+                  regex: {{ .Values.qdrant.service.port | quote }}
+      {{- end }}
+      {{- if .Values.opensearch.enabled }}
+      # OpenSearch has no /metrics; the elasticsearch receiver polls its REST
+      # API. The SUSE AI StackPack's OpenSearch bindings key on
+      # elasticsearch_cluster_name="opensearch-cluster" (see values.yaml).
+      elasticsearch:
+        endpoint: "http://{{ include "hr-assistant.fullname" . }}-opensearch.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.opensearch.service.port }}"
+        collection_interval: 10s
+        tls:
+          insecure_skip_verify: true
+      {{- end }}
     extensions:
       health_check:
         endpoint: ${env:MY_POD_IP}:13133
@@ -112,6 +147,46 @@ spec:
         limit_percentage: 80
         spike_limit_percentage: 25
       batch: {}
+      resource:
+        attributes:
+          - key: k8s.cluster.name
+            value: ${env:K8S_CLUSTER_NAME}
+            action: insert
+          - key: service.instance.id
+            from_attribute: k8s.pod.uid
+            action: insert
+      transform/qdrant:
+        error_mode: ignore
+        metric_statements:
+          - context: resource
+            statements:
+              - set(attributes["suse.ai.managed"], "true") where attributes["service.name"] == "qdrant"
+              - set(attributes["suse.ai.component.name"], "qdrant") where attributes["service.name"] == "qdrant"
+              - set(attributes["suse.ai.component.type"], "vectordb") where attributes["service.name"] == "qdrant"
+              - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["service.name"] == "qdrant"
+      resource/opensearch:
+        attributes:
+          - key: suse.ai.managed
+            value: "true"
+            action: insert
+          - key: suse.ai.component.name
+            value: opensearch
+            action: insert
+          - key: suse.ai.component.type
+            value: search-engine
+            action: insert
+          - key: service.name
+            value: opensearch
+            action: insert
+          - key: service.namespace
+            value: ${env:SUSE_AI_NAMESPACE}
+            action: insert
+          - key: k8s.namespace.name
+            value: ${env:SUSE_AI_NAMESPACE}
+            action: upsert
+          - key: service.instance.id
+            value: opensearch-cluster
+            action: insert
       k8s_attributes:
         auth_type: serviceAccount
         passthrough: false
@@ -212,6 +287,14 @@ spec:
           - context: span
             statements:
               - set(attributes["peer.service"], resource.attributes["gen_ai.provider.name"]) where resource.attributes["gen_ai.provider.name"] != nil
+      # Draws app -> vectordb / search-engine edges from the client spans.
+      transform/db-topology-relations:
+        error_mode: ignore
+        trace_statements:
+          - context: span
+            statements:
+              - set(attributes["peer.service"], "qdrant") where attributes["db.system.name"] == "qdrant" or attributes["db.system"] == "qdrant"
+              - set(attributes["peer.service"], "opensearch") where IsMatch(attributes["server.address"], ".*opensearch.*") or IsMatch(attributes["net.peer.name"], ".*opensearch.*") or IsMatch(attributes["url.full"], ".*opensearch.*") or IsMatch(attributes["http.url"], ".*opensearch.*")
       transform/topology-provider:
         error_mode: ignore
         trace_statements:
@@ -221,6 +304,10 @@ spec:
               - set(attributes["gen_ai.request.model"], resource.attributes["gen_ai.request.model"]) where resource.attributes["gen_ai.request.model"] != nil
 
     connectors:
+      # RED metrics (otel_span_*) SUSE Observability uses for service health.
+      span_metrics:
+        metrics_expiration: 5m
+        namespace: otel_span
       # Fan the same trace stream out to sampling plus the three views SUSE
       # Observability needs to draw app -> inference-engine -> model.
       routing/traces:
@@ -230,6 +317,7 @@ spec:
             action: copy
             pipelines:
               - traces/sampling
+              - traces/spanmetrics
               - traces/model-relations
               - traces/provider-relations
               - traces/topology
@@ -258,8 +346,12 @@ spec:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: [k8s_attributes, memory_limiter, batch]
+          processors: [k8s_attributes, memory_limiter, resource, batch]
           exporters: [routing/traces]
+        traces/spanmetrics:
+          receivers: [routing/traces]
+          processors: []
+          exporters: [span_metrics]
         traces/sampling:
           receivers: [routing/traces]
           processors: [batch]
@@ -274,26 +366,32 @@ spec:
           exporters: [otlp_grpc{{ if .Values.opentelemetry.operator.debug }}, debug{{ end }}]
         traces/topology:
           receivers: [routing/traces]
-          processors: [transform/topology-provider, batch]
+          processors: [transform/topology-provider, transform/db-topology-relations, batch]
           exporters: [topology]
         metrics:
-          receivers: [otlp]
-          processors: [k8s_attributes, memory_limiter, batch]
+          receivers: [otlp, span_metrics{{ if .Values.qdrant.enabled }}, prometheus{{ end }}]
+          processors: [k8s_attributes, memory_limiter{{ if .Values.qdrant.enabled }}, transform/qdrant{{ end }}, resource, batch]
           exporters: [otlp_grpc{{ if .Values.opentelemetry.operator.debug }}, debug{{ end }}]
+        {{- if .Values.opensearch.enabled }}
+        metrics/opensearch:
+          receivers: [elasticsearch]
+          processors: [memory_limiter, resource/opensearch, resource, batch]
+          exporters: [otlp_grpc{{ if .Values.opentelemetry.operator.debug }}, debug{{ end }}]
+        {{- end }}
         metrics/infer-applications:
           receivers: [otlp]
-          processors: [filter/genai-metrics-only, filter/exclude-already-tagged, transform/infer-applications, k8s_attributes, batch]
+          processors: [filter/genai-metrics-only, filter/exclude-already-tagged, transform/infer-applications, k8s_attributes, resource, batch]
           exporters: [otlp_grpc{{ if .Values.opentelemetry.operator.debug }}, debug{{ end }}]
         metrics/infer-models:
           receivers: [otlp]
-          processors: [filter/genai-metrics-only, groupbyattrs/infer-models, transform/infer-models, k8s_attributes, batch]
+          processors: [filter/genai-metrics-only, groupbyattrs/infer-models, transform/infer-models, k8s_attributes, resource, batch]
           exporters: [otlp_grpc{{ if .Values.opentelemetry.operator.debug }}, debug{{ end }}]
         metrics/infer-providers:
           receivers: [otlp]
-          processors: [filter/genai-metrics-only, groupbyattrs/infer-providers, transform/infer-providers, k8s_attributes, batch]
+          processors: [filter/genai-metrics-only, groupbyattrs/infer-providers, transform/infer-providers, k8s_attributes, resource, batch]
           exporters: [otlp_grpc{{ if .Values.opentelemetry.operator.debug }}, debug{{ end }}]
         logs:
           receivers: [otlp]
-          processors: [k8s_attributes, memory_limiter, batch]
+          processors: [k8s_attributes, memory_limiter, resource, batch]
           exporters: [otlp_grpc]
 {{- end }}
