@@ -22,7 +22,7 @@ spec:
   components:
     - chartName: hr-assistant-vllm
       chartRepo: wiredquill-ai-demos
-      chartVersion: "0.1.3"
+      chartVersion: "0.1.7"
       # Minimal, portable values: the rest come from the chart defaults and
       # the chart's questions.yaml (rendered by the AIWorkload wizard).
       # storageClass left at the chart default -> PVCs omit storageClassName
