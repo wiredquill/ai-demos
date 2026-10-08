@@ -340,6 +340,11 @@ spec:
       debug:
         verbosity: detailed
       {{- end }}
+      # SUSE Observability 2.10.x has no OTLP logs service (it rejects them
+      # with "unknown service ...LogsService"); logs are collected by the
+      # SUSE Observability agent instead, so the OTLP logs are dropped here
+      # rather than failing on every export.
+      nop: {}
 
     service:
       extensions: [health_check]
@@ -392,6 +397,6 @@ spec:
           exporters: [otlp_grpc{{ if .Values.opentelemetry.operator.debug }}, debug{{ end }}]
         logs:
           receivers: [otlp]
-          processors: [k8s_attributes, memory_limiter, resource, batch]
-          exporters: [otlp_grpc]
+          processors: [memory_limiter]
+          exporters: [nop]
 {{- end }}

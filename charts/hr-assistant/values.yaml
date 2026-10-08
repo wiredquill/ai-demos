@@ -161,13 +161,15 @@ ollama:
       enabled: true
       type: "nvidia"
       number: 1
+  # Ollama 0.34 holds the chat model and the bge-large embeddings model in
+  # host memory alongside its runner; 4Gi was OOMKilled under the demo load.
   resources:
     requests:
       cpu: "1"
       memory: "4Gi"
     limits:
-      cpu: "1"
-      memory: "4Gi"
+      cpu: "2"
+      memory: "8Gi"
   persistence:
     enabled: false
     size: 10Gi
