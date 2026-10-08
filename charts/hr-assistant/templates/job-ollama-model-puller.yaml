@@ -23,7 +23,7 @@ spec:
       restartPolicy: Never
       containers:
       - name: ollama-model-puller
-        image: "dp.apps.rancher.io/containers/ollama:{{ .Values.ollama.image.tag | default "0.21.2-11.48" }}"
+        image: "dp.apps.rancher.io/containers/ollama:{{ .Values.ollama.image.tag | default "0.34.4-11.97" }}"
         imagePullPolicy: IfNotPresent
         command: ["/bin/sh"]
         args:

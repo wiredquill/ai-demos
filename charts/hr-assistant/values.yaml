@@ -2,8 +2,11 @@
 # Showcases comprehensive LLM observability with OpenLit integration
 
 # Global configuration
+# application-collection: dp.apps.rancher.io (Ollama, OpenSearch)
+# suse-registry: registry.suse.com/ai (Qdrant)
 imagePullSecrets:
   - name: application-collection
+  - name: suse-registry
 
 # Observability endpoints
 # Used when observability.mode=existing. A single shared collector can serve every
@@ -44,8 +47,9 @@ observability:
   # otlpEndpoint is left empty, and by the pre-install connectivity-check hook.
   collectorNamespace: observability
 
-  # Image used by the pre-install OTLP connectivity-check hook Job.
-  checkImage: curlimages/curl:8.5.0
+  # Image used by the pre-install OTLP connectivity-check hook Job (needs
+  # /bin/sh + curl; SUSE BCI base ships both).
+  checkImage: registry.suse.com/bci/bci-base:15.7
 
   # Reported as the service.namespace resource attribute, and the primary source
   # SUSE Observability uses to group this release's SUSE AI components.
@@ -65,11 +69,16 @@ opentelemetry:
     replicas: 1
     # Set true to also log telemetry to the collector's stdout for debugging.
     debug: false
+    # SUSE AI collector build: the only collector image that ships the
+    # topology exporter SUSE Observability needs for the SUSE AI view. The
+    # registry.suse.com/ai build is only published at 0.149.0, which lacks the
+    # otlp_grpc exporter and k8s_attributes processor this pipeline uses, so
+    # the SUSE-published ghcr.io/suse build is used, matched to the
+    # OpenTelemetry Operator version (0.156.0).
     image:
-      repository: registry.suse.com/ai/containers/suse-ai-opentelemetry-collector
-      tag: '0.149.0'
+      repository: ghcr.io/suse/suse-ai-opentelemetry-collector
+      tag: '0.156.0'
       pullPolicy: IfNotPresent
-    # registry.suse.com/ai is authenticated; the collector pod needs these.
     imagePullSecrets:
       - name: application-collection
       - name: suse-registry
@@ -112,7 +121,7 @@ opentelemetry:
         enabled: true
         sourceNamespace: observability
         name: open-telemetry-collector
-        image: curlimages/curl:8.5.0
+        image: registry.suse.com/bci/bci-base:15.7
 
 # Persistent load generator. Replaces the old CronJob approach, which created a
 # new pod every cycle and let it terminate — that churn made the load-gen pod
@@ -141,7 +150,7 @@ jobs:
 ollama:
   enabled: true
   image:
-    tag: "0.21.2-11.48"
+    tag: "0.34.4-11.97"
   imagePullSecrets:
     - name: application-collection
   # runtimeClassName required for NVIDIA libraries to be mounted in container
@@ -186,55 +195,30 @@ ollama:
 replicaCount: 1
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+# app/hr-assistant is one shared source tree for all three app roles
+# (HRAssistant/EmployeeHandbook/HRPolicyDatabase, dispatched by APP_NAME - see
+# main.py), built to ghcr.io/wiredquill/ai-demos/genai-demo by
+# .github/workflows/build-hr-assistant.yml. LLM_PROVIDER is unset here, so the
+# code takes its default Ollama path. The hr-assistant-vllm chart runs the
+# same image with LLM_PROVIDER=vllm.
+#
+# main-be07471 (built from be074713, identical to main for app/hr-assistant)
+# carries OpenLIT 1.45 + the OTel SDK, the cross-service orchestration and
+# FastAPI server-span instrumentation, the SUSE AI cost/request metrics
+# patches, the qdrant-client migration and background Qdrant/OpenSearch
+# relation refresher, the Milvus idempotency fix, and health_check_emitter.py
+# (run by the load-generator's second container). The previous chat-app
+# image line (ghcr.io/wiredquill/ai-demos-suse) is no longer built.
 image:
-  # Published by .github/workflows/build-hr-assistant.yml from app/hr-assistant.
-  # The old llm-experiments repository is no longer built and is frozen on
-  # openlit 1.27, which predates the gen_ai.provider.name convention.
-  # SUSE Observability instrumented variant (OpenLIT + pricing.json bundled).
-  # The upstream ai-demos/genai-demo image has no OpenLIT init and ships zero
-  # gen_ai telemetry. 3f435cd carries openlit 1.28.0 whose underscore
-  # gen_ai_* counters are verified against the suse-ai StackPack on dev-ai.
-  repository: ghcr.io/wiredquill/ai-demos-suse
-  # This sets the pull policy for images.
+  repository: ghcr.io/wiredquill/ai-demos/genai-demo
   pullPolicy: Always
-  # Overrides the image tag whose default is the chart appVersion.
-  # Carries the HRAssistant cross-service orchestration + FastAPI server-span
-  # instrumentation fix (main.py, apps/simple.py) so the SUSE AI topology shows
-  # a connected app -> app -> {ollama, qdrant, opensearch} picture, plus the
-  # SUSE AI cost/request metrics fix for the native ollama and langchain call
-  # paths (patch/suse_ai_metrics.py), the dashboard move to / (main.py), and
-  # the EmployeeHandbook vectorstore connection-lifecycle fix (build once per
-  # process, and removed the vestigial second MilvusClient connection to the
-  # same embedded file that was fighting langchain_milvus's own connection -
-  # apps/rag102.py), health_check_emitter.py (used by the load-generator's
-  # second container to give Qdrant/OpenSearch a trace presence), and the
-  # qdrant-client SDK migration (apps/rag101.py) so OpenLIT's native qdrant
-  # instrumentor emits the db_requests metric the SUSE AI vectordb health
-  # monitor actually requires. Also carries: HRAssistant's downstream calls
-  # to HRPolicyDatabase/EmployeeHandbook now run concurrently instead of
-  # sequentially (apps/simple.py), cutting its own end-to-end latency roughly
-  # in half; and a background loop in HRPolicyDatabase that re-runs real
-  # Qdrant/OpenSearch searches every 10s (apps/rag101.py) so their topology
-  # edges stay lit continuously instead of flickering in and out between
-  # /ask calls.
-  tag: "topology-orchestration-10"
+  tag: "main-be07471"
 
-# The RAG app (hr-policy-db) runs a different image than the chat apps:
-# app/hr-assistant is built to ghcr.io/wiredquill/ai-demos/genai-demo by
-# .github/workflows/build-hr-assistant.yml and contains main.py + apps/ (rag101,
-# rag102), which the chat-app ai-demos-suse image does NOT ship. The RAG apps
-# need milvus-lite (local-file Milvus) which is baked into this image.
 policyDb:
   image:
     repository: ghcr.io/wiredquill/ai-demos/genai-demo
     pullPolicy: Always
-    # Carries the same FastAPIInstrumentor fix as image.tag above, plus the
-    # Milvus idempotency fix (build_policy_vault() was throwing "collection
-    # already exists" on every request after the first, silently falling back
-    # to a plain LLM answer instead of the RAG/tool-calling flow), the SUSE
-    # AI cost/request metrics fix for the native ollama call path, and the
-    # background Qdrant/OpenSearch relation-refresh loop described above.
-    tag: "topology-orchestration-10"
+    tag: "main-be07471"
 
 # Qdrant — vector database component.
 #
@@ -246,8 +230,9 @@ policyDb:
 # topology shows hr-policy-db -> qdrant as a dependency.
 qdrant:
   enabled: true
+  # SUSE AI build of Qdrant (authenticated; needs the suse-registry pull secret).
   image:
-    repository: qdrant/qdrant
+    repository: registry.suse.com/ai/containers/qdrant
     tag: "v1.19.0"
     pullPolicy: IfNotPresent
   resources:
@@ -270,9 +255,10 @@ qdrant:
 # documents and queries them, so the topology shows hr-policy-db -> opensearch.
 opensearch:
   enabled: true
+  # SUSE Application Collection build (3.x line only).
   image:
-    repository: opensearchproject/opensearch
-    tag: "2.19.6"
+    repository: dp.apps.rancher.io/containers/opensearch
+    tag: "3.8.0"
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -293,7 +279,7 @@ opensearch:
       value: "true"
     - name: bootstrap.memory_lock
       value: "false"
-    - name: ES_JAVA_OPTS
+    - name: OPENSEARCH_JAVA_OPTS
       value: "-Xms512m -Xmx512m"
     # The SUSE AI StackPack's opensearch metric bindings and health monitor
     # (extracted and read from the suse-ai-observability-extension-setup

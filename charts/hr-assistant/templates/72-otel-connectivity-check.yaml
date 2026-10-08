@@ -37,7 +37,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: otel-check
-          image: {{ .Values.observability.checkImage | default "curlimages/curl:8.5.0" | quote }}
+          image: {{ .Values.observability.checkImage | default "registry.suse.com/bci/bci-base:15.7" | quote }}
           env:
             - name: OTLP_ENDPOINT
               value: {{ $endpoint | quote }}
@@ -89,7 +89,7 @@ spec:
               fi
               echo >&2
               echo "       Verify manually from the cluster:" >&2
-              echo "         kubectl run curl-check --rm -i --restart=Never --image=curlimages/curl -- \\" >&2
+              echo "         kubectl run curl-check --rm -i --restart=Never --image=registry.suse.com/bci/bci-base:15.7 -- \\" >&2
               echo "           curl -v -m 5 http://${HOST}:${PORT}/v1/traces" >&2
               exit 1
           resources:
