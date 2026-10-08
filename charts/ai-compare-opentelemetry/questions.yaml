@@ -21,7 +21,7 @@ questions:
   type: string
   description: "Leave blank to auto-discover the shared OpenTelemetry collector at install time. Set an explicit URL (e.g. http://my-collector.observability.svc.cluster.local:4318) only to override discovery."
   required: false
-  default: ""
+  default: "http://opentelemetry-collector.observability.svc.cluster.local:4318"
   group: General
 
 - variable: ollama.gpu.enabled
