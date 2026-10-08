@@ -1,0 +1,30 @@
+apiVersion: ai-factory.suse.com/v1alpha1
+kind: Blueprint
+metadata:
+  labels:
+    ai-factory.suse.com/blueprint-name: hr-assistant-vllm
+    ai-factory.suse.com/blueprint-version: 1.0.0
+  name: hr-assistant-vllm-1-0-0
+spec:
+  source: Custom  # community, unsupported demo
+  displayName: SUSE AI HR Assistant (vLLM)
+  version: 1.0.0
+  description: |
+    Intelligent Employee Support and Policy Management served by SUSE vLLM
+    (Qwen2.5-7B-Instruct), with native engine-level GenAI metrics and full
+    OpenLIT observability into the shared SUSE AI collector. Vector DB
+    (Qdrant) and search engine (OpenSearch) topology included.
+
+    Prerequisites on the target cluster: the shared SUSE AI OpenTelemetry
+    collector in ns `observability`, a default StorageClass, and (for GPU
+    inference) a node with an NVIDIA GPU + GPU operator. Uses the chart
+    defaults; tune per-cluster values when you deploy the AIWorkload.
+  components:
+    - chartName: hr-assistant-vllm
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "0.1.3"
+      # Minimal, portable values: the rest come from the chart defaults and
+      # the chart's questions.yaml (rendered by the AIWorkload wizard).
+      # storageClass left at the chart default -> PVCs omit storageClassName
+      # and use the cluster default SC (local-path on vimes).
+      values: {}

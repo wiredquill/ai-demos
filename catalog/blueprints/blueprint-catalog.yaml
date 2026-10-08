@@ -1,0 +1,20 @@
+apiVersion: ai-factory.suse.com/v1alpha1
+kind: BlueprintCatalog
+metadata:
+  # Catalog identity (DNS-1123, <=40 chars). The operator derives a Fleet
+  # GitRepo name and a catalog label from this. Keep it the SAME as the
+  # `blueprintCatalogs[].name` you register in Settings / the aif-operator
+  # helm values.
+  name: ai-demos
+spec:
+  displayName: WiredQuill AI Demos
+  description: WiredQuill ai-demos applications — HR assistant (vLLM) and AI Compare (OpenTelemetry).
+  categories: [demo, llm, observability]
+  maintainer:
+    name: WiredQuill
+    url: https://github.com/wiredquill
+  blueprints:
+    # `name` MUST match each Blueprint CR's ai-factory.suse.com/blueprint-name
+    # LABEL (the family), not the resource name. See each blueprint below.
+    - name: hr-assistant-vllm
+    - name: ai-compare-opentelemetry
