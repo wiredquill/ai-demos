@@ -22,7 +22,7 @@ spec:
       restartPolicy: OnFailure
       containers:
       - name: configure-pipelines
-        image: curlimages/curl:8.5.0
+        image: curlimages/curl:8.22.0
         command:
         - /bin/sh
         - -c

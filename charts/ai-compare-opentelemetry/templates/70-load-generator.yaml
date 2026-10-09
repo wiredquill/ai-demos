@@ -42,7 +42,7 @@ spec:
       {{- end }}
       containers:
         - name: load-gen
-          image: curlimages/curl:8.4.0
+          image: dp.apps.rancher.io/containers/curl:8.14.1-13.2
           # Poll the app's /api/chat endpoint on the configured interval. The
           # FlaskInstrumentor on the app turns each /api/chat into a SERVER
           # span, which (with the app's outbound requests to pipelines/open-webui

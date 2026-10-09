@@ -194,7 +194,7 @@ spec:
       {{- if .Values.ollama.observability.enabled }}
       # OpenTelemetry Sidecar for Ollama observability
       - name: otel-collector
-        image: otel/opentelemetry-collector-contrib:0.157.0
+        image: otel/opentelemetry-collector-contrib:0.162.0
         ports:
         - containerPort: 4317
           name: otlp-grpc

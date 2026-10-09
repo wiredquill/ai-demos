@@ -23,7 +23,7 @@ spec:
       {{- if .Values.pipelines.git.enabled }}
       # Git Sync Init Container - Downloads pipelines from repository
       - name: git-sync
-        image: alpine/git:latest
+        image: alpine/git:2.54.0
         command: ["/bin/sh"]
         args:
           - -c

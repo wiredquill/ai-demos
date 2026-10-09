@@ -9,7 +9,7 @@ imagePullSecrets:
 ollama:
   image:
     repository: dp.apps.rancher.io/containers/ollama
-    tag: "0.21.2-11.48"
+    tag: "0.34.4-11.97"
   service:
     port: 11434
     type: ClusterIP
@@ -36,9 +36,11 @@ ollama:
     requests:
       cpu: "1" # 1 CPU for GPU, will be overridden to 2 if GPU disabled
       memory: "4Gi" # 4Gi for GPU, will be overridden to 8Gi if GPU disabled
+    # Ollama 0.34 keeps the loaded model and its runner in host memory; 4Gi
+    # was OOMKilled under load (same finding as the hr-assistant chart).
     limits:
-      cpu: "1" # 1 CPU for GPU, will be overridden to 2 if GPU disabled
-      memory: "4Gi" # 4Gi for GPU, will be overridden to 8Gi if GPU disabled
+      cpu: "2"
+      memory: "8Gi"
   # CPU-only resource configuration (used when gpu.enabled=false)
   resourcesCpuOnly:
     requests:
@@ -61,7 +63,7 @@ ollama:
 openWebui:
   image:
     repository: dp.apps.rancher.io/containers/open-webui
-    tag: "0.6.41-14.20" # SUSE Application Collection version
+    tag: "0.6.41-15.13" # SUSE Application Collection version
   service:
     port: 8080
     type: NodePort
@@ -74,7 +76,7 @@ pipelines:
   enabled: true
   image:
     repository: dp.apps.rancher.io/containers/open-webui-pipelines
-    tag: "0.20250819.030501-8.19"
+    tag: "0.20250819.030501-8.103"
   service:
     port: 9099
     type: ClusterIP
