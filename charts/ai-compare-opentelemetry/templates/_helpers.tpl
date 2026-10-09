@@ -167,7 +167,9 @@ silently black-holes telemetry elsewhere.
 */}}
 {{- define "ai-compare-opentelemetry.otlpHttpEndpoint" -}}
 {{- $endpoint := .Values.aiCompare.observability.otlpEndpoint -}}
-{{- if not $endpoint -}}
+{{- if include "ai-compare-opentelemetry.collectorEnabled" . -}}
+  {{- $endpoint = printf "http://%s-collector.%s.svc.cluster.local:4318" (include "ai-compare-opentelemetry.collectorName" .) .Release.Namespace -}}
+{{- else if not $endpoint -}}
   {{- $discovery := (include "ai-compare-opentelemetry.collectorService" .) | fromJson -}}
   {{- if (get $discovery "found") -}}
     {{- $endpoint = printf "http://%s.%s.svc.cluster.local:4318" (get $discovery "service") (get $discovery "namespace") -}}
@@ -184,7 +186,9 @@ Same rules as the HTTP endpoint, on port 4317.
 */}}
 {{- define "ai-compare-opentelemetry.otlpGrpcEndpoint" -}}
 {{- $endpoint := .Values.openWebui.observability.otlpEndpoint -}}
-{{- if not $endpoint -}}
+{{- if include "ai-compare-opentelemetry.collectorEnabled" . -}}
+  {{- $endpoint = printf "http://%s-collector.%s.svc.cluster.local:4317" (include "ai-compare-opentelemetry.collectorName" .) .Release.Namespace -}}
+{{- else if not $endpoint -}}
   {{- $discovery := (include "ai-compare-opentelemetry.collectorService" .) | fromJson -}}
   {{- if (get $discovery "found") -}}
     {{- $endpoint = printf "http://%s.%s.svc.cluster.local:4317" (get $discovery "service") (get $discovery "namespace") -}}
@@ -214,7 +218,7 @@ Set observability.requireCollector=false to install anyway (a warning is
 printed to NOTES.txt instead).
 */}}
 {{- define "ai-compare-opentelemetry.validateCollector" -}}
-{{- if and .Values.aiCompare.observability.enabled (not .Values.aiCompare.observability.otlpEndpoint) -}}
+{{- if and .Values.aiCompare.observability.enabled (not .Values.aiCompare.observability.otlpEndpoint) (not (include "ai-compare-opentelemetry.collectorEnabled" .)) -}}
   {{- if lookup "v1" "Namespace" "" "kube-system" -}}
     {{- $d := include "ai-compare-opentelemetry.collectorService" . | fromJson -}}
     {{- if not (get $d "found") -}}
@@ -225,3 +229,84 @@ printed to NOTES.txt instead).
   {{- end -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Whether this release provisions its own SUSE AI collector through the
+OpenTelemetry Operator (observability.mode=operator). The shared cluster
+collector cannot build the SUSE AI topology unless it is a SUSE AI collector
+build with the topology exporter; operator mode guarantees that per release.
+*/}}
+{{- define "ai-compare-opentelemetry.collectorEnabled" -}}
+{{- if eq (.Values.observability.mode | default "existing") "operator" -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
+Name of the OpenTelemetryCollector CR. The operator names its Service
+"<name>-collector".
+*/}}
+{{- define "ai-compare-opentelemetry.collectorName" -}}
+{{- printf "%s-otel" (include "ai-compare-opentelemetry.fullname" .) | trunc 58 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Cluster name stamped on the telemetry; Rancher injects global.cattle.clusterName.
+*/}}
+{{- define "ai-compare-opentelemetry.clusterName" -}}
+{{- $global := .Values.global | default dict -}}
+{{- $cattle := $global.cattle | default dict -}}
+{{- .Values.opentelemetry.operator.clusterName | default $cattle.clusterName | default "unknown" }}
+{{- end }}
+
+{{/*
+Secret holding the SUSE Observability API key: existingSecret, then a chart-
+created secret from apiKey, then the secret copied by the pre-install hook.
+*/}}
+{{- define "ai-compare-opentelemetry.apiKeySecretName" -}}
+{{- $so := .Values.opentelemetry.operator.suseObservability -}}
+{{- if $so.existingSecret -}}
+{{ $so.existingSecret }}
+{{- else if $so.apiKey -}}
+{{ include "ai-compare-opentelemetry.collectorName" . }}
+{{- else -}}
+{{ $so.copySecret.name }}
+{{- end -}}
+{{- end }}
+
+{{/*
+Namespace SUSE AI components are attributed to (defaults to the release namespace).
+*/}}
+{{- define "ai-compare-opentelemetry.suseAiNamespace" -}}
+{{- default .Release.Namespace .Values.opentelemetry.operator.suseAiNamespace }}
+{{- end }}
+
+{{/*
+Backend URLs. Each backend is either deployed by this chart (<x>.enabled=true,
+the in-chart Service) or provided externally, e.g. by the SUSE Application
+Collection ollama / open-webui / open-webui-pipelines charts deployed as
+separate AI Factory blueprint components (<x>.url).
+*/}}
+{{- define "ai-compare-opentelemetry.ollamaUrl" -}}
+{{- if .Values.ollama.enabled -}}
+http://ollama-service:{{ .Values.ollama.service.port }}
+{{- else -}}
+{{ .Values.ollama.url | default "http://ollama-service:11434" }}
+{{- end -}}
+{{- end }}
+
+{{- define "ai-compare-opentelemetry.openWebuiUrl" -}}
+{{- if .Values.openWebui.enabled -}}
+http://open-webui-service:{{ .Values.openWebui.service.port }}
+{{- else -}}
+{{ .Values.openWebui.url | default "http://open-webui:80" }}
+{{- end -}}
+{{- end }}
+
+{{- define "ai-compare-opentelemetry.pipelinesUrl" -}}
+{{- if .Values.pipelines.enabled -}}
+http://pipelines-service:{{ .Values.pipelines.service.port }}
+{{- else -}}
+{{ .Values.pipelines.url | default "http://pipelines-service:9099" }}
+{{- end -}}
+{{- end }}

@@ -12,7 +12,7 @@ spec:
   restartPolicy: Never
   containers:
   - name: connectivity-test
-    image: curlimages/curl:8.5.0
+    image: dp.apps.rancher.io/containers/curl:8.14.1-13.2
     command:
     - /bin/sh
     - -c

@@ -42,7 +42,7 @@ spec:
       {{- end }}
       containers:
         - name: load-gen
-          image: curlimages/curl:8.4.0
+          image: dp.apps.rancher.io/containers/curl:8.14.1-13.2
           # Poll the app's /api/chat endpoint on the configured interval. The
           # FlaskInstrumentor on the app turns each /api/chat into a SERVER
           # span, which (with the app's outbound requests to pipelines/open-webui
@@ -97,11 +97,11 @@ spec:
             - name: SUSE_AI_NAMESPACE
               value: "{{ .Release.Namespace }}"
             - name: OLLAMA_URL
-              value: "http://ollama-service:{{ .Values.ollama.service.port }}"
+              value: {{ include "ai-compare-opentelemetry.ollamaUrl" . | quote }}
             - name: OPEN_WEBUI_URL
-              value: "http://open-webui-service:{{ .Values.openWebui.service.port }}"
+              value: {{ include "ai-compare-opentelemetry.openWebuiUrl" . | quote }}
             - name: PIPELINES_URL
-              value: "http://pipelines-service:{{ .Values.pipelines.service.port }}"
+              value: {{ include "ai-compare-opentelemetry.pipelinesUrl" . | quote }}
           resources:
             requests:
               cpu: 10m

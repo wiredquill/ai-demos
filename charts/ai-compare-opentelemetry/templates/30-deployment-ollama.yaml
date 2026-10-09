@@ -1,3 +1,4 @@
+{{- if .Values.ollama.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -112,6 +113,10 @@ spec:
         env:
         - name: OLLAMA_HOST
           value: "0.0.0.0:{{ .Values.ollama.service.port }}"
+        # Ollama 0.34 sizes the default context from GPU memory (32k on a 24 GB
+        # card, ~6 GB of KV cache). The demo prompts are short; pin it.
+        - name: OLLAMA_CONTEXT_LENGTH
+          value: "4096"
         volumeMounts:
         - name: ollama-models
           mountPath: /root/.ollama
@@ -136,7 +141,7 @@ spec:
       {{- if .Values.ollama.observability.enabled }}
       # OpenTelemetry Sidecar for Ollama observability
       - name: otel-collector
-        image: otel/opentelemetry-collector-contrib:0.157.0
+        image: dp.apps.rancher.io/containers/opentelemetry-collector:0.162.0-contrib-16.5
         ports:
         - containerPort: 4317
           name: otlp-grpc
@@ -181,3 +186,4 @@ spec:
         configMap:
           name: {{ include "ai-compare-opentelemetry.fullname" . }}-ollama-otel-config
       {{- end }}
+{{- end }}
