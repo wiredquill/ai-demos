@@ -76,12 +76,10 @@ opentelemetry:
     # Cluster name recorded on the telemetry. Defaults to the Rancher-injected
     # global.cattle.clusterName, so it rarely needs setting by hand.
     clusterName: ''
-
     # SUSE_AI_NAMESPACE on the collector: the fallback applied only to telemetry
     # that carries no service.namespace of its own. Defaults to the release
     # namespace when empty.
     suseAiNamespace: ''
-
     suseObservability:
       # Base URL of the SUSE Observability server, used by the topology exporter.
       apiUrl: ''
@@ -91,7 +89,6 @@ opentelemetry:
       otlpInsecure: false
       # Skip TLS verification, for demo clusters with self-signed certificates.
       skipTlsVerify: true
-
       # API key resolution, in order:
       #   1. existingSecret, if set
       #   2. apiKey, if set - the chart creates a secret holding it
@@ -229,7 +226,7 @@ pipelines:
 aiCompare:
   image:
     repository: ghcr.io/wiredquill/ai-demos-suse
-    tag: "3934eef"
+    tag: "edc3c3e"
   service:
     port: 7860
     type: NodePort
