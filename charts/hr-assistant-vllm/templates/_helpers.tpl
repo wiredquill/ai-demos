@@ -208,7 +208,7 @@ http://{{ include "hr-assistant.collectorName" . }}-collector.{{ .Release.Namesp
   {{- if $svc -}}
     {{- $endpoint = printf "http://%s.%s.svc.cluster.local:4318" $svc (include "hr-assistant.collectorNamespace" .) -}}
   {{- else -}}
-    {{- $endpoint = "http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4318" -}}
+    {{- $endpoint = "http://opentelemetry-collector.observability.svc.cluster.local:4318" -}}
   {{- end -}}
 {{- end -}}
 {{- $endpoint -}}

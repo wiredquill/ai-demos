@@ -1,0 +1,27 @@
+{{- if .Values.collector.aliasService.enabled }}
+# Short, stable Service name (<collector.name>) next to the operator-generated
+# <collector.name>-collector Service. Apps and charts that were configured with
+# http://<collector.name>.<namespace>.svc.cluster.local:4318 keep working.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.collector.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "aiobs.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "aiobs.collectorService" . }}
+    app.kubernetes.io/part-of: opentelemetry
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/instance: {{ printf "%s.%s" .Release.Namespace .Values.collector.name }}
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+{{- end }}

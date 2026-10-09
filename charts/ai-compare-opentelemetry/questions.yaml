@@ -18,12 +18,12 @@ questions:
 
 - variable: observability.mode
   label: "Telemetry Collector"
-  description: "Where the apps send telemetry.<br><br><b>operator</b> (recommended): the OpenTelemetry Operator creates a SUSE AI collector in this namespace with the topology exporter, so the app, Ollama, the model, Open WebUI and Pipelines all appear with health in the SUSE AI view. Requires the OpenTelemetry Operator in the cluster.<br><br><b>existing</b>: send to a collector that already runs in the cluster. The SUSE AI view only works if that collector is a SUSE AI collector build with the topology exporter."
+  description: "Where the apps send telemetry.<br><br><b>existing</b> (default): the cluster's shared SUSE AI collector (<code>opentelemetry-collector</code> in namespace <code>observability</code>, installed from the <code>ai-observability-collector</code> chart). It builds the SUSE AI view for every app in the cluster, so the app, Ollama, the model, Open WebUI and Pipelines all appear with health.<br><br><b>operator</b>: create a separate SUSE AI collector just for this release. Only needed on clusters without the shared SUSE AI collector; requires the OpenTelemetry Operator."
   type: enum
   options:
-    - "operator"
     - "existing"
-  default: "operator"
+    - "operator"
+  default: "existing"
   group: Observability
 
 - variable: aiCompare.observability.otlpEndpoint
