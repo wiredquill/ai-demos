@@ -52,7 +52,7 @@ spec:
           - name: OTLP_ENDPOINT
             value: "{{ include "hr-assistant.otlpEndpoint" . }}"
           - name: QDRANT_URL
-            value: "http://{{ include "hr-assistant.fullname" . }}-qdrant:{{ .Values.qdrant.service.port }}"
+            value: "{{ include "hr-assistant.qdrantUrl" . }}"
           - name: OPENSEARCH_URL
             value: "http://{{ include "hr-assistant.fullname" . }}-opensearch:{{ .Values.opensearch.service.port }}"
           - name: COLLECT_GPU_STATS

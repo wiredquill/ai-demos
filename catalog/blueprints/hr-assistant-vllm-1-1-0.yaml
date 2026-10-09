@@ -1,0 +1,103 @@
+apiVersion: ai-factory.suse.com/v1alpha1
+kind: Blueprint
+metadata:
+  labels:
+    ai-factory.suse.com/blueprint-name: hr-assistant-vllm
+    ai-factory.suse.com/blueprint-version: 1.1.0
+  name: hr-assistant-vllm-1-1-0
+spec:
+  source: Custom  # community, unsupported demo
+  displayName: SUSE AI HR Assistant (vLLM)
+  version: 1.1.0
+  description: |
+    Intelligent Employee Support and Policy Management served by SUSE vLLM
+    (Qwen2.5-7B-Instruct), with native engine-level GenAI metrics and full
+    OpenLIT observability into SUSE Observability.
+
+    Components (each a separate SUSE AI Factory application):
+      - vllm           SUSE vLLM serving engine + router (Application Collection)
+      - qdrant         SUSE AI Qdrant vector database (SUSE AI registry)
+      - hr-assistant-vllm  the three HR apps (Python 3.11, SUSE BCI based),
+                       OpenSearch search engine, load generator, and a SUSE AI
+                       OpenTelemetry collector (operator mode)
+
+    Prerequisites on the target cluster: a node with an NVIDIA GPU + GPU
+    operator (vLLM requests 1 GPU), a default StorageClass (vLLM model cache,
+    Qdrant storage), the OpenTelemetry Operator, and the SUSE Observability
+    API key Secret `open-telemetry-collector` (key API_KEY) in namespace
+    `observability`. The SUSE Observability endpoints below default to the
+    demo backend; change them in the Configuration step for another backend.
+  components:
+    # Release names are pinned so the components find each other by Service
+    # name in the shared target namespace: vllm -> vllm-router-service,
+    # qdrant -> qdrant, hr-assistant-vllm -> hr-assistant-vllm-otel-collector.
+    - chartName: vllm
+      chartRepo: application-collection
+      chartVersion: "0.1.10"
+      releaseName: vllm
+      values:
+        servingEngineSpec:
+          enableEngine: true
+          runtimeClassName: nvidia
+          labels:
+            environment: production
+            release: hr-assistant
+          modelSpec:
+            - name: hr-assistant-llm
+              registry: dp.apps.rancher.io
+              repository: containers/vllm-openai
+              tag: "0.19.0-5.55"
+              modelURL: Qwen/Qwen2.5-7B-Instruct
+              # Set at install time for gated models; Qwen2.5 is not gated.
+              hf_token: ""
+              replicaCount: 1
+              requestGPU: 1
+              requestCPU: 2
+              requestMemory: 4Gi
+              limitCPU: 2
+              limitMemory: 16Gi
+              pvcStorage: 100Gi
+              # apps/rag101.py calls chat.completions with tools=; vLLM needs
+              # both flags or it rejects "auto" tool choice with a 400.
+              vllmConfig:
+                extraArgs:
+                  - --enable-auto-tool-choice
+                  - --tool-call-parser
+                  - hermes
+        routerSpec:
+          enableRouter: true
+          serviceType: ClusterIP
+          repository: containers/lmcache-lmstack-router
+          tag: "0.1.10-3.110"
+          otel:
+            endpoint: http://hr-assistant-vllm-otel-collector:4317
+            serviceName: hr-assistant-vllm-router
+    - chartName: qdrant
+      chartRepo: suse-ai-registry
+      chartVersion: "1.19.0"
+      releaseName: qdrant
+      values:
+        persistence:
+          size: 10Gi
+    - chartName: hr-assistant-vllm
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "0.1.9"
+      releaseName: hr-assistant-vllm
+      values:
+        # vLLM and Qdrant come from the components above.
+        vllm:
+          enabled: false
+        vllmEndpoint: http://vllm-router-service:80
+        model: Qwen/Qwen2.5-7B-Instruct
+        qdrant:
+          enabled: false
+          url: http://qdrant:6333
+        service:
+          type: ClusterIP
+        observability:
+          mode: operator
+        opentelemetry:
+          operator:
+            suseObservability:
+              apiUrl: https://observability.mort.dna-42.com
+              otlpEndpoint: otlp-observability.mort.dna-42.com:443

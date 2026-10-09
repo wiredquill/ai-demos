@@ -107,7 +107,7 @@ spec:
             endpoint: ${env:MY_POD_IP}:4317
           http:
             endpoint: ${env:MY_POD_IP}:4318
-      {{- if .Values.qdrant.enabled }}
+      {{- if include "hr-assistant.qdrantInUse" . }}
       # Qdrant serves Prometheus metrics on its REST port. Discovered by label
       # in the release namespace so the job survives release renames.
       prometheus:
@@ -121,12 +121,18 @@ spec:
                   namespaces:
                     names: [{{ .Release.Namespace | quote }}]
               relabel_configs:
+                # Bundled Qdrant (app.component=qdrant) or the SUSE AI Qdrant
+                # chart (app=qdrant); its headless discovery Service is skipped
+                # so the same pod is not scraped twice.
                 - action: keep
-                  source_labels: [__meta_kubernetes_service_label_app_component]
-                  regex: qdrant
+                  source_labels: [__meta_kubernetes_service_label_app_component, __meta_kubernetes_service_label_app]
+                  regex: "qdrant;.*|.*;qdrant"
+                - action: drop
+                  source_labels: [__meta_kubernetes_service_label_app_kubernetes_io_component]
+                  regex: cluster-discovery
                 - action: keep
                   source_labels: [__meta_kubernetes_service_port_number]
-                  regex: {{ .Values.qdrant.service.port | quote }}
+                  regex: "6333"
       {{- end }}
       {{- if .Values.opensearch.enabled }}
       # OpenSearch has no /metrics; the elasticsearch receiver polls its REST
@@ -374,8 +380,8 @@ spec:
           processors: [transform/topology-provider, transform/db-topology-relations, batch]
           exporters: [topology]
         metrics:
-          receivers: [otlp, span_metrics{{ if .Values.qdrant.enabled }}, prometheus{{ end }}]
-          processors: [k8s_attributes, memory_limiter{{ if .Values.qdrant.enabled }}, transform/qdrant{{ end }}, resource, batch]
+          receivers: [otlp, span_metrics{{ if include "hr-assistant.qdrantInUse" . }}, prometheus{{ end }}]
+          processors: [k8s_attributes, memory_limiter{{ if include "hr-assistant.qdrantInUse" . }}, transform/qdrant{{ end }}, resource, batch]
           exporters: [otlp_grpc{{ if .Values.opentelemetry.operator.debug }}, debug{{ end }}]
         {{- if .Values.opensearch.enabled }}
         metrics/opensearch:

@@ -184,7 +184,7 @@ vllm:
         name: hr-assistant-llm
         registry: dp.apps.rancher.io
         repository: containers/vllm-openai
-        tag: "0.19.0"
+        tag: "0.19.0-5.55"
         modelURL: Qwen/Qwen2.5-7B-Instruct
         # Hugging Face token (set at install time; never commit a real token).
         # The subchart stores it in a Secret and injects HF_TOKEN into vLLM.
@@ -229,6 +229,8 @@ vllm:
     # needed) is the dedicated Service in routerExposure below, since the
     # packaged subchart's own router Service cannot render nodePort/LB.
     serviceType: ClusterIP
+    repository: containers/lmcache-lmstack-router
+    tag: "0.1.10-3.110"
     otel:
       # Service the OpenTelemetry Operator creates for an OpenTelemetryCollector
       # named "opentelemetry-collector" (SUSE Observability's documented setup).
@@ -314,6 +316,10 @@ policyDb:
 # topology shows hr-policy-db -> qdrant as a dependency.
 qdrant:
   enabled: true
+  # Used only when enabled=false: REST URL of an external Qdrant, e.g. the SUSE
+  # AI Qdrant chart deployed as a separate AI Factory blueprint component with
+  # releaseName "qdrant" (Service qdrant:6333).
+  url: ""
   # SUSE AI build of Qdrant (authenticated; needs the suse-registry pull secret).
   image:
     repository: registry.suse.com/ai/containers/qdrant
