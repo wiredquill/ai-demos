@@ -1,5 +1,5 @@
-{{- if include "hr-assistant.collectorEnabled" . }}
-{{- $collector := include "hr-assistant.collectorName" . }}
+{{- if include "ai-compare-opentelemetry.collectorEnabled" . }}
+{{- $collector := include "ai-compare-opentelemetry.collectorName" . }}
 {{- $so := .Values.opentelemetry.operator.suseObservability }}
 {{- if not $so.apiUrl }}
 {{- fail "observability.mode=operator requires opentelemetry.operator.suseObservability.apiUrl (e.g. https://observability.example.com)" }}
@@ -16,7 +16,7 @@ kind: ServiceAccount
 metadata:
   name: {{ $collector }}
   labels:
-    {{- include "hr-assistant.labels" . | nindent 4 }}
+    {{- include "ai-compare-opentelemetry.labels" . | nindent 4 }}
 {{- with .Values.opentelemetry.operator.imagePullSecrets }}
 imagePullSecrets:
   {{- toYaml . | nindent 2 }}
@@ -29,9 +29,8 @@ kind: ClusterRole
 metadata:
   name: {{ $collector }}-{{ .Release.Namespace }}
   labels:
-    {{- include "hr-assistant.labels" . | nindent 4 }}
+    {{- include "ai-compare-opentelemetry.labels" . | nindent 4 }}
 rules:
-  # services/endpoints: Kubernetes service discovery for the Qdrant scrape.
   - apiGroups: [""]
     resources: ["pods", "namespaces", "nodes", "services", "endpoints"]
     verbs: ["get", "list", "watch"]
@@ -47,7 +46,7 @@ kind: ClusterRoleBinding
 metadata:
   name: {{ $collector }}-{{ .Release.Namespace }}
   labels:
-    {{- include "hr-assistant.labels" . | nindent 4 }}
+    {{- include "ai-compare-opentelemetry.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -63,7 +62,7 @@ kind: Secret
 metadata:
   name: {{ $collector }}
   labels:
-    {{- include "hr-assistant.labels" . | nindent 4 }}
+    {{- include "ai-compare-opentelemetry.labels" . | nindent 4 }}
 type: Opaque
 stringData:
   API_KEY: {{ $so.apiKey | quote }}
@@ -74,7 +73,7 @@ kind: OpenTelemetryCollector
 metadata:
   name: {{ $collector }}
   labels:
-    {{- include "hr-assistant.labels" . | nindent 4 }}
+    {{- include "ai-compare-opentelemetry.labels" . | nindent 4 }}
 spec:
   mode: {{ .Values.opentelemetry.operator.mode }}
   replicas: {{ .Values.opentelemetry.operator.replicas }}
@@ -91,13 +90,13 @@ spec:
         fieldRef:
           fieldPath: status.podIP
     - name: K8S_CLUSTER_NAME
-      value: {{ include "hr-assistant.clusterName" . | quote }}
+      value: {{ include "ai-compare-opentelemetry.clusterName" . | quote }}
     - name: SUSE_AI_NAMESPACE
-      value: {{ include "hr-assistant.suseAiNamespace" . | quote }}
+      value: {{ include "ai-compare-opentelemetry.suseAiNamespace" . | quote }}
     - name: API_KEY
       valueFrom:
         secretKeyRef:
-          name: {{ include "hr-assistant.apiKeySecretName" . }}
+          name: {{ include "ai-compare-opentelemetry.apiKeySecretName" . }}
           key: {{ $so.existingSecretKey }}
   config:
     receivers:
@@ -107,43 +106,6 @@ spec:
             endpoint: ${env:MY_POD_IP}:4317
           http:
             endpoint: ${env:MY_POD_IP}:4318
-      {{- if include "hr-assistant.qdrantInUse" . }}
-      # Qdrant serves Prometheus metrics on its REST port. Discovered by label
-      # in the release namespace so the job survives release renames.
-      prometheus:
-        config:
-          scrape_configs:
-            - job_name: qdrant
-              scrape_interval: 10s
-              metrics_path: /metrics
-              kubernetes_sd_configs:
-                - role: service
-                  namespaces:
-                    names: [{{ .Release.Namespace | quote }}]
-              relabel_configs:
-                # Bundled Qdrant (app.component=qdrant) or the SUSE AI Qdrant
-                # chart (app=qdrant); its headless discovery Service is skipped
-                # so the same pod is not scraped twice.
-                - action: keep
-                  source_labels: [__meta_kubernetes_service_label_app_component, __meta_kubernetes_service_label_app]
-                  regex: "qdrant;.*|.*;qdrant"
-                - action: drop
-                  source_labels: [__meta_kubernetes_service_label_app_kubernetes_io_component]
-                  regex: cluster-discovery
-                - action: keep
-                  source_labels: [__meta_kubernetes_service_port_number]
-                  regex: "6333"
-      {{- end }}
-      {{- if .Values.opensearch.enabled }}
-      # OpenSearch has no /metrics; the elasticsearch receiver polls its REST
-      # API. The SUSE AI StackPack's OpenSearch bindings key on
-      # elasticsearch_cluster_name="opensearch-cluster" (see values.yaml).
-      elasticsearch:
-        endpoint: "http://{{ include "hr-assistant.fullname" . }}-opensearch.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.opensearch.service.port }}"
-        collection_interval: 10s
-        tls:
-          insecure_skip_verify: true
-      {{- end }}
     extensions:
       health_check:
         endpoint: ${env:MY_POD_IP}:13133
@@ -160,38 +122,6 @@ spec:
             action: insert
           - key: service.instance.id
             from_attribute: k8s.pod.uid
-            action: insert
-      transform/qdrant:
-        error_mode: ignore
-        metric_statements:
-          - context: resource
-            statements:
-              - set(attributes["suse.ai.managed"], "true") where attributes["service.name"] == "qdrant"
-              - set(attributes["suse.ai.component.name"], "qdrant") where attributes["service.name"] == "qdrant"
-              - set(attributes["suse.ai.component.type"], "vectordb") where attributes["service.name"] == "qdrant"
-              - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["service.name"] == "qdrant"
-      resource/opensearch:
-        attributes:
-          - key: suse.ai.managed
-            value: "true"
-            action: insert
-          - key: suse.ai.component.name
-            value: opensearch
-            action: insert
-          - key: suse.ai.component.type
-            value: search-engine
-            action: insert
-          - key: service.name
-            value: opensearch
-            action: insert
-          - key: service.namespace
-            value: ${env:SUSE_AI_NAMESPACE}
-            action: insert
-          - key: k8s.namespace.name
-            value: ${env:SUSE_AI_NAMESPACE}
-            action: upsert
-          - key: service.instance.id
-            value: opensearch-cluster
             action: insert
       k8s_attributes:
         auth_type: serviceAccount
@@ -293,14 +223,6 @@ spec:
           - context: span
             statements:
               - set(attributes["peer.service"], resource.attributes["gen_ai.provider.name"]) where resource.attributes["gen_ai.provider.name"] != nil
-      # Draws app -> vectordb / search-engine edges from the client spans.
-      transform/db-topology-relations:
-        error_mode: ignore
-        trace_statements:
-          - context: span
-            statements:
-              - set(attributes["peer.service"], "qdrant") where attributes["db.system.name"] == "qdrant" or attributes["db.system"] == "qdrant"
-              - set(attributes["peer.service"], "opensearch") where IsMatch(attributes["server.address"], ".*opensearch.*") or IsMatch(attributes["net.peer.name"], ".*opensearch.*") or IsMatch(attributes["url.full"], ".*opensearch.*") or IsMatch(attributes["http.url"], ".*opensearch.*")
       transform/topology-provider:
         error_mode: ignore
         trace_statements:
@@ -377,18 +299,12 @@ spec:
           exporters: [otlp_grpc{{ if .Values.opentelemetry.operator.debug }}, debug{{ end }}]
         traces/topology:
           receivers: [routing/traces]
-          processors: [transform/topology-provider, transform/db-topology-relations, batch]
+          processors: [transform/topology-provider, batch]
           exporters: [topology]
         metrics:
-          receivers: [otlp, span_metrics{{ if include "hr-assistant.qdrantInUse" . }}, prometheus{{ end }}]
-          processors: [k8s_attributes, memory_limiter{{ if include "hr-assistant.qdrantInUse" . }}, transform/qdrant{{ end }}, resource, batch]
+          receivers: [otlp, span_metrics]
+          processors: [k8s_attributes, memory_limiter, resource, batch]
           exporters: [otlp_grpc{{ if .Values.opentelemetry.operator.debug }}, debug{{ end }}]
-        {{- if .Values.opensearch.enabled }}
-        metrics/opensearch:
-          receivers: [elasticsearch]
-          processors: [memory_limiter, resource/opensearch, resource, batch]
-          exporters: [otlp_grpc{{ if .Values.opentelemetry.operator.debug }}, debug{{ end }}]
-        {{- end }}
         metrics/infer-applications:
           receivers: [otlp]
           processors: [filter/genai-metrics-only, filter/exclude-already-tagged, transform/infer-applications, k8s_attributes, resource, batch]

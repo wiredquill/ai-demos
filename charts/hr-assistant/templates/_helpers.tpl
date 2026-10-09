@@ -268,3 +268,25 @@ still group each application under its own.
 {{- define "hr-assistant.serviceNamespace" -}}
 {{- default .Release.Namespace .Values.observability.serviceNamespace }}
 {{- end }}
+
+{{/*
+Qdrant REST URL. The bundled Qdrant (qdrant.enabled) is used when enabled;
+otherwise qdrant.url points at an external Qdrant, e.g. the SUSE AI Qdrant
+chart deployed as its own AI Factory blueprint component (release "qdrant").
+*/}}
+{{- define "hr-assistant.qdrantUrl" -}}
+{{- if .Values.qdrant.enabled -}}
+http://{{ include "hr-assistant.fullname" . }}-qdrant:{{ .Values.qdrant.service.port }}
+{{- else -}}
+{{ .Values.qdrant.url | default "http://qdrant:6333" }}
+{{- end -}}
+{{- end }}
+
+{{/*
+Whether a Qdrant (bundled or external) is in use, so the collector scrapes it.
+*/}}
+{{- define "hr-assistant.qdrantInUse" -}}
+{{- if or .Values.qdrant.enabled .Values.qdrant.url -}}
+true
+{{- end -}}
+{{- end }}

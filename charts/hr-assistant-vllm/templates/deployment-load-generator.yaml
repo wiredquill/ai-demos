@@ -112,7 +112,7 @@ spec:
             - name: SUSE_AI_NAMESPACE
               value: "{{ include "hr-assistant.serviceNamespace" . }}"
             - name: QDRANT_URL
-              value: "http://{{ $fullname }}-qdrant:6333"
+              value: "{{ include "hr-assistant.qdrantUrl" . }}"
             - name: OPENSEARCH_URL
               value: "http://{{ $fullname }}-opensearch:9200"
           resources:

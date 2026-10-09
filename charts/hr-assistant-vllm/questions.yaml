@@ -30,6 +30,16 @@ questions:
   show_if: "service.type=NodePort"
 
 # --- Observability (Form Page) ---
+- variable: observability.mode
+  label: "Telemetry Collector"
+  description: "Where the apps send telemetry.<br><br><b>operator</b> (recommended): the OpenTelemetry Operator creates a SUSE AI collector in this namespace with the topology exporter, so the app, inference engine, models, vector DB and search engine all appear with health in the SUSE AI view. Requires the OpenTelemetry Operator in the cluster.<br><br><b>existing</b>: send to a collector that already runs in the cluster. The SUSE AI view only works if that collector is a SUSE AI collector build with the topology exporter."
+  type: enum
+  options:
+    - "operator"
+    - "existing"
+  default: "operator"
+  group: Observability
+
 - variable: otlpEndpoint
   label: "OTLP Endpoint"
   description: "OpenTelemetry collector address (scheme://host:port).<br><br><b>Leave blank to auto-discover:</b> the chart looks up the collector Service in the Collector Namespace below and uses it automatically.<br><br>Find it manually:<br><code>kubectl get svc -n &lt;namespace&gt; | grep opentelemetry</code>"
@@ -37,6 +47,7 @@ questions:
   required: false
   default: ""
   group: Observability
+  show_if: "observability.mode=existing"
 
 - variable: observability.collectorNamespace
   label: "Collector Namespace"
@@ -45,6 +56,43 @@ questions:
   required: false
   default: "observability"
   group: Observability
+  show_if: "observability.mode=existing"
+
+- variable: opentelemetry.operator.suseObservability.apiUrl
+  label: "SUSE Observability URL"
+  description: "Base URL of SUSE Observability, used by the topology exporter. Example: <code>https://observability.example.com</code>"
+  type: string
+  required: true
+  default: ""
+  group: Observability
+  show_if: "observability.mode=operator"
+
+- variable: opentelemetry.operator.suseObservability.otlpEndpoint
+  label: "SUSE Observability OTLP Endpoint"
+  description: "OTLP gRPC ingestion endpoint as <code>host:port</code>, no scheme. Example: <code>otlp-observability.example.com:443</code>"
+  type: string
+  required: true
+  default: ""
+  group: Observability
+  show_if: "observability.mode=operator"
+
+- variable: opentelemetry.operator.clusterName
+  label: "Cluster Name in SUSE Observability"
+  description: "Optional. Defaults to the Rancher cluster name."
+  type: string
+  required: false
+  default: ""
+  group: Observability
+  show_if: "observability.mode=operator"
+
+- variable: opentelemetry.operator.suseObservability.existingSecret
+  label: "API Key Secret (optional)"
+  description: "Secret in this namespace holding the SUSE Observability API key (key <code>API_KEY</code>). Leave blank to copy <code>open-telemetry-collector</code> from the <code>observability</code> namespace at install time."
+  type: string
+  required: false
+  default: ""
+  group: Observability
+  show_if: "observability.mode=operator"
 
 # --- vLLM Configuration (Form Page) ---
 - variable: vllm.enabled
@@ -53,6 +101,15 @@ questions:
   description: "Deploy the SUSE Application Collection vLLM engine + router as part of this chart."
   type: "boolean"
   default: true
+
+- variable: vllmEndpoint
+  group: "vLLM Deployment"
+  label: "vLLM Router URL"
+  description: "OpenAI-compatible endpoint of an existing vLLM router, e.g. the SUSE AI vLLM application installed separately (<code>http://vllm-router-service:80</code>)."
+  type: string
+  required: true
+  default: "http://vllm-router-service:80"
+  show_if: "vllm.enabled=false"
 
 - variable: loadGenerator.intervalSeconds
   label: "Load Generation Interval (seconds)"
@@ -159,15 +216,6 @@ questions:
   default: "/data/ai-models"
   show_if: "vllm.enabled=true && vllm.sharedPvcStorage.enabled=true"
 
-- variable: vllmEndpoint
-  label: "Existing vLLM Router URL"
-  type: string
-  description: "URL for an existing, externally-managed vLLM OpenAI-compatible router.<br>Leave blank to use the router this chart deploys."
-  required: false
-  default: ""
-  group: "vLLM Deployment"
-  show_if: "vllm.enabled=false"
-
 # --- Vector Database + Search Engine components ---
 - variable: qdrant.enabled
   group: "Observability Demo Components"
@@ -175,6 +223,14 @@ questions:
   description: "Deploys Qdrant and wires the collector to tag it as a Vector Databases component. The RAG app seeds and searches it for topology data."
   type: "boolean"
   default: true
+
+- variable: qdrant.url
+  group: "Observability Demo Components"
+  label: "Qdrant URL"
+  type: string
+  required: true
+  default: "http://qdrant:6333"
+  show_if: "qdrant.enabled=false"
 
 - variable: opensearch.enabled
   group: "Observability Demo Components"

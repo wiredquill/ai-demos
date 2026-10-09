@@ -33,6 +33,79 @@ observability:
   # Set false to install anyway; NOTES.txt will print a warning.
   # (Offline renders - helm template - skip the check automatically.)
   requireCollector: true
+  # How the app ships telemetry.
+  #
+  #   existing  - send to the shared collector already in the cluster
+  #               (aiCompare.observability.otlpEndpoint, or auto-discovered).
+  #               SUSE AI topology only appears if that collector is a SUSE AI
+  #               collector build with the topology exporter.
+  #   operator  - have the OpenTelemetry Operator create a SUSE AI collector in
+  #               this namespace with the GenAI topology pipeline (same as the
+  #               hr-assistant charts). The app, Open WebUI and the health-check
+  #               emitter are pointed at it automatically. Requires the
+  #               OpenTelemetry Operator and suseObservability.apiUrl/otlpEndpoint.
+  mode: existing
+opentelemetry:
+  operator:
+    # Set by observability.mode; kept for callers that set it directly.
+    enabled: false
+    mode: deployment
+    replicas: 1
+    # Set true to also log telemetry to the collector's stdout for debugging.
+    debug: false
+    # SUSE AI collector build: the only collector image that ships the
+    # topology exporter SUSE Observability needs for the SUSE AI view. The
+    # registry.suse.com/ai build is only published at 0.149.0, which lacks the
+    # otlp_grpc exporter and k8s_attributes processor this pipeline uses, so
+    # the SUSE-published ghcr.io/suse build is used, matched to the
+    # OpenTelemetry Operator version (0.156.0).
+    image:
+      repository: ghcr.io/suse/suse-ai-opentelemetry-collector
+      tag: '0.156.0'
+      pullPolicy: IfNotPresent
+    imagePullSecrets:
+      - name: application-collection
+      - name: suse-registry
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: '1'
+        memory: 1Gi
+    # Cluster name recorded on the telemetry. Defaults to the Rancher-injected
+    # global.cattle.clusterName, so it rarely needs setting by hand.
+    clusterName: ''
+
+    # SUSE_AI_NAMESPACE on the collector: the fallback applied only to telemetry
+    # that carries no service.namespace of its own. Defaults to the release
+    # namespace when empty.
+    suseAiNamespace: ''
+
+    suseObservability:
+      # Base URL of the SUSE Observability server, used by the topology exporter.
+      apiUrl: ''
+      # OTLP gRPC ingestion endpoint as host:port, with no scheme.
+      otlpEndpoint: ''
+      # Plaintext gRPC. Leave false for a TLS ingestion endpoint.
+      otlpInsecure: false
+      # Skip TLS verification, for demo clusters with self-signed certificates.
+      skipTlsVerify: true
+
+      # API key resolution, in order:
+      #   1. existingSecret, if set
+      #   2. apiKey, if set - the chart creates a secret holding it
+      #   3. otherwise a pre-install hook copies apiKeySecret out of
+      #      sourceNamespace, so nobody has to paste a token at install time
+      apiKey: ''
+      existingSecret: ''
+      existingSecretKey: API_KEY
+      # Where to copy the API key secret from when neither of the above is set.
+      copySecret:
+        enabled: true
+        sourceNamespace: observability
+        name: open-telemetry-collector
+        image: registry.suse.com/bci/bci-base:15.7
 # -- Global image pull policy
 imagePullPolicy: Always
 # -- Correctly formatted list for imagePullSecrets
@@ -40,9 +113,13 @@ imagePullSecrets:
   - name: application-collection
 # -- Application settings
 ollama:
+  # false = use an external Ollama (ollama.url), e.g. the SUSE Application
+  # Collection ollama chart as a separate AI Factory blueprint component.
+  enabled: true
+  url: ""
   image:
     repository: dp.apps.rancher.io/containers/ollama
-    tag: "0.21.2-11.48"
+    tag: "0.34.4-11.97"
   service:
     port: 11434
     type: ClusterIP
@@ -67,9 +144,11 @@ ollama:
     requests:
       cpu: "1" # 1 CPU for GPU, will be overridden to 2 if GPU disabled
       memory: "4Gi" # 4Gi for GPU, will be overridden to 8Gi if GPU disabled
+    # Ollama 0.34 keeps the loaded model and its runner in host memory; 4Gi
+    # was OOMKilled under load (same finding as the hr-assistant chart).
     limits:
-      cpu: "1" # 1 CPU for GPU, will be overridden to 2 if GPU disabled
-      memory: "4Gi" # 4Gi for GPU, will be overridden to 8Gi if GPU disabled
+      cpu: "2"
+      memory: "8Gi"
   # CPU-only resource configuration (used when gpu.enabled=false)
   resourcesCpuOnly:
     requests:
@@ -78,8 +157,10 @@ ollama:
     limits:
       cpu: "2"
       memory: "8Gi"
+  # Map form so the Rancher install form can set it (questions.yaml cannot
+  # write list elements); templates range over the values.
   models:
-    - llama3.2:latest
+    main: llama3.2:latest
   persistence:
     enabled: true
     size: 10Gi
@@ -92,9 +173,13 @@ ollama:
       server: "10.0.9.10" # NFS server IP/hostname
       path: "/data/ai-models" # NFS share path for caching models
 openWebui:
+  # false = use an external Open WebUI (openWebui.url), e.g. the SUSE
+  # Application Collection open-webui chart (Service open-webui:80).
+  enabled: true
+  url: ""
   image:
     repository: dp.apps.rancher.io/containers/open-webui
-    tag: "0.6.41-14.20" # SUSE Application Collection version with enterprise hardening
+    tag: "0.6.41-15.13" # SUSE Application Collection version with enterprise hardening
   service:
     port: 8080
     type: NodePort
@@ -116,9 +201,12 @@ openWebui:
 # Open WebUI Pipelines Service
 pipelines:
   enabled: true
+  # Used when enabled=false: an external Pipelines, e.g. the SUSE Application
+  # Collection open-webui-pipelines chart with releaseName pipelines-service.
+  url: ""
   image:
     repository: dp.apps.rancher.io/containers/open-webui-pipelines
-    tag: "0.20250819.030501-8.19" # Current SUSE Application Collection version
+    tag: "0.20250819.030501-8.103" # Current SUSE Application Collection version
   service:
     port: 9099
     type: ClusterIP
@@ -223,7 +311,7 @@ frontend:
     enabled: true # Enabled by default for comprehensive observability traffic generation
     # NOTE: this block now drives the PERSISTENT load-gen Deployment (templates/70-
     # load-generator.yaml) instead of the old */2 CronJob. image.* is unused by
-    # the new template (it runs curlimages/curl + the app image's
+    # the new template (it runs the SUSE curl image + the app image's
     # health-check-emitter sidecar). intervalSeconds MUST stay < topology-TTL/2
     # (~2min TTL on the SUSE Observability backend): 45s keeps the SUSE AI view
     # + topology populated; the old */2 cadence left the view empty most of the

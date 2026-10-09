@@ -23,32 +23,43 @@ spec:
       {{- end }}
       initContainers:
       {{- if .Values.pipelines.git.enabled }}
-      # Git Sync Init Container - Downloads pipelines from repository
+      # Git Sync - Downloads pipelines from repository. The SUSE Application
+      # Collection git image runs `git` as its entrypoint (no shell), so the
+      # clone and the copy into the shared volume are two steps.
+      - name: git-clone
+        image: dp.apps.rancher.io/containers/git:2.56.0-31.5
+        args:
+          - clone
+          - --branch
+          - {{ .Values.pipelines.git.branch | quote }}
+          - --depth
+          - "1"
+          - {{ .Values.pipelines.git.repo | quote }}
+          - /work/repo
+        env:
+        - name: HOME
+          value: /work
+        volumeMounts:
+        - name: git-work
+          mountPath: /work
       - name: git-sync
-        image: alpine/git:latest
+        image: registry.suse.com/bci/bci-base:15.7
         command: ["/bin/sh"]
         args:
           - -c
           - |
-            echo "=== Cloning pipeline repository ==="
-            echo "Repository: {{ .Values.pipelines.git.repo }}"
-            echo "Branch: {{ .Values.pipelines.git.branch }}"
-            echo "Path: {{ .Values.pipelines.git.path }}"
-            
-            # Clone the repository
-            git clone --branch {{ .Values.pipelines.git.branch }} --depth 1 {{ .Values.pipelines.git.repo }} /tmp/repo
-            
-            # Copy pipelines to the shared volume
-            if [ -d "/tmp/repo/{{ .Values.pipelines.git.path }}" ]; then
-              echo "✅ Copying pipelines from repository"
-              cp -r /tmp/repo/{{ .Values.pipelines.git.path }}/* /app/pipelines/
+            echo "Repository: {{ .Values.pipelines.git.repo }} ({{ .Values.pipelines.git.branch }}), path: {{ .Values.pipelines.git.path }}"
+            if [ -d "/work/repo/{{ .Values.pipelines.git.path }}" ]; then
+              cp -r /work/repo/{{ .Values.pipelines.git.path }}/* /app/pipelines/
               ls -la /app/pipelines/
-              echo "✅ Pipeline files copied successfully"
+              echo "Pipeline files copied successfully"
             else
-              echo "⚠️  Pipeline directory not found in repository"
+              echo "Pipeline directory not found in repository"
               exit 1
             fi
         volumeMounts:
+        - name: git-work
+          mountPath: /work
         - name: pipeline-storage
           mountPath: /app/pipelines
       {{- end }}
@@ -98,4 +109,8 @@ spec:
       volumes:
       - name: pipeline-storage
         emptyDir: {}
+      {{- if .Values.pipelines.git.enabled }}
+      - name: git-work
+        emptyDir: {}
+      {{- end }}
 {{- end }}

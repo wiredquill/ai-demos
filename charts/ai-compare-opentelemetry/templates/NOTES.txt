@@ -6,6 +6,9 @@ SUSE AI Observability
 {{- $sd := dig "spanDuration" (dict) $obs -}}
 {{- if not .Values.aiCompare.observability.enabled }}
 Telemetry is DISABLED (aiCompare.observability.enabled=false) - no collector is needed.
+{{- else if include "ai-compare-opentelemetry.collectorEnabled" . }}
+SUSE AI collector (operator mode): {{ include "ai-compare-opentelemetry.otlpHttpEndpoint" . }}
+  -> SUSE Observability {{ .Values.opentelemetry.operator.suseObservability.apiUrl }} (topology) / {{ .Values.opentelemetry.operator.suseObservability.otlpEndpoint }} (OTLP)
 {{- else if $explicit }}
 OTLP endpoint (explicitly configured): {{ $explicit }}
 {{- else if get $d "found" }}

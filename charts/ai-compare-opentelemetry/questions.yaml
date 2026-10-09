@@ -7,14 +7,24 @@ questions:
   type: "boolean"
   default: true
 
-- variable: ollamaEndpoint
-  label: "Ollama Endpoint"
+- variable: ollama.url
+  label: "Ollama URL"
   type: string
-  description: "The URL for the Ollama service - Include http:// and port."
+  description: "URL of an existing Ollama, e.g. the SUSE AI Ollama application installed separately - include http:// and port."
   required: true
-  default: "http://ollama:11434"
+  default: "http://ollama-service:11434"
   group: General
   show_if: "ollama.enabled=false"
+
+- variable: observability.mode
+  label: "Telemetry Collector"
+  description: "Where the apps send telemetry.<br><br><b>operator</b> (recommended): the OpenTelemetry Operator creates a SUSE AI collector in this namespace with the topology exporter, so the app, Ollama, the model, Open WebUI and Pipelines all appear with health in the SUSE AI view. Requires the OpenTelemetry Operator in the cluster.<br><br><b>existing</b>: send to a collector that already runs in the cluster. The SUSE AI view only works if that collector is a SUSE AI collector build with the topology exporter."
+  type: enum
+  options:
+    - "operator"
+    - "existing"
+  default: "operator"
+  group: Observability
 
 - variable: aiCompare.observability.otlpEndpoint
   label: "OTLP Endpoint (optional)"
@@ -22,7 +32,44 @@ questions:
   description: "Leave blank to auto-discover the shared OpenTelemetry collector at install time. Set an explicit URL (e.g. http://my-collector.observability.svc.cluster.local:4318) only to override discovery."
   required: false
   default: "http://opentelemetry-collector.observability.svc.cluster.local:4318"
-  group: General
+  group: Observability
+  show_if: "observability.mode=existing"
+
+- variable: opentelemetry.operator.suseObservability.apiUrl
+  label: "SUSE Observability URL"
+  description: "Base URL of SUSE Observability, used by the topology exporter. Example: <code>https://observability.example.com</code>"
+  type: string
+  required: true
+  default: ""
+  group: Observability
+  show_if: "observability.mode=operator"
+
+- variable: opentelemetry.operator.suseObservability.otlpEndpoint
+  label: "SUSE Observability OTLP Endpoint"
+  description: "OTLP gRPC ingestion endpoint as <code>host:port</code>, no scheme. Example: <code>otlp-observability.example.com:443</code>"
+  type: string
+  required: true
+  default: ""
+  group: Observability
+  show_if: "observability.mode=operator"
+
+- variable: opentelemetry.operator.clusterName
+  label: "Cluster Name in SUSE Observability"
+  description: "Optional. Defaults to the Rancher cluster name."
+  type: string
+  required: false
+  default: ""
+  group: Observability
+  show_if: "observability.mode=operator"
+
+- variable: opentelemetry.operator.suseObservability.existingSecret
+  label: "API Key Secret (optional)"
+  description: "Secret in this namespace holding the SUSE Observability API key (key <code>API_KEY</code>). Leave blank to copy <code>open-telemetry-collector</code> from the <code>observability</code> namespace at install time."
+  type: string
+  required: false
+  default: ""
+  group: Observability
+  show_if: "observability.mode=operator"
 
 - variable: ollama.gpu.enabled
   group: General
@@ -94,7 +141,7 @@ questions:
   default: false
 
 # Ollama Deployment Configuration
-- variable: ollama.models[0]
+- variable: ollama.models.main
   group: "Ollama Deployment"
   label: "Ollama Model"
   description: "The Ollama model to pull and use for inference."
@@ -186,7 +233,7 @@ questions:
   label: "Ollama CPU Limit"
   description: "CPU limit for Ollama in GPU mode."
   type: "string"
-  default: "1"
+  default: "2"
   show_if: "ollama.enabled=true && ollama.gpu.enabled=true"
 
 - variable: ollama.resources.limits.memory
@@ -194,7 +241,7 @@ questions:
   label: "Ollama Memory Limit"
   description: "Memory limit for Ollama in GPU mode."
   type: "string"
-  default: "4Gi"
+  default: "8Gi"
   show_if: "ollama.enabled=true && ollama.gpu.enabled=true"
 
 # Ollama Resources - CPU-only mode (shown when GPU disabled on General page)

@@ -6,6 +6,8 @@ metadata:
     ai-factory.suse.com/blueprint-version: 1.0.0
   name: ai-compare-opentelemetry-1-0-0
 spec:
+  # Superseded by 1.1.0 (separate AI Factory components). Kept for rollback.
+  deprecated: true
   source: Custom  # community, unsupported demo
   displayName: AI Compare (OpenTelemetry)
   version: 1.0.0

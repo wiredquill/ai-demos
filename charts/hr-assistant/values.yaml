@@ -232,6 +232,10 @@ policyDb:
 # topology shows hr-policy-db -> qdrant as a dependency.
 qdrant:
   enabled: true
+  # Used only when enabled=false: REST URL of an external Qdrant, e.g. the SUSE
+  # AI Qdrant chart deployed as a separate AI Factory blueprint component with
+  # releaseName "qdrant" (Service qdrant:6333).
+  url: ""
   # SUSE AI build of Qdrant (authenticated; needs the suse-registry pull secret).
   image:
     repository: registry.suse.com/ai/containers/qdrant
