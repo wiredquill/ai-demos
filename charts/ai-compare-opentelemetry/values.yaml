@@ -157,8 +157,10 @@ ollama:
     limits:
       cpu: "2"
       memory: "8Gi"
+  # Map form so the Rancher install form can set it (questions.yaml cannot
+  # write list elements); templates range over the values.
   models:
-    - llama3.2:latest
+    main: llama3.2:latest
   persistence:
     enabled: true
     size: 10Gi

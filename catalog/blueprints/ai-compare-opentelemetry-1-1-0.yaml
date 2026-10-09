@@ -126,7 +126,7 @@ spec:
             value: open-webui
     - chartName: ai-compare-opentelemetry
       chartRepo: wiredquill-ai-demos
-      chartVersion: "0.1.551"
+      chartVersion: "0.1.552"
       releaseName: ai-compare-opentelemetry
       values:
         # Ollama, Open WebUI and Pipelines come from the components above.

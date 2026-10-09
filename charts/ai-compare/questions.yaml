@@ -1,21 +1,5 @@
 questions:
 # General Configuration
-- variable: ollama.enabled
-  group: General
-  label: "Enable Ollama Deployment"
-  description: "If true, Ollama will be deployed as part of this chart."
-  type: "boolean"
-  default: true
-
-- variable: ollamaEndpoint
-  label: "Ollama Endpoint"
-  type: string
-  description: "The URL for the Ollama service - Include http:// and port."
-  required: true
-  default: "http://ollama:11434"
-  group: General
-  show_if: "ollama.enabled=false"
-
 - variable: ollama.gpu.enabled
   group: General
   label: "Enable GPU Acceleration"
@@ -70,22 +54,6 @@ questions:
   default: false
 
 # Ollama Deployment Configuration
-- variable: ollama.models[0]
-  group: "Ollama Deployment"
-  label: "Primary Ollama Model"
-  description: "The primary Ollama model to pull (e.g., 'llama3.2:latest', 'tinyllama:latest')."
-  type: "string"
-  default: "tinyllama:latest"
-  show_if: "ollama.enabled=true"
-
-- variable: ollama.models[1]
-  group: "Ollama Deployment"
-  label: "Secondary Ollama Model"
-  description: "Additional model for embeddings (optional)."
-  type: "string"
-  default: "bge-large:latest"
-  show_if: "ollama.enabled=true"
-
 - variable: ollama.service.type
   group: "Ollama Deployment"
   label: "Ollama Service Type"
@@ -93,7 +61,6 @@ questions:
   type: "enum"
   required: true
   default: "ClusterIP"
-  show_if: "ollama.enabled=true"
   options:
     - "ClusterIP"
     - "NodePort"
@@ -104,7 +71,6 @@ questions:
   description: "If true, a PersistentVolumeClaim will be created to store Ollama models so they are not re-downloaded on restart."
   type: "boolean"
   default: false
-  show_if: "ollama.enabled=true"
 
 - variable: ollama.persistence.size
   group: "Ollama Deployment"
@@ -112,7 +78,7 @@ questions:
   description: "The size of the PersistentVolumeClaim for Ollama models (e.g., '10Gi', '50Gi')."
   type: "string"
   default: "10Gi"
-  show_if: "ollama.enabled=true && ollama.persistence.enabled=true"
+  show_if: "ollama.persistence.enabled=true"
 
 - variable: ollama.persistence.storageClassName
   group: "Ollama Deployment"
@@ -120,7 +86,7 @@ questions:
   description: "The storage class name for the Ollama models PVC. Leave empty to use the default storage class."
   type: "string"
   default: ""
-  show_if: "ollama.enabled=true && ollama.persistence.enabled=true"
+  show_if: "ollama.persistence.enabled=true"
 
 - variable: ollama.modelCache.nfs.enabled
   group: "Ollama Deployment"
@@ -128,7 +94,6 @@ questions:
   description: "Mount an NFS share to cache Ollama models across deployments and avoid re-downloading."
   type: "boolean"
   default: false
-  show_if: "ollama.enabled=true"
 
 - variable: ollama.modelCache.nfs.server
   group: "Ollama Deployment"
@@ -136,7 +101,7 @@ questions:
   description: "IP address or hostname of the NFS server."
   type: "string"
   default: ""
-  show_if: "ollama.enabled=true && ollama.modelCache.nfs.enabled=true"
+  show_if: "ollama.modelCache.nfs.enabled=true"
 
 - variable: ollama.modelCache.nfs.path
   group: "Ollama Deployment"
@@ -144,7 +109,7 @@ questions:
   description: "Path on the NFS server to use for caching models (e.g., '/data/ai-models')."
   type: "string"
   default: "/data/ai-models"
-  show_if: "ollama.enabled=true && ollama.modelCache.nfs.enabled=true"
+  show_if: "ollama.modelCache.nfs.enabled=true"
 
 # Ollama Resources - GPU mode (shown when GPU enabled on General page)
 - variable: ollama.resources.requests.cpu
@@ -153,7 +118,7 @@ questions:
   description: "CPU request for Ollama. GPU acceleration reduces CPU dependency."
   type: "string"
   default: "1"
-  show_if: "ollama.enabled=true && ollama.gpu.enabled=true"
+  show_if: "ollama.gpu.enabled=true"
 
 - variable: ollama.resources.requests.memory
   group: "Ollama Resources"
@@ -161,23 +126,23 @@ questions:
   description: "Memory request for Ollama in GPU mode."
   type: "string"
   default: "4Gi"
-  show_if: "ollama.enabled=true && ollama.gpu.enabled=true"
+  show_if: "ollama.gpu.enabled=true"
 
 - variable: ollama.resources.limits.cpu
   group: "Ollama Resources"
   label: "Ollama CPU Limit"
   description: "CPU limit for Ollama in GPU mode."
   type: "string"
-  default: "1"
-  show_if: "ollama.enabled=true && ollama.gpu.enabled=true"
+  default: "2"
+  show_if: "ollama.gpu.enabled=true"
 
 - variable: ollama.resources.limits.memory
   group: "Ollama Resources"
   label: "Ollama Memory Limit"
   description: "Memory limit for Ollama in GPU mode."
   type: "string"
-  default: "4Gi"
-  show_if: "ollama.enabled=true && ollama.gpu.enabled=true"
+  default: "8Gi"
+  show_if: "ollama.gpu.enabled=true"
 
 # Ollama Resources - CPU-only mode (shown when GPU disabled on General page)
 - variable: ollama.resourcesCpuOnly.requests.cpu
@@ -186,7 +151,7 @@ questions:
   description: "CPU request for Ollama in CPU-only mode (higher allocation required without GPU)."
   type: "string"
   default: "2"
-  show_if: "ollama.enabled=true && ollama.gpu.enabled=false"
+  show_if: "ollama.gpu.enabled=false"
 
 - variable: ollama.resourcesCpuOnly.requests.memory
   group: "Ollama Resources"
@@ -194,7 +159,7 @@ questions:
   description: "Memory request for Ollama in CPU-only mode."
   type: "string"
   default: "8Gi"
-  show_if: "ollama.enabled=true && ollama.gpu.enabled=false"
+  show_if: "ollama.gpu.enabled=false"
 
 - variable: ollama.resourcesCpuOnly.limits.cpu
   group: "Ollama Resources"
@@ -202,7 +167,7 @@ questions:
   description: "CPU limit for Ollama in CPU-only mode."
   type: "string"
   default: "2"
-  show_if: "ollama.enabled=true && ollama.gpu.enabled=false"
+  show_if: "ollama.gpu.enabled=false"
 
 - variable: ollama.resourcesCpuOnly.limits.memory
   group: "Ollama Resources"
@@ -210,4 +175,4 @@ questions:
   description: "Memory limit for Ollama in CPU-only mode."
   type: "string"
   default: "8Gi"
-  show_if: "ollama.enabled=true && ollama.gpu.enabled=false"
+  show_if: "ollama.gpu.enabled=false"

@@ -81,7 +81,7 @@ spec:
           size: 10Gi
     - chartName: hr-assistant-vllm
       chartRepo: wiredquill-ai-demos
-      chartVersion: "0.1.9"
+      chartVersion: "0.1.10"
       releaseName: hr-assistant-vllm
       values:
         # vLLM and Qdrant come from the components above.
