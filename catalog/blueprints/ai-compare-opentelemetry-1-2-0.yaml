@@ -3,14 +3,12 @@ kind: Blueprint
 metadata:
   labels:
     ai-factory.suse.com/blueprint-name: ai-compare-opentelemetry
-    ai-factory.suse.com/blueprint-version: 1.1.0
-  name: ai-compare-opentelemetry-1-1-0
+    ai-factory.suse.com/blueprint-version: 1.2.0
+  name: ai-compare-opentelemetry-1-2-0
 spec:
-  # Superseded by 1.2.0 (shared SUSE AI collector). Kept for rollback.
-  deprecated: true
   source: Custom  # community, unsupported demo
   displayName: AI Compare (OpenTelemetry)
-  version: 1.1.0
+  version: 1.2.0
   description: |
     AI Compare OpenTelemetry Edition: compares direct Ollama answers with
     pipeline-enhanced Open WebUI answers, with GenAI telemetry, token and cost
@@ -21,21 +19,18 @@ spec:
       - open-webui-pipelines SUSE Open WebUI Pipelines, loading the
                              response-level pipeline from this repository
       - open-webui           SUSE Open WebUI, wired to Ollama and Pipelines
-      - ai-compare-opentelemetry  the AI Compare app (SUSE BCI Python),
-                             load generator and a SUSE AI OpenTelemetry
-                             collector (operator mode)
+      - ai-compare-opentelemetry  the AI Compare app (SUSE BCI Python) and
+                             load generator
 
     Prerequisites on the target cluster: an NVIDIA GPU + GPU operator for
-    Ollama, a default StorageClass, the OpenTelemetry Operator, and the SUSE
-    Observability API key Secret `open-telemetry-collector` (key API_KEY) in
-    namespace `observability`. The SUSE Observability endpoints below default
-    to the demo backend; change them in the Configuration step for another
-    backend.
+    Ollama, a default StorageClass, and the shared SUSE AI OpenTelemetry
+    collector (`opentelemetry-collector` in namespace `observability`,
+    installed from the ai-observability-collector chart).
   components:
     # Release names are pinned so the components find each other by Service
     # name in the shared target namespace: ollama-service:11434,
-    # pipelines-service:9099, open-webui:80, and
-    # ai-compare-opentelemetry-otel-collector for telemetry.
+    # pipelines-service:9099, open-webui:80. Telemetry goes to the cluster's
+    # shared SUSE AI collector.
     - chartName: ollama
       chartRepo: application-collection
       chartVersion: "1.76.0"
@@ -121,14 +116,14 @@ spec:
           - name: ENABLE_OTEL_METRICS
             value: "true"
           - name: OTEL_EXPORTER_OTLP_ENDPOINT
-            value: http://ai-compare-opentelemetry-otel-collector:4317
+            value: http://opentelemetry-collector-collector.observability.svc.cluster.local:4317
           - name: OTEL_EXPORTER_OTLP_INSECURE
             value: "true"
           - name: OTEL_SERVICE_NAME
             value: open-webui
     - chartName: ai-compare-opentelemetry
       chartRepo: wiredquill-ai-demos
-      chartVersion: "0.1.552"
+      chartVersion: "0.1.553"
       releaseName: ai-compare-opentelemetry
       values:
         # Ollama, Open WebUI and Pipelines come from the components above.
@@ -141,10 +136,3 @@ spec:
         pipelines:
           enabled: false
           url: http://pipelines-service:9099
-        observability:
-          mode: operator
-        opentelemetry:
-          operator:
-            suseObservability:
-              apiUrl: https://observability.mort.dna-42.com
-              otlpEndpoint: otlp-observability.mort.dna-42.com:443

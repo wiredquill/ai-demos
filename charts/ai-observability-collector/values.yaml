@@ -10,8 +10,16 @@
 # =====================================================================
 collector:
   # -- Name of the OpenTelemetryCollector CR. The operator creates the
-  #    collector Service as <name>-collector.<namespace>.svc.cluster.local
-  name: ai-observability
+  #    collector Service as <name>-collector.<namespace>.svc.cluster.local.
+  #    "opentelemetry-collector" in namespace "observability" is the name the
+  #    app charts auto-discover and the one SUSE Observability's own docs use.
+  name: opentelemetry-collector
+
+  # -- Also create a Service named exactly <name> (OTLP 4317/4318) next to the
+  #    operator's <name>-collector Service, for apps configured with the short
+  #    name (http://opentelemetry-collector.observability...:4318).
+  aliasService:
+    enabled: true
 
   # -- Collector image. MUST be a SUSE AI image: it ships the proprietary
   #    `topology` exporter that populates the SUSE AI topology view.
@@ -21,16 +29,20 @@ collector:
   pullPolicy: IfNotPresent
 
   # -- K8S_CLUSTER_NAME stamped on all telemetry as k8s.cluster.name.
-  #    MUST match the kubernetes-v2 StackPack instance name in SUSE
+  #    Required. MUST match the kubernetes-v2 StackPack instance name in SUSE
   #    Observability, otherwise telemetry shows in the wrong cluster view.
-  clusterName: dev-ai
+  clusterName: ""
 
-  # -- SUSE Observability topology exporter endpoint (HTTP).
-  backendEndpoint: https://observability.mort.dna-42.com
-  # -- SUSE Observability OTLP gRPC ingest endpoint.
-  otlpEndpoint: otlp-observability.mort.dna-42.com:443
+  # -- SUSE Observability base URL, used by the topology exporter. Required.
+  backendEndpoint: ""
+  # -- SUSE Observability OTLP gRPC ingest endpoint (host:port). Required.
+  otlpEndpoint: ""
   # -- Set true if the OTLP endpoint is plaintext (http, no TLS).
   otlpInsecure: false
+  # -- Skip TLS verification for the topology exporter (self-signed demo certs).
+  skipTlsVerify: true
+  # -- Also log telemetry to the collector's stdout.
+  debug: false
 
   # -- Namespace that holds the API_KEY secret (copied into the release
   #    namespace by a pre-install hook if missing there).
@@ -64,16 +76,29 @@ collector:
 #                prometheus.io/path: "/metrics"   (default /metrics)
 # =====================================================================
 discovery:
-  # -- Prometheus scrape interval for auto-discovered targets.
+  # -- Prometheus scrape interval for discovered targets.
   scrapeInterval: 10s
-  # -- Only discover pods in these namespaces (empty list = all namespaces).
-  namespaces: []
 
-  # -- Scrape NVIDIA DCGM exporter for GPU metrics.
+  # -- vLLM serving engines (Services labelled app.kubernetes.io/part-of=vllm,
+  #    component=serving-engine), any namespace. Feeds the vLLM monitors.
+  vllm:
+    enabled: true
+  # -- Qdrant (Services labelled app.component=qdrant or app=qdrant), any
+  #    namespace. Feeds the SUSE AI Qdrant health monitors.
+  qdrant:
+    enabled: true
+  # -- OpenSearch (pods labelled app.component=opensearch, port 9200), any
+  #    namespace. Feeds the SUSE AI OpenSearch health monitors, which expect
+  #    the cluster to be named "opensearch-cluster".
+  opensearch:
+    enabled: true
+  # -- NVIDIA DCGM exporter (GPU operator) for GPU metrics.
   gpu:
     enabled: true
-    # -- Namespace the dcgm-exporter pods run in (GPU Operator default).
-    namespace: gpu-operator
+  # -- Anything else that opts in with label observability/enabled=true or
+  #    annotation prometheus.io/scrape=true (+ prometheus.io/port/path).
+  annotated:
+    enabled: true
 
 # -- Extra Prometheus scrape_config entries (free-form YAML list).
 extraJobs: []
@@ -84,6 +109,7 @@ extraJobs: []
 # =====================================================================
 traces:
   sampling:
+    enabled: true
     # -- Max total spans/second the sampler admits to the backend.
     maxSpansPerSecond: 500
 
@@ -97,9 +123,11 @@ traces:
 # NOTE: do NOT add these annotations to apps that already bundle an OTel SDK
 # (e.g. OpenLIT apps) — that produces duplicate spans.
 # =====================================================================
+# Off by default: these are upstream (non-SUSE) images, and the ai-demos apps
+# instrument themselves with OpenLIT.
 instrumentation:
   python:
-    enabled: true
+    enabled: false
     image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python
     tag: "0.43b0"
   nodejs:
