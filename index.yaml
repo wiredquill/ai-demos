@@ -8,6 +8,43 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
+    created: "2026-10-08T18:03:12.275481-07:00"
+    description: AI Compare OpenTelemetry Edition - Advanced observability-focused
+      AI response comparison platform. Features comprehensive GenAI telemetry, token-level
+      cost tracking, model performance monitoring, and deep integration with SUSE
+      Observability.
+    digest: 1d0cba08ee599815d1756595976de912422d6f404873d016c7a24786de763354
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - ollama
+    - machine-learning
+    - opentelemetry
+    - observability
+    - telemetry
+    - monitoring
+    - genai
+    - tokens
+    - cost-tracking
+    - demo
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: ai-compare-opentelemetry
+    sources:
+    - https://github.com/wiredquill/ai-demos
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/ai-compare-opentelemetry-0.1.551.tgz
+    version: 0.1.551
+  - annotations:
+      category: AI/ML
+      licenses: MIT
+      observability.suse.com/compatible: "true"
+      opentelemetry.io/instrumented: "true"
+    apiVersion: v2
+    appVersion: 1.0.0
     created: "2026-09-29T04:46:53.349926229+02:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
@@ -300,4 +337,4 @@ entries:
     urls:
     - https://github.com/wiredquill/ai-demos/hr-assistant-vllm-0.1.0.tgz
     version: 0.1.0
-generated: "2026-10-08T17:53:15.71866-07:00"
+generated: "2026-10-08T18:03:12.273083-07:00"
