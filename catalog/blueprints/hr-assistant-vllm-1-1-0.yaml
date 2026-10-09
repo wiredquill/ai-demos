@@ -18,19 +18,17 @@ spec:
       - vllm           SUSE vLLM serving engine + router (Application Collection)
       - qdrant         SUSE AI Qdrant vector database (SUSE AI registry)
       - hr-assistant-vllm  the three HR apps (Python 3.11, SUSE BCI based),
-                       OpenSearch search engine, load generator, and a SUSE AI
-                       OpenTelemetry collector (operator mode)
+                       OpenSearch search engine and load generator
 
     Prerequisites on the target cluster: a node with an NVIDIA GPU + GPU
     operator (vLLM requests 1 GPU), a default StorageClass (vLLM model cache,
-    Qdrant storage), the OpenTelemetry Operator, and the SUSE Observability
-    API key Secret `open-telemetry-collector` (key API_KEY) in namespace
-    `observability`. The SUSE Observability endpoints below default to the
-    demo backend; change them in the Configuration step for another backend.
+    Qdrant storage), and the shared SUSE AI OpenTelemetry collector
+    (`opentelemetry-collector` in namespace `observability`, installed from
+    the ai-observability-collector chart).
   components:
     # Release names are pinned so the components find each other by Service
     # name in the shared target namespace: vllm -> vllm-router-service,
-    # qdrant -> qdrant, hr-assistant-vllm -> hr-assistant-vllm-otel-collector.
+    # qdrant -> qdrant. Telemetry goes to the cluster's shared SUSE AI collector.
     - chartName: vllm
       chartRepo: application-collection
       chartVersion: "0.1.10"
@@ -70,7 +68,7 @@ spec:
           repository: containers/lmcache-lmstack-router
           tag: "0.1.10-3.110"
           otel:
-            endpoint: http://hr-assistant-vllm-otel-collector:4317
+            endpoint: http://opentelemetry-collector-collector.observability.svc.cluster.local:4317
             serviceName: hr-assistant-vllm-router
     - chartName: qdrant
       chartRepo: suse-ai-registry
@@ -94,10 +92,3 @@ spec:
           url: http://qdrant:6333
         service:
           type: ClusterIP
-        observability:
-          mode: operator
-        opentelemetry:
-          operator:
-            suseObservability:
-              apiUrl: https://observability.mort.dna-42.com
-              otlpEndpoint: otlp-observability.mort.dna-42.com:443
