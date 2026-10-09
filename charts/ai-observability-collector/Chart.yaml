@@ -22,4 +22,4 @@ sources:
   - https://documentation.suse.com/suse-ai-factory/latest/html/AI-monitoring/ai-monitoring-otel-operator.html
   - https://documentation.suse.com/cloudnative/suse-observability/latest/en/setup/otel/getting-started/getting-started-k8s-operator.html
 type: application
-version: 0.2.0
+version: 0.2.1
