@@ -1,3 +1,4 @@
+{{- if .Values.ollama.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -112,6 +113,10 @@ spec:
         env:
         - name: OLLAMA_HOST
           value: "0.0.0.0:{{ .Values.ollama.service.port }}"
+        # Ollama 0.34 sizes the default context from GPU memory (32k on a 24 GB
+        # card, ~6 GB of KV cache). The demo prompts are short; pin it.
+        - name: OLLAMA_CONTEXT_LENGTH
+          value: "4096"
         volumeMounts:
         - name: ollama-models
           mountPath: /root/.ollama
@@ -181,3 +186,4 @@ spec:
         configMap:
           name: {{ include "ai-compare-opentelemetry.fullname" . }}-ollama-otel-config
       {{- end }}
+{{- end }}

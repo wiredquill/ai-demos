@@ -113,6 +113,10 @@ imagePullSecrets:
   - name: application-collection
 # -- Application settings
 ollama:
+  # false = use an external Ollama (ollama.url), e.g. the SUSE Application
+  # Collection ollama chart as a separate AI Factory blueprint component.
+  enabled: true
+  url: ""
   image:
     repository: dp.apps.rancher.io/containers/ollama
     tag: "0.34.4-11.97"
@@ -167,6 +171,10 @@ ollama:
       server: "10.0.9.10" # NFS server IP/hostname
       path: "/data/ai-models" # NFS share path for caching models
 openWebui:
+  # false = use an external Open WebUI (openWebui.url), e.g. the SUSE
+  # Application Collection open-webui chart (Service open-webui:80).
+  enabled: true
+  url: ""
   image:
     repository: dp.apps.rancher.io/containers/open-webui
     tag: "0.6.41-15.13" # SUSE Application Collection version with enterprise hardening
@@ -191,6 +199,9 @@ openWebui:
 # Open WebUI Pipelines Service
 pipelines:
   enabled: true
+  # Used when enabled=false: an external Pipelines, e.g. the SUSE Application
+  # Collection open-webui-pipelines chart with releaseName pipelines-service.
+  url: ""
   image:
     repository: dp.apps.rancher.io/containers/open-webui-pipelines
     tag: "0.20250819.030501-8.103" # Current SUSE Application Collection version

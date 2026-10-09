@@ -57,12 +57,12 @@ spec:
               name: http-api
           env:
             - name: OLLAMA_BASE_URL
-              value: "http://ollama-service:11434"
+              value: {{ include "ai-compare-opentelemetry.ollamaUrl" . | quote }}
             - name: OPEN_WEBUI_BASE_URL
-              value: "http://open-webui-service:8080"
+              value: {{ include "ai-compare-opentelemetry.openWebuiUrl" . | quote }}
             # Pipeline service configuration
             - name: PIPELINES_BASE_URL
-              value: "http://pipelines-service:9099"
+              value: {{ include "ai-compare-opentelemetry.pipelinesUrl" . | quote }}
             - name: PIPELINE_API_KEY
               value: "{{ .Values.pipelines.autoConfig.apiKey }}"
             # --- NEW ENVIRONMENT VARIABLES ---
@@ -86,7 +86,7 @@ spec:
               value: "true"
             # Add working genai app environment pattern
             - name: OLLAMA_ENDPOINT
-              value: "http://ollama-service:11434"
+              value: {{ include "ai-compare-opentelemetry.ollamaUrl" . | quote }}
             # Enhanced GenAI observability settings
             - name: TOKEN_TRACKING_ENABLED
               value: "{{ .Values.aiCompare.observability.tokenTracking }}"

@@ -280,3 +280,33 @@ Namespace SUSE AI components are attributed to (defaults to the release namespac
 {{- define "ai-compare-opentelemetry.suseAiNamespace" -}}
 {{- default .Release.Namespace .Values.opentelemetry.operator.suseAiNamespace }}
 {{- end }}
+
+{{/*
+Backend URLs. Each backend is either deployed by this chart (<x>.enabled=true,
+the in-chart Service) or provided externally, e.g. by the SUSE Application
+Collection ollama / open-webui / open-webui-pipelines charts deployed as
+separate AI Factory blueprint components (<x>.url).
+*/}}
+{{- define "ai-compare-opentelemetry.ollamaUrl" -}}
+{{- if .Values.ollama.enabled -}}
+http://ollama-service:{{ .Values.ollama.service.port }}
+{{- else -}}
+{{ .Values.ollama.url | default "http://ollama-service:11434" }}
+{{- end -}}
+{{- end }}
+
+{{- define "ai-compare-opentelemetry.openWebuiUrl" -}}
+{{- if .Values.openWebui.enabled -}}
+http://open-webui-service:{{ .Values.openWebui.service.port }}
+{{- else -}}
+{{ .Values.openWebui.url | default "http://open-webui:80" }}
+{{- end -}}
+{{- end }}
+
+{{- define "ai-compare-opentelemetry.pipelinesUrl" -}}
+{{- if .Values.pipelines.enabled -}}
+http://pipelines-service:{{ .Values.pipelines.service.port }}
+{{- else -}}
+{{ .Values.pipelines.url | default "http://pipelines-service:9099" }}
+{{- end -}}
+{{- end }}
