@@ -10,14 +10,14 @@ questions:
   - Qwen/Qwen3.6-35B-A3B
   - meta-llama/Llama-3.3-70B-Instruct
   - openai/gpt-oss-120b
-  description: Must match the model chosen in the <b>hr-assistant-vllm-engine</b> component. Reported as gen_ai.request.model and sent on every request.
+  description: Must match the model served by the <b>vllm</b> component. Reported as gen_ai.request.model and sent on every request.
 - variable: hr.vllmEndpoint
   label: vLLM Router URL
   group: LLM
   type: string
   required: true
   default: http://vllm-router-service:80
-  description: OpenAI-compatible endpoint of the <b>hr-assistant-vllm-router</b> component (release <code>vllm</code> creates Service <code>vllm-router-service</code>).
+  description: OpenAI-compatible endpoint of the <b>vllm</b> component's router (release <code>vllm</code> creates Service <code>vllm-router-service</code>).
 - variable: hr.service.type
   label: Service Type
   group: Service Access

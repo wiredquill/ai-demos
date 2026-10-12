@@ -88,32 +88,35 @@ deploy a blueprint, the AI Factory UI shows each component together with the
 install form from its chart's `questions.yaml`. An **AIWorkload** then deploys
 the components to a downstream cluster as Fleet bundles.
 
-### hr-assistant-vllm 1.3.0: one component per pod
+### hr-assistant-vllm 1.4.0: SUSE charts plus the app pods
 
-`chartName` must be unique within a blueprint, so each pod has its own small
-chart. Every component chart vendors `charts/hr-assistant-vllm` (alias `hr`),
-turns on only its own workload, and has its own `questions.yaml`:
+The infrastructure components are SUSE's own charts, listed directly so that the
+AI Factory UI shows the real chart and its selectable versions, just as
+`simple-chatbot-with-rag` does. Each of the four app pods has its own small chart
+with its own `questions.yaml`. Those charts vendor `charts/hr-assistant-vllm`
+(alias `hr`) and switch on only their own workload:
 
-| Component chart | Release | Pod | Form |
+| Component | Repo / version | Release | Pods |
 |---|---|---|---|
-| `hr-assistant-vllm-engine` | `vllm-engine` | vLLM serving engine (GPU) | model, HF token, GPU/CPU/memory, model cache, NFS |
-| `hr-assistant-vllm-router` | `vllm` | vLLM router (`vllm-router-service`) | routing logic, router OTLP endpoint |
-| `hr-assistant-vllm-qdrant` | `qdrant` | Qdrant vector DB | CPU/memory |
-| `hr-assistant-vllm-opensearch` | `opensearch` | OpenSearch | CPU/memory |
-| `hr-assistant-vllm-policy-db` | `hr-policy-db` | HR Policy DB + dashboard (NodePort 30081) | model, router URL, Qdrant URL, service, OTLP |
-| `hr-assistant-vllm-handbook` | `employee-handbook` | Employee Handbook | model, router URL, service, OTLP |
-| `hr-assistant-vllm-app` | `hr-assistant` | HR Assistant | model, router URL, service, OTLP |
-| `hr-assistant-vllm-load-gen` | `load-gen` | load generator + health-check emitter | interval, OTLP |
+| `vllm` | application-collection 0.1.10 | `vllm` | engine (GPU) + router (`vllm-router-service`) |
+| `qdrant` | suse-ai-registry 1.19.0 | `qdrant` | Qdrant (`qdrant:6333`) |
+| `opensearch` | application-collection 3.8.0 | `opensearch` | OpenSearch (`opensearch-cluster-master:9200`) |
+| `hr-assistant-vllm-policy-db` | wiredquill-ai-demos 0.1.1 | `hr-policy-db` | HR Policy DB + dashboard (NodePort 30081) |
+| `hr-assistant-vllm-handbook` | wiredquill-ai-demos 0.1.1 | `employee-handbook` | Employee Handbook |
+| `hr-assistant-vllm-app` | wiredquill-ai-demos 0.1.1 | `hr-assistant` | HR Assistant |
+| `hr-assistant-vllm-load-gen` | wiredquill-ai-demos 0.1.1 | `load-gen` | load generator + health-check emitter |
 
-All eight go into **one namespace**. The app components share
-`fullnameOverride: hr-assistant-vllm`, so their Services keep the all-in-one names
-(`hr-assistant-vllm-hr-policy-db`, `hr-assistant-vllm-qdrant`, …). The router is
-pinned to release `vllm`, which creates `vllm-router-service`. If you pick a
-non-default model in the engine form, select the same **Model served by vLLM** in
-the three app forms.
+That's seven components and eight pods. SUSE's `vllm` chart provides both the
+engine and the router, and a blueprint can list each `chartName` only once.
 
-The all-in-one `hr-assistant-vllm` chart is unchanged for Rancher Apps installs:
-every workload switch defaults to on.
+Install everything into **one namespace**. The release names are pinned because the
+app forms default to the SUSE charts' Service names (`vllm-router-service`,
+`qdrant`, `opensearch-cluster-master`). The app components share
+`fullnameOverride: hr-assistant-vllm`, so they reach each other as
+`hr-assistant-vllm-<app>`. If the `vllm` component serves a different model,
+select the same **Model served by vLLM** in the three app forms.
+
+The all-in-one `hr-assistant-vllm` chart is unchanged for Rancher Apps installs.
 
 ### Installing a blueprint on a cluster with SUSE AI Factory
 
@@ -169,19 +172,20 @@ The operator fetches charts from git ClusterRepos at deploy time, which needs
 calls; the response must include a top-level `questions` array:
 ```bash
 curl -sk -H "Authorization: Bearer $TOKEN" \
-  "https://<rancher>/v1/catalog.cattle.io.clusterrepos/wiredquill-ai-demos?link=info&chartName=hr-assistant-vllm-engine&version=0.1.0" \
+  "https://<rancher>/v1/catalog.cattle.io.clusterrepos/wiredquill-ai-demos?link=info&chartName=hr-assistant-vllm-policy-db&version=0.1.1" \
   | jq '.questions | length'
 ```
 
 **4. Create the blueprint** on the management cluster:
 ```bash
-kubectl apply -f catalog/blueprints/hr-assistant-vllm-1-3-0.yaml
+kubectl apply -f catalog/blueprints/hr-assistant-vllm-1-4-0.yaml
 kubectl get blueprints.ai-factory.suse.com -l ai-factory.suse.com/blueprint-name=hr-assistant-vllm
 ```
 
 **5. Deploy it.** In Rancher, go to **AI Factory → Blueprints → SUSE AI HR
-Assistant (vLLM) 1.3.0 → Deploy**. Pick the target cluster and namespace, then
-fill in each component's form (the engine form holds the model and HF token).
+Assistant (vLLM) 1.4.0 → Deploy**. Pick the target cluster and a namespace that
+nothing else uses, then review each component (the `vllm` component holds the
+model and HF token).
 To deploy from YAML instead, use an AIWorkload. `componentValues` is keyed by
 chart name, and values sit under `hr:`:
 ```yaml
@@ -197,23 +201,20 @@ spec:
     sourceType: Blueprint
     blueprint:
       name: hr-assistant-vllm
-      version: "1.3.0"
+      version: "1.4.0"
   targetClusters:
     - c-m-xxxxxxxx                   # Rancher cluster ID, not the display name
   targetNamespace: hr-assistant-vllm
   componentValues:
-    - componentName: hr-assistant-vllm-engine
+    - componentName: hr-assistant-vllm-policy-db
       values:
         hr:
-          vllm:
-            servingEngineSpec:
-              modelSpec:
-                main:
-                  hf_token: hf_...
+          service:
+            nodePort: 30082          # if 30081 is taken on the cluster
 ```
 
-**6. Verify** on the target cluster. Expect eight pods (engine, router, qdrant,
-opensearch, hr-policy-db, employee-handbook, hr-assistant, load-gen):
+**6. Verify** on the target cluster. Expect eight pods (vLLM engine and router,
+qdrant, opensearch-cluster-master, and the four `hr-assistant-vllm-*` apps):
 ```bash
 kubectl get pods -n hr-assistant-vllm
 kubectl logs -n hr-assistant-vllm deploy/hr-assistant-vllm-load-gen -c load-gen --tail=5
@@ -228,6 +229,18 @@ kubectl logs -n hr-assistant-vllm deploy/hr-assistant-vllm-load-gen -c load-gen 
 >   `app.kubernetes.io/managed-by` labels. It's cosmetic; the pods run fine.
 > - The engine downloads the model on first start (~15 GB for Qwen2.5-7B). Until
 >   it's ready, the app pods answer `/ask` with errors.
+> - The engine reserves 90% of GPU memory. If another vLLM engine already holds the
+>   GPU (for example a leftover all-in-one install), it fails with `Free memory on
+>   device … is less than desired GPU memory utilization`.
+> - On Rancher-provisioned clusters, the AIWorkload can show `Degraded` even when
+>   every bundle is Ready. The operator tracks the target under both its cluster ID
+>   (`c-m-…`, which stays Pending) and its Fleet name (which shows Running). Check
+>   the Fleet bundles and the pods instead.
+> - SUSE's `vllm` chart labels its resources `app.kubernetes.io/managed-by: helm`,
+>   which Fleet keeps re-patching, so the vllm bundle shows `Modified`.
+> - Editing a blueprint in the UI saves a new blueprint version with every value
+>   baked in, secrets such as `hf_token` included. Blueprints are readable across
+>   the whole management cluster.
 
 ---
 

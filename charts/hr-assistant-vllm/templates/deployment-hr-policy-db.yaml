@@ -55,7 +55,7 @@ spec:
           - name: QDRANT_URL
             value: "{{ include "hr-assistant.qdrantUrl" . }}"
           - name: OPENSEARCH_URL
-            value: "http://{{ include "hr-assistant.fullname" . }}-opensearch:{{ .Values.opensearch.service.port }}"
+            value: "{{ include "hr-assistant.opensearchUrl" . }}"
           - name: COLLECT_GPU_STATS
             value: "{{ .Values.collectGpuStats }}"
           - name: OTEL_RESOURCE_ATTRIBUTES

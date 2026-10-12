@@ -364,6 +364,10 @@ qdrant:
 # documents and queries them, so the topology shows hr-policy-db -> opensearch.
 opensearch:
   enabled: true
+  # Used only when enabled=false: REST URL of an external OpenSearch, e.g. the
+  # SUSE Application Collection opensearch chart deployed as a separate AI
+  # Factory blueprint component (Service opensearch-cluster-master:9200).
+  url: ""
   # SUSE Application Collection build (3.x line only).
   image:
     repository: dp.apps.rancher.io/containers/opensearch

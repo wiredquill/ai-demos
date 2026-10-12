@@ -1,2 +1,2 @@
 HR Policy DB app + dashboard installed as release {{ .Release.Name }} in namespace {{ .Release.Namespace }}.
-It is one of the eight hr-assistant-vllm blueprint components; install the others into the same namespace.
+It is one of the hr-assistant-vllm blueprint components; install the others into the same namespace.

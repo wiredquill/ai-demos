@@ -16,9 +16,11 @@ hr:
     enabled: false
   qdrant:
     enabled: false
-    url: http://hr-assistant-vllm-qdrant:6333
+    url: http://qdrant:6333
   opensearch:
     enabled: false
+    url: http://opensearch-cluster-master:9200
+  imagePullSecrets: []
   vllm:
     enabled: false
   vllmEndpoint: http://vllm-router-service:80

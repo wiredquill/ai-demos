@@ -115,7 +115,7 @@ spec:
             - name: QDRANT_URL
               value: "{{ include "hr-assistant.qdrantUrl" . }}"
             - name: OPENSEARCH_URL
-              value: "http://{{ $fullname }}-opensearch:9200"
+              value: "{{ include "hr-assistant.opensearchUrl" . }}"
           resources:
             requests:
               cpu: 10m

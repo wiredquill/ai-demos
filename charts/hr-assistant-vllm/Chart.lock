@@ -1,0 +1,6 @@
+dependencies:
+- name: vllm
+  repository: file://charts/vllm
+  version: 0.1.10
+digest: sha256:f6a39f96294eb820b51c1354bed07af32a5c66dc76c06bf20b4992f58e926a0f
+generated: "2026-10-12T12:53:03.391623-07:00"
