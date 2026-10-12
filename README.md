@@ -88,19 +88,23 @@ deploy a blueprint, the AI Factory UI shows each component together with the
 install form from its chart's `questions.yaml`. An **AIWorkload** then deploys
 the components to a downstream cluster as Fleet bundles.
 
-### hr-assistant-vllm 1.4.0: SUSE charts plus the app pods
+### hr-assistant-vllm 1.4.1: SUSE charts plus the app pods
 
-The infrastructure components are SUSE's own charts, listed directly so that the
-AI Factory UI shows the real chart and its selectable versions, just as
-`simple-chatbot-with-rag` does. Each of the four app pods has its own small chart
+The infrastructure components are SUSE's own charts, so the AI Factory UI shows
+the real chart name and version, just as `simple-chatbot-with-rag` does. SUSE's
+`vllm` and `opensearch` charts ship no install form, so
+`scripts/package-aif-suse-charts.sh` republishes them unchanged to
+`wiredquill-ai-demos`, keeping SUSE's name and version and adding the
+`questions.yaml` from `catalog/charts/<chart>/`. The version list for those two
+therefore shows only the versions republished there. Each of the four app pods has its own small chart
 with its own `questions.yaml`. Those charts vendor `charts/hr-assistant-vllm`
 (alias `hr`) and switch on only their own workload:
 
 | Component | Repo / version | Release | Pods |
 |---|---|---|---|
-| `vllm` | application-collection 0.1.10 | `vllm` | engine (GPU) + router (`vllm-router-service`) |
+| `vllm` | wiredquill-ai-demos 0.1.10 (SUSE chart + form) | `vllm` | engine (GPU) + router (`vllm-router-service`) |
 | `qdrant` | suse-ai-registry 1.19.0 | `qdrant` | Qdrant (`qdrant:6333`) |
-| `opensearch` | application-collection 3.8.0 | `opensearch` | OpenSearch (`opensearch-cluster-master:9200`) |
+| `opensearch` | wiredquill-ai-demos 3.8.0 (SUSE chart + form) | `opensearch` | OpenSearch (`opensearch-cluster-master:9200`) |
 | `hr-assistant-vllm-policy-db` | wiredquill-ai-demos 0.1.1 | `hr-policy-db` | HR Policy DB + dashboard (NodePort 30081) |
 | `hr-assistant-vllm-handbook` | wiredquill-ai-demos 0.1.1 | `employee-handbook` | Employee Handbook |
 | `hr-assistant-vllm-app` | wiredquill-ai-demos 0.1.1 | `hr-assistant` | HR Assistant |
@@ -140,10 +144,12 @@ mkdir -p /tmp/aif && rm -f /tmp/aif/*.tgz
 for c in charts/hr-assistant-vllm charts/hr-assistant-vllm-*/; do
   helm package "$c" --dependency-update -d /tmp/aif
 done
+# SUSE vllm + opensearch with install forms (needs: helm registry login dp.apps.rancher.io)
+scripts/package-aif-suse-charts.sh /tmp/aif
 git checkout aif/hr-assistant-vllm
 cp /tmp/aif/*.tgz .
 helm repo index . --url https://github.com/wiredquill/ai-demos
-git add index.yaml hr-assistant-vllm*.tgz
+git add index.yaml hr-assistant-vllm*.tgz vllm-*.tgz opensearch-*.tgz
 git commit -s -m "chore(aif): publish hr-assistant-vllm component charts"
 git push origin aif/hr-assistant-vllm
 ```
@@ -178,12 +184,12 @@ curl -sk -H "Authorization: Bearer $TOKEN" \
 
 **4. Create the blueprint** on the management cluster:
 ```bash
-kubectl apply -f catalog/blueprints/hr-assistant-vllm-1-4-0.yaml
+kubectl apply -f catalog/blueprints/hr-assistant-vllm-1-4-1.yaml
 kubectl get blueprints.ai-factory.suse.com -l ai-factory.suse.com/blueprint-name=hr-assistant-vllm
 ```
 
 **5. Deploy it.** In Rancher, go to **AI Factory → Blueprints → SUSE AI HR
-Assistant (vLLM) 1.4.0 → Deploy**. Pick the target cluster and a namespace that
+Assistant (vLLM) 1.4.1 → Deploy**. Pick the target cluster and a namespace that
 nothing else uses, then review each component (the `vllm` component holds the
 model and HF token).
 To deploy from YAML instead, use an AIWorkload. `componentValues` is keyed by
@@ -201,7 +207,7 @@ spec:
     sourceType: Blueprint
     blueprint:
       name: hr-assistant-vllm
-      version: "1.4.0"
+      version: "1.4.1"
   targetClusters:
     - c-m-xxxxxxxx                   # Rancher cluster ID, not the display name
   targetNamespace: hr-assistant-vllm

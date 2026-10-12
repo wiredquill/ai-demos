@@ -1,0 +1,72 @@
+# Install form for the SUSE Application Collection vllm chart, added when
+# scripts/package-aif-suse-charts.sh republishes it to the wiredquill-ai-demos
+# repo (the upstream chart ships none). Paths address modelSpec as a map keyed
+# "main": Rancher forms cannot write list elements, and the chart's templates
+# range over modelSpec, so a map works the same as the documented list.
+#
+# Not offered on purpose: storageClass (the chart emits storageClassName for any
+# value, and "" disables dynamic provisioning) and sharedPvcStorage (the chart
+# enables it whenever the key exists, even with enabled: false).
+questions:
+- variable: servingEngineSpec.modelSpec.main.modelURL
+  group: Model
+  label: Model (by GPU VRAM class)
+  description: "Hugging Face model ID. 16GB VRAM → Qwen2.5-7B (fp16); 24GB → Qwen3.6-35B-A3B (AWQ/GPTQ); 64GB → Llama-3.3-70B (AWQ); 100GB → gpt-oss-120b.<br>Select the same model in the HR app components."
+  type: enum
+  required: true
+  default: Qwen/Qwen2.5-7B-Instruct
+  options:
+    - Qwen/Qwen2.5-7B-Instruct
+    - Qwen/Qwen3.6-35B-A3B
+    - meta-llama/Llama-3.3-70B-Instruct
+    - openai/gpt-oss-120b
+- variable: servingEngineSpec.modelSpec.main.hf_token
+  group: Model
+  label: Hugging Face Token
+  description: "Needed for gated models (e.g. meta-llama/*); recommended for all to avoid anonymous rate limits. Stored in a Secret and injected as HF_TOKEN."
+  type: password
+  required: false
+  default: ""
+- variable: servingEngineSpec.modelSpec.main.requestGPU
+  group: Engine Resources
+  label: GPU Request
+  description: GPUs per engine replica.
+  type: int
+  default: 1
+- variable: servingEngineSpec.modelSpec.main.requestCPU
+  group: Engine Resources
+  label: CPU Request (cores)
+  type: int
+  default: 2
+- variable: servingEngineSpec.modelSpec.main.requestMemory
+  group: Engine Resources
+  label: Memory Request
+  description: vLLM streams weights through CPU RAM while loading; a Qwen2.5-7B pod peaks ~3.3Gi.
+  type: string
+  default: 4Gi
+- variable: servingEngineSpec.modelSpec.main.limitMemory
+  group: Engine Resources
+  label: Memory Limit
+  description: Must exceed the model size during load, or the pod is OOM-killed.
+  type: string
+  default: 16Gi
+- variable: servingEngineSpec.modelSpec.main.pvcStorage
+  group: Engine Resources
+  label: Model Cache PVC Size
+  description: Weights are downloaded once into this PVC (cluster default StorageClass).
+  type: string
+  default: 100Gi
+- variable: routerSpec.routingLogic
+  group: Router
+  label: Routing Logic
+  type: enum
+  default: roundrobin
+  options:
+    - roundrobin
+    - session
+- variable: routerSpec.otel.endpoint
+  group: Router
+  label: Router OTLP gRPC Endpoint
+  description: Where the router sends traces (OTLP gRPC, port 4317). Leave blank to disable router tracing.
+  type: string
+  default: http://opentelemetry-collector-collector.observability.svc.cluster.local:4317

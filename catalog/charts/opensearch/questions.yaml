@@ -1,0 +1,37 @@
+# Install form for the SUSE Application Collection opensearch chart, added when
+# scripts/package-aif-suse-charts.sh republishes it to the wiredquill-ai-demos
+# repo (the upstream chart ships none).
+questions:
+- variable: opensearchJavaOpts
+  group: Resources
+  label: JVM Heap Options
+  description: Keep the heap at about half the memory limit.
+  type: string
+  default: "-Xms512m -Xmx512m"
+- variable: resources.requests.memory
+  group: Resources
+  label: Memory Request
+  type: string
+  default: 1Gi
+- variable: resources.limits.memory
+  group: Resources
+  label: Memory Limit
+  type: string
+  default: 2Gi
+- variable: resources.limits.cpu
+  group: Resources
+  label: CPU Limit
+  type: string
+  default: "1"
+- variable: persistence.enabled
+  group: Storage
+  label: Persistent Storage
+  description: Off keeps the index in the pod (the demo re-indexes on start). On creates a PVC from the cluster default StorageClass.
+  type: boolean
+  default: false
+- variable: persistence.size
+  group: Storage
+  label: Volume Size
+  type: string
+  default: 8Gi
+  show_if: persistence.enabled=true
