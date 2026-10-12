@@ -1,3 +1,4 @@
+{{- if .Values.aiCompare.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -34,3 +35,4 @@ data:
         - "Health check failures on /health endpoint"
         - "Service degradation alerts in SUSE Observability"
       recovery_method: "Change config key back to 'models-latest'"
+{{- end }}

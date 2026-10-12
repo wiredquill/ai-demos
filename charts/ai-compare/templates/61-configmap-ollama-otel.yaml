@@ -1,4 +1,4 @@
-{{- if .Values.ollama.observability.enabled }}
+{{- if and .Values.ollama.enabled (.Values.ollama.observability.enabled) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:

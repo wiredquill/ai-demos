@@ -7,6 +7,10 @@ imagePullSecrets:
   - name: application-collection
 # -- Application settings
 ollama:
+  # Deploy ollama with this chart. Off when the blueprint provides it as its own component.
+  enabled: true
+  # Used only when enabled=false: an external Ollama, e.g. the blueprint's ollama component (Service ollama-service:11434).
+  url: ""
   image:
     repository: dp.apps.rancher.io/containers/ollama
     tag: "0.34.4-11.97"
@@ -61,6 +65,10 @@ ollama:
       server: "10.0.9.10" # NFS server IP/hostname
       path: "/data/ai-models" # NFS share path for caching models
 openWebui:
+  # Deploy openWebui with this chart. Off when the blueprint provides it as its own component.
+  enabled: true
+  # Used only when enabled=false: an external Open WebUI, e.g. the blueprint's open-webui component (Service open-webui:80).
+  url: ""
   image:
     repository: dp.apps.rancher.io/containers/open-webui
     tag: "0.6.41-15.13" # SUSE Application Collection version
@@ -74,6 +82,8 @@ openWebui:
 # Open WebUI Pipelines Service
 pipelines:
   enabled: true
+  # Used only when enabled=false: an external Pipelines, e.g. the blueprint's open-webui-pipelines component (Service pipelines-service:9099).
+  url: ""
   image:
     repository: dp.apps.rancher.io/containers/open-webui-pipelines
     tag: "0.20250819.030501-8.103"
@@ -97,6 +107,10 @@ pipelines:
     modelId: "response_level"
     connectionName: "Response Level Pipeline"
 aiCompare:
+  # Deploy the AI Compare app (Deployment, Service, RBAC, ConfigMaps). The SUSE
+  # AI Factory blueprint runs it as its own component chart
+  # (charts/ai-compare-suse-app) that vendors this chart with only the app on.
+  enabled: true
   image:
     repository: ghcr.io/wiredquill/ai-demos-suse
     tag: "9786f29"

@@ -1,0 +1,44 @@
+# Install form for the SUSE Application Collection open-webui chart, added when
+# scripts/package-aif-charts.sh republishes it to the wiredquill-ai-demos
+# repo (the upstream chart ships none). Backend wiring (Ollama/Pipelines URLs,
+# OTel) is set by the blueprint values, since those are lists forms cannot edit.
+questions:
+- variable: service.type
+  group: Access
+  label: Service Type
+  description: How the Open WebUI UI is exposed. NodePort gives direct browser access.
+  type: enum
+  default: ClusterIP
+  options:
+    - ClusterIP
+    - NodePort
+    - LoadBalancer
+- variable: service.nodePort
+  group: Access
+  label: NodePort
+  description: Leave blank to let Kubernetes pick one (range 30000-32767).
+  type: string
+  default: ""
+  show_if: service.type=NodePort
+- variable: persistence.enabled
+  group: Storage
+  label: Persistent Storage
+  description: Keep chats and settings on a PVC (cluster default StorageClass).
+  type: boolean
+  default: true
+- variable: persistence.size
+  group: Storage
+  label: Volume Size
+  type: string
+  default: 2Gi
+  show_if: persistence.enabled=true
+- variable: resources.limits.memory
+  group: Resources
+  label: Memory Limit
+  type: string
+  default: 2Gi
+- variable: resources.limits.cpu
+  group: Resources
+  label: CPU Limit
+  type: string
+  default: "2"

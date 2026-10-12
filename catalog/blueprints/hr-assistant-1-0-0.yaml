@@ -36,7 +36,7 @@ spec:
     # republished to wiredquill-ai-demos with an added questions.yaml (upstream
     # ships no install form) and, for ollama,
     # catalog/charts/ollama/form-friendly-values.patch (NFS model cache, blank
-    # model fields) - see scripts/package-aif-suse-charts.sh.
+    # model fields) - see scripts/package-aif-charts.sh.
     - chartName: ollama
       chartRepo: wiredquill-ai-demos
       chartVersion: "1.76.0"

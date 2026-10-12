@@ -15,7 +15,7 @@ spec:
       labels:
         app: pipelines
     spec:
-      {{- with .Values.imagePullSecrets }}
+      {{- with (include "ai-compare.imagePullSecrets" . | fromYamlArray) }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}

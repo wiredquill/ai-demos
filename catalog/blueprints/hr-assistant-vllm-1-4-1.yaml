@@ -38,7 +38,7 @@ spec:
     #
     # vllm and opensearch are SUSE's Application Collection charts, republished
     # unchanged to wiredquill-ai-demos with an added questions.yaml
-    # (scripts/package-aif-suse-charts.sh) because upstream ships no install form.
+    # (scripts/package-aif-charts.sh) because upstream ships no install form.
     - chartName: vllm
       chartRepo: wiredquill-ai-demos
       chartVersion: "0.1.10"

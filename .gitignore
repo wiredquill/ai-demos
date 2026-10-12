@@ -77,3 +77,9 @@ charts/hr-assistant-policy-db/charts/
 charts/hr-assistant-policy-db/Chart.lock
 charts/hr-assistant-load-gen/charts/
 charts/hr-assistant-load-gen/Chart.lock
+
+# Vendored base chart of the ai-compare component charts
+charts/ai-compare*-app/charts/
+charts/ai-compare*-app/Chart.lock
+charts/ai-compare*-load-gen/charts/
+charts/ai-compare*-load-gen/Chart.lock

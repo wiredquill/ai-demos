@@ -1,4 +1,4 @@
-# Applied to SUSE's ollama chart by scripts/package-aif-suse-charts.sh so install-form
+# Applied to SUSE's ollama chart by scripts/package-aif-charts.sh so install-form
 # values work:
 #  - modelCache.nfs.{enabled,server,path}: mount an NFS share as the ollama-data volume
 #    (/root/.ollama), the same layout the ai-compare charts use, so pulled models are

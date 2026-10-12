@@ -6,6 +6,10 @@ imagePullPolicy: Always
 imagePullSecrets: []
 # -- Application settings
 ollama:
+  # Deploy ollama with this chart. Off when the blueprint provides it as its own component.
+  enabled: true
+  # Used only when enabled=false: an external Ollama, e.g. the blueprint's ollama component (Service ollama-service:11434).
+  url: ""
   image:
     repository: ollama/ollama
     tag: "0.34.4" # Same Ollama release as the SUSE variants (0.34.4-11.97)
@@ -56,6 +60,10 @@ ollama:
       server: "10.0.9.10" # NFS server IP/hostname
       path: "/data/ai-models" # NFS share path for caching models
 openWebui:
+  # Deploy openWebui with this chart. Off when the blueprint provides it as its own component.
+  enabled: true
+  # Used only when enabled=false: an external Open WebUI, e.g. the blueprint's open-webui component (Service open-webui:80).
+  url: ""
   image:
     repository: ghcr.io/open-webui/open-webui
     tag: "0.6.41" # Same Open WebUI release as the SUSE variants (0.6.41-15.13)
@@ -69,6 +77,8 @@ openWebui:
 # Open WebUI Pipelines Service
 pipelines:
   enabled: true
+  # Used only when enabled=false: an external Pipelines, e.g. the blueprint's open-webui-pipelines component (Service pipelines-service:9099).
+  url: ""
   image:
     repository: ghcr.io/open-webui/pipelines
     tag: "main"
@@ -92,6 +102,10 @@ pipelines:
     modelId: "response_level"
     connectionName: "Response Level Pipeline"
 aiCompare:
+  # Deploy the AI Compare app (Deployment, Service, RBAC, ConfigMaps). The SUSE
+  # AI Factory blueprint runs it as its own component chart
+  # (charts/ai-compare-app) that vendors this chart with only the app on.
+  enabled: true
   image:
     repository: ghcr.io/wiredquill/ai-demos
     tag: "9786f29"

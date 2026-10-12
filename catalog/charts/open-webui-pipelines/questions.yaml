@@ -1,0 +1,27 @@
+# Install form for the SUSE Application Collection open-webui-pipelines chart,
+# added when scripts/package-aif-charts.sh republishes it to the
+# wiredquill-ai-demos repo (the upstream chart ships none). The pipeline to load
+# (PIPELINES_URLS) and its Ollama wiring are set by the blueprint values.
+questions:
+- variable: persistence.enabled
+  group: Storage
+  label: Persistent Storage
+  description: Keep downloaded pipelines on a PVC (cluster default StorageClass).
+  type: boolean
+  default: true
+- variable: persistence.size
+  group: Storage
+  label: Volume Size
+  type: string
+  default: 2Gi
+  show_if: persistence.enabled=true
+- variable: resources.limits.memory
+  group: Resources
+  label: Memory Limit
+  type: string
+  default: 1Gi
+- variable: resources.limits.cpu
+  group: Resources
+  label: CPU Limit
+  type: string
+  default: "1"

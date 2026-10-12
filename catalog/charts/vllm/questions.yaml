@@ -1,5 +1,5 @@
 # Install form for the SUSE Application Collection vllm chart, added when
-# scripts/package-aif-suse-charts.sh republishes it to the wiredquill-ai-demos
+# scripts/package-aif-charts.sh republishes it to the wiredquill-ai-demos
 # repo (the upstream chart ships none). Paths address modelSpec as a map keyed
 # "main": Rancher forms cannot write list elements, and the chart's templates
 # range over modelSpec, so a map works the same as the documented list.

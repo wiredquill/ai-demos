@@ -29,7 +29,7 @@ spec:
         ai.framework: "open-webui"
         genai.application: "true"
     spec:
-      {{- with .Values.imagePullSecrets }}
+      {{- with (include "ai-compare-opentelemetry.imagePullSecrets" . | fromYamlArray) }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
