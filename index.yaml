@@ -1,5 +1,35 @@
 apiVersion: v1
 entries:
+  ai-compare-app:
+  - annotations:
+      catalog.cattle.io/display-name: AI Compare (upstream) - AI Compare app
+    apiVersion: v2
+    appVersion: latest
+    created: "2026-10-12T15:07:22.553913-07:00"
+    dependencies:
+    - alias: aic
+      name: ai-compare
+      repository: file://../ai-compare
+      version: ~0.1
+    description: 'AI Compare (upstream) component: AI Compare app. One of the components
+      of the ai-compare SUSE AI Factory blueprint.'
+    digest: 478443a32123ce6974b463cb7c1af41e1567025782fd5fee5e3989f429b870f5
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - ollama
+    - open-webui
+    - demo
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: ai-compare-app
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/ai-compare-app-0.1.0.tgz
+    version: 0.1.0
   ai-compare-opentelemetry:
   - annotations:
       category: AI/ML
@@ -8,7 +38,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-10-12T14:53:23.718411-07:00"
+    created: "2026-10-12T15:07:22.555212-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -45,7 +75,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-10-12T14:53:23.717675-07:00"
+    created: "2026-10-12T15:07:22.554566-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -75,10 +105,102 @@ entries:
     urls:
     - https://github.com/wiredquill/ai-demos/ai-compare-opentelemetry-0.1.543.tgz
     version: 0.1.543
+  ai-compare-opentelemetry-app:
+  - annotations:
+      catalog.cattle.io/display-name: AI Compare (OpenTelemetry) - AI Compare app
+    apiVersion: v2
+    appVersion: latest
+    created: "2026-10-12T15:07:22.556435-07:00"
+    dependencies:
+    - alias: aic
+      name: ai-compare-opentelemetry
+      repository: file://../ai-compare-opentelemetry
+      version: ~0.1
+    description: 'AI Compare (OpenTelemetry) component: AI Compare app. One of the
+      components of the ai-compare-opentelemetry SUSE AI Factory blueprint.'
+    digest: 853dc8668996443b778d92d8b847bdc3ab31d9984f49128886eecb6f53225a4b
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - ollama
+    - open-webui
+    - demo
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: ai-compare-opentelemetry-app
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/ai-compare-opentelemetry-app-0.1.0.tgz
+    version: 0.1.0
+  ai-compare-opentelemetry-load-gen:
+  - annotations:
+      catalog.cattle.io/display-name: AI Compare (OpenTelemetry) - Load generator
+        + health-check emitter
+    apiVersion: v2
+    appVersion: latest
+    created: "2026-10-12T15:07:22.557334-07:00"
+    dependencies:
+    - alias: aic
+      name: ai-compare-opentelemetry
+      repository: file://../ai-compare-opentelemetry
+      version: ~0.1
+    description: 'AI Compare (OpenTelemetry) component: Load generator + health-check
+      emitter. One of the components of the ai-compare-opentelemetry SUSE AI Factory
+      blueprint.'
+    digest: fc03dc1adb56ddc446f5058b578106eedf50f879068241389c1ecf7ab6189a82
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - ollama
+    - open-webui
+    - demo
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: ai-compare-opentelemetry-load-gen
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/ai-compare-opentelemetry-load-gen-0.1.0.tgz
+    version: 0.1.0
+  ai-compare-suse-app:
+  - annotations:
+      catalog.cattle.io/display-name: AI Compare (SUSE) - AI Compare app
+    apiVersion: v2
+    appVersion: latest
+    created: "2026-10-12T15:07:22.557948-07:00"
+    dependencies:
+    - alias: aic
+      name: ai-compare-suse
+      repository: file://../ai-compare-suse
+      version: ~0.1
+    description: 'AI Compare (SUSE) component: AI Compare app. One of the components
+      of the ai-compare-suse SUSE AI Factory blueprint.'
+    digest: 38b1bc6050f11ee3547e47724e58c580dba1d66da659fc1d40134f7f8fb750fc
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - ollama
+    - open-webui
+    - demo
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: ai-compare-suse-app
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/ai-compare-suse-app-0.1.0.tgz
+    version: 0.1.0
   hr-assistant:
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.719684-07:00"
+    created: "2026-10-12T15:07:22.559127-07:00"
     dependencies:
     - condition: ollama.enabled
       name: ollama
@@ -111,7 +233,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (Ollama) - HR Assistant app
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.721284-07:00"
+    created: "2026-10-12T15:07:22.560625-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant
@@ -141,7 +263,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (Ollama) - Employee Handbook app
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.722559-07:00"
+    created: "2026-10-12T15:07:22.561825-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant
@@ -172,7 +294,7 @@ entries:
         emitter
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.723825-07:00"
+    created: "2026-10-12T15:07:22.563381-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant
@@ -202,7 +324,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (Ollama) - HR Policy DB app + dashboard
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.725533-07:00"
+    created: "2026-10-12T15:07:22.564655-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant
@@ -230,7 +352,7 @@ entries:
   hr-assistant-vllm:
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.735366-07:00"
+    created: "2026-10-12T15:07:22.573682-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -262,7 +384,7 @@ entries:
     version: 0.1.13
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.733131-07:00"
+    created: "2026-10-12T15:07:22.571555-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -294,7 +416,7 @@ entries:
     version: 0.1.12
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.739245-07:00"
+    created: "2026-10-12T15:07:22.577413-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -326,7 +448,7 @@ entries:
     version: 0.1.3
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.737872-07:00"
+    created: "2026-10-12T15:07:22.576069-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -358,7 +480,7 @@ entries:
     version: 0.1.2
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.730562-07:00"
+    created: "2026-10-12T15:07:22.56909-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -390,7 +512,7 @@ entries:
     version: 0.1.1
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.727853-07:00"
+    created: "2026-10-12T15:07:22.56703-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -425,7 +547,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Assistant app
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.744449-07:00"
+    created: "2026-10-12T15:07:22.582318-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -454,7 +576,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Assistant app
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.741892-07:00"
+    created: "2026-10-12T15:07:22.579854-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -484,7 +606,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - vLLM serving engine
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.747086-07:00"
+    created: "2026-10-12T15:07:22.584421-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -514,7 +636,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - Employee Handbook app
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.751901-07:00"
+    created: "2026-10-12T15:07:22.58896-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -543,7 +665,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - Employee Handbook app
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.749384-07:00"
+    created: "2026-10-12T15:07:22.586849-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -574,7 +696,7 @@ entries:
         emitter
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.756508-07:00"
+    created: "2026-10-12T15:07:22.593525-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -604,7 +726,7 @@ entries:
         emitter
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.754088-07:00"
+    created: "2026-10-12T15:07:22.591346-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -634,7 +756,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - OpenSearch search engine
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.7591-07:00"
+    created: "2026-10-12T15:07:22.595974-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -664,7 +786,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Policy DB app + dashboard
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.764372-07:00"
+    created: "2026-10-12T15:07:22.600544-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -693,7 +815,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Policy DB app + dashboard
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.761637-07:00"
+    created: "2026-10-12T15:07:22.598412-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -723,7 +845,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - Qdrant vector database
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.767237-07:00"
+    created: "2026-10-12T15:07:22.602874-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -753,7 +875,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - vLLM router
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:53:23.769557-07:00"
+    created: "2026-10-12T15:07:22.605489-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -788,7 +910,7 @@ entries:
       license: MIT
     apiVersion: v2
     appVersion: 0.32.14
-    created: "2026-10-12T14:53:23.770259-07:00"
+    created: "2026-10-12T15:07:22.606038-07:00"
     description: Get up and running with Llama 3.2, Mistral, Gemma 2, and other large
       language models.
     digest: ba32799ea047e239c229ddb1ef1cb667658e8787c08eb245567310fc27528e1b
@@ -810,6 +932,84 @@ entries:
     urls:
     - https://github.com/wiredquill/ai-demos/ollama-1.76.0.tgz
     version: 1.76.0
+  open-webui:
+  - annotations:
+      helm.sh/images: |
+        - image: dp.apps.rancher.io/containers/open-webui:0.6.41-14.20
+          name: open-webui
+        - image: dp.apps.rancher.io/containers/redis:8.4.0-2.1
+          name: redis
+      license: MIT
+    apiVersion: v2
+    appVersion: 0.6.41
+    created: "2026-10-12T15:07:22.608132-07:00"
+    dependencies:
+    - condition: ollama.enabled
+      import-values:
+      - child: service
+        parent: ollama.service
+      name: ollama
+      repository: oci://dp.apps.rancher.io/charts
+      version: 1.33.2
+    - alias: pipelines
+      condition: pipelines.enabled
+      import-values:
+      - child: service
+        parent: pipelines.service
+      name: open-webui-pipelines
+      repository: oci://dp.apps.rancher.io/charts
+      version: 0.9.2
+    - alias: tika
+      condition: tika.enabled
+      name: apache-tika
+      repository: oci://dp.apps.rancher.io/charts
+      version: 3.2.2
+    description: Open WebUI is an extensible, feature-rich, and user-friendly self-hosted
+      WebUI designed to operate entirely offline. It supports various LLM runners,
+      including Ollama and OpenAI-compatible APIs.
+    digest: 2ffb9b482ca4b4a3e6eec25fd4b11081d18e10476d440116f338b1de24a143ef
+    home: https://apps.rancher.io/applications/open-webui
+    icon: https://apps.rancher.io/logos/open-webui.png
+    keywords:
+    - llm
+    - chat
+    - web-ui
+    maintainers:
+    - name: SUSE LLC
+      url: https://www.suse.com
+    name: open-webui
+    urls:
+    - https://github.com/wiredquill/ai-demos/open-webui-8.19.1.tgz
+    version: 8.19.1
+  open-webui-pipelines:
+  - annotations:
+      helm.sh/images: |
+        - image: dp.apps.rancher.io/containers/open-webui-pipelines:0.20250819.030501-8.19
+          name: open-webui-pipelines
+      license: MIT
+    apiVersion: v2
+    appVersion: 0.20250819.030501
+    created: "2026-10-12T15:07:22.608427-07:00"
+    description: Pipelines bring modular, customizable workflows to any UI client
+      supporting OpenAI API specs and much more! Easily extend functionalities, integrate
+      unique logic, and create dynamic workflows with just a few lines of code.
+    digest: d8fe11d3c0b5ca486c17b7d252da7877ec4865eff3114d3c1bbe7ec7174cd8d7
+    home: https://apps.rancher.io/applications/open-webui-pipelines
+    icon: https://apps.rancher.io/logos/open-webui-pipelines.png
+    keywords:
+    - ai
+    - llm
+    - chat
+    - web-ui
+    maintainers:
+    - name: SUSE LLC
+      url: https://www.suse.com/
+    name: open-webui-pipelines
+    sources:
+    - https://github.com/open-webui/pipelines
+    urls:
+    - https://github.com/wiredquill/ai-demos/open-webui-pipelines-0.9.2.tgz
+    version: 0.9.2
   opensearch:
   - annotations:
       helm.sh/images: |
@@ -820,7 +1020,7 @@ entries:
       license: Apache-2.0
     apiVersion: v2
     appVersion: 3.8.0
-    created: "2026-10-12T14:53:23.770879-07:00"
+    created: "2026-10-12T15:07:22.609295-07:00"
     description: OpenSearch is an open-source, enterprise-grade search and observability
       suite that brings order to unstructured data at scale.
     digest: 21a1f2be8f02fc795279dd8b72dc72d97596b0c3c449ff8387e41799402890f4
@@ -847,7 +1047,7 @@ entries:
       license: Apache-2.0
     apiVersion: v2
     appVersion: 0.19.0
-    created: "2026-10-12T14:53:23.772054-07:00"
+    created: "2026-10-12T15:07:22.610081-07:00"
     description: A high-throughput and memory-efficient inference and serving engine
       for LLMs.
     digest: 76c4fffb3148c2a04c9a082bd83eaebb8c913ea93f143fe43494face9be8a4a3
@@ -866,4 +1066,4 @@ entries:
     urls:
     - https://github.com/wiredquill/ai-demos/vllm-0.1.10.tgz
     version: 0.1.10
-generated: "2026-10-12T14:53:23.716269-07:00"
+generated: "2026-10-12T15:07:22.553232-07:00"
