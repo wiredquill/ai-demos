@@ -1,6 +1,6 @@
 """Generate the per-pod app charts for the HR Assistant SUSE AI Factory blueprints.
 
-For each variant, writes charts/<variant>-{app,handbook,policy-db,load-gen}: one
+For each variant, writes catalog/components/<variant>-{app,handbook,policy-db,load-gen}: one
 chart per app pod, each vendoring charts/<variant> (alias "hr") with only its own
 workload switched on. The inference engine, Qdrant and OpenSearch are SUSE charts
 listed directly in the blueprints (catalog/blueprints/<variant>-*.yaml).
@@ -116,12 +116,12 @@ def dump(o):
 for variant, cfg in VARIANTS.items():
     for c in components(cfg):
         chart = f"{variant}-{c['name']}"
-        d = os.path.join(ROOT, "charts", chart); os.makedirs(os.path.join(d, "templates"), exist_ok=True)
+        d = os.path.join(ROOT, "catalog", "components", chart); os.makedirs(os.path.join(d, "templates"), exist_ok=True)
         meta = {
             "apiVersion": "v2", "name": chart,
             "description": f"{cfg['title']} component: {c['pod']}. One of the components of the {variant} SUSE AI Factory blueprint.",
             "type": "application", "version": cfg["version"], "appVersion": "latest",
-            "dependencies": [{"name": variant, "version": cfg["base_version"], "repository": f"file://../{variant}", "alias": "hr"}],
+            "dependencies": [{"name": variant, "version": cfg["base_version"], "repository": f"file://../../../charts/{variant}", "alias": "hr"}],
             "keywords": ["ai", "llm", "hr", "demo", cfg["engine"], "suse-ai-factory"],
             "maintainers": [{"name": "SUSE AI Team", "email": "ai-team@suse.com"}],
             "home": "https://github.com/wiredquill/ai-demos",
