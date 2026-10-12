@@ -1,3 +1,5 @@
+{{- /* Pulls into the bundled Ollama; an external Ollama (e.g. the blueprint's ollama component) pulls its own models. */ -}}
+{{- if .Values.ollama.enabled }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -90,3 +92,4 @@ spec:
           limits:
             cpu: "2"
             memory: "8Gi"
+{{- end }}

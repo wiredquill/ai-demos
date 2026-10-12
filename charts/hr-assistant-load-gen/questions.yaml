@@ -1,0 +1,22 @@
+questions:
+- variable: hr.loadGenerator.intervalSeconds
+  label: Load Generation Interval (seconds)
+  group: Load Generator
+  type: int
+  default: 45
+  required: true
+  description: 'How often the three apps are polled. Keep at 120 or lower: SUSE AI components expire ~2 minutes after their last telemetry.'
+- variable: hr.otlpEndpoint
+  label: OTLP Endpoint
+  group: Observability
+  type: string
+  required: false
+  default: ''
+  description: OpenTelemetry collector address (scheme://host:port).<br><br><b>Leave blank to auto-discover</b> the shared SUSE AI collector in the Collector Namespace below.
+- variable: hr.observability.collectorNamespace
+  label: Collector Namespace
+  group: Observability
+  type: string
+  required: false
+  default: observability
+  description: Namespace holding the shared SUSE AI OpenTelemetry collector (installed from the ai-observability-collector chart).

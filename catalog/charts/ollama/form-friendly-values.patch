@@ -1,0 +1,49 @@
+# Applied to SUSE's ollama chart by scripts/package-aif-suse-charts.sh so install-form
+# values work:
+#  - modelCache.nfs.{enabled,server,path}: mount an NFS share as the ollama-data volume
+#    (/root/.ollama), the same layout the ai-compare charts use, so pulled models are
+#    shared across installs. Upstream only offers a PVC or generic volume lists.
+#  - empty ollama.models.pull entries are skipped. Models are a map on the form
+#    (forms cannot write list elements), and a blank field would otherwise run
+#    "ollama pull" with no model and fail the postStart hook.
+#  - no PVC is created while the NFS model cache is enabled (nothing would mount it, and
+#    on a WaitForFirstConsumer StorageClass it stays Pending).
+--- a/templates/deployment.yaml
++++ b/templates/deployment.yaml
+@@ -183,6 +183,7 @@
+ 
+                     {{- if .Values.ollama.models.pull }}
+                     {{- range .Values.ollama.models.pull }}
++                    {{- if . }}
+ 
+                     {{- if contains ":" . }}
+                       {{- $allModels = append $allModels . }}
+@@ -193,6 +194,7 @@
+                     /bin/ollama pull {{ternary "--insecure" "" $.Values.ollama.insecure | toString }} {{ . }}
+                     {{- end }}
+                     {{- end }}
++                    {{- end }}
+ 
+                     {{- if .Values.ollama.models.create }}
+                     {{- range .Values.ollama.models.create }}
+@@ -236,7 +238,11 @@
+       {{- end }}
+       volumes:
+         - name: ollama-data
+-          {{- if .Values.persistentVolume.enabled }}
++          {{- if and .Values.modelCache .Values.modelCache.nfs .Values.modelCache.nfs.enabled }}
++          nfs:
++            server: {{ required "modelCache.nfs.server is required when the NFS model cache is enabled" .Values.modelCache.nfs.server }}
++            path: {{ .Values.modelCache.nfs.path | default "/data/ai-models" }}
++          {{- else if .Values.persistentVolume.enabled }}
+           persistentVolumeClaim:
+             claimName: {{ .Values.persistentVolume.existingClaim |  default (printf "%s" (include "ollama.fullname" .)) }}
+           {{- else }}
+--- a/templates/pvc.yaml
++++ b/templates/pvc.yaml
+@@ -1,4 +1,4 @@
+-{{- if (and .Values.persistentVolume.enabled (not .Values.persistentVolume.existingClaim)) -}}
++{{- if and (not (and .Values.modelCache .Values.modelCache.nfs .Values.modelCache.nfs.enabled)) ((and .Values.persistentVolume.enabled (not .Values.persistentVolume.existingClaim)) ) -}}
+ ---
+ apiVersion: v1
+ kind: PersistentVolumeClaim

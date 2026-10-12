@@ -65,7 +65,11 @@ Create the name of the service account to use
 Create the ollama endpoint URL based on release name
 */}}
 {{- define "hr-assistant.ollamaEndpoint" -}}
+{{- if .Values.ollama.enabled -}}
 http://{{ .Release.Name }}-ollama:11434
+{{- else -}}
+{{ .Values.ollamaEndpoint | default "http://ollama:11434" }}
+{{- end -}}
 {{- end }}
 
 {{/*
@@ -279,6 +283,20 @@ chart deployed as its own AI Factory blueprint component (release "qdrant").
 http://{{ include "hr-assistant.fullname" . }}-qdrant:{{ .Values.qdrant.service.port }}
 {{- else -}}
 {{ .Values.qdrant.url | default "http://qdrant:6333" }}
+{{- end -}}
+{{- end }}
+
+{{/*
+OpenSearch REST URL. The bundled OpenSearch (opensearch.enabled) is used when
+enabled; otherwise opensearch.url points at an external OpenSearch, e.g. the
+SUSE Application Collection opensearch chart deployed as its own AI Factory
+blueprint component (Service opensearch-cluster-master).
+*/}}
+{{- define "hr-assistant.opensearchUrl" -}}
+{{- if .Values.opensearch.enabled -}}
+http://{{ include "hr-assistant.fullname" . }}-opensearch:{{ .Values.opensearch.service.port }}
+{{- else -}}
+{{ .Values.opensearch.url | default "http://opensearch-cluster-master:9200" }}
 {{- end -}}
 {{- end }}
 

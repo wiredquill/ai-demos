@@ -1,3 +1,4 @@
+{{- if .Values.components.hrPolicyDb }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -18,3 +19,4 @@ spec:
   selector:
     {{- include "hr-assistant.selectorLabels" . | nindent 4 }}
     genai: hr-policy-db
+{{- end }}
