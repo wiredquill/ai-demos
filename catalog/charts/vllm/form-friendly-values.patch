@@ -4,8 +4,10 @@
 #  - sharedPvcStorage.enabled is honoured (upstream enables it whenever the key exists)
 #  - HF_HOME points at the shared NFS cache when it is enabled (upstream mounts it
 #    but keeps downloading into the per-install PVC)
-#  - app.kubernetes.io/managed-by: Helm (upstream "helm" is rewritten on the cluster,
-#    so Fleet reports the bundle Modified and the AIWorkload Degraded)
+#  - the engine/router Deployments' and Services' own metadata.labels say
+#    app.kubernetes.io/managed-by: Helm. Upstream's "helm" is rewritten on the cluster,
+#    so Fleet reported the bundle Modified. Selectors and pod labels keep "helm"
+#    (selectors are immutable, so changing them would break upgrades).
 #  - empty GPU-memory/core fields are ignored instead of rendered
 --- a/templates/pvc.yaml
 +++ b/templates/pvc.yaml
@@ -46,6 +48,15 @@
      {{- toYaml .Values.sharedPvcStorage.accessModes | nindent 4 }}
 --- a/templates/deployment-vllm-multi.yaml
 +++ b/templates/deployment-vllm-multi.yaml
+@@ -22,7 +22,7 @@
+   labels:
+     model: {{ $modelSpec.name }}
+     helm-release-name: {{ .Release.Name }}
+-  {{- include "chart.engineStandardLabels" (dict "releaseName" .Release.Name "modelName" $modelSpec.name "chartName" .Chart.Name) | nindent 4 }}
++  {{- include "chart.engineStandardLabels" (dict "releaseName" .Release.Name "modelName" $modelSpec.name "chartName" .Chart.Name) | replace "managed-by: helm" "managed-by: Helm" | nindent 4 }}
+   {{- include "chart.engineLabels" . | nindent 4 }}
+ spec:
+   replicas: {{ $modelSpec.replicaCount }}
 @@ -208,7 +208,9 @@
            - name: PYTHONHASHSEED
              value: "123"
@@ -149,28 +160,36 @@
    nvidia.com/gpucores: {{ $modelSpec.limitGPUCores | quote }}
    {{- end }}
  {{- end }}
-@@ -263,7 +263,7 @@
- app.kubernetes.io/instance: {{ .releaseName }}
- app.kubernetes.io/component: serving-engine
- app.kubernetes.io/part-of: {{ .chartName }}
--app.kubernetes.io/managed-by: helm
-+app.kubernetes.io/managed-by: Helm
- {{- end -}}
- 
- {{/*
-@@ -275,7 +275,7 @@
- app.kubernetes.io/instance: {{ .releaseName }}
- app.kubernetes.io/component: router
- app.kubernetes.io/part-of: {{ .chartName }}
--app.kubernetes.io/managed-by: helm
-+app.kubernetes.io/managed-by: Helm
- {{- end -}}
- 
- {{/*
-@@ -287,5 +287,5 @@
- app.kubernetes.io/instance: {{ .releaseName }}
- app.kubernetes.io/component: cache-server
- app.kubernetes.io/part-of: {{ .chartName }}
--app.kubernetes.io/managed-by: helm
-+app.kubernetes.io/managed-by: Helm
- {{- end -}}
+--- a/templates/deployment-router.yaml
++++ b/templates/deployment-router.yaml
+@@ -5,7 +5,7 @@
+   name: "{{ .Release.Name }}-deployment-router"
+   namespace: {{ .Release.Namespace }}
+   labels:
+-  {{- include "chart.routerStandardLabels" (dict "releaseName" .Release.Name "chartName" .Chart.Name) | nindent 4 }}
++  {{- include "chart.routerStandardLabels" (dict "releaseName" .Release.Name "chartName" .Chart.Name) | replace "managed-by: helm" "managed-by: Helm" | nindent 4 }}
+   {{- include "chart.routerLabels" . | nindent 4 }}
+ spec:
+ {{- if .Values.routerSpec.autoscaling.enabled }}
+--- a/templates/service-vllm.yaml
++++ b/templates/service-vllm.yaml
+@@ -7,7 +7,7 @@
+   name: "{{ $.Release.Name }}-{{ $modelSpec.name }}-engine-service"
+   namespace: {{ $.Release.Namespace }}
+   labels:
+-  {{- include "chart.engineStandardLabels" (dict "releaseName" $.Release.Name "modelName" $modelSpec.name "chartName" $.Chart.Name) | nindent 4 }}
++  {{- include "chart.engineStandardLabels" (dict "releaseName" $.Release.Name "modelName" $modelSpec.name "chartName" $.Chart.Name) | replace "managed-by: helm" "managed-by: Helm" | nindent 4 }}
+   {{- include "chart.engineLabels" $ | nindent 4 }}
+ spec:
+   type: ClusterIP
+--- a/templates/service-router.yaml
++++ b/templates/service-router.yaml
+@@ -8,7 +8,7 @@
+   annotations: {{- toYaml .Values.routerSpec.serviceAnnotations | nindent 4 }}
+   {{- end }}
+   labels:
+-  {{- include "chart.routerStandardLabels" (dict "releaseName" .Release.Name "chartName" .Chart.Name) | nindent 4 }}
++  {{- include "chart.routerStandardLabels" (dict "releaseName" .Release.Name "chartName" .Chart.Name) | replace "managed-by: helm" "managed-by: Helm" | nindent 4 }}
+   {{- include "chart.routerLabels" . | nindent 4 }}
+ spec:
+   type: {{ .Values.routerSpec.serviceType }}

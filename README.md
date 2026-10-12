@@ -88,7 +88,7 @@ deploy a blueprint, the AI Factory UI shows each component together with the
 install form from its chart's `questions.yaml`. An **AIWorkload** then deploys
 the components to a downstream cluster as Fleet bundles.
 
-### hr-assistant-vllm 1.4.3: SUSE charts plus the app pods
+### hr-assistant-vllm 1.5.0: SUSE charts plus the app pods
 
 The infrastructure components are SUSE's own charts, so the AI Factory UI shows
 the real chart name and version, just as `simple-chatbot-with-rag` does. SUSE's
@@ -102,8 +102,10 @@ keeping SUSE's name and version and adding the `questions.yaml` from
   provisioning, and shared storage switches on whenever the key exists.
 - points `HF_HOME` at the NFS cache when it's enabled. Upstream mounts the cache
   but keeps downloading into the per-install PVC.
-- sets `app.kubernetes.io/managed-by: Helm`. The cluster rewrites upstream's
-  lowercase `helm`, so Fleet reported the vllm bundle as Modified. The version list for those two
+- sets `app.kubernetes.io/managed-by: Helm` on the engine and router Deployments'
+  and Services' own labels. The cluster rewrites upstream's lowercase `helm`, so
+  Fleet reported the vllm bundle as Modified. Selectors and pod labels keep `helm`,
+  because selectors are immutable and changing them would make upgrades fail. The version list for those two
 therefore shows only the versions republished there. Each of the four app pods has its own small chart
 with its own `questions.yaml`. Those charts vendor `charts/hr-assistant-vllm`
 (alias `hr`) and switch on only their own workload:
@@ -192,12 +194,12 @@ curl -sk -H "Authorization: Bearer $TOKEN" \
 
 **4. Create the blueprint** on the management cluster:
 ```bash
-kubectl apply -f catalog/blueprints/hr-assistant-vllm-1-4-3.yaml
+kubectl apply -f catalog/blueprints/hr-assistant-vllm-1-5-0.yaml
 kubectl get blueprints.ai-factory.suse.com -l ai-factory.suse.com/blueprint-name=hr-assistant-vllm
 ```
 
 **5. Deploy it.** In Rancher, go to **AI Factory → Blueprints → SUSE AI HR
-Assistant (vLLM) 1.4.3 → Deploy**. Pick the target cluster and a namespace that
+Assistant (vLLM) 1.5.0 → Deploy**. Pick the target cluster and a namespace that
 nothing else uses, then review each component (the `vllm` component holds the
 model and HF token).
 To deploy from YAML instead, use an AIWorkload. `componentValues` is keyed by
@@ -215,7 +217,7 @@ spec:
     sourceType: Blueprint
     blueprint:
       name: hr-assistant-vllm
-      version: "1.4.3"
+      version: "1.5.0"
   targetClusters:
     - c-m-xxxxxxxx                   # Rancher cluster ID, not the display name
   targetNamespace: hr-assistant-vllm
@@ -254,7 +256,9 @@ kubectl logs -n hr-assistant-vllm deploy/hr-assistant-vllm-load-gen -c load-gen 
 >   already holds it. An interrupted Hugging Face download makes the engine exit
 >   once, and the restart resumes the download.
 > - Editing a blueprint in the UI saves a new blueprint version with every value
->   baked in, secrets such as `hf_token` included. Blueprints are readable across
+>   baked in, secrets such as `hf_token` included. It takes the next patch version
+>   (e.g. 1.4.2 → 1.4.3), so publish repository versions with a minor bump to avoid
+>   overwriting a UI-saved one. Blueprints are readable across
 >   the whole management cluster.
 
 ---

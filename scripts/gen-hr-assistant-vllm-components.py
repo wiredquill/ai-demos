@@ -120,7 +120,7 @@ for c in COMPONENTS:
         "Install all components into the same namespace (the blueprint does this for you).\n")
     open(os.path.join(d, "README.md"), "w").write(f"# {chart}\n\n{c['summary']}\n\n"
         "This chart is one component of the `hr-assistant-vllm` SUSE AI Factory blueprint "
-        "(`catalog/blueprints/hr-assistant-vllm-1-4-3.yaml`). It vendors `charts/hr-assistant-vllm` "
+        "(`catalog/blueprints/hr-assistant-vllm-1-5-0.yaml`). It vendors `charts/hr-assistant-vllm` "
         "(alias `hr`) and enables only this workload. See `charts/hr-assistant-vllm/README.md` for the "
         "full component list, how the components connect, and how to install the blueprint.\n")
     open(os.path.join(d, "templates", "NOTES.txt"), "w").write(
