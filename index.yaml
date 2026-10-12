@@ -8,7 +8,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-10-12T13:43:45.29584-07:00"
+    created: "2026-10-12T14:00:10.243736-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -45,7 +45,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-10-12T13:43:45.29509-07:00"
+    created: "2026-10-12T14:00:10.24306-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -78,7 +78,7 @@ entries:
   hr-assistant-vllm:
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T13:43:45.30509-07:00"
+    created: "2026-10-12T14:00:10.25338-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -110,7 +110,7 @@ entries:
     version: 0.1.13
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T13:43:45.302847-07:00"
+    created: "2026-10-12T14:00:10.251188-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -142,7 +142,7 @@ entries:
     version: 0.1.12
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T13:43:45.30873-07:00"
+    created: "2026-10-12T14:00:10.257131-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -174,7 +174,7 @@ entries:
     version: 0.1.3
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T13:43:45.30739-07:00"
+    created: "2026-10-12T14:00:10.255796-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -206,7 +206,7 @@ entries:
     version: 0.1.2
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T13:43:45.300327-07:00"
+    created: "2026-10-12T14:00:10.248338-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -238,7 +238,7 @@ entries:
     version: 0.1.1
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T13:43:45.298005-07:00"
+    created: "2026-10-12T14:00:10.245902-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -273,7 +273,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Assistant app
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T13:43:45.313414-07:00"
+    created: "2026-10-12T14:00:10.262125-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -302,7 +302,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Assistant app
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T13:43:45.311207-07:00"
+    created: "2026-10-12T14:00:10.259486-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -332,7 +332,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - vLLM serving engine
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T13:43:45.315794-07:00"
+    created: "2026-10-12T14:00:10.264408-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -362,7 +362,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - Employee Handbook app
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T13:43:45.320233-07:00"
+    created: "2026-10-12T14:00:10.269399-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -391,7 +391,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - Employee Handbook app
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T13:43:45.317899-07:00"
+    created: "2026-10-12T14:00:10.26723-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -422,7 +422,7 @@ entries:
         emitter
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T13:43:45.324728-07:00"
+    created: "2026-10-12T14:00:10.274516-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -452,7 +452,7 @@ entries:
         emitter
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T13:43:45.322632-07:00"
+    created: "2026-10-12T14:00:10.272176-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -482,7 +482,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - OpenSearch search engine
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T13:43:45.327034-07:00"
+    created: "2026-10-12T14:00:10.276629-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -512,7 +512,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Policy DB app + dashboard
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T13:43:45.331548-07:00"
+    created: "2026-10-12T14:00:10.281345-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -541,7 +541,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Policy DB app + dashboard
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T13:43:45.329133-07:00"
+    created: "2026-10-12T14:00:10.279232-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -571,7 +571,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - Qdrant vector database
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T13:43:45.333952-07:00"
+    created: "2026-10-12T14:00:10.283637-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -601,7 +601,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - vLLM router
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T13:43:45.336042-07:00"
+    created: "2026-10-12T14:00:10.28609-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -626,4 +626,60 @@ entries:
     urls:
     - https://github.com/wiredquill/ai-demos/hr-assistant-vllm-router-0.1.0.tgz
     version: 0.1.0
-generated: "2026-10-12T13:43:45.29391-07:00"
+  opensearch:
+  - annotations:
+      helm.sh/images: |
+        - image: dp.apps.rancher.io/containers/opensearch:3.8.0-15.9
+          name: opensearch
+        - image: dp.apps.rancher.io/containers/bci-busybox:15.7-25.30
+          name: bci-busybox
+      license: Apache-2.0
+    apiVersion: v2
+    appVersion: 3.8.0
+    created: "2026-10-12T14:00:10.286728-07:00"
+    description: OpenSearch is an open-source, enterprise-grade search and observability
+      suite that brings order to unstructured data at scale.
+    digest: 21a1f2be8f02fc795279dd8b72dc72d97596b0c3c449ff8387e41799402890f4
+    home: https://apps.rancher.io/applications/opensearch
+    icon: https://apps.rancher.io/logos/opensearch.png
+    maintainers:
+    - name: SUSE LLC
+      url: https://www.suse.com/
+    name: opensearch
+    urls:
+    - https://github.com/wiredquill/ai-demos/opensearch-3.8.0.tgz
+    version: 3.8.0
+  vllm:
+  - annotations:
+      helm.sh/images: |
+        - image: dp.apps.rancher.io/containers/vllm-openai:0.19.0-5.20
+          name: vllm-openai
+        - image: dp.apps.rancher.io/containers/lmcache-vllm-openai:0.3.9-4.17
+          name: lmcache-vllm-openai
+        - image: dp.apps.rancher.io/containers/lmcache-lmstack-router:0.1.10-3.60
+          name: lmcache-lmstack-router
+        - image: dp.apps.rancher.io/containers/bci-busybox:15.7-19.10
+          name: bci-busybox
+      license: Apache-2.0
+    apiVersion: v2
+    appVersion: 0.19.0
+    created: "2026-10-12T14:00:10.287558-07:00"
+    description: A high-throughput and memory-efficient inference and serving engine
+      for LLMs.
+    digest: cfdf75cd2902972393b6a4ea4e3cbca11b970d80f8646c8b195e43401ab25e1c
+    home: https://apps.rancher.io/applications/vllm
+    icon: https://apps.rancher.io/logos/vllm.png
+    keywords:
+    - ai
+    - llm
+    maintainers:
+    - name: SUSE LLC
+      url: https://www.suse.com/
+    name: vllm
+    sources:
+    - https://github.com/vllm-project/vllm
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/vllm-0.1.10.tgz
+    version: 0.1.10
+generated: "2026-10-12T14:00:10.240822-07:00"
