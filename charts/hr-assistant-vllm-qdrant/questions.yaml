@@ -1,0 +1,11 @@
+questions:
+- variable: hr.qdrant.resources.limits.cpu
+  label: CPU Limit
+  group: Resources
+  type: string
+  default: '1'
+- variable: hr.qdrant.resources.limits.memory
+  label: Memory Limit
+  group: Resources
+  type: string
+  default: 1Gi

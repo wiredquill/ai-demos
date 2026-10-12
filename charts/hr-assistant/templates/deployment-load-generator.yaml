@@ -1,6 +1,7 @@
 {{- $fullname := include "hr-assistant.fullname" . }}
 {{- $generator := .Values.loadGenerator | default dict -}}
-{{- $enabled := $generator.enabled | default true -}}
+{{- /* `default` would turn an explicit false back into true */ -}}
+{{- $enabled := ternary $generator.enabled true (hasKey $generator "enabled") -}}
 {{- if $enabled }}
 {{- $interval := $generator.intervalSeconds | default 120 -}}
 # Persistent load generator (replaces ephemeral CronJob).

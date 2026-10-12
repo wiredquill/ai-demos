@@ -248,10 +248,50 @@ topology sent components=5 relations=4 status=200
 
 ---
 
-## 7. Chart versions
+## 7. SUSE AI Factory blueprint (one component per pod)
+
+The `hr-assistant-vllm` blueprint (`catalog/blueprints/hr-assistant-vllm-1-3-0.yaml`)
+deploys this chart's eight pods as eight AI Factory components, each with its own
+install form. A blueprint's `chartName`s must be unique, so each pod has a thin
+chart in `charts/hr-assistant-vllm-<component>`. Each of these vendors this chart
+(alias `hr`) with only its own workload switched on:
+
+| Switch (this chart) | Component chart |
+|---|---|
+| `vllm.enabled` + `vllm.routerSpec.enableRouter=false` | `hr-assistant-vllm-engine` |
+| `vllm.enabled` + `vllm.servingEngineSpec.enableEngine=false` | `hr-assistant-vllm-router` |
+| `qdrant.enabled` | `hr-assistant-vllm-qdrant` |
+| `opensearch.enabled` | `hr-assistant-vllm-opensearch` |
+| `components.hrPolicyDb` | `hr-assistant-vllm-policy-db` |
+| `components.employeeHandbook` | `hr-assistant-vllm-handbook` |
+| `components.hrAssistant` | `hr-assistant-vllm-app` |
+| `loadGenerator.enabled` | `hr-assistant-vllm-load-gen` |
+
+The component releases share `fullnameOverride: hr-assistant-vllm`, which keeps the
+Service names the same as in an all-in-one install. They set `serviceAccount.create=false`
+because a shared ServiceAccount name would clash between releases. Only the
+components that send telemetry run the `observability.connectivityCheck` hook. The
+router selects the engine pods with an explicit `--k8s-label-selector`: the subchart
+omits that flag when the engine lives in another release, and the apps also listen
+on port 8000.
+
+To change a component, edit the base chart or the component's
+`values.yaml`/`questions.yaml`, bump that component chart's `version`, and also bump
+the base chart's version plus each component chart's dependency on it. See the
+repository README ("SUSE AI Factory Blueprints") for publishing and installing the
+blueprint.
+
+---
+
+## 8. Chart versions
 
 - **0.1.0** — Initial hr-assistant-vllm: cloned from hr-assistant, swapped
   Ollama for the vendored SUSE Application Collection `vllm` chart
   (engine + router), added the native `vllm` Prometheus scrape/transform to
   the shared collector, and ported the app's LLM calls to the OpenAI-
   compatible/tool-calling shape vLLM speaks (see `docs/hr-assistant-vllm.md`).
+- **0.1.12** — Per-workload switches (`components.*`,
+  `observability.connectivityCheck`) for the one-component-per-pod AI Factory
+  blueprint. The otel-check hook Job is now named after the release.
+  `loadGenerator.enabled=false` now takes effect (previously `| default true`
+  turned it back on). The all-in-one render is otherwise unchanged.

@@ -1,0 +1,29 @@
+# HR Assistant app - a single-workload release of charts/hr-assistant-vllm.
+#
+# Every value of the base chart can be set under "hr:". Everything except this
+# component's own workload is switched off; the shared fullnameOverride keeps
+# the Service names (hr-assistant-vllm-<workload>) the same as in the
+# all-in-one install, so the components find each other in one namespace.
+hr:
+  fullnameOverride: hr-assistant-vllm
+  serviceAccount:
+    create: false
+  components:
+    hrAssistant: true
+    employeeHandbook: false
+    hrPolicyDb: false
+  loadGenerator:
+    enabled: false
+  qdrant:
+    enabled: false
+    url: http://hr-assistant-vllm-qdrant:6333
+  opensearch:
+    enabled: false
+  vllm:
+    enabled: false
+  vllmEndpoint: http://vllm-router-service:80
+  model: Qwen/Qwen2.5-7B-Instruct
+  observability:
+    connectivityCheck: true
+  service:
+    type: ClusterIP
