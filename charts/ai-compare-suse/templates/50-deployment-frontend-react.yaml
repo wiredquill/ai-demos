@@ -27,7 +27,7 @@ spec:
         ui.type: "react-dashboard"
         frontend.category: "enterprise"
     spec:
-      {{- with .Values.imagePullSecrets }}
+      {{- with (include "ai-compare-suse.imagePullSecrets" . | fromYamlArray) }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}

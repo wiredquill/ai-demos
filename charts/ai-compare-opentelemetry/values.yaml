@@ -224,6 +224,11 @@ pipelines:
     modelId: "response_level"
     connectionName: "Response Level Pipeline"
 aiCompare:
+  # Deploy the AI Compare app (Deployment, Service, RBAC, ConfigMaps). The SUSE
+  # AI Factory blueprint runs the app and the load generator as separate
+  # component charts (charts/ai-compare-opentelemetry-{app,load-gen}) that each
+  # vendor this chart with only their own workload on.
+  enabled: true
   image:
     repository: ghcr.io/wiredquill/ai-demos-suse
     tag: "9786f29"

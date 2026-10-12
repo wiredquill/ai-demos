@@ -1,0 +1,25 @@
+# AI Compare app - a single-workload release of charts/ai-compare-opentelemetry.
+#
+# Every value of the base chart can be set under "aic:". Everything except this
+# component's own workload is switched off; the shared fullnameOverride keeps
+# the Service names (ai-compare-opentelemetry-*) the same as in the all-in-one install, so
+# the components find each other in one namespace.
+aic:
+  fullnameOverride: ai-compare-opentelemetry
+  aiCompare:
+    enabled: true
+  frontend:
+    loadSimulator:
+      enabled: false
+  ollama:
+    enabled: false
+    url: http://ollama-service:11434
+    models:
+      main: llama3.2:latest
+  openWebui:
+    enabled: false
+    url: http://open-webui:80
+  pipelines:
+    enabled: false
+    url: http://pipelines-service:9099
+  imagePullSecrets: []

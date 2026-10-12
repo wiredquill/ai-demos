@@ -38,7 +38,7 @@ spec:
     # to wiredquill-ai-demos with an added questions.yaml (upstream ships no
     # install form) and, for vllm, catalog/charts/vllm/form-friendly-values.patch
     # so the storage class and shared NFS cache fields work
-    # (scripts/package-aif-suse-charts.sh).
+    # (scripts/package-aif-charts.sh).
     - chartName: vllm
       chartRepo: wiredquill-ai-demos
       chartVersion: "0.1.10"

@@ -1,5 +1,5 @@
 # Install form for the SUSE Application Collection ollama chart, added when
-# scripts/package-aif-suse-charts.sh republishes it to the wiredquill-ai-demos
+# scripts/package-aif-charts.sh republishes it to the wiredquill-ai-demos
 # repo (the upstream chart ships none). Models are a map keyed main/secondary
 # because forms cannot write list elements; the chart ranges over the map values.
 # modelCache relies on form-friendly-values.patch.

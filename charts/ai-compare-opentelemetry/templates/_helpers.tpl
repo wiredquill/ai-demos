@@ -310,3 +310,13 @@ http://pipelines-service:{{ .Values.pipelines.service.port }}
 {{ .Values.pipelines.url | default "http://pipelines-service:9099" }}
 {{- end -}}
 {{- end }}
+
+{{/*
+Image pull secrets: .Values.imagePullSecrets plus global.imagePullSecrets, which
+is how SUSE AI Factory hands its delivered pull secret to every component
+(including charts that vendor this one as a subchart). Duplicates are dropped.
+*/}}
+{{- define "ai-compare-opentelemetry.imagePullSecrets" -}}
+{{- $global := (.Values.global | default dict).imagePullSecrets | default list -}}
+{{- toYaml (concat (.Values.imagePullSecrets | default list) $global | uniq) -}}
+{{- end }}

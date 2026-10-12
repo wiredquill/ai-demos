@@ -1,0 +1,52 @@
+questions:
+- variable: aic.ollama.url
+  label: Ollama URL
+  group: LLM
+  type: string
+  required: true
+  default: http://ollama-service:11434
+  description: Endpoint of the <b>ollama</b> component (release <code>ollama-service</code> creates Service <code>ollama-service</code>).
+- variable: aic.openWebui.url
+  label: Open WebUI URL
+  group: LLM
+  type: string
+  required: true
+  default: http://open-webui:80
+  description: Endpoint of the <b>open-webui</b> component (release <code>open-webui</code>).
+- variable: aic.pipelines.url
+  label: Pipelines URL
+  group: LLM
+  type: string
+  required: true
+  default: http://pipelines-service:9099
+  description: Endpoint of the <b>open-webui-pipelines</b> component (release <code>pipelines-service</code>).
+- variable: aic.aiCompare.service.type
+  label: Service Type
+  group: Service Access
+  type: enum
+  required: true
+  default: NodePort
+  options:
+  - NodePort
+  - LoadBalancer
+  - ClusterIP
+  description: How the AI Compare UI (7860) and HTTP API (8080) are exposed.
+- variable: aic.aiCompare.service.nodePort
+  label: UI NodePort
+  group: Service Access
+  type: int
+  default: 31701
+  show_if: aic.aiCompare.service.type=NodePort
+- variable: aic.aiCompare.service.httpApiNodePort
+  label: HTTP API NodePort
+  group: Service Access
+  type: int
+  default: 31702
+  show_if: aic.aiCompare.service.type=NodePort
+- variable: aic.aiCompare.observability.otlpEndpoint
+  label: OTLP Endpoint
+  group: Observability
+  type: string
+  required: false
+  default: http://opentelemetry-collector.observability.svc.cluster.local:4318
+  description: 'OpenTelemetry collector (OTLP HTTP). Default: the shared SUSE AI collector in namespace <code>observability</code>.'
