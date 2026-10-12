@@ -1,0 +1,45 @@
+questions:
+- variable: hr.model
+  label: Model served by Ollama
+  group: LLM
+  type: enum
+  required: true
+  default: llama3.2:latest
+  options:
+  - llama3.2:latest
+  - llama3.2:1b
+  - llama3.1:8b
+  - qwen2.5:7b
+  description: Must match the model served by the <b>ollama</b> component. Reported as gen_ai.request.model and sent on every request.
+- variable: hr.ollamaEndpoint
+  label: Ollama URL
+  group: LLM
+  type: string
+  required: true
+  default: http://ollama:11434
+  description: Endpoint of the <b>ollama</b> component (release <code>ollama</code> creates Service <code>ollama</code>).
+- variable: hr.service.type
+  label: Service Type
+  group: Service Access
+  type: enum
+  required: true
+  default: ClusterIP
+  options:
+  - ClusterIP
+  - NodePort
+  - LoadBalancer
+  description: How this app's Service is exposed. ClusterIP keeps it in-cluster (port-forward to reach it).
+- variable: hr.otlpEndpoint
+  label: OTLP Endpoint
+  group: Observability
+  type: string
+  required: false
+  default: ''
+  description: OpenTelemetry collector address (scheme://host:port).<br><br><b>Leave blank to auto-discover</b> the shared SUSE AI collector in the Collector Namespace below.
+- variable: hr.observability.collectorNamespace
+  label: Collector Namespace
+  group: Observability
+  type: string
+  required: false
+  default: observability
+  description: Namespace holding the shared SUSE AI OpenTelemetry collector (installed from the ai-observability-collector chart).

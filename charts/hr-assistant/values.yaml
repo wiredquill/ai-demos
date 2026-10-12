@@ -12,7 +12,9 @@ imagePullSecrets:
 # Used when observability.mode=existing. A single shared collector can serve every
 # namespace in the cluster; each release names itself via observability.serviceNamespace.
 otlpEndpoint: ''  # empty = auto-discover the collector Service at install time (see observability.collectorNamespace)
-ollamaEndpoint: 'http://my-hr-assistant-ollama:11434'
+# Used only when ollama.enabled=false: an external Ollama, e.g. the SUSE Ollama
+# chart deployed as the blueprint's ollama component (Service ollama:11434).
+ollamaEndpoint: ''
 collectGpuStats: 'false'  # Enable GPU metrics for demo
 
 # Reported as deployment.environment on every signal.
@@ -50,6 +52,10 @@ observability:
   # Image used by the pre-install OTLP connectivity-check hook Job (needs
   # /bin/sh + curl; SUSE BCI base ships both).
   checkImage: registry.suse.com/bci/bci-base:15.7
+
+  # Run the pre-install OTLP connectivity check. Component charts that send no
+  # telemetry of their own turn it off.
+  connectivityCheck: true
 
   # Reported as the service.namespace resource attribute, and the primary source
   # SUSE Observability uses to group this release's SUSE AI components.
@@ -122,6 +128,19 @@ opentelemetry:
         sourceNamespace: observability
         name: open-telemetry-collector
         image: registry.suse.com/bci/bci-base:15.7
+
+# Per-workload switches. All on (the default) is the all-in-one install.
+#
+# The SUSE AI Factory blueprint (catalog/blueprints/hr-assistant-*.yaml) deploys
+# SUSE's ollama, qdrant and opensearch charts plus one component chart per app
+# pod (charts/hr-assistant-{policy-db,handbook,app,load-gen}), each of which
+# vendors this chart with only its own workload switched on. Those releases
+# share fullnameOverride "hr-assistant", so the app Service names are the same
+# as in the all-in-one install.
+components:
+  hrAssistant: true
+  employeeHandbook: true
+  hrPolicyDb: true
 
 # Persistent load generator. Replaces the old CronJob approach, which created a
 # new pod every cycle and let it terminate — that churn made the load-gen pod
@@ -261,6 +280,10 @@ qdrant:
 # documents and queries them, so the topology shows hr-policy-db -> opensearch.
 opensearch:
   enabled: true
+  # Used only when enabled=false: REST URL of an external OpenSearch, e.g. the
+  # SUSE Application Collection opensearch chart deployed as a separate AI
+  # Factory blueprint component (Service opensearch-cluster-master:9200).
+  url: ""
   # SUSE Application Collection build (3.x line only).
   image:
     repository: dp.apps.rancher.io/containers/opensearch

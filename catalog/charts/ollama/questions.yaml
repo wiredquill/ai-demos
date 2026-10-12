@@ -1,0 +1,82 @@
+# Install form for the SUSE Application Collection ollama chart, added when
+# scripts/package-aif-suse-charts.sh republishes it to the wiredquill-ai-demos
+# repo (the upstream chart ships none). Models are a map keyed main/secondary
+# because forms cannot write list elements; the chart ranges over the map values.
+# modelCache relies on form-friendly-values.patch.
+questions:
+- variable: ollama.models.pull.main
+  group: Models
+  label: Main Model
+  description: Pulled at startup. The HR apps' "Model served by Ollama" must name one of the pulled models.
+  type: enum
+  default: llama3.2:latest
+  options:
+    - llama3.2:latest
+    - llama3.2:1b
+    - llama3.1:8b
+    - qwen2.5:7b
+- variable: ollama.models.pull.secondary
+  group: Models
+  label: Additional Model (optional)
+  description: A second model to pull, e.g. llama3.2:1b. Leave blank for none.
+  type: string
+  default: ""
+- variable: ollama.gpu.enabled
+  group: GPU
+  label: Use GPU
+  type: boolean
+  default: true
+- variable: ollama.gpu.number
+  group: GPU
+  label: Number of GPUs
+  type: int
+  default: 1
+  show_if: ollama.gpu.enabled=true
+- variable: resources.requests.memory
+  group: Resources
+  label: Memory Request
+  description: Ollama keeps the loaded model and its runner in host memory.
+  type: string
+  default: 4Gi
+- variable: resources.limits.memory
+  group: Resources
+  label: Memory Limit
+  type: string
+  default: 8Gi
+- variable: resources.limits.cpu
+  group: Resources
+  label: CPU Limit
+  type: string
+  default: "2"
+- variable: modelCache.nfs.enabled
+  group: Storage
+  label: Enable Shared NFS Model Cache (skip re-downloads)
+  description: Mount an NFS share as Ollama's model store so every install reuses pulled models. Needs TCP 2049 from the cluster nodes to the NFS server.
+  type: boolean
+  default: false
+- variable: modelCache.nfs.server
+  group: Storage
+  label: Shared NFS Model Cache — Server
+  description: NFS server hosting the shared cache, e.g. 10.0.9.10.
+  type: string
+  default: ""
+  show_if: modelCache.nfs.enabled=true
+- variable: modelCache.nfs.path
+  group: Storage
+  label: Shared NFS Model Cache — Path
+  type: string
+  default: /data/ai-models
+  show_if: modelCache.nfs.enabled=true
+- variable: persistentVolume.enabled
+  group: Storage
+  label: Persistent Volume (when NFS is off)
+  description: Keep pulled models on a PVC from the cluster default StorageClass. Off uses an emptyDir, so models are pulled again on every restart.
+  type: boolean
+  default: true
+  show_if: modelCache.nfs.enabled=false
+- variable: persistentVolume.size
+  group: Storage
+  label: Volume Size
+  type: string
+  default: 30Gi
+  show_if: modelCache.nfs.enabled=false && persistentVolume.enabled=true

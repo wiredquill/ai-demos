@@ -15,6 +15,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 CHARTS=(
   "vllm 0.1.10"
   "opensearch 3.8.0"
+  "ollama 1.76.0"
 )
 
 WORK=$(mktemp -d)

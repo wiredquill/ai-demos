@@ -1,0 +1,31 @@
+# Employee Handbook app - a single-workload release of charts/hr-assistant.
+#
+# Every value of the base chart can be set under "hr:". Everything except this
+# component's own workload is switched off; the shared fullnameOverride keeps
+# the Service names (hr-assistant-<workload>) the same as in the
+# all-in-one install, so the components find each other in one namespace.
+hr:
+  fullnameOverride: hr-assistant
+  serviceAccount:
+    create: false
+  components:
+    hrAssistant: false
+    employeeHandbook: true
+    hrPolicyDb: false
+  loadGenerator:
+    enabled: false
+  qdrant:
+    enabled: false
+    url: http://qdrant:6333
+  opensearch:
+    enabled: false
+    url: http://opensearch-cluster-master:9200
+  imagePullSecrets: []
+  ollama:
+    enabled: false
+  ollamaEndpoint: http://ollama:11434
+  model: llama3.2:latest
+  observability:
+    connectivityCheck: true
+  service:
+    type: ClusterIP

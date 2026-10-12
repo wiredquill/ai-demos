@@ -132,6 +132,31 @@ select the same **Model served by vLLM** in the three app forms.
 
 The all-in-one `hr-assistant-vllm` chart is unchanged for Rancher Apps installs.
 
+### hr-assistant 1.0.0: the Ollama variant, same layout
+
+| Component | Repo / version | Release | Pods |
+|---|---|---|---|
+| `ollama` | wiredquill-ai-demos 1.76.0 (SUSE chart + form) | `ollama` | Ollama, GPU (`ollama:11434`) |
+| `qdrant` | suse-ai-registry 1.19.0 | `qdrant` | Qdrant (`qdrant:6333`) |
+| `opensearch` | wiredquill-ai-demos 3.8.0 (SUSE chart + form) | `opensearch` | OpenSearch (`opensearch-cluster-master:9200`) |
+| `hr-assistant-policy-db` | wiredquill-ai-demos 0.1.0 | `hr-policy-db` | HR Policy DB + dashboard (NodePort 30080) |
+| `hr-assistant-handbook` | wiredquill-ai-demos 0.1.0 | `employee-handbook` | Employee Handbook |
+| `hr-assistant-app` | wiredquill-ai-demos 0.1.0 | `hr-assistant` | HR Assistant |
+| `hr-assistant-load-gen` | wiredquill-ai-demos 0.1.0 | `load-gen` | load generator + health-check emitter |
+
+That's seven components and seven pods. Ollama pulls its own models at startup,
+from **Main Model** and an optional **Additional Model** on its form, so the
+all-in-one chart's model-puller Job isn't used. The republished `ollama` chart
+applies `catalog/charts/ollama/form-friendly-values.patch`:
+- **Shared NFS Model Cache** mounts the share as Ollama's model store, using the
+  same layout as the ai-compare charts, and skips the PVC.
+- A blank model field is skipped. Without this it would fail the pull hook and
+  kill the container.
+
+Pick the same model in the app forms (**Model served by Ollama**). Both HR
+blueprints use the same release names, so install them in different namespaces,
+and change one dashboard NodePort if both run on one cluster.
+
 ### Installing a blueprint on a cluster with SUSE AI Factory
 
 **Prerequisites**
@@ -151,15 +176,15 @@ branch (`aif/hr-assistant-vllm`):
 ```bash
 git checkout main && git pull
 mkdir -p /tmp/aif && rm -f /tmp/aif/*.tgz
-for c in charts/hr-assistant-vllm charts/hr-assistant-vllm-*/; do
+for c in charts/hr-assistant charts/hr-assistant-vllm charts/hr-assistant-{,vllm-}{app,handbook,policy-db,load-gen}; do
   helm package "$c" --dependency-update -d /tmp/aif
 done
-# SUSE vllm + opensearch with install forms (needs: helm registry login dp.apps.rancher.io)
+# SUSE vllm, ollama and opensearch with install forms (needs: helm registry login dp.apps.rancher.io)
 scripts/package-aif-suse-charts.sh /tmp/aif
 git checkout aif/hr-assistant-vllm
 cp /tmp/aif/*.tgz .
 helm repo index . --url https://github.com/wiredquill/ai-demos
-git add index.yaml hr-assistant-vllm*.tgz vllm-*.tgz opensearch-*.tgz
+git add index.yaml hr-assistant*.tgz vllm-*.tgz ollama-*.tgz opensearch-*.tgz
 git commit -s -m "chore(aif): publish hr-assistant-vllm component charts"
 git push origin aif/hr-assistant-vllm
 ```
@@ -194,8 +219,8 @@ curl -sk -H "Authorization: Bearer $TOKEN" \
 
 **4. Create the blueprint** on the management cluster:
 ```bash
-kubectl apply -f catalog/blueprints/hr-assistant-vllm-1-5-0.yaml
-kubectl get blueprints.ai-factory.suse.com -l ai-factory.suse.com/blueprint-name=hr-assistant-vllm
+kubectl apply -f catalog/blueprints/hr-assistant-vllm-1-5-0.yaml   # and/or hr-assistant-1-0-0.yaml
+kubectl get blueprints.ai-factory.suse.com -l 'ai-factory.suse.com/blueprint-name in (hr-assistant,hr-assistant-vllm)'
 ```
 
 **5. Deploy it.** In Rancher, go to **AI Factory → Blueprints → SUSE AI HR

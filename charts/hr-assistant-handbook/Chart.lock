@@ -1,0 +1,6 @@
+dependencies:
+- name: hr-assistant
+  repository: file://../hr-assistant
+  version: 1.17.0
+digest: sha256:22bc3d24f88d96f58c4be473a8aac72e1537d197a9568ffbb0adafab9ee9592e
+generated: "2026-10-12T14:52:36.171903-07:00"

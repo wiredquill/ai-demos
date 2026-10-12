@@ -1,4 +1,4 @@
-{{- if not (include "hr-assistant.collectorEnabled" .) }}
+{{- if and .Values.observability.connectivityCheck (not (include "hr-assistant.collectorEnabled" .)) }}
 {{- $endpoint := include "hr-assistant.otlpEndpoint" . }}
 {{- $discovered := include "hr-assistant.discoveredCollectorEndpoint" . }}
 {{/*
@@ -18,7 +18,7 @@ external to validate.
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "hr-assistant.fullname" . }}-otel-check
+  name: {{ printf "%s-otel-check" .Release.Name | trunc 63 | trimSuffix "-" }}
   namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
