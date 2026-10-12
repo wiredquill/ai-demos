@@ -250,7 +250,7 @@ topology sent components=5 relations=4 status=200
 
 ## 7. SUSE AI Factory blueprint
 
-The `hr-assistant-vllm` blueprint (`catalog/blueprints/hr-assistant-vllm-1-4-1.yaml`)
+The `hr-assistant-vllm` blueprint (`catalog/blueprints/hr-assistant-vllm-1-4-2.yaml`)
 deploys this demo as SUSE's `vllm` (engine + router), `qdrant` and `opensearch`
 charts, plus four app components. Each app pod has a thin chart in
 `charts/hr-assistant-vllm-<component>`, which vendors this chart (alias `hr`) with

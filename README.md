@@ -88,14 +88,18 @@ deploy a blueprint, the AI Factory UI shows each component together with the
 install form from its chart's `questions.yaml`. An **AIWorkload** then deploys
 the components to a downstream cluster as Fleet bundles.
 
-### hr-assistant-vllm 1.4.1: SUSE charts plus the app pods
+### hr-assistant-vllm 1.4.2: SUSE charts plus the app pods
 
 The infrastructure components are SUSE's own charts, so the AI Factory UI shows
 the real chart name and version, just as `simple-chatbot-with-rag` does. SUSE's
 `vllm` and `opensearch` charts ship no install form, so
-`scripts/package-aif-suse-charts.sh` republishes them unchanged to
-`wiredquill-ai-demos`, keeping SUSE's name and version and adding the
-`questions.yaml` from `catalog/charts/<chart>/`. The version list for those two
+`scripts/package-aif-suse-charts.sh` republishes them to `wiredquill-ai-demos`,
+keeping SUSE's name and version and adding the `questions.yaml` from
+`catalog/charts/<chart>/`. For `vllm` it also applies
+`catalog/charts/vllm/form-friendly-values.patch`, which makes the form's Storage
+Class (`Default` = the cluster default) and Shared NFS Model Cache switch work.
+Upstream, an empty storage class disables dynamic provisioning, and shared storage
+switches on whenever the key exists. The version list for those two
 therefore shows only the versions republished there. Each of the four app pods has its own small chart
 with its own `questions.yaml`. Those charts vendor `charts/hr-assistant-vllm`
 (alias `hr`) and switch on only their own workload:
@@ -184,12 +188,12 @@ curl -sk -H "Authorization: Bearer $TOKEN" \
 
 **4. Create the blueprint** on the management cluster:
 ```bash
-kubectl apply -f catalog/blueprints/hr-assistant-vllm-1-4-1.yaml
+kubectl apply -f catalog/blueprints/hr-assistant-vllm-1-4-2.yaml
 kubectl get blueprints.ai-factory.suse.com -l ai-factory.suse.com/blueprint-name=hr-assistant-vllm
 ```
 
 **5. Deploy it.** In Rancher, go to **AI Factory → Blueprints → SUSE AI HR
-Assistant (vLLM) 1.4.1 → Deploy**. Pick the target cluster and a namespace that
+Assistant (vLLM) 1.4.2 → Deploy**. Pick the target cluster and a namespace that
 nothing else uses, then review each component (the `vllm` component holds the
 model and HF token).
 To deploy from YAML instead, use an AIWorkload. `componentValues` is keyed by
@@ -207,7 +211,7 @@ spec:
     sourceType: Blueprint
     blueprint:
       name: hr-assistant-vllm
-      version: "1.4.1"
+      version: "1.4.2"
   targetClusters:
     - c-m-xxxxxxxx                   # Rancher cluster ID, not the display name
   targetNamespace: hr-assistant-vllm

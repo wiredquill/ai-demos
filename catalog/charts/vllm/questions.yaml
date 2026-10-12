@@ -4,9 +4,9 @@
 # "main": Rancher forms cannot write list elements, and the chart's templates
 # range over modelSpec, so a map works the same as the documented list.
 #
-# Not offered on purpose: storageClass (the chart emits storageClassName for any
-# value, and "" disables dynamic provisioning) and sharedPvcStorage (the chart
-# enables it whenever the key exists, even with enabled: false).
+# storageClass and sharedPvcStorage rely on form-friendly-values.patch: upstream
+# renders storageClassName "" (no dynamic provisioning) for an empty class and
+# enables shared storage whenever the key exists, even with enabled: false.
 questions:
 - variable: servingEngineSpec.modelSpec.main.modelURL
   group: Model
@@ -51,11 +51,43 @@ questions:
   type: string
   default: 16Gi
 - variable: servingEngineSpec.modelSpec.main.pvcStorage
-  group: Engine Resources
+  group: Storage
   label: Model Cache PVC Size
   description: Weights are downloaded once into this PVC (cluster default StorageClass).
   type: string
   default: 100Gi
+- variable: servingEngineSpec.modelSpec.main.storageClass
+  group: Storage
+  label: Storage Class
+  description: "StorageClass for the model cache PVC. 'Default' uses the cluster's default StorageClass."
+  type: string
+  default: Default
+- variable: sharedPvcStorage.enabled
+  group: Storage
+  label: Enable Shared NFS Model Cache (skip re-downloads)
+  description: "Cache model weights once on a shared NFS volume that every install reuses instead of re-downloading. Needs TCP 2049 from the cluster nodes to the NFS server."
+  type: boolean
+  default: false
+- variable: sharedPvcStorage.nfs.server
+  group: Storage
+  label: Shared NFS Model Cache — Server
+  description: NFS server hosting the shared cache, e.g. 10.0.9.10.
+  type: string
+  default: ""
+  show_if: sharedPvcStorage.enabled=true
+- variable: sharedPvcStorage.nfs.path
+  group: Storage
+  label: Shared NFS Model Cache — Path
+  description: Directory on the NFS server for the model cache, e.g. /data/ai-models.
+  type: string
+  default: /data/ai-models
+  show_if: sharedPvcStorage.enabled=true
+- variable: sharedPvcStorage.size
+  group: Storage
+  label: Shared NFS Model Cache — Size
+  type: string
+  default: 200Gi
+  show_if: sharedPvcStorage.enabled=true
 - variable: routerSpec.routingLogic
   group: Router
   label: Routing Logic
