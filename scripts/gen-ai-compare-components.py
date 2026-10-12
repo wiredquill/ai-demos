@@ -1,6 +1,6 @@
 """Generate the per-pod app charts for the AI Compare SUSE AI Factory blueprints.
 
-For each variant, writes charts/<variant>-<component>: one chart per AI Compare
+For each variant, writes catalog/components/<variant>-<component>: one chart per AI Compare
 pod, each vendoring charts/<variant> (alias "aic") with only its own workload
 switched on. Ollama, Open WebUI and Pipelines are separate charts listed directly
 in the blueprints (catalog/blueprints/<variant>-*.yaml).
@@ -113,12 +113,12 @@ def dump(o):
 for variant, cfg in VARIANTS.items():
     for c in cfg["components"]:
         chart = f"{variant}-{c['name']}"
-        d = os.path.join(ROOT, "charts", chart); os.makedirs(os.path.join(d, "templates"), exist_ok=True)
+        d = os.path.join(ROOT, "catalog", "components", chart); os.makedirs(os.path.join(d, "templates"), exist_ok=True)
         meta = {
             "apiVersion": "v2", "name": chart,
             "description": f"{cfg['title']} component: {c['pod']}. One of the components of the {variant} SUSE AI Factory blueprint.",
             "type": "application", "version": cfg["version"], "appVersion": "latest",
-            "dependencies": [{"name": variant, "version": cfg["base_range"], "repository": f"file://../{variant}", "alias": "aic"}],
+            "dependencies": [{"name": variant, "version": cfg["base_range"], "repository": f"file://../../../charts/{variant}", "alias": "aic"}],
             "keywords": ["ai", "llm", "ollama", "open-webui", "demo", "suse-ai-factory"],
             "maintainers": [{"name": "SUSE AI Team", "email": "ai-team@suse.com"}],
             "home": "https://github.com/wiredquill/ai-demos",

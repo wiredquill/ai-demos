@@ -67,19 +67,8 @@ env/
 Thumbs.db
 
 # Vendored base chart of the hr-assistant-vllm component charts (rebuilt by helm package --dependency-update)
-charts/hr-assistant-vllm-*/charts/
-charts/hr-assistant-vllm-*/Chart.lock
-charts/hr-assistant-app/charts/
-charts/hr-assistant-app/Chart.lock
-charts/hr-assistant-handbook/charts/
-charts/hr-assistant-handbook/Chart.lock
-charts/hr-assistant-policy-db/charts/
-charts/hr-assistant-policy-db/Chart.lock
-charts/hr-assistant-load-gen/charts/
-charts/hr-assistant-load-gen/Chart.lock
 
 # Vendored base chart of the ai-compare component charts
-charts/ai-compare*-app/charts/
-charts/ai-compare*-app/Chart.lock
-charts/ai-compare*-load-gen/charts/
-charts/ai-compare*-load-gen/Chart.lock
+# AI Factory component charts vendor their base chart at package time
+catalog/components/*/charts/
+catalog/components/*/Chart.lock

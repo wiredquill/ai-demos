@@ -8,7 +8,7 @@ appVersion: latest
 dependencies:
 - name: ai-compare-opentelemetry
   version: ~0.1
-  repository: file://../ai-compare-opentelemetry
+  repository: file://../../../charts/ai-compare-opentelemetry
   alias: aic
 keywords:
 - ai

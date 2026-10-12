@@ -222,8 +222,9 @@ branch (`aif/hr-assistant-vllm`):
 ```bash
 git checkout main && git pull
 mkdir -p /tmp/aif && rm -f /tmp/aif/*.tgz
-for c in charts/hr-assistant charts/hr-assistant-vllm charts/hr-assistant-{,vllm-}{app,handbook,policy-db,load-gen} \
-         charts/ai-compare{,-suse,-opentelemetry}-app charts/ai-compare-opentelemetry-load-gen; do
+# Base charts plus the per-workload component charts (catalog/components/, kept out
+# of the gh-pages repo because they exist only for the blueprints)
+for c in charts/hr-assistant charts/hr-assistant-vllm catalog/components/*/; do
   helm package "$c" --dependency-update -d /tmp/aif
 done
 # SUSE vllm, ollama, opensearch, open-webui and open-webui-pipelines with install forms
