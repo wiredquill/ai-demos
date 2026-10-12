@@ -1,0 +1,101 @@
+apiVersion: v1
+entries:
+  ollama:
+  - annotations:
+      artifacthub.io/category: ai-machine-learning
+      artifacthub.io/changes: |
+        - kind: changed
+          description: upgrade app version to v0.32.14
+          links:
+            - name: Ollama release v0.32.14
+              url: https://github.com/ollama/ollama/releases/tag/v0.32.14
+    apiVersion: v2
+    appVersion: 0.32.14
+    created: "2026-10-12T15:07:24.57843-07:00"
+    description: Get up and running with large language models locally.
+    digest: b940c7788e71e99f2fce58ca15b3d3260de6a4791326ac03e76b7c9e328472a6
+    home: https://ollama.ai/
+    icon: https://ollama.ai/public/ollama.png
+    keywords:
+    - ai
+    - llm
+    - llama
+    - mistral
+    kubeVersion: ^1.16.0-0
+    maintainers:
+    - email: contact@otwld.com
+      name: OTWLD
+    name: ollama
+    sources:
+    - https://github.com/ollama/ollama
+    - https://github.com/otwld/ollama-helm
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/ollama-1.76.0.tgz
+    version: 1.76.0
+  open-webui:
+  - annotations:
+      licenses: MIT
+    apiVersion: v2
+    appVersion: 0.6.41
+    created: "2026-10-12T15:07:24.581248-07:00"
+    dependencies:
+    - condition: ollama.enabled
+      import-values:
+      - child: service
+        parent: ollama.service
+      name: ollama
+      repository: https://otwld.github.io/ollama-helm/
+      version: '>=0.24.0'
+    - condition: pipelines.enabled
+      import-values:
+      - child: service
+        parent: pipelines.service
+      name: pipelines
+      repository: https://helm.openwebui.com
+      version: '>=0.0.1'
+    - condition: tika.enabled
+      name: tika
+      repository: https://apache.jfrog.io/artifactory/tika
+      version: '>=2.9.0'
+    description: "Open WebUI: A User-Friendly Web Interface for Chat Interactions
+      \U0001F44B"
+    digest: 1c82781b30a929020e1c5c9e53afb2c67a9557a6970d6694a0201465e81d2c92
+    home: https://www.openwebui.com/
+    icon: https://raw.githubusercontent.com/open-webui/open-webui/main/static/favicon.png
+    keywords:
+    - llm
+    - chat
+    - web-ui
+    - open-webui
+    name: open-webui
+    sources:
+    - https://github.com/open-webui/helm-charts
+    - https://github.com/open-webui/open-webui/pkgs/container/open-webui
+    - https://github.com/otwld/ollama-helm/
+    - https://hub.docker.com/r/ollama/ollama
+    urls:
+    - https://github.com/wiredquill/ai-demos/open-webui-8.19.0.tgz
+    version: 8.19.0
+  pipelines:
+  - annotations:
+      licenses: MIT
+    apiVersion: v2
+    appVersion: alpha
+    created: "2026-10-12T15:07:24.581505-07:00"
+    description: 'Pipelines: UI-Agnostic OpenAI API Plugin Framework'
+    digest: d9c961fad90e68d66b7371acb0316d8d5db641e4b677707e6d14eec23ae60f3d
+    home: https://github.com/open-webui/pipelines
+    icon: https://github.com/open-webui/pipelines/raw/main/header.png
+    keywords:
+    - llm
+    - chat
+    - web-ui
+    name: pipelines
+    sources:
+    - https://github.com/open-webui/helm-charts
+    - https://github.com/open-webui/pipelines/pkgs/container/pipelines
+    urls:
+    - https://github.com/wiredquill/ai-demos/pipelines-0.9.0.tgz
+    version: 0.9.0
+generated: "2026-10-12T15:07:24.576909-07:00"
