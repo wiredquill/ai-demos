@@ -8,7 +8,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-10-12T12:53:03.823588-07:00"
+    created: "2026-10-12T13:43:45.29584-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -45,7 +45,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-10-12T12:53:03.822888-07:00"
+    created: "2026-10-12T13:43:45.29509-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -78,7 +78,39 @@ entries:
   hr-assistant-vllm:
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T12:53:03.830609-07:00"
+    created: "2026-10-12T13:43:45.30509-07:00"
+    dependencies:
+    - alias: vllm
+      condition: vllm.enabled
+      name: vllm
+      repository: file://charts/vllm
+      version: 0.1.10
+    description: SUSE AI HR Assistant (vLLM variant) - Intelligent Employee Support
+      and Policy Management served by SUSE vLLM, with native engine-level GenAI metrics
+    digest: c4d8fc6b662a854cced2add5ec513a0b77ec694388fb34e30234050b6e77bc3f
+    home: https://www.suse.com/products/ai/
+    keywords:
+    - ai
+    - llm
+    - observability
+    - hr
+    - demo
+    - openlit
+    - vllm
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: hr-assistant-vllm
+    sources:
+    - https://github.com/openlit/openlit
+    - https://github.com/vllm-project/vllm
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/hr-assistant-vllm-0.1.13.tgz
+    version: 0.1.13
+  - apiVersion: v2
+    appVersion: latest
+    created: "2026-10-12T13:43:45.302847-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -110,7 +142,7 @@ entries:
     version: 0.1.12
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T12:53:03.834388-07:00"
+    created: "2026-10-12T13:43:45.30873-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -142,7 +174,7 @@ entries:
     version: 0.1.3
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T12:53:03.833008-07:00"
+    created: "2026-10-12T13:43:45.30739-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -174,7 +206,7 @@ entries:
     version: 0.1.2
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T12:53:03.828163-07:00"
+    created: "2026-10-12T13:43:45.300327-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -206,7 +238,7 @@ entries:
     version: 0.1.1
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T12:53:03.825747-07:00"
+    created: "2026-10-12T13:43:45.298005-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -241,7 +273,36 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Assistant app
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T12:53:03.836719-07:00"
+    created: "2026-10-12T13:43:45.313414-07:00"
+    dependencies:
+    - alias: hr
+      name: hr-assistant-vllm
+      repository: file://../hr-assistant-vllm
+      version: 0.1.13
+    description: 'HR Assistant (vLLM) component: HR Assistant app. One of the components
+      of the hr-assistant-vllm SUSE AI Factory blueprint.'
+    digest: a8b6f0202011d40d0c609393e07db8b955142f21d199b85badfe59c9b631aae0
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - hr
+    - demo
+    - vllm
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: hr-assistant-vllm-app
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/hr-assistant-vllm-app-0.1.1.tgz
+    version: 0.1.1
+  - annotations:
+      catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Assistant app
+    apiVersion: v2
+    appVersion: latest
+    created: "2026-10-12T13:43:45.311207-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -271,7 +332,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - vLLM serving engine
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T12:53:03.839258-07:00"
+    created: "2026-10-12T13:43:45.315794-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -301,7 +362,36 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - Employee Handbook app
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T12:53:03.841379-07:00"
+    created: "2026-10-12T13:43:45.320233-07:00"
+    dependencies:
+    - alias: hr
+      name: hr-assistant-vllm
+      repository: file://../hr-assistant-vllm
+      version: 0.1.13
+    description: 'HR Assistant (vLLM) component: Employee Handbook app. One of the
+      components of the hr-assistant-vllm SUSE AI Factory blueprint.'
+    digest: 6f946a985c291bb5c9a9193f903671c68ff50bdb3a998637c8768cfda11d6faf
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - hr
+    - demo
+    - vllm
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: hr-assistant-vllm-handbook
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/hr-assistant-vllm-handbook-0.1.1.tgz
+    version: 0.1.1
+  - annotations:
+      catalog.cattle.io/display-name: HR Assistant (vLLM) - Employee Handbook app
+    apiVersion: v2
+    appVersion: latest
+    created: "2026-10-12T13:43:45.317899-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -332,7 +422,37 @@ entries:
         emitter
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T12:53:03.84385-07:00"
+    created: "2026-10-12T13:43:45.324728-07:00"
+    dependencies:
+    - alias: hr
+      name: hr-assistant-vllm
+      repository: file://../hr-assistant-vllm
+      version: 0.1.13
+    description: 'HR Assistant (vLLM) component: Load generator + health-check emitter.
+      One of the components of the hr-assistant-vllm SUSE AI Factory blueprint.'
+    digest: e3525c1820e75afd1bf904bf48a277be5c38659350ddf0da46468b68392a7702
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - hr
+    - demo
+    - vllm
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: hr-assistant-vllm-load-gen
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/hr-assistant-vllm-load-gen-0.1.1.tgz
+    version: 0.1.1
+  - annotations:
+      catalog.cattle.io/display-name: HR Assistant (vLLM) - Load generator + health-check
+        emitter
+    apiVersion: v2
+    appVersion: latest
+    created: "2026-10-12T13:43:45.322632-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -362,7 +482,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - OpenSearch search engine
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T12:53:03.846317-07:00"
+    created: "2026-10-12T13:43:45.327034-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -392,7 +512,36 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Policy DB app + dashboard
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T12:53:03.848518-07:00"
+    created: "2026-10-12T13:43:45.331548-07:00"
+    dependencies:
+    - alias: hr
+      name: hr-assistant-vllm
+      repository: file://../hr-assistant-vllm
+      version: 0.1.13
+    description: 'HR Assistant (vLLM) component: HR Policy DB app + dashboard. One
+      of the components of the hr-assistant-vllm SUSE AI Factory blueprint.'
+    digest: bb20d83b0552c933a272ada2f943b58d811942592b65600d7b841293bf2e2639
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - hr
+    - demo
+    - vllm
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: hr-assistant-vllm-policy-db
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/hr-assistant-vllm-policy-db-0.1.1.tgz
+    version: 0.1.1
+  - annotations:
+      catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Policy DB app + dashboard
+    apiVersion: v2
+    appVersion: latest
+    created: "2026-10-12T13:43:45.329133-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -422,7 +571,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - Qdrant vector database
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T12:53:03.850944-07:00"
+    created: "2026-10-12T13:43:45.333952-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -452,7 +601,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - vLLM router
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T12:53:03.85304-07:00"
+    created: "2026-10-12T13:43:45.336042-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -477,4 +626,4 @@ entries:
     urls:
     - https://github.com/wiredquill/ai-demos/hr-assistant-vllm-router-0.1.0.tgz
     version: 0.1.0
-generated: "2026-10-12T12:53:03.821636-07:00"
+generated: "2026-10-12T13:43:45.29391-07:00"
