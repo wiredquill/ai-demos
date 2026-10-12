@@ -65,3 +65,7 @@ env/
 # OS
 .DS_Store
 Thumbs.db
+
+# Vendored base chart of the hr-assistant-vllm component charts (rebuilt by helm package --dependency-update)
+charts/hr-assistant-vllm-*/charts/
+charts/hr-assistant-vllm-*/Chart.lock

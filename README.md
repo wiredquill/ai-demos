@@ -79,91 +79,131 @@ This repository is designed to grow as a catalog of AI applications. To add new 
 
 ---
 
-## 🧩 SUSE AI Factory Blueprint on vimes (hr-assistant-vllm)
+## 🧩 SUSE AI Factory Blueprints
 
-`charts/hr-assistant-vllm` is registered as a **SUSE AI Factory Blueprint** on the
-vimes management cluster, installable through the AI Factory wizard with a
-`questions.yaml` form (not a raw YAML editor). This section documents how to
-package, publish, and register it — the same flow used for `ollama-suse`.
+The `catalog/blueprints/` directory holds SUSE AI Factory **Blueprints** for the
+demos. A Blueprint (`ai-factory.suse.com/v1alpha1`, cluster-scoped, on the
+Rancher management cluster) lists Helm charts as **components**. When you edit or
+deploy a blueprint, the AI Factory UI shows each component together with the
+install form from its chart's `questions.yaml`. An **AIWorkload** then deploys
+the components to a downstream cluster as Fleet bundles.
 
-### How it works
-- A **Blueprint** is a plain cluster-scoped CR (`ai-factory.suse.com/v1alpha1`).
-- The **form** is served from the chart's `questions.yaml` via a git-backed
-  **ClusterRepo** catalog. The AI Factory wizard calls Rancher's
-  `catalog/getVersionInfo`; if the chart metadata contains `questions`, it
-  renders the form automatically.
-- An **AIWorkload** deploys the blueprint to a target cluster via Fleet bundles.
+### hr-assistant-vllm 1.5.0: SUSE charts plus the app pods
 
-### 1. Package the chart (with vendored vllm subchart)
+The infrastructure components are SUSE's own charts, so the AI Factory UI shows
+the real chart name and version, just as `simple-chatbot-with-rag` does. SUSE's
+`vllm` and `opensearch` charts ship no install form, so
+`scripts/package-aif-suse-charts.sh` republishes them to `wiredquill-ai-demos`,
+keeping SUSE's name and version and adding the `questions.yaml` from
+`catalog/charts/<chart>/`. For `vllm` it also applies
+`catalog/charts/vllm/form-friendly-values.patch`. The patch:
+- makes the form's Storage Class (`Default` = the cluster default) and Shared NFS
+  Model Cache switch work. Upstream, an empty storage class disables dynamic
+  provisioning, and shared storage switches on whenever the key exists.
+- points `HF_HOME` at the NFS cache when it's enabled. Upstream mounts the cache
+  but keeps downloading into the per-install PVC.
+- sets `app.kubernetes.io/managed-by: Helm` on the engine and router Deployments'
+  and Services' own labels. The cluster rewrites upstream's lowercase `helm`, so
+  Fleet reported the vllm bundle as Modified. Selectors and pod labels keep `helm`,
+  because selectors are immutable and changing them would make upgrades fail. The version list for those two
+therefore shows only the versions republished there. Each of the four app pods has its own small chart
+with its own `questions.yaml`. Those charts vendor `charts/hr-assistant-vllm`
+(alias `hr`) and switch on only their own workload:
+
+| Component | Repo / version | Release | Pods |
+|---|---|---|---|
+| `vllm` | wiredquill-ai-demos 0.1.10 (SUSE chart + form) | `vllm` | engine (GPU) + router (`vllm-router-service`) |
+| `qdrant` | suse-ai-registry 1.19.0 | `qdrant` | Qdrant (`qdrant:6333`) |
+| `opensearch` | wiredquill-ai-demos 3.8.0 (SUSE chart + form) | `opensearch` | OpenSearch (`opensearch-cluster-master:9200`) |
+| `hr-assistant-vllm-policy-db` | wiredquill-ai-demos 0.1.1 | `hr-policy-db` | HR Policy DB + dashboard (NodePort 30081) |
+| `hr-assistant-vllm-handbook` | wiredquill-ai-demos 0.1.1 | `employee-handbook` | Employee Handbook |
+| `hr-assistant-vllm-app` | wiredquill-ai-demos 0.1.1 | `hr-assistant` | HR Assistant |
+| `hr-assistant-vllm-load-gen` | wiredquill-ai-demos 0.1.1 | `load-gen` | load generator + health-check emitter |
+
+That's seven components and eight pods. SUSE's `vllm` chart provides both the
+engine and the router, and a blueprint can list each `chartName` only once.
+
+Install everything into **one namespace**. The release names are pinned because the
+app forms default to the SUSE charts' Service names (`vllm-router-service`,
+`qdrant`, `opensearch-cluster-master`). The app components share
+`fullnameOverride: hr-assistant-vllm`, so they reach each other as
+`hr-assistant-vllm-<app>`. If the `vllm` component serves a different model,
+select the same **Model served by vLLM** in the three app forms.
+
+The all-in-one `hr-assistant-vllm` chart is unchanged for Rancher Apps installs.
+
+### Installing a blueprint on a cluster with SUSE AI Factory
+
+**Prerequisites**
+- A Rancher management cluster with SUSE AI Factory installed (the `aif-operator`
+  and the AI Factory UI extension).
+- A downstream target cluster with:
+  - an NVIDIA GPU and the GPU operator;
+  - a default StorageClass;
+  - the shared SUSE AI collector (`charts/ai-observability-collector`, Service
+    `opentelemetry-collector` in namespace `observability`);
+  - pull secrets named `application-collection` and `suse-registry` in the target
+    namespace, or set `hr.imagePullSecrets` in each form.
+
+**1. Publish the charts to the git ClusterRepo AI Factory reads.** Rancher's git
+catalog indexes only a root `index.yaml` plus packaged `.tgz` files on the tracked
+branch (`aif/hr-assistant-vllm`):
 ```bash
-cd charts/hr-assistant-vllm
-helm dependency build .            # vendors charts/vllm (file:// dep)
-helm package . -d <repo-root>      # -> hr-assistant-vllm-<ver>.tgz
-# verify questions.yaml + subchart are inside
-tar -tzf hr-assistant-vllm-<ver>.tgz | grep -E "questions.yaml|charts/vllm/Chart.yaml"
-```
-
-### 2. Publish to a git ClusterRepo (root index.yaml + .tgz required)
-Rancher's git catalog indexer does **not** index bare chart source dirs — it
-needs a root `index.yaml` plus the packaged `.tgz` committed to the branch the
-ClusterRepo tracks. The index URL host must match `spec.gitRepo` (github.com,
-not raw.githubusercontent.com).
-```bash
+git checkout main && git pull
+mkdir -p /tmp/aif && rm -f /tmp/aif/*.tgz
+for c in charts/hr-assistant-vllm charts/hr-assistant-vllm-*/; do
+  helm package "$c" --dependency-update -d /tmp/aif
+done
+# SUSE vllm + opensearch with install forms (needs: helm registry login dp.apps.rancher.io)
+scripts/package-aif-suse-charts.sh /tmp/aif
+git checkout aif/hr-assistant-vllm
+cp /tmp/aif/*.tgz .
 helm repo index . --url https://github.com/wiredquill/ai-demos
-git add index.yaml hr-assistant-vllm-<ver>.tgz
-git commit -m "chore(hr-assistant-vllm): package <ver> for AI Factory"
-git push origin <branch>          # e.g. aif/hr-assistant-vllm
+git add index.yaml hr-assistant-vllm*.tgz vllm-*.tgz opensearch-*.tgz
+git commit -s -m "chore(aif): publish hr-assistant-vllm component charts"
+git push origin aif/hr-assistant-vllm
 ```
 
-### 3. Create the ClusterRepo on vimes (management cluster)
+**2. Register the ClusterRepo** (once per management cluster):
 ```yaml
 apiVersion: catalog.cattle.io/v1
 kind: ClusterRepo
 metadata:
-  name: wiredquill-ai-demos
+  name: wiredquill-ai-demos   # blueprints reference this as chartRepo
 spec:
   gitRepo: https://github.com/wiredquill/ai-demos
   gitBranch: aif/hr-assistant-vllm
 ```
 ```bash
-kubectl --context local apply -f clusterrepo.yaml
-# wait for Downloaded=True + index populated
+kubectl apply -f clusterrepo.yaml
+# after a push, force a refresh and confirm the new commit was picked up
+kubectl patch clusterrepo wiredquill-ai-demos --type=merge -p "{\"spec\":{\"forceUpdate\":\"$(date -u +%FT%TZ)\"}}"
 kubectl get clusterrepo wiredquill-ai-demos -o jsonpath='{.status.commit}'
 ```
+The operator fetches charts from git ClusterRepos at deploy time, which needs
+`Settings.spec.rancherCatalog` set (a Rancher token in a secret). On vimes, use
+`url: https://rancher.cattle-system` and `insecureSkipVerify: true`.
 
-### 4. Verify the questions form renders
-Probe the exact endpoint the wizard uses (Bearer token from `~/.kube/vimes.yaml`):
+**3. Check that a component's form will render.** This is the endpoint the wizard
+calls; the response must include a top-level `questions` array:
 ```bash
 curl -sk -H "Authorization: Bearer $TOKEN" \
-  "https://rancher.vimes.dna-42.com/v1/catalog.cattle.io.clusterrepos/wiredquill-ai-demos?link=info&chartName=hr-assistant-vllm&version=<ver>"
+  "https://<rancher>/v1/catalog.cattle.io.clusterrepos/wiredquill-ai-demos?link=info&chartName=hr-assistant-vllm-policy-db&version=0.1.1" \
+  | jq '.questions | length'
 ```
-The JSON must contain a top-level `questions` array (20 fields for this chart).
-If it returns no `questions`, the index is empty or the URL host mismatches —
-recheck step 2.
 
-### 5. Create the Blueprint
-```yaml
-apiVersion: ai-factory.suse.com/v1alpha1
-kind: Blueprint
-metadata:
-  labels:
-    ai-factory.suse.com/blueprint-name: hr-assistant-vllm
-    ai-factory.suse.com/blueprint-version: <ver>
-  name: hr-assistant-vllm-<ver-dashed>
-spec:
-  displayName: "HR Assistant (vLLM)"
-  version: "<ver>"
-  description: SUSE AI HR Assistant demo served by SUSE vLLM
-  components:
-    - chartName: hr-assistant-vllm
-      chartRepo: wiredquill-ai-demos
-      chartVersion: "<ver>"
-```
+**4. Create the blueprint** on the management cluster:
 ```bash
-kubectl --context local apply -f blueprint.yaml
+kubectl apply -f catalog/blueprints/hr-assistant-vllm-1-5-0.yaml
+kubectl get blueprints.ai-factory.suse.com -l ai-factory.suse.com/blueprint-name=hr-assistant-vllm
 ```
 
-### 6. Deploy via an AIWorkload (Fleet bundle)
+**5. Deploy it.** In Rancher, go to **AI Factory → Blueprints → SUSE AI HR
+Assistant (vLLM) 1.5.0 → Deploy**. Pick the target cluster and a namespace that
+nothing else uses, then review each component (the `vllm` component holds the
+model and HF token).
+To deploy from YAML instead, use an AIWorkload. `componentValues` is keyed by
+chart name, and values sit under `hr:`:
 ```yaml
 apiVersion: ai-factory.suse.com/v1alpha1
 kind: AIWorkload
@@ -171,45 +211,55 @@ metadata:
   name: hr-assistant-vllm
   namespace: aif-operator
 spec:
-  displayName: "HR Assistant (vLLM)"
-  deployStrategy: FleetBundle        # REQUIRED for Blueprint sources (Helm default creates nothing)
+  displayName: HR Assistant (vLLM)
+  deployStrategy: FleetBundle        # required for Blueprint sources
   source:
     sourceType: Blueprint
     blueprint:
       name: hr-assistant-vllm
-      version: "<ver>"
+      version: "1.5.0"
   targetClusters:
-    - <rancher-cluster-id>           # e.g. c-m-sw729qft (ai-4090); NOT the friendly name
+    - c-m-xxxxxxxx                   # Rancher cluster ID, not the display name
   targetNamespace: hr-assistant-vllm
   componentValues:
-    - componentName: hr-assistant-vllm
+    - componentName: hr-assistant-vllm-policy-db
       values:
-        otlpEndpoint: http://opentelemetry-collector.observability.svc.cluster.local:4318
+        hr:
+          service:
+            nodePort: 30082          # if 30081 is taken on the cluster
 ```
-> **Gotchas (all hit in practice):**
-> - `deployStrategy` must be `FleetBundle` — the default `Helm` produces **no**
->   bundle for Blueprint-sourced workloads (workload sits `Pending` forever).
-> - `targetClusters` takes the **Rancher cluster ID** (`c-m-xxx`), not the Fleet
->   friendly name. Find it: `kubectl get clusters.fleet.cattle.io -A -o
->   custom-columns=NAME:.metadata.name,ID:.metadata.labels.management\\.cattle\\.io/cluster-name`.
-> - The operator needs `Settings.spec.rancherCatalog` configured (a valid Rancher
->   token in a secret) to fetch charts from git-backed ClusterRepos at deploy
->   time; on vimes set `url: https://rancher.cattle-system` (cert-valid name) and
->   `insecureSkipVerify: true` (lab cluster).
-> - The operator watches AIWorkloads in **all** namespaces (no namespace filter),
->   so the CR can live in `aif-operator` or the target namespace. It does **not**
->   create per-cluster child workloads or delete a healthy parent — if you see a
->   workload named `<name>-<clusterID>` in the target namespace, it was created
->   by you/the UI, not the operator.
-> - `Degraded` phase with the bundle in a `Modified` re-apply loop is Fleet
->   re-patching `app.kubernetes.io/managed-by: helm` labels — cosmetic, the app
->   runs fine. Check `kubectl top pods` to confirm resources are healthy.
 
-### 7. OTel defaults (chart 0.1.1+)
-The chart now defaults `otlpEndpoint` to
-`http://opentelemetry-collector.observability.svc.cluster.local:4318` and no
-longer hardcodes a router OTel server. Override `otlpEndpoint` per cluster in
-`componentValues` if the collector FQDN differs.
+**6. Verify** on the target cluster. Expect eight pods (vLLM engine and router,
+qdrant, opensearch-cluster-master, and the four `hr-assistant-vllm-*` apps):
+```bash
+kubectl get pods -n hr-assistant-vllm
+kubectl logs -n hr-assistant-vllm deploy/hr-assistant-vllm-load-gen -c load-gen --tail=5
+```
+
+> **Gotchas** (all hit in practice)
+> - `deployStrategy` must be `FleetBundle`. With the default `Helm`, a
+>   Blueprint-sourced workload creates nothing and stays `Pending`.
+> - `targetClusters` takes the Rancher cluster ID (`c-m-…`). Look it up with
+>   `kubectl get clusters.fleet.cattle.io -A -o custom-columns=NAME:.metadata.name,ID:.metadata.labels.management\\.cattle\\.io/cluster-name`.
+> - A `Degraded` phase with the bundle in a `Modified` loop is Fleet re-patching
+>   `app.kubernetes.io/managed-by` labels. It's cosmetic; the pods run fine.
+> - The engine downloads the model on first start (~15 GB for Qwen2.5-7B). Until
+>   it's ready, the app pods answer `/ask` with errors.
+> - The engine reserves 90% of GPU memory. If another vLLM engine already holds the
+>   GPU (for example a leftover all-in-one install), it fails with `Free memory on
+>   device … is less than desired GPU memory utilization`.
+> - On Rancher-provisioned clusters, the AIWorkload can show `Degraded` even when
+>   every bundle is Ready. The operator tracks the target under both its cluster ID
+>   (`c-m-…`, which stays Pending) and its Fleet name (which shows Running). Check
+>   the Fleet bundles and the pods instead.
+> - The first engine start downloads the model unless the Shared NFS Model Cache
+>   already holds it. An interrupted Hugging Face download makes the engine exit
+>   once, and the restart resumes the download.
+> - Editing a blueprint in the UI saves a new blueprint version with every value
+>   baked in, secrets such as `hf_token` included. It takes the next patch version
+>   (e.g. 1.4.2 → 1.4.3), so publish repository versions with a minor bump to avoid
+>   overwriting a UI-saved one. Blueprints are readable across
+>   the whole management cluster.
 
 ---
 

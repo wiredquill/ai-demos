@@ -290,6 +290,20 @@ http://{{ include "hr-assistant.fullname" . }}-qdrant:{{ .Values.qdrant.service.
 {{- end }}
 
 {{/*
+OpenSearch REST URL. The bundled OpenSearch (opensearch.enabled) is used when
+enabled; otherwise opensearch.url points at an external OpenSearch, e.g. the
+SUSE Application Collection opensearch chart deployed as its own AI Factory
+blueprint component (Service opensearch-cluster-master).
+*/}}
+{{- define "hr-assistant.opensearchUrl" -}}
+{{- if .Values.opensearch.enabled -}}
+http://{{ include "hr-assistant.fullname" . }}-opensearch:{{ .Values.opensearch.service.port }}
+{{- else -}}
+{{ .Values.opensearch.url | default "http://opensearch-cluster-master:9200" }}
+{{- end -}}
+{{- end }}
+
+{{/*
 Whether a Qdrant (bundled or external) is in use, so the collector scrapes it.
 */}}
 {{- define "hr-assistant.qdrantInUse" -}}

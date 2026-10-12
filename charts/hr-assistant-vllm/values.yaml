@@ -61,6 +61,10 @@ observability:
   # /bin/sh + curl; SUSE BCI base ships both).
   checkImage: registry.suse.com/bci/bci-base:15.7
 
+  # Run the pre-install OTLP connectivity check. Component charts that send no
+  # telemetry of their own (vLLM, Qdrant, OpenSearch) turn it off.
+  connectivityCheck: true
+
   # Reported as the service.namespace resource attribute, and the primary source
   # SUSE Observability uses to group this release's SUSE AI components.
   #
@@ -132,6 +136,21 @@ opentelemetry:
         sourceNamespace: observability
         name: open-telemetry-collector
         image: registry.suse.com/bci/bci-base:15.7
+
+# Per-workload switches. All on (the default) is the all-in-one install.
+#
+# The SUSE AI Factory blueprint (catalog/blueprints/hr-assistant-vllm-*.yaml)
+# instead deploys every pod as its own component chart (charts/hr-assistant-vllm-*),
+# each of which vendors this chart with only its own workload switched on.
+# Those releases share fullnameOverride "hr-assistant-vllm", so the Service
+# names the apps use to reach each other are the same as in the all-in-one
+# install. qdrant.enabled, opensearch.enabled, loadGenerator.enabled and
+# vllm.enabled (with vllm.servingEngineSpec.enableEngine /
+# vllm.routerSpec.enableRouter) switch the remaining workloads.
+components:
+  hrAssistant: true
+  employeeHandbook: true
+  hrPolicyDb: true
 
 # Persistent load generator. Replaces the old CronJob approach, which created a
 # new pod every cycle and let it terminate — that churn made the load-gen pod
@@ -345,6 +364,10 @@ qdrant:
 # documents and queries them, so the topology shows hr-policy-db -> opensearch.
 opensearch:
   enabled: true
+  # Used only when enabled=false: REST URL of an external OpenSearch, e.g. the
+  # SUSE Application Collection opensearch chart deployed as a separate AI
+  # Factory blueprint component (Service opensearch-cluster-master:9200).
+  url: ""
   # SUSE Application Collection build (3.x line only).
   image:
     repository: dp.apps.rancher.io/containers/opensearch

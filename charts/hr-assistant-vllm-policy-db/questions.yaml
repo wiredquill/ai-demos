@@ -1,0 +1,66 @@
+questions:
+- variable: hr.model
+  label: Model served by vLLM
+  group: LLM
+  type: enum
+  required: true
+  default: Qwen/Qwen2.5-7B-Instruct
+  options:
+  - Qwen/Qwen2.5-7B-Instruct
+  - Qwen/Qwen3.6-35B-A3B
+  - meta-llama/Llama-3.3-70B-Instruct
+  - openai/gpt-oss-120b
+  description: Must match the model served by the <b>vllm</b> component. Reported as gen_ai.request.model and sent on every request.
+- variable: hr.vllmEndpoint
+  label: vLLM Router URL
+  group: LLM
+  type: string
+  required: true
+  default: http://vllm-router-service:80
+  description: OpenAI-compatible endpoint of the <b>vllm</b> component's router (release <code>vllm</code> creates Service <code>vllm-router-service</code>).
+- variable: hr.qdrant.url
+  label: Qdrant URL
+  group: Retrieval
+  type: string
+  required: true
+  default: http://qdrant:6333
+  description: REST URL of the <b>qdrant</b> component (SUSE AI chart, release <code>qdrant</code>).
+- variable: hr.opensearch.url
+  label: OpenSearch URL
+  group: Retrieval
+  type: string
+  required: true
+  default: http://opensearch-cluster-master:9200
+  description: REST URL of the <b>opensearch</b> component (SUSE Application Collection chart).
+- variable: hr.service.type
+  label: Service Type
+  group: Service Access
+  type: enum
+  required: true
+  default: NodePort
+  options:
+  - ClusterIP
+  - NodePort
+  - LoadBalancer
+  description: How this app's Service is exposed. ClusterIP keeps it in-cluster (port-forward to reach it).
+- variable: hr.service.nodePort
+  label: Dashboard NodePort
+  group: Service Access
+  type: int
+  default: 30081
+  show_if: hr.service.type=NodePort
+  description: NodePort for the dashboard (range 30000-32767).
+- variable: hr.otlpEndpoint
+  label: OTLP Endpoint
+  group: Observability
+  type: string
+  required: false
+  default: ''
+  description: OpenTelemetry collector address (scheme://host:port).<br><br><b>Leave blank to auto-discover</b> the shared SUSE AI collector in the Collector Namespace below.
+- variable: hr.observability.collectorNamespace
+  label: Collector Namespace
+  group: Observability
+  type: string
+  required: false
+  default: observability
+  description: Namespace holding the shared SUSE AI OpenTelemetry collector (installed from the ai-observability-collector chart).

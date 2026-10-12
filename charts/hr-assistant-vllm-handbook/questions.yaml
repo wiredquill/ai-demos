@@ -1,0 +1,45 @@
+questions:
+- variable: hr.model
+  label: Model served by vLLM
+  group: LLM
+  type: enum
+  required: true
+  default: Qwen/Qwen2.5-7B-Instruct
+  options:
+  - Qwen/Qwen2.5-7B-Instruct
+  - Qwen/Qwen3.6-35B-A3B
+  - meta-llama/Llama-3.3-70B-Instruct
+  - openai/gpt-oss-120b
+  description: Must match the model served by the <b>vllm</b> component. Reported as gen_ai.request.model and sent on every request.
+- variable: hr.vllmEndpoint
+  label: vLLM Router URL
+  group: LLM
+  type: string
+  required: true
+  default: http://vllm-router-service:80
+  description: OpenAI-compatible endpoint of the <b>vllm</b> component's router (release <code>vllm</code> creates Service <code>vllm-router-service</code>).
+- variable: hr.service.type
+  label: Service Type
+  group: Service Access
+  type: enum
+  required: true
+  default: ClusterIP
+  options:
+  - ClusterIP
+  - NodePort
+  - LoadBalancer
+  description: How this app's Service is exposed. ClusterIP keeps it in-cluster (port-forward to reach it).
+- variable: hr.otlpEndpoint
+  label: OTLP Endpoint
+  group: Observability
+  type: string
+  required: false
+  default: ''
+  description: OpenTelemetry collector address (scheme://host:port).<br><br><b>Leave blank to auto-discover</b> the shared SUSE AI collector in the Collector Namespace below.
+- variable: hr.observability.collectorNamespace
+  label: Collector Namespace
+  group: Observability
+  type: string
+  required: false
+  default: observability
+  description: Namespace holding the shared SUSE AI OpenTelemetry collector (installed from the ai-observability-collector chart).

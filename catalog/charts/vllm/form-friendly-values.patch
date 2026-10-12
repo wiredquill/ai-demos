@@ -1,0 +1,195 @@
+# Applied to SUSE's vllm chart by scripts/package-aif-suse-charts.sh so install-form
+# values and Fleet work:
+#  - modelSpec.storageClass ""/"Default" omits storageClassName (cluster default class)
+#  - sharedPvcStorage.enabled is honoured (upstream enables it whenever the key exists)
+#  - HF_HOME points at the shared NFS cache when it is enabled (upstream mounts it
+#    but keeps downloading into the per-install PVC)
+#  - the engine/router Deployments' and Services' own metadata.labels say
+#    app.kubernetes.io/managed-by: Helm. Upstream's "helm" is rewritten on the cluster,
+#    so Fleet reported the bundle Modified. Selectors and pod labels keep "helm"
+#    (selectors are immutable, so changing them would break upgrades).
+#  - empty GPU-memory/core fields are ignored instead of rendered
+--- a/templates/pvc.yaml
++++ b/templates/pvc.yaml
+@@ -26,7 +26,7 @@
+   resources:
+     requests:
+       storage: {{ $modelSpec.pvcStorage }}
+-  {{- if hasKey $modelSpec "storageClass" }}
++  {{- if and (hasKey $modelSpec "storageClass") (not (empty $modelSpec.storageClass)) (ne $modelSpec.storageClass "Default") }}
+   storageClassName: "{{ $modelSpec.storageClass }}"
+   {{- end }}
+   {{- if not (empty $modelSpec.pvcMatchLabels) }}
+--- a/templates/shared-storage.yaml
++++ b/templates/shared-storage.yaml
+@@ -1,4 +1,4 @@
+-{{- if .Values.sharedPvcStorage }}
++{{- if and .Values.sharedPvcStorage (ternary true .Values.sharedPvcStorage.enabled (not (hasKey .Values.sharedPvcStorage "enabled"))) }}
+ ---
+ apiVersion: v1
+ kind: PersistentVolume
+@@ -9,7 +9,7 @@
+     app: {{ .Release.Name }}
+     component: shared-pvc-storage
+ spec:
+-  storageClassName: {{ .Values.sharedPvcStorage.storageClass | default "standard" }}
++  storageClassName: {{ if and .Values.sharedPvcStorage.storageClass (ne .Values.sharedPvcStorage.storageClass "Default") }}{{ .Values.sharedPvcStorage.storageClass }}{{ else }}""{{ end }}
+   capacity:
+     storage: {{ .Values.sharedPvcStorage.size | default "100Gi" }}
+   accessModes:
+@@ -36,7 +36,7 @@
+     app: {{ .Release.Name }}
+     component: shared-pvc-storage
+ spec:
+-  storageClassName: {{ .Values.sharedPvcStorage.storageClass | default "standard" }}
++  storageClassName: {{ if and .Values.sharedPvcStorage.storageClass (ne .Values.sharedPvcStorage.storageClass "Default") }}{{ .Values.sharedPvcStorage.storageClass }}{{ else }}""{{ end }}
+   accessModes:
+   {{- if .Values.sharedPvcStorage.accessModes }}
+     {{- toYaml .Values.sharedPvcStorage.accessModes | nindent 4 }}
+--- a/templates/deployment-vllm-multi.yaml
++++ b/templates/deployment-vllm-multi.yaml
+@@ -22,7 +22,7 @@
+   labels:
+     model: {{ $modelSpec.name }}
+     helm-release-name: {{ .Release.Name }}
+-  {{- include "chart.engineStandardLabels" (dict "releaseName" .Release.Name "modelName" $modelSpec.name "chartName" .Chart.Name) | nindent 4 }}
++  {{- include "chart.engineStandardLabels" (dict "releaseName" .Release.Name "modelName" $modelSpec.name "chartName" .Chart.Name) | replace "managed-by: helm" "managed-by: Helm" | nindent 4 }}
+   {{- include "chart.engineLabels" . | nindent 4 }}
+ spec:
+   replicas: {{ $modelSpec.replicaCount }}
+@@ -208,7 +208,9 @@
+           - name: PYTHONHASHSEED
+             value: "123"
+           - name: HF_HOME
+-            {{- if hasKey $modelSpec "pvcStorage" }}
++            {{- if and (hasKey $.Values "sharedPvcStorage") (ternary true $.Values.sharedPvcStorage.enabled (not (hasKey $.Values.sharedPvcStorage "enabled"))) }}
++            value: /data/shared-pvc-storage
++            {{- else if hasKey $modelSpec "pvcStorage" }}
+             value: /data
+             {{- else }}
+             value: /tmp
+@@ -415,7 +417,7 @@
+           {{- if hasKey $modelSpec "extraVolumeMounts" }}
+           {{- toYaml $modelSpec.extraVolumeMounts | nindent 10 }}
+           {{- end }}
+-          {{- if hasKey $.Values "sharedPvcStorage" }}
++          {{- if and (hasKey $.Values "sharedPvcStorage") (ternary true $.Values.sharedPvcStorage.enabled (not (hasKey $.Values.sharedPvcStorage "enabled"))) }}
+           - name: {{ .Release.Name }}-shared-pvc-storage
+             mountPath: /data/shared-pvc-storage
+           {{- end }}
+@@ -444,7 +446,7 @@
+         {{- end }}
+         {{- toYaml $imagePullSecrets | nindent 8 }}
+       {{- end }}
+-      {{- if or (hasKey $modelSpec "pvcStorage") (and $modelSpec.vllmConfig (hasKey $modelSpec.vllmConfig "tensorParallelSize")) (hasKey $modelSpec "chatTemplate") (hasKey $modelSpec "extraVolumes") (hasKey $.Values "sharedPvcStorage") }}
++      {{- if or (hasKey $modelSpec "pvcStorage") (and $modelSpec.vllmConfig (hasKey $modelSpec.vllmConfig "tensorParallelSize")) (hasKey $modelSpec "chatTemplate") (hasKey $modelSpec "extraVolumes") (and (hasKey $.Values "sharedPvcStorage") (ternary true $.Values.sharedPvcStorage.enabled (not (hasKey $.Values.sharedPvcStorage "enabled")))) }}
+       volumes:
+       {{- end}}
+         {{- if hasKey $modelSpec "pvcStorage" }}
+@@ -457,7 +459,7 @@
+             claimName: "{{ .Release.Name }}-{{$modelSpec.name}}-storage-claim"
+         {{- end }}
+         {{- end }}
+-        {{- if hasKey $.Values "sharedPvcStorage" }}
++        {{- if and (hasKey $.Values "sharedPvcStorage") (ternary true $.Values.sharedPvcStorage.enabled (not (hasKey $.Values.sharedPvcStorage "enabled"))) }}
+         - name: {{ .Release.Name }}-shared-pvc-storage
+           persistentVolumeClaim:
+             claimName: "{{ .Release.Name }}-shared-pvc-storage-claim"
+--- a/templates/deployment-lora-controller.yaml
++++ b/templates/deployment-lora-controller.yaml
+@@ -38,7 +38,7 @@
+       serviceAccountName: {{ .Release.Name }}-lora-controller
+       securityContext:
+         {{- toYaml .Values.loraController.podSecurityContext | nindent 8 }}
+-      {{- if hasKey $.Values "sharedPvcStorage" }}
++      {{- if and (hasKey $.Values "sharedPvcStorage") (ternary true $.Values.sharedPvcStorage.enabled (not (hasKey $.Values.sharedPvcStorage "enabled"))) }}
+       initContainers:
+         - name: fix-perms
+           image: dp.apps.rancher.io/containers/bci-busybox:15.6
+@@ -109,7 +109,7 @@
+               mountPath: /tmp/k8s-webhook-server/serving-certs
+               readOnly: true
+           {{- end }}
+-          {{- if hasKey $.Values "sharedPvcStorage" }}
++          {{- if and (hasKey $.Values "sharedPvcStorage") (ternary true $.Values.sharedPvcStorage.enabled (not (hasKey $.Values.sharedPvcStorage "enabled"))) }}
+             - name: {{ .Release.Name }}-shared-pvc-storage
+               mountPath: /data/shared-pvc-storage
+           {{- end }}
+@@ -119,7 +119,7 @@
+           secret:
+             secretName: {{ .Release.Name }}-lora-controller-webhook-server-cert
+       {{- end }}
+-      {{- if hasKey $.Values "sharedPvcStorage" }}
++      {{- if and (hasKey $.Values "sharedPvcStorage") (ternary true $.Values.sharedPvcStorage.enabled (not (hasKey $.Values.sharedPvcStorage "enabled"))) }}
+         - name: {{ .Release.Name }}-shared-pvc-storage
+           persistentVolumeClaim:
+             claimName: "{{ .Release.Name }}-shared-pvc-storage-claim"
+--- a/templates/_helpers.tpl
++++ b/templates/_helpers.tpl
+@@ -173,13 +173,13 @@
+   {{- $gpuType := default "nvidia.com/gpu" $modelSpec.requestGPUType }}
+   {{ $gpuType }}: {{ required "Value 'modelSpec.requestGPU' must be defined !" (index $modelSpec.requestGPU | quote) }}
+   {{- end }}
+-  {{- if (hasKey $modelSpec "requestGPUMem") }}
++  {{- if and (hasKey $modelSpec "requestGPUMem") (not (empty $modelSpec.requestGPUMem)) }}
+   nvidia.com/gpumem: {{ $modelSpec.requestGPUMem | quote }}
+   {{- end }}
+-  {{- if (hasKey $modelSpec "requestGPUMemPercentage") }}
++  {{- if and (hasKey $modelSpec "requestGPUMemPercentage") (not (empty $modelSpec.requestGPUMemPercentage)) }}
+   nvidia.com/gpumem-percentage: {{ $modelSpec.requestGPUMemPercentage | quote }}
+   {{- end }}
+-  {{- if (hasKey $modelSpec "requestGPUCores") }}
++  {{- if and (hasKey $modelSpec "requestGPUCores") (not (empty $modelSpec.requestGPUCores)) }}
+   nvidia.com/gpucores: {{ $modelSpec.requestGPUCores | quote }}
+   {{- end }}
+ {{- if (include "chart.hasLimits" $modelSpec | fromYaml) }}
+@@ -194,13 +194,13 @@
+   {{- $gpuType := default "nvidia.com/gpu" $modelSpec.requestGPUType }}
+   {{ $gpuType }}: {{ required "Value 'modelSpec.requestGPU' must be defined !" (index $modelSpec.requestGPU | quote) }}
+   {{- end }}
+-  {{- if (hasKey $modelSpec "limitGPUMem") }}
++  {{- if and (hasKey $modelSpec "limitGPUMem") (not (empty $modelSpec.limitGPUMem)) }}
+   nvidia.com/gpumem: {{ $modelSpec.limitGPUMem | quote }}
+   {{- end }}
+-  {{- if (hasKey $modelSpec "limitGPUMemPercentage") }}
++  {{- if and (hasKey $modelSpec "limitGPUMemPercentage") (not (empty $modelSpec.limitGPUMemPercentage)) }}
+   nvidia.com/gpumem-percentage: {{ $modelSpec.limitGPUMemPercentage | quote }}
+   {{- end }}
+-  {{- if (hasKey $modelSpec "limitGPUCores") }}
++  {{- if and (hasKey $modelSpec "limitGPUCores") (not (empty $modelSpec.limitGPUCores)) }}
+   nvidia.com/gpucores: {{ $modelSpec.limitGPUCores | quote }}
+   {{- end }}
+ {{- end }}
+--- a/templates/deployment-router.yaml
++++ b/templates/deployment-router.yaml
+@@ -5,7 +5,7 @@
+   name: "{{ .Release.Name }}-deployment-router"
+   namespace: {{ .Release.Namespace }}
+   labels:
+-  {{- include "chart.routerStandardLabels" (dict "releaseName" .Release.Name "chartName" .Chart.Name) | nindent 4 }}
++  {{- include "chart.routerStandardLabels" (dict "releaseName" .Release.Name "chartName" .Chart.Name) | replace "managed-by: helm" "managed-by: Helm" | nindent 4 }}
+   {{- include "chart.routerLabels" . | nindent 4 }}
+ spec:
+ {{- if .Values.routerSpec.autoscaling.enabled }}
+--- a/templates/service-vllm.yaml
++++ b/templates/service-vllm.yaml
+@@ -7,7 +7,7 @@
+   name: "{{ $.Release.Name }}-{{ $modelSpec.name }}-engine-service"
+   namespace: {{ $.Release.Namespace }}
+   labels:
+-  {{- include "chart.engineStandardLabels" (dict "releaseName" $.Release.Name "modelName" $modelSpec.name "chartName" $.Chart.Name) | nindent 4 }}
++  {{- include "chart.engineStandardLabels" (dict "releaseName" $.Release.Name "modelName" $modelSpec.name "chartName" $.Chart.Name) | replace "managed-by: helm" "managed-by: Helm" | nindent 4 }}
+   {{- include "chart.engineLabels" $ | nindent 4 }}
+ spec:
+   type: ClusterIP
+--- a/templates/service-router.yaml
++++ b/templates/service-router.yaml
+@@ -8,7 +8,7 @@
+   annotations: {{- toYaml .Values.routerSpec.serviceAnnotations | nindent 4 }}
+   {{- end }}
+   labels:
+-  {{- include "chart.routerStandardLabels" (dict "releaseName" .Release.Name "chartName" .Chart.Name) | nindent 4 }}
++  {{- include "chart.routerStandardLabels" (dict "releaseName" .Release.Name "chartName" .Chart.Name) | replace "managed-by: helm" "managed-by: Helm" | nindent 4 }}
+   {{- include "chart.routerLabels" . | nindent 4 }}
+ spec:
+   type: {{ .Values.routerSpec.serviceType }}
