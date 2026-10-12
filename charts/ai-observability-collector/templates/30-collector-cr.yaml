@@ -422,7 +422,11 @@ spec:
       topology:
         api_key: ${env:API_KEY}
         endpoint: {{ required "collector.backendEndpoint is required" .Values.collector.backendEndpoint | quote }}
-        namespace: ${env:SUSE_AI_NAMESPACE}
+        # Shared collector: each component's namespace comes from its own
+        # telemetry. A fixed exporter namespace would label every SUSE AI
+        # component with the collector's namespace (SUSE reference config).
+        namespace: ""
+        cluster_name: ${env:K8S_CLUSTER_NAME}
         tls:
           insecure_skip_verify: {{ .Values.collector.skipTlsVerify }}
       nop: {}
@@ -470,15 +474,15 @@ spec:
         {{- end }}
         metrics/infer-applications:
           receivers: [otlp]
-          processors: [filter/genai-metrics-only, filter/exclude-already-tagged, k8s_attributes, transform/infer-applications, resource, batch]
+          processors: [memory_limiter, k8s_attributes, filter/genai-metrics-only, filter/exclude-already-tagged, transform/infer-applications, resource, batch]
           exporters: [otlp_grpc]
         metrics/infer-models:
           receivers: [otlp]
-          processors: [filter/genai-metrics-only, groupbyattrs/infer-models, k8s_attributes, transform/infer-models, resource, batch]
+          processors: [memory_limiter, k8s_attributes, filter/genai-metrics-only, groupbyattrs/infer-models, transform/infer-models, resource, batch]
           exporters: [otlp_grpc]
         metrics/infer-providers:
           receivers: [otlp]
-          processors: [filter/genai-metrics-only, groupbyattrs/infer-providers, k8s_attributes, transform/infer-providers, resource, batch]
+          processors: [memory_limiter, k8s_attributes, filter/genai-metrics-only, groupbyattrs/infer-providers, transform/infer-providers, resource, batch]
           exporters: [otlp_grpc]
         logs:
           receivers: [otlp]
