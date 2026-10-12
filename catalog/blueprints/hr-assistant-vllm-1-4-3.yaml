@@ -1,0 +1,158 @@
+apiVersion: ai-factory.suse.com/v1alpha1
+kind: Blueprint
+metadata:
+  labels:
+    ai-factory.suse.com/blueprint-name: hr-assistant-vllm
+    ai-factory.suse.com/blueprint-version: 1.4.3
+  name: hr-assistant-vllm-1-4-3
+spec:
+  source: Custom  # community, unsupported demo
+  displayName: SUSE AI HR Assistant (vLLM)
+  version: 1.4.3
+  description: |
+    Intelligent Employee Support and Policy Management served by SUSE vLLM
+    (Qwen2.5-7B-Instruct), with native engine-level GenAI metrics and full
+    OpenLIT observability into SUSE Observability.
+
+    Seven components, eight pods:
+      - vllm          SUSE vLLM (Application Collection 0.1.10): engine (GPU) + router
+      - qdrant        SUSE AI Qdrant vector database
+      - opensearch    OpenSearch search engine (Application Collection 3.8.0)
+      - hr-assistant-vllm-policy-db  HR Policy DB app + demo dashboard
+      - hr-assistant-vllm-handbook   Employee Handbook RAG app
+      - hr-assistant-vllm-app        HR Assistant app
+      - hr-assistant-vllm-load-gen   load generator + health-check emitter
+
+    Prerequisites on the target cluster: a node with an NVIDIA GPU + GPU
+    operator, with the GPU free (the engine reserves 90% of its memory), a
+    default StorageClass (model cache, Qdrant), and the shared SUSE AI
+    OpenTelemetry collector (`opentelemetry-collector` in namespace
+    `observability`, installed from the ai-observability-collector chart).
+  components:
+    # Install everything into one target namespace. The apps reach the SUSE
+    # charts by their Service names, so these release names are pinned:
+    # vllm -> vllm-router-service:80, qdrant -> qdrant:6333, opensearch ->
+    # opensearch-cluster-master:9200 (the apps' form defaults).
+    #
+    # vllm and opensearch are SUSE's Application Collection charts, republished
+    # to wiredquill-ai-demos with an added questions.yaml (upstream ships no
+    # install form) and, for vllm, catalog/charts/vllm/form-friendly-values.patch
+    # so the storage class and shared NFS cache fields work
+    # (scripts/package-aif-suse-charts.sh).
+    - chartName: vllm
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "0.1.10"
+      releaseName: vllm
+      vendor: suse
+      values:
+        servingEngineSpec:
+          enableEngine: true
+          runtimeClassName: nvidia
+          labels:
+            environment: production
+            release: hr-assistant
+          # A map keyed "main" (not the documented list) so the install form
+          # can edit it; the chart ranges over modelSpec either way.
+          modelSpec:
+            main:
+              name: hr-assistant-llm
+              registry: dp.apps.rancher.io
+              repository: containers/vllm-openai
+              tag: "0.19.0-5.55"
+              modelURL: Qwen/Qwen2.5-7B-Instruct
+              # Set at deploy time for gated models; Qwen2.5 is not gated.
+              hf_token: ""
+              replicaCount: 1
+              requestGPU: 1
+              requestCPU: 2
+              requestMemory: 4Gi
+              limitCPU: 2
+              limitMemory: 16Gi
+              pvcStorage: 100Gi
+              # "Default" = cluster default StorageClass (patched chart).
+              storageClass: Default
+              # apps/rag101.py calls chat.completions with tools=; vLLM needs
+              # both flags or it rejects "auto" tool choice with a 400.
+              vllmConfig:
+                extraArgs:
+                  - --enable-auto-tool-choice
+                  - --tool-call-parser
+                  - hermes
+        # Shared NFS model cache, off by default; the form turns it on.
+        sharedPvcStorage:
+          enabled: false
+          nfs:
+            server: ""
+            path: /data/ai-models
+          size: 200Gi
+          storageClass: Default
+          accessModes:
+            - ReadWriteMany
+        routerSpec:
+          enableRouter: true
+          routingLogic: roundrobin
+          serviceType: ClusterIP
+          repository: containers/lmcache-lmstack-router
+          tag: "0.1.10-3.110"
+          otel:
+            endpoint: http://opentelemetry-collector-collector.observability.svc.cluster.local:4317
+            serviceName: hr-assistant-vllm-router
+    - chartName: qdrant
+      chartRepo: suse-ai-registry
+      chartVersion: "1.19.0"
+      releaseName: qdrant
+      vendor: suse
+      values:
+        persistence:
+          size: 10Gi
+    - chartName: opensearch
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "3.8.0"
+      releaseName: opensearch
+      vendor: suse
+      values:
+        # Single-node demo, security plugin off: the apps and the collector's
+        # elasticsearch receiver talk plain HTTP without auth.
+        singleNode: true
+        replicas: 1
+        protocol: http
+        # The SUSE AI StackPack's OpenSearch metric bindings match
+        # elasticsearch_cluster_name="opensearch-cluster".
+        clusterName: opensearch-cluster
+        # The shared collector creates an elasticsearch receiver for pods
+        # labelled app.component=opensearch on port 9200.
+        labels:
+          app.component: opensearch
+        opensearchJavaOpts: "-Xms512m -Xmx512m"
+        extraEnvs:
+          - name: DISABLE_SECURITY_PLUGIN
+            value: "true"
+          - name: DISABLE_INSTALL_DEMO_CONFIG
+            value: "true"
+        securityConfig:
+          enabled: false
+        persistence:
+          enabled: false
+        resources:
+          requests:
+            cpu: 250m
+            memory: 1Gi
+          limits:
+            cpu: "1"
+            memory: 2Gi
+    - chartName: hr-assistant-vllm-policy-db
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "0.1.1"
+      releaseName: hr-policy-db
+    - chartName: hr-assistant-vllm-handbook
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "0.1.1"
+      releaseName: employee-handbook
+    - chartName: hr-assistant-vllm-app
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "0.1.1"
+      releaseName: hr-assistant
+    - chartName: hr-assistant-vllm-load-gen
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "0.1.1"
+      releaseName: load-gen

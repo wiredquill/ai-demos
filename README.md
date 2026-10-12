@@ -88,7 +88,7 @@ deploy a blueprint, the AI Factory UI shows each component together with the
 install form from its chart's `questions.yaml`. An **AIWorkload** then deploys
 the components to a downstream cluster as Fleet bundles.
 
-### hr-assistant-vllm 1.4.2: SUSE charts plus the app pods
+### hr-assistant-vllm 1.4.3: SUSE charts plus the app pods
 
 The infrastructure components are SUSE's own charts, so the AI Factory UI shows
 the real chart name and version, just as `simple-chatbot-with-rag` does. SUSE's
@@ -96,10 +96,14 @@ the real chart name and version, just as `simple-chatbot-with-rag` does. SUSE's
 `scripts/package-aif-suse-charts.sh` republishes them to `wiredquill-ai-demos`,
 keeping SUSE's name and version and adding the `questions.yaml` from
 `catalog/charts/<chart>/`. For `vllm` it also applies
-`catalog/charts/vllm/form-friendly-values.patch`, which makes the form's Storage
-Class (`Default` = the cluster default) and Shared NFS Model Cache switch work.
-Upstream, an empty storage class disables dynamic provisioning, and shared storage
-switches on whenever the key exists. The version list for those two
+`catalog/charts/vllm/form-friendly-values.patch`. The patch:
+- makes the form's Storage Class (`Default` = the cluster default) and Shared NFS
+  Model Cache switch work. Upstream, an empty storage class disables dynamic
+  provisioning, and shared storage switches on whenever the key exists.
+- points `HF_HOME` at the NFS cache when it's enabled. Upstream mounts the cache
+  but keeps downloading into the per-install PVC.
+- sets `app.kubernetes.io/managed-by: Helm`. The cluster rewrites upstream's
+  lowercase `helm`, so Fleet reported the vllm bundle as Modified. The version list for those two
 therefore shows only the versions republished there. Each of the four app pods has its own small chart
 with its own `questions.yaml`. Those charts vendor `charts/hr-assistant-vllm`
 (alias `hr`) and switch on only their own workload:
@@ -188,12 +192,12 @@ curl -sk -H "Authorization: Bearer $TOKEN" \
 
 **4. Create the blueprint** on the management cluster:
 ```bash
-kubectl apply -f catalog/blueprints/hr-assistant-vllm-1-4-2.yaml
+kubectl apply -f catalog/blueprints/hr-assistant-vllm-1-4-3.yaml
 kubectl get blueprints.ai-factory.suse.com -l ai-factory.suse.com/blueprint-name=hr-assistant-vllm
 ```
 
 **5. Deploy it.** In Rancher, go to **AI Factory → Blueprints → SUSE AI HR
-Assistant (vLLM) 1.4.2 → Deploy**. Pick the target cluster and a namespace that
+Assistant (vLLM) 1.4.3 → Deploy**. Pick the target cluster and a namespace that
 nothing else uses, then review each component (the `vllm` component holds the
 model and HF token).
 To deploy from YAML instead, use an AIWorkload. `componentValues` is keyed by
@@ -211,7 +215,7 @@ spec:
     sourceType: Blueprint
     blueprint:
       name: hr-assistant-vllm
-      version: "1.4.2"
+      version: "1.4.3"
   targetClusters:
     - c-m-xxxxxxxx                   # Rancher cluster ID, not the display name
   targetNamespace: hr-assistant-vllm
@@ -246,8 +250,9 @@ kubectl logs -n hr-assistant-vllm deploy/hr-assistant-vllm-load-gen -c load-gen 
 >   every bundle is Ready. The operator tracks the target under both its cluster ID
 >   (`c-m-…`, which stays Pending) and its Fleet name (which shows Running). Check
 >   the Fleet bundles and the pods instead.
-> - SUSE's `vllm` chart labels its resources `app.kubernetes.io/managed-by: helm`,
->   which Fleet keeps re-patching, so the vllm bundle shows `Modified`.
+> - The first engine start downloads the model unless the Shared NFS Model Cache
+>   already holds it. An interrupted Hugging Face download makes the engine exit
+>   once, and the restart resumes the download.
 > - Editing a blueprint in the UI saves a new blueprint version with every value
 >   baked in, secrets such as `hf_token` included. Blueprints are readable across
 >   the whole management cluster.

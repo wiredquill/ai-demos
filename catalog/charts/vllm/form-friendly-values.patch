@@ -1,7 +1,11 @@
-# Applied to SUSE's vllm chart by scripts/package-aif-suse-charts.sh (same changes as
-# the copy vendored in charts/hr-assistant-vllm/charts/vllm), so install-form values work:
+# Applied to SUSE's vllm chart by scripts/package-aif-suse-charts.sh so install-form
+# values and Fleet work:
 #  - modelSpec.storageClass ""/"Default" omits storageClassName (cluster default class)
 #  - sharedPvcStorage.enabled is honoured (upstream enables it whenever the key exists)
+#  - HF_HOME points at the shared NFS cache when it is enabled (upstream mounts it
+#    but keeps downloading into the per-install PVC)
+#  - app.kubernetes.io/managed-by: Helm (upstream "helm" is rewritten on the cluster,
+#    so Fleet reports the bundle Modified and the AIWorkload Degraded)
 #  - empty GPU-memory/core fields are ignored instead of rendered
 --- a/templates/pvc.yaml
 +++ b/templates/pvc.yaml
@@ -42,7 +46,18 @@
      {{- toYaml .Values.sharedPvcStorage.accessModes | nindent 4 }}
 --- a/templates/deployment-vllm-multi.yaml
 +++ b/templates/deployment-vllm-multi.yaml
-@@ -415,7 +415,7 @@
+@@ -208,7 +208,9 @@
+           - name: PYTHONHASHSEED
+             value: "123"
+           - name: HF_HOME
+-            {{- if hasKey $modelSpec "pvcStorage" }}
++            {{- if and (hasKey $.Values "sharedPvcStorage") (ternary true $.Values.sharedPvcStorage.enabled (not (hasKey $.Values.sharedPvcStorage "enabled"))) }}
++            value: /data/shared-pvc-storage
++            {{- else if hasKey $modelSpec "pvcStorage" }}
+             value: /data
+             {{- else }}
+             value: /tmp
+@@ -415,7 +417,7 @@
            {{- if hasKey $modelSpec "extraVolumeMounts" }}
            {{- toYaml $modelSpec.extraVolumeMounts | nindent 10 }}
            {{- end }}
@@ -51,7 +66,7 @@
            - name: {{ .Release.Name }}-shared-pvc-storage
              mountPath: /data/shared-pvc-storage
            {{- end }}
-@@ -444,7 +444,7 @@
+@@ -444,7 +446,7 @@
          {{- end }}
          {{- toYaml $imagePullSecrets | nindent 8 }}
        {{- end }}
@@ -60,7 +75,7 @@
        volumes:
        {{- end}}
          {{- if hasKey $modelSpec "pvcStorage" }}
-@@ -457,7 +457,7 @@
+@@ -457,7 +459,7 @@
              claimName: "{{ .Release.Name }}-{{$modelSpec.name}}-storage-claim"
          {{- end }}
          {{- end }}
@@ -134,3 +149,28 @@
    nvidia.com/gpucores: {{ $modelSpec.limitGPUCores | quote }}
    {{- end }}
  {{- end }}
+@@ -263,7 +263,7 @@
+ app.kubernetes.io/instance: {{ .releaseName }}
+ app.kubernetes.io/component: serving-engine
+ app.kubernetes.io/part-of: {{ .chartName }}
+-app.kubernetes.io/managed-by: helm
++app.kubernetes.io/managed-by: Helm
+ {{- end -}}
+ 
+ {{/*
+@@ -275,7 +275,7 @@
+ app.kubernetes.io/instance: {{ .releaseName }}
+ app.kubernetes.io/component: router
+ app.kubernetes.io/part-of: {{ .chartName }}
+-app.kubernetes.io/managed-by: helm
++app.kubernetes.io/managed-by: Helm
+ {{- end -}}
+ 
+ {{/*
+@@ -287,5 +287,5 @@
+ app.kubernetes.io/instance: {{ .releaseName }}
+ app.kubernetes.io/component: cache-server
+ app.kubernetes.io/part-of: {{ .chartName }}
+-app.kubernetes.io/managed-by: helm
++app.kubernetes.io/managed-by: Helm
+ {{- end -}}
