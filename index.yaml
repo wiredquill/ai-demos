@@ -8,7 +8,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-10-12T14:00:10.243736-07:00"
+    created: "2026-10-12T14:13:34.44827-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -45,7 +45,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-10-12T14:00:10.24306-07:00"
+    created: "2026-10-12T14:13:34.447611-07:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -78,7 +78,7 @@ entries:
   hr-assistant-vllm:
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:00:10.25338-07:00"
+    created: "2026-10-12T14:13:34.458574-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -110,7 +110,7 @@ entries:
     version: 0.1.13
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:00:10.251188-07:00"
+    created: "2026-10-12T14:13:34.456421-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -142,7 +142,7 @@ entries:
     version: 0.1.12
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:00:10.257131-07:00"
+    created: "2026-10-12T14:13:34.462411-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -174,7 +174,7 @@ entries:
     version: 0.1.3
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:00:10.255796-07:00"
+    created: "2026-10-12T14:13:34.461045-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -206,7 +206,7 @@ entries:
     version: 0.1.2
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:00:10.248338-07:00"
+    created: "2026-10-12T14:13:34.453623-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -238,7 +238,7 @@ entries:
     version: 0.1.1
   - apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:00:10.245902-07:00"
+    created: "2026-10-12T14:13:34.451091-07:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -273,7 +273,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Assistant app
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:00:10.262125-07:00"
+    created: "2026-10-12T14:13:34.467126-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -302,7 +302,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Assistant app
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:00:10.259486-07:00"
+    created: "2026-10-12T14:13:34.465026-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -332,7 +332,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - vLLM serving engine
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:00:10.264408-07:00"
+    created: "2026-10-12T14:13:34.469496-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -362,7 +362,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - Employee Handbook app
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:00:10.269399-07:00"
+    created: "2026-10-12T14:13:34.474056-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -391,7 +391,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - Employee Handbook app
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:00:10.26723-07:00"
+    created: "2026-10-12T14:13:34.471571-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -422,7 +422,7 @@ entries:
         emitter
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:00:10.274516-07:00"
+    created: "2026-10-12T14:13:34.478563-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -452,7 +452,7 @@ entries:
         emitter
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:00:10.272176-07:00"
+    created: "2026-10-12T14:13:34.476445-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -482,7 +482,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - OpenSearch search engine
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:00:10.276629-07:00"
+    created: "2026-10-12T14:13:34.48093-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -512,7 +512,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Policy DB app + dashboard
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:00:10.281345-07:00"
+    created: "2026-10-12T14:13:34.485394-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -541,7 +541,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Policy DB app + dashboard
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:00:10.279232-07:00"
+    created: "2026-10-12T14:13:34.483003-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -571,7 +571,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - Qdrant vector database
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:00:10.283637-07:00"
+    created: "2026-10-12T14:13:34.487727-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -601,7 +601,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - vLLM router
     apiVersion: v2
     appVersion: latest
-    created: "2026-10-12T14:00:10.28609-07:00"
+    created: "2026-10-12T14:13:34.489842-07:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -636,7 +636,7 @@ entries:
       license: Apache-2.0
     apiVersion: v2
     appVersion: 3.8.0
-    created: "2026-10-12T14:00:10.286728-07:00"
+    created: "2026-10-12T14:13:34.490416-07:00"
     description: OpenSearch is an open-source, enterprise-grade search and observability
       suite that brings order to unstructured data at scale.
     digest: 21a1f2be8f02fc795279dd8b72dc72d97596b0c3c449ff8387e41799402890f4
@@ -663,10 +663,10 @@ entries:
       license: Apache-2.0
     apiVersion: v2
     appVersion: 0.19.0
-    created: "2026-10-12T14:00:10.287558-07:00"
+    created: "2026-10-12T14:13:34.491231-07:00"
     description: A high-throughput and memory-efficient inference and serving engine
       for LLMs.
-    digest: cfdf75cd2902972393b6a4ea4e3cbca11b970d80f8646c8b195e43401ab25e1c
+    digest: e7f2882af2f9db1bb6a460058a098cecde39fa6ba88d1637a43dacfc4542bcb7
     home: https://apps.rancher.io/applications/vllm
     icon: https://apps.rancher.io/logos/vllm.png
     keywords:
@@ -682,4 +682,4 @@ entries:
     urls:
     - https://github.com/wiredquill/ai-demos/vllm-0.1.10.tgz
     version: 0.1.10
-generated: "2026-10-12T14:00:10.240822-07:00"
+generated: "2026-10-12T14:13:34.445862-07:00"
