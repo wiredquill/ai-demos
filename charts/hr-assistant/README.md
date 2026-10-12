@@ -39,7 +39,7 @@ kubectl get svc -n observability -o jsonpath='{range .items[*]}{.metadata.name}{
 ```
 
 Then use the resulting service name (commonly
-`open-telemetry-collector-opentelemetry-collector`) in the OTLP endpoint:
+`opentelemetry-collector-collector`) in the OTLP endpoint:
 
 ```bash
 OTLP_ENDPOINT="http://$(kubectl get svc -n observability -l app.kubernetes.io/name=opentelemetry-collector -o jsonpath='{.items[0].metadata.name}').observability.svc.cluster.local:4318"
@@ -133,7 +133,7 @@ into the per-component **Token Usage** and **Cost** drill-downs:
      the view can briefly look empty between cycles. The collector log shows a
      healthy cadence of `topology sent components=N relations=N status=200`.
    - Check the collector is actually receiving app telemetry:
-     `kubectl exec -n observability deploy/open-telemetry-collector-opentelemetry-collector -- sh -c '...'`
+     `kubectl exec -n observability deploy/opentelemetry-collector-collector -- sh -c '...'`
      (the otlp receiver counters `otelcol_receiver_accepted_metric_points_total`
      and `otelcol_receiver_accepted_spans_total` must grow when the load
      generator fires — see §1 for the endpoint check first).
@@ -163,7 +163,7 @@ Or via helm:
 ```bash
 helm repo add ai-demos https://wiredquill.github.io/ai-demos
 helm install hr-assistant ai-demos/hr-assistant -n hr-assistant --create-namespace \
-  --set otlpEndpoint=http://open-telemetry-collector-opentelemetry-collector.observability.svc.cluster.local:4318 \
+  --set otlpEndpoint=http://opentelemetry-collector-collector.observability.svc.cluster.local:4318 \
   --set service.type=NodePort \
   --set service.nodePort=30080
 ```
@@ -181,7 +181,7 @@ kubectl get pods -n hr-assistant -l app.component=load-generator
 kubectl logs -n hr-assistant deploy/<release>-load-gen --tail=20
 
 # 3. Collector is pushing topology to SUSE Observability
-kubectl logs deploy/open-telemetry-collector-opentelemetry-collector -n observability \
+kubectl logs deploy/opentelemetry-collector-collector -n observability \
   --tail=100 | grep "topology sent"
 
 # 4. Dashboard responds (if NodePort enabled)
