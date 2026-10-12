@@ -47,6 +47,11 @@ spec:
       values:
         servingEngineSpec:
           enableEngine: true
+          # One GPU: stop the old engine before starting the new one. The
+          # chart's default rolling update (maxSurge 100%) starts a second
+          # engine that cannot get GPU memory, and the rollout never finishes.
+          strategy:
+            type: Recreate
           runtimeClassName: nvidia
           labels:
             environment: production
