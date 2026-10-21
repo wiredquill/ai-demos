@@ -1,0 +1,27 @@
+SUSE AI Observability
+---------------------
+{{- $explicit := .Values.aiCompare.observability.otlpEndpoint -}}
+{{- $d := include "ai-compare.collectorService" . | fromJson -}}
+{{- $obs := .Values.observability | default (dict) -}}
+{{- $sd := dig "spanDuration" (dict) $obs -}}
+{{- if not (and (include "ai-compare.otel" .) .Values.aiCompare.observability.enabled) }}
+Telemetry is DISABLED (observability.enabled or aiCompare.observability.enabled is false) - no collector is needed.
+{{- else if include "ai-compare.collectorEnabled" . }}
+SUSE AI collector (operator mode): {{ include "ai-compare.otlpHttpEndpoint" . }}
+  -> SUSE Observability {{ .Values.opentelemetry.operator.suseObservability.apiUrl }} (topology) / {{ .Values.opentelemetry.operator.suseObservability.otlpEndpoint }} (OTLP)
+{{- else if $explicit }}
+OTLP endpoint (explicitly configured): {{ $explicit }}
+{{- else if get $d "found" }}
+OTLP collector discovered: http://{{ get $d "service" }}.{{ get $d "namespace" }}.svc.cluster.local:4318
+{{- else }}
+WARNING: no OpenTelemetry collector was discovered and no explicit endpoint was set.
+Telemetry will be exported to the fallback address
+http://opentelemetry-collector.observability.svc.cluster.local:4318
+and is likely to be silently dropped: the app will look healthy while no spans
+ever reach SUSE Observability, and every span-duration monitor will go stale.
+
+Fix by installing the shared OpenTelemetry collector, or by setting
+aiCompare.observability.otlpEndpoint (http://<collector-host>:4318).
+{{- end }}
+
+Span-duration monitors: {{ if and (include "ai-compare.otel" .) $sd (get $sd "enabled") }}threshold overridden to {{ $sd.thresholdMilliseconds | default 15000 }} ms for this app's Services and Pods (stock default 5000 ms).{{ else }}stock 5 s thresholds in use (observability.spanDuration.enabled=false).{{ end }}

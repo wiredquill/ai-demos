@@ -1,0 +1,117 @@
+{{- if and (include "ai-compare.otel" .) .Values.ollama.observability.enabled .Values.ollama.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ai-compare.fullname" . }}-ollama-otel-config
+  labels:
+    app.kubernetes.io/name: ollama-otel-collector
+    app.kubernetes.io/component: observability
+data:
+  otel-collector-config.yaml: |
+    receivers:
+      # HTTP receiver to scrape Ollama metrics and create traces
+      httpcheck:
+        targets:
+          - endpoint: http://localhost:{{ .Values.ollama.service.port }}
+            method: GET
+        collection_interval: 30s
+
+      # Prometheus receiver for standard metrics
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: 'ollama'
+              scrape_interval: 30s
+              static_configs:
+                - targets: ['localhost:{{ .Values.ollama.service.port }}']
+              metrics_path: '/metrics'
+
+      # OTLP receiver for any traces sent directly
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      # Add resource attributes to identify Ollama service with GenAI context
+      resource:
+        attributes:
+          - key: service.name
+            value: "ollama-server"
+            action: upsert
+          - key: service.version
+            value: "{{ .Values.ollama.image.tag }}"
+            action: upsert
+          - key: deployment.environment
+            value: "{{ .Release.Namespace }}"
+            action: upsert
+          # NOTE: k8s.cluster.name is deliberately NOT stamped by the sidecar.
+          # The shared collector's global resource processor sets it from its
+          # K8S_CLUSTER_NAME env (dev-ai on this cluster). An earlier version
+          # hardcoded "ai-compare-cluster", leaking a wrong cluster label into
+          # the OTEL service view (and overriding the collector's insert).
+          - key: k8s.namespace.name
+            value: "{{ .Release.Namespace }}"
+            action: upsert
+          - key: k8s.pod.name
+            from_attribute: k8s.pod.name
+            action: upsert
+          # GenAI-specific resource attributes for SUSE Observability detection
+          - key: ai.framework
+            value: "ollama"
+            action: upsert
+          - key: ai.model.type
+            value: "llm"
+            action: upsert
+          - key: genai.application
+            value: "true"
+            action: upsert
+          - key: ai.component.type
+            value: "inference-server"
+            action: upsert
+          - key: genai.observability.enabled
+            value: "true"
+            action: upsert
+          - key: ai.application.category
+            value: "model-inference"
+            action: upsert
+
+      # Batch processor for efficiency
+      batch:
+        timeout: 10s
+        send_batch_size: 1024
+
+    exporters:
+      # Export to SUSE Observability
+      otlphttp:
+        endpoint: {{ include "ai-compare.otlpHttpEndpoint" . }}
+        headers:
+          "Content-Type": "application/x-protobuf"
+        compression: gzip
+
+      # Debug logging (optional)
+      debug:
+        verbosity: basic
+
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+      pprof:
+        endpoint: 0.0.0.0:1777
+      zpages:
+        endpoint: 0.0.0.0:55679
+
+    service:
+      extensions: [health_check, pprof, zpages]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [resource, batch]
+          exporters: [otlphttp, debug]
+        metrics:
+          receivers: [prometheus, httpcheck]
+          processors: [resource, batch]
+          exporters: [otlphttp, debug]
+{{- end }}

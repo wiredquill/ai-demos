@@ -14,7 +14,7 @@ data:
         "comment": "Detect credit card and SSN patterns for AI Compare security demo",
         "rules": [
           {
-            "name": "credit-card-pattern", 
+            "name": "credit-card-pattern",
             "patterns": [
               {
                 "key": "credit-card",
@@ -30,7 +30,7 @@ data:
             "patterns": [
               {
                 "key": "ssn",
-                "op": "regex", 
+                "op": "regex",
                 "value": "\\b\\d{3}-\\d{2}-\\d{4}\\b",
                 "context": "body"
               }
@@ -40,7 +40,7 @@ data:
         ]
       }
     }
-  
+
   group-config.json: |
     {
       "config": {
@@ -65,7 +65,7 @@ data:
             "op": "="
           },
           {
-            "key": "service", 
+            "key": "service",
             "value": "{{ include "ai-compare.fullname" . }}",
             "op": "="
           }

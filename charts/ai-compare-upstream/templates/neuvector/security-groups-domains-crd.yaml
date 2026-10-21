@@ -1,0 +1,44 @@
+{{- if and .Values.neuvector.enabled (.Capabilities.APIVersions.Has "neuvector.com/v1/NvClusterSecurityRule") }}
+---
+apiVersion: neuvector.com/v1
+kind: NvClusterSecurityRule
+metadata:
+  name: deepseek
+spec:
+  egress: []
+  file: []
+  ingress: []
+  process: []
+  response: null
+  target:
+    policymode: N/A
+    selector:
+      comment: ""
+      criteria:
+      - key: address
+        op: =
+        value: '*.deepseek.com'
+      name: deepseek
+      original_name: ""
+---
+apiVersion: neuvector.com/v1
+kind: NvClusterSecurityRule
+metadata:
+  name: gemini
+spec:
+  egress: []
+  file: []
+  ingress: []
+  process: []
+  response: null
+  target:
+    policymode: N/A
+    selector:
+      comment: ""
+      criteria:
+      - key: address
+        op: =
+        value: '*.google.com'
+      name: gemini
+      original_name: ""
+{{- end }}

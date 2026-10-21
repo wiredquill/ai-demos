@@ -1,15 +1,5 @@
 questions:
-# Edition and telemetry
-- variable: edition
-  group: General
-  label: "Edition"
-  description: "suse: SUSE Application Collection and SUSE BCI images (needs the application-collection pull secret). upstream: the community images at the same versions (ollama/ollama, ghcr.io/open-webui), for a like-for-like comparison. To run both on one cluster, install them in different namespaces."
-  type: enum
-  options:
-    - "suse"
-    - "upstream"
-  default: "suse"
-
+# Telemetry
 - variable: observability.enabled
   group: General
   label: "Enable OpenTelemetry"

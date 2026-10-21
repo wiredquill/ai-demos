@@ -57,17 +57,22 @@ cd app && python python-ollama-open-webui.py
 ```
 
 ### Helm Chart Operations
-One chart, `charts/ai-compare`, with two switches: `edition` (`suse` default |
-`upstream`) picks every image from `editions.<edition>`, and
-`observability.enabled` (default true) is the master OpenTelemetry switch.
+`charts/ai-compare` (SUSE edition) is the only chart to edit. `edition` picks every
+image from `editions.<edition>`; `observability.enabled` (default true) is the
+master OpenTelemetry switch. `charts/ai-compare-upstream` is GENERATED from it
+(`python3 scripts/gen-ai-compare-upstream.py .`, default `edition: upstream`) so
+Rancher lists the editions as two apps that can run side by side; CI regenerates
+it on every image-tag bump and fails PRs where it is stale.
 ```bash
 # SUSE edition with OpenTelemetry (defaults)
 helm install my-release charts/ai-compare
 
-# Upstream edition, no telemetry
-helm install my-release charts/ai-compare \
-  --set edition=upstream \
+# Upstream edition, no telemetry (own namespace when next to the SUSE one)
+helm install my-release charts/ai-compare-upstream -n ai-compare-upstream --create-namespace \
   --set observability.enabled=false
+
+# After editing charts/ai-compare
+python3 scripts/gen-ai-compare-upstream.py .
 
 # Without a GPU
 helm install my-release charts/ai-compare --set ollama.gpu.enabled=false
