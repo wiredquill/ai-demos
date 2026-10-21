@@ -5,6 +5,8 @@ metadata:
   name: pipelines-service
   labels:
     app: pipelines
+  annotations:
+    {{- include "ai-compare.spanDurationServiceAnnotations" . | nindent 4 }}
 spec:
   selector:
     app: pipelines

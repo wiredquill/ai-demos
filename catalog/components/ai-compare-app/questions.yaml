@@ -1,4 +1,16 @@
 questions:
+- variable: aic.ollama.models.main
+  label: Model
+  group: LLM
+  type: enum
+  required: true
+  default: llama3.2:latest
+  options:
+  - llama3.2:latest
+  - llama3.2:1b
+  - llama3.1:8b
+  - qwen2.5:7b
+  description: Model the app asks Ollama for. Must be one the <b>ollama</b> component pulls.
 - variable: aic.ollama.url
   label: Ollama URL
   group: LLM
@@ -35,18 +47,27 @@ questions:
   label: UI NodePort
   group: Service Access
   type: int
-  default: 31701
+  description: 0 = auto-assign.
+  default: 0
   show_if: aic.aiCompare.service.type=NodePort
 - variable: aic.aiCompare.service.httpApiNodePort
   label: HTTP API NodePort
   group: Service Access
   type: int
-  default: 31702
+  description: 0 = auto-assign.
+  default: 0
   show_if: aic.aiCompare.service.type=NodePort
+- variable: aic.observability.enabled
+  label: Enable OpenTelemetry
+  group: Observability
+  type: boolean
+  default: true
+  description: Send telemetry to the OpenTelemetry collector. Set the same way on the app and load-gen components.
 - variable: aic.aiCompare.observability.otlpEndpoint
   label: OTLP Endpoint
   group: Observability
   type: string
   required: false
   default: http://opentelemetry-collector.observability.svc.cluster.local:4318
+  show_if: aic.observability.enabled=true
   description: 'OpenTelemetry collector (OTLP HTTP). Default: the shared SUSE AI collector in namespace <code>observability</code>.'

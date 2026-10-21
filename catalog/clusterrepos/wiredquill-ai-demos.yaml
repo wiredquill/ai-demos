@@ -1,0 +1,11 @@
+# Chart repository for the blueprints' chartRepo: wiredquill-ai-demos.
+# Holds the per-workload component charts (catalog/components/) and the SUSE
+# Application Collection charts republished with install forms
+# (scripts/package-aif-charts.sh). Apply before registering the blueprints.
+apiVersion: catalog.cattle.io/v1
+kind: ClusterRepo
+metadata:
+  name: wiredquill-ai-demos
+spec:
+  gitRepo: https://github.com/wiredquill/ai-demos
+  gitBranch: aif/hr-assistant-vllm

@@ -12,14 +12,14 @@ spec:
   restartPolicy: Never
   containers:
   - name: connectivity-test
-    image: curlimages/curl:8.22.0
+    image: {{ include "ai-compare.image" (dict "root" . "name" "curl") | quote }}
     command:
     - /bin/sh
     - -c
     - |
       set -e
       echo "=== AI Compare Service Connectivity Tests ==="
-      
+
       # Test Ollama service
       echo "Testing Ollama service connectivity..."
       if curl -f -s http://ollama-service:{{ .Values.ollama.service.port }}/api/tags; then
@@ -28,7 +28,7 @@ spec:
         echo "❌ Failed to connect to Ollama service"
         exit 1
       fi
-      
+
       # Test Open WebUI service
       echo "Testing Open WebUI service connectivity..."
       if curl -f -s http://open-webui-service:{{ .Values.openWebui.service.port }}/health || curl -f -s http://open-webui-service:{{ .Values.openWebui.service.port }}/; then
@@ -37,7 +37,7 @@ spec:
         echo "❌ Failed to connect to Open WebUI service"
         exit 1
       fi
-      
+
       # Test AI Compare App service
       echo "Testing AI Compare App service connectivity..."
       if curl -f -s http://{{ include "ai-compare.fullname" . }}-app-service:{{ .Values.aiCompare.service.port }}/; then
@@ -46,7 +46,7 @@ spec:
         echo "❌ Failed to connect to AI Compare App service"
         exit 1
       fi
-      
+
       # Test Pipelines service (if enabled)
       {{- if .Values.pipelines.enabled }}
       echo "Testing Pipelines service connectivity..."
@@ -57,7 +57,7 @@ spec:
         exit 1
       fi
       {{- end }}
-      
+
       echo "=== All connectivity tests passed! ==="
     resources:
       requests:

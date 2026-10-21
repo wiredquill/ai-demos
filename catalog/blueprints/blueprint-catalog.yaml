@@ -8,7 +8,7 @@ metadata:
   name: ai-demos
 spec:
   displayName: WiredQuill AI Demos
-  description: WiredQuill ai-demos applications — HR assistant (vLLM and Ollama) and AI Compare (OpenTelemetry, SUSE and upstream).
+  description: WiredQuill ai-demos applications — HR assistant (vLLM and Ollama) and AI Compare (SUSE and upstream).
   categories: [demo, llm, observability]
   maintainer:
     name: WiredQuill
@@ -18,6 +18,5 @@ spec:
     # LABEL (the family), not the resource name. See each blueprint below.
     - name: hr-assistant-vllm
     - name: hr-assistant
-    - name: ai-compare-opentelemetry
     - name: ai-compare-suse
     - name: ai-compare

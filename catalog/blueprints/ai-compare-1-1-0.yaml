@@ -16,12 +16,14 @@ spec:
     0.34.4), Open WebUI chart 8.19.0 (Open WebUI 0.6.41) and Pipelines chart
     0.9.0 (commit 039f9c5, the source of SUSE's 0.20250819.030501 build).
 
-    Four components, four pods:
-      - ollama          Ollama (otwld ollama-helm), llama3.2
-      - pipelines       Open WebUI Pipelines, loading the response-level
-                        pipeline from this repository
-      - open-webui      Open WebUI, wired to Ollama and Pipelines
-      - ai-compare-app  the AI Compare app (upstream Python image)
+    Five components, five pods:
+      - ollama               Ollama (otwld ollama-helm), llama3.2
+      - pipelines            Open WebUI Pipelines, loading the response-level
+                             pipeline from this repository
+      - open-webui           Open WebUI, wired to Ollama and Pipelines
+      - ai-compare-app       the AI Compare app (upstream Python image), with
+                             OpenTelemetry GenAI telemetry (form checkbox)
+      - ai-compare-load-gen  load generator + health-check emitter
 
     Prerequisites on the target cluster: an NVIDIA GPU + GPU operator for
     Ollama, a default StorageClass, and the shared SUSE AI OpenTelemetry
@@ -143,7 +145,24 @@ spec:
             value: "true"
           - name: OTEL_SERVICE_NAME
             value: open-webui
+    # The app and load generator are the same two charts in both AI Compare
+    # blueprints (catalog/components/ai-compare-{app,load-gen}); aic.edition
+    # picks SUSE or upstream images.
     - chartName: ai-compare-app
       chartRepo: wiredquill-ai-demos
-      chartVersion: "0.1.1"
+      chartVersion: "1.0.0"
       releaseName: ai-compare
+      values:
+        aic:
+          edition: upstream
+          aiCompare:
+            service:
+              nodePort: 31701
+              httpApiNodePort: 31702
+    - chartName: ai-compare-load-gen
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "1.0.0"
+      releaseName: load-gen
+      values:
+        aic:
+          edition: upstream

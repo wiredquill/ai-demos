@@ -3,26 +3,37 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ include "ai-compare.fullname" . }}-demo-config
+  annotations:
+    configmap.criticality: "HIGH"
+    observability.monitor: "true"
+    suse.observability/critical-resource: "true"
+    demo.type: "availability-simulation"
+    description: "CRITICAL ConfigMap - Changes to this resource directly affect application health and observability demos"
+    monitoring.priority: "high"
+    demo.impact: "Modifying 'models-latest' key breaks application, creates HTTP 500 errors for observability testing"
   labels:
     {{- include "ai-compare.labels" . | nindent 4 }}
     app.kubernetes.io/component: demo
+    configmap.criticality: "high"
+    observability.target: "monitor-changes"
+    demo.category: "availability"
 data:
   # This key determines service health - changing it breaks the application
   # Normal: "models-latest" -> Works correctly
   # Broken: "models_latest" -> Application can't find config, returns HTTP 500
   {{ .Values.demo.availability.configKey }}: {{ .Values.demo.availability.validValue | quote }}
-  
+
   # Backup configurations for demonstration
-  models-backup: "tinyllama:latest"
+  models-backup: {{ .Values.demo.availability.validValue | quote }}
   service-info: |
     {
       "name": "ai-compare-app",
       "version": "{{ .Chart.AppVersion }}",
       "demo_enabled": true,
-      "observability_endpoint": "{{ .Values.aiCompare.observability.otlpEndpoint }}",
+      "observability_endpoint": "{{ include "ai-compare.otlpHttpEndpoint" . }}",
       "last_updated": "{{ now | date "2006-01-02T15:04:05Z" }}"
     }
-  
+
   # Demo metadata for SUSE Observability
   demo-metadata: |
     availability_demo:

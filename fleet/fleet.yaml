@@ -1,89 +1,29 @@
-# This fleet.yaml defines the Git Repositories, Cluster Groups,
-# and Bundles to deploy the ai-compare charts.
-
-# This tells Fleet to create the following resources in the `fleet-default` namespace,
-# which is the standard location for managing Fleet configurations for downstream clusters.
-# You can bundle multiple resources into a single file using `---` as a separator.
-apiVersion: v1
-kind: List
-items:
-- apiVersion: fleet.cattle.io/v1alpha1
-  kind: GitRepo
-  metadata:
-    name: ai-compare-suse-repo
-    namespace: fleet-default
-  spec:
-    # IMPORTANT: Replace this with the URL to your Git repository
-    repo: "https://github.com/wiredquill/ai-demos.git"
-    branch: main
-    # This tells Fleet to only look for manifests inside this specific directory
-    paths:
-    - "/charts/ai-compare-suse"
-
-- apiVersion: fleet.cattle.io/v1alpha1
-  kind: GitRepo
-  metadata:
-    name: ai-compare-upstream-repo
-    namespace: fleet-default
-  spec:
-    # IMPORTANT: Replace this with the URL to your Git repository
-    repo: "https://github.com/wiredquill/ai-demos.git"
-    branch: main
-    paths:
-    - "/charts/ai-compare"
-
----
-# This ClusterGroup targets any downstream cluster with the specific label for the SUSE deployment.
+# Deploys the ai-compare chart to downstream clusters with Rancher Fleet.
+#
+# Apply to the Rancher management cluster:
+#   kubectl apply -f fleet/fleet.yaml
+# then label the target clusters:
+#   needs-llm-suse=true   SUSE edition (SUSE Application Collection / BCI images)
+#   needs-llm=true        upstream edition (community images)
+#
+# The GitRepo points at fleet/ai-compare, whose fleet.yaml installs the chart
+# from the ai-demos Helm repository and sets the edition per cluster label.
 apiVersion: fleet.cattle.io/v1alpha1
-kind: ClusterGroup
+kind: GitRepo
 metadata:
-  name: ai-compare-suse-group
+  name: ai-compare
   namespace: fleet-default
 spec:
-  selector:
-    matchLabels:
-      'needs-llm-suse': 'true'
-
----
-# This ClusterGroup targets any downstream cluster with the specific label for the Upstream deployment.
-apiVersion: fleet.cattle.io/v1alpha1
-kind: ClusterGroup
-metadata:
-  name: ai-compare-upstream-group
-  namespace: fleet-default
-spec:
-  selector:
-    matchLabels:
-      'needs-llm': 'true'
-
----
-# This Bundle links the SUSE git repo to the SUSE cluster group.
-apiVersion: fleet.cattle.io/v1alpha1
-kind: Bundle
-metadata:
-  name: ai-compare-suse-bundle
-  namespace: fleet-default
-spec:
-  # This references the GitRepo defined above
-  repoName: ai-compare-suse-repo
-  # This targets the ClusterGroup defined above
+  repo: "https://github.com/wiredquill/ai-demos.git"
+  branch: main
+  paths:
+    - fleet/ai-compare
   targets:
-  - clusterGroup: ai-compare-suse-group
-  # This tells Fleet that the content is a Helm chart
-  helm:
-    # The chart name as defined in Chart.yaml
-    chart: ai-compare-suse
-
----
-# This Bundle links the Upstream git repo to the Upstream cluster group.
-apiVersion: fleet.cattle.io/v1alpha1
-kind: Bundle
-metadata:
-  name: ai-compare-upstream-bundle
-  namespace: fleet-default
-spec:
-  repoName: ai-compare-upstream-repo
-  targets:
-  - clusterGroup: ai-compare-upstream-group
-  helm:
-    chart: ai-compare
+    - name: suse
+      clusterSelector:
+        matchLabels:
+          needs-llm-suse: "true"
+    - name: upstream
+      clusterSelector:
+        matchLabels:
+          needs-llm: "true"

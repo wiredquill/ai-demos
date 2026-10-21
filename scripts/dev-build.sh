@@ -51,12 +51,12 @@ check_buildkit() {
 fallback_build() {
     warning "Falling back to local Docker daemon"
     unset BUILDKIT_HOST
-    
+
     TIMESTAMP=$(date +%Y%m%d-%H%M%S)
     TAG="dev-fallback-$TIMESTAMP"
-    
+
     log "Building with local Docker daemon: $REGISTRY/$PROJECT:$TAG"
-    
+
     docker buildx build \
         --platform linux/amd64 \
         --file "$DOCKERFILE" \
@@ -66,7 +66,7 @@ fallback_build() {
         --cache-from type=gha \
         --cache-to type=gha,mode=max \
         .
-    
+
     success "Fallback build completed: $REGISTRY/$PROJECT:$TAG"
     echo "$REGISTRY/$PROJECT:$TAG"
 }
@@ -74,18 +74,18 @@ fallback_build() {
 # Function to perform development build
 dev_build() {
     log "Starting development build with remote BuildKit server"
-    
+
     # Generate development tag
     TIMESTAMP=$(date +%Y%m%d-%H%M%S)
     COMMIT_SHORT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
     BRANCH=$(git branch --show-current 2>/dev/null | tr '/' '-' || echo "unknown")
     TAG="dev-${BRANCH}-${COMMIT_SHORT}-${TIMESTAMP}"
-    
+
     log "Building AI Compare SUSE edition"
     log "Tag: $TAG"
     log "Dockerfile: $DOCKERFILE"
     log "Registry: $REGISTRY/$PROJECT"
-    
+
     # Use buildctl for optimized remote building
     buildctl build \
         --frontend dockerfile.v0 \
@@ -98,7 +98,7 @@ dev_build() {
         --import-cache type=registry,ref="$REGISTRY/$PROJECT:buildcache-dev" \
         --import-cache type=registry,ref="$REGISTRY/$PROJECT:buildcache" \
         --progress=auto
-    
+
     success "Development build completed successfully!"
     echo ""
     echo "Images pushed:"
@@ -109,23 +109,23 @@ dev_build() {
     echo "  docker run --rm -p 7860:7860 -p 8080:8080 $REGISTRY/$PROJECT:$TAG"
     echo ""
     echo "To update Helm deployment:"
-    echo "  helm upgrade ai-compare charts/ai-compare-suse --set aiCompare.image.tag=$TAG"
-    
+    echo "  helm upgrade ai-compare charts/ai-compare --set aiCompare.image.tag=$TAG"
+
     # Notify completion (if ntfy is available)
     if command -v curl >/dev/null 2>&1; then
         curl -d "AI Compare dev build completed: $TAG" https://ntfy.sh/wq_task >/dev/null 2>&1 || true
     fi
-    
+
     return 0
 }
 
 # Function to perform quick rebuild (skip cache layers)
 quick_build() {
     log "Starting quick development build (no cache import)"
-    
+
     TIMESTAMP=$(date +%Y%m%d-%H%M%S)
     TAG="quick-$TIMESTAMP"
-    
+
     buildctl build \
         --frontend dockerfile.v0 \
         --local context=. \
@@ -134,7 +134,7 @@ quick_build() {
         --output type=image,name="$REGISTRY/$PROJECT:$TAG",push=true \
         --export-cache type=inline \
         --progress=plain
-    
+
     success "Quick build completed: $REGISTRY/$PROJECT:$TAG"
     echo "$REGISTRY/$PROJECT:$TAG"
 }
@@ -149,12 +149,12 @@ show_info() {
     echo "Project: $PROJECT"
     echo "Dockerfile: $DOCKERFILE"
     echo ""
-    
+
     if [ "$BUILDKIT_HOST" ]; then
         log "Checking BuildKit server status..."
         buildctl debug info 2>/dev/null || warning "Could not get BuildKit info"
     fi
-    
+
     echo ""
     log "Recent images:"
     docker images "$REGISTRY/$PROJECT" --format "table {{.Tag}}\t{{.CreatedAt}}\t{{.Size}}" 2>/dev/null | head -6 || true

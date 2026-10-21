@@ -14,6 +14,8 @@ aic:
   ollama:
     enabled: false
     url: http://ollama-service:11434
+    models:
+      main: llama3.2:latest
   openWebui:
     enabled: false
     url: http://open-webui:80

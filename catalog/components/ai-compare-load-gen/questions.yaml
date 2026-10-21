@@ -1,0 +1,22 @@
+questions:
+- variable: aic.frontend.loadSimulator.intervalSeconds
+  label: Load Generation Interval (seconds)
+  group: Load Generator
+  type: int
+  default: 60
+  required: true
+  description: 'Keep at 60 or lower: SUSE AI components expire ~2 minutes after their last telemetry.'
+- variable: aic.observability.enabled
+  label: Enable OpenTelemetry
+  group: Observability
+  type: boolean
+  default: true
+  description: Send telemetry to the OpenTelemetry collector. Set the same way on the app and load-gen components.
+- variable: aic.aiCompare.observability.otlpEndpoint
+  label: OTLP Endpoint
+  group: Observability
+  type: string
+  required: false
+  default: http://opentelemetry-collector.observability.svc.cluster.local:4318
+  show_if: aic.observability.enabled=true
+  description: 'OpenTelemetry collector (OTLP HTTP). Default: the shared SUSE AI collector in namespace <code>observability</code>.'
