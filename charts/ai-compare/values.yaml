@@ -314,7 +314,7 @@ aiCompare:
   image:
     # Empty = the edition's app image (editions.<edition>.app)
     repository: ""
-    tag: "cb1e5d5"
+    tag: "04d7650"
   service:
     port: 7860
     type: NodePort
