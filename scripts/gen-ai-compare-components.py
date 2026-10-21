@@ -1,12 +1,13 @@
 """Generate the per-pod app charts for the AI Compare SUSE AI Factory blueprints.
 
-For each variant, writes catalog/components/<variant>-<component>: one chart per AI Compare
-pod, each vendoring charts/<variant> (alias "aic") with only its own workload
+Writes catalog/components/ai-compare-<component>: one chart per AI Compare pod,
+each vendoring charts/ai-compare (alias "aic") with only its own workload
 switched on. Ollama, Open WebUI and Pipelines are separate charts listed directly
-in the blueprints (catalog/blueprints/<variant>-*.yaml).
+in the blueprints (catalog/blueprints/ai-compare{,-suse}-*.yaml), which also set
+aic.edition (suse | upstream) on these components.
 
-The base charts' versions are bumped by CI on every merge, so the dependency is a
-range (~0.1), not a pin.
+The base chart's version is bumped by CI on every merge, so the dependency is a
+range (^1.0), not a pin.
 
 Usage (needs PyYAML): python3 scripts/gen-ai-compare-components.py .
 Edit VARIANTS below, bump the variant's version, re-run, then update the blueprint
@@ -38,9 +39,9 @@ def q_service(ui_port, api_port):
     return [
         dict(variable="aic.aiCompare.service.type", label="Service Type", group="Service Access", type="enum", required=True, default="NodePort",
              options=["NodePort", "LoadBalancer", "ClusterIP"], description="How the AI Compare UI (7860) and HTTP API (8080) are exposed."),
-        dict(variable="aic.aiCompare.service.nodePort", label="UI NodePort", group="Service Access", type="int", default=ui_port,
+        dict(variable="aic.aiCompare.service.nodePort", label="UI NodePort", group="Service Access", type="int", description="0 = auto-assign.", default=ui_port,
              show_if="aic.aiCompare.service.type=NodePort"),
-        dict(variable="aic.aiCompare.service.httpApiNodePort", label="HTTP API NodePort", group="Service Access", type="int", default=api_port,
+        dict(variable="aic.aiCompare.service.httpApiNodePort", label="HTTP API NodePort", group="Service Access", type="int", description="0 = auto-assign.", default=api_port,
              show_if="aic.aiCompare.service.type=NodePort"),
     ]
 Q_OTLP = [
@@ -49,47 +50,40 @@ Q_OTLP = [
          description="OpenTelemetry collector (OTLP HTTP). Default: the shared SUSE AI collector in namespace <code>observability</code>."),
 ]
 
+# One AI Compare chart (charts/ai-compare) serves every blueprint: the SUSE and
+# upstream blueprints install the same components and pick the images with
+# aic.edition in the blueprint's component values.
+Q_OTEL = [
+    dict(variable="aic.observability.enabled", label="Enable OpenTelemetry", group="Observability", type="boolean", default=True,
+         description="Send telemetry to the OpenTelemetry collector. Set the same way on the app and load-gen components."),
+    dict(variable="aic.aiCompare.observability.otlpEndpoint", label="OTLP Endpoint", group="Observability", type="string", required=False,
+         default="http://opentelemetry-collector.observability.svc.cluster.local:4318", show_if="aic.observability.enabled=true",
+         description="OpenTelemetry collector (OTLP HTTP). Default: the shared SUSE AI collector in namespace <code>observability</code>."),
+]
+
 VARIANTS = {
-    "ai-compare-opentelemetry": dict(
-        title="AI Compare (OpenTelemetry)", base_range="~0.1", version="0.1.1", blueprint="ai-compare-opentelemetry-1-4-0.yaml",
+    "ai-compare": dict(
+        title="AI Compare", base_range="^1.0", version="1.0.0",
+        blueprints=["ai-compare-suse-1-1-0.yaml", "ai-compare-1-1-0.yaml"],
         components=[
             dict(name="app", pod="AI Compare app",
                  summary="The AI Compare app: asks the same prompt of Ollama directly and through Open WebUI + Pipelines, and compares the answers. GenAI telemetry, token and cost tracking go to SUSE Observability.",
                  values=lambda v: deep(v, "aiCompare.enabled", True),
-                 questions=Q_MODEL + Q_BACKENDS + q_service(31705, 31706) + Q_OTLP),
+                 # NodePort 0 = auto-assign, so a SUSE and an upstream install can share a cluster;
+                 # each blueprint pins its own ports in its component values.
+                 questions=Q_MODEL + Q_BACKENDS + q_service(0, 0) + Q_OTEL),
             dict(name="load-gen", pod="Load generator + health-check emitter",
-                 summary="Keeps the demo busy by calling the AI Compare HTTP API on an interval, and emits health-check spans for Ollama, Open WebUI and Pipelines so they get a health state in SUSE Observability.",
+                 summary="Keeps the demo busy by calling the AI Compare HTTP API on an interval, and (with OpenTelemetry on) emits health-check spans for Ollama, Open WebUI and Pipelines so they get a health state in SUSE Observability.",
                  values=lambda v: deep(v, "frontend.loadSimulator.enabled", True),
                  questions=[dict(variable="aic.frontend.loadSimulator.intervalSeconds", label="Load Generation Interval (seconds)", group="Load Generator",
                                  type="int", default=60, required=True,
-                                 description="Keep at 60 or lower: SUSE AI components expire ~2 minutes after their last telemetry.")] + Q_OTLP),
-        ]),
-    # The SUSE and upstream editions deploy the same four pods (Ollama, Open WebUI,
-    # Pipelines, app), so their blueprints compare like for like: same app
-    # versions, SUSE versus upstream images.
-    "ai-compare-suse": dict(
-        title="AI Compare (SUSE)", base_range="~0.1", version="0.1.1", blueprint="ai-compare-suse-1-1-0.yaml", models=False,
-        components=[
-            dict(name="app", pod="AI Compare app",
-                 summary="The AI Compare app (SUSE BCI images): asks the same prompt of Ollama directly and through Open WebUI + Pipelines, and compares the answers.",
-                 values=lambda v: deep(v, "aiCompare.enabled", True),
-                 questions=Q_BACKENDS + q_service(31703, 31704) + Q_OTLP),
-        ]),
-    "ai-compare": dict(
-        title="AI Compare (upstream)", base_range="~0.1", version="0.1.1", blueprint="ai-compare-1-1-0.yaml", models=False,
-        components=[
-            dict(name="app", pod="AI Compare app",
-                 summary="The AI Compare app (upstream images): asks the same prompt of Ollama directly and through Open WebUI + Pipelines, and compares the answers.",
-                 values=lambda v: deep(v, "aiCompare.enabled", True),
-                 questions=Q_BACKENDS + q_service(31701, 31702) + Q_OTLP),
+                                 description="Keep at 60 or lower: SUSE AI components expire ~2 minutes after their last telemetry.")] + Q_OTEL),
         ]),
 }
 
 def off(variant, cfg):
     """Everything off; each component switches its own workload back on."""
-    ollama = {"enabled": False, "url": "http://ollama-service:11434"}
-    if cfg.get("models", True):
-        ollama["models"] = {"main": MODELS[0]}
+    ollama = {"enabled": False, "url": "http://ollama-service:11434", "models": {"main": MODELS[0]}}
     return {
         "fullnameOverride": variant,
         "aiCompare": {"enabled": False},
@@ -141,7 +135,7 @@ for variant, cfg in VARIANTS.items():
             "Install all components into the same namespace (the blueprint does this for you).\n")
         open(os.path.join(d, "README.md"), "w").write(f"# {chart}\n\n{c['summary']}\n\n"
             f"This chart is one component of the `{variant}` SUSE AI Factory blueprint "
-            f"(`catalog/blueprints/{cfg['blueprint']}`). It vendors `charts/{variant}` "
+            f"({', '.join(f'`catalog/blueprints/{b}`' for b in cfg['blueprints'])}). It vendors `charts/{variant}` "
             "(alias `aic`) and enables only this workload. See the repository README "
             "(\"SUSE AI Factory Blueprints\") for the component list and how to install the blueprint.\n")
         open(os.path.join(d, "templates", "NOTES.txt"), "w").write(

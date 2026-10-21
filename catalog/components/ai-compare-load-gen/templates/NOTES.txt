@@ -1,0 +1,2 @@
+Load generator + health-check emitter installed as release {{ .Release.Name }} in namespace {{ .Release.Namespace }}.
+It is one of the ai-compare blueprint components; install the others into the same namespace.

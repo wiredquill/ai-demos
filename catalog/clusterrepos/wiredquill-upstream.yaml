@@ -1,0 +1,11 @@
+# Chart repository for chartRepo: wiredquill-upstream (ai-compare upstream
+# edition): the community ollama, open-webui and pipelines charts with the same
+# install forms as the SUSE ones. Community charts under their upstream
+# licenses (see each chart), not SUSE-supported.
+apiVersion: catalog.cattle.io/v1
+kind: ClusterRepo
+metadata:
+  name: wiredquill-upstream
+spec:
+  gitRepo: https://github.com/wiredquill/ai-demos
+  gitBranch: aif/upstream-charts

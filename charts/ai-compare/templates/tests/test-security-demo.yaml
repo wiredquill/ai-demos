@@ -12,16 +12,16 @@ spec:
   restartPolicy: Never
   containers:
   - name: security-test
-    image: curlimages/curl:8.22.0
+    image: {{ include "ai-compare.image" (dict "root" . "name" "curl") | quote }}
     command:
     - /bin/sh
     - -c
     - |
       set -e
       echo "=== AI Compare Security Demo Tests ==="
-      
-      AI_COMPARE_URL="http://ai-compare-chat-service:{{ .Values.aiCompare.service.port }}"
-      
+
+      AI_COMPARE_URL="http://{{ include "ai-compare.fullname" . }}-app-service:{{ .Values.aiCompare.service.port }}"
+
       # Test main interface accessibility
       echo "Testing main AI Compare interface..."
       if curl -f -s "$AI_COMPARE_URL/" > /dev/null; then
@@ -30,22 +30,22 @@ spec:
         echo "❌ Failed to access AI Compare main interface"
         exit 1
       fi
-      
+
       # Test security demo endpoints (if available)
       echo "Testing security demo functionality..."
-      
+
       # Note: We test connectivity, not actual demo execution in tests
       # The security demos require interactive UI components
-      
+
       echo "Checking for security demo components..."
       RESPONSE=$(curl -s "$AI_COMPARE_URL/" || echo "")
-      
+
       if echo "$RESPONSE" | grep -q "Availability Demo\|Data Leak Demo"; then
         echo "✅ Security demo components found in UI"
       else
         echo "⚠️ Security demo components not detected (may be loading dynamically)"
       fi
-      
+
       # Test external connectivity (similar to availability demo)
       echo "Testing external connectivity (availability demo simulation)..."
       if curl -f -s https://suse.com > /dev/null 2>&1; then
@@ -53,7 +53,7 @@ spec:
       else
         echo "⚠️ External connectivity test failed (expected in restricted environments)"
       fi
-      
+
       {{- if .Values.neuvector.enabled }}
       # Test NeuVector integration (if enabled)
       echo "Testing NeuVector integration readiness..."
@@ -63,7 +63,7 @@ spec:
         echo "⚠️ NeuVector controller not accessible (may not be deployed)"
       fi
       {{- end }}
-      
+
       echo "=== Security demo tests completed! ==="
     resources:
       requests:

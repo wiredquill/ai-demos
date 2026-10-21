@@ -25,7 +25,7 @@ This is AI Compare - a comprehensive demonstration of AI response comparison tha
 **Multi-Container AI Stack:**
 - **Ollama**: Local LLM inference server (runs models like tinyllama)
 - **Open WebUI**: Web interface for LLM interactions with pipeline support
-- **AI Compare Chat**: Custom Python/Gradio chat application that compares responses from direct Ollama vs pipeline-enhanced Open WebUI
+- **AI Compare Chat**: Custom Python/Flask app with an HTML/JS UI that compares responses from direct Ollama vs pipeline-enhanced Open WebUI
 
 **Deployment Options:**
 - **SUSE variant**: Uses SUSE BCI (Base Container Images) with zypper package manager
@@ -57,54 +57,28 @@ cd app && python python-ollama-open-webui.py
 ```
 
 ### Helm Chart Operations
+One chart, `charts/ai-compare`, with two switches: `edition` (`suse` default |
+`upstream`) picks every image from `editions.<edition>`, and
+`observability.enabled` (default true) is the master OpenTelemetry switch.
 ```bash
-# Install SUSE variant
-helm install my-release charts/ai-compare-suse
-
-# Install upstream variant
+# SUSE edition with OpenTelemetry (defaults)
 helm install my-release charts/ai-compare
 
-# Install with GPU support
-helm install my-release charts/ai-compare-suse \
-  --set ollama.gpu.enabled=true \
-  --set ollama.hardware.type=nvidia
-
-# Enable development mode with SSH access
+# Upstream edition, no telemetry
 helm install my-release charts/ai-compare \
-  --set aiCompare.devMode.enabled=true \
-  --set aiCompare.devMode.persistence.enabled=true
+  --set edition=upstream \
+  --set observability.enabled=false
 
-# Enable OpenTelemetry observability for development/testing (disabled by default)
-# Note: OpenLit is a development option - not recommended for production
-helm install my-release charts/ai-compare-suse \
-  --set aiCompare.observability.enabled=true \
-  --set aiCompare.observability.otlpEndpoint="http://opentelemetry-collector.suse-observability.svc.cluster.local:4318" \
-  --set aiCompare.observability.collectGpuStats=true
+# Without a GPU
+helm install my-release charts/ai-compare --set ollama.gpu.enabled=false
 
-# Enable optional NGINX frontend for End User UI and HTTP traffic generation
+# Explicit collector endpoint instead of auto-discovery
 helm install my-release charts/ai-compare \
-  --set frontend.enabled=true
+  --set aiCompare.observability.otlpEndpoint="http://opentelemetry-collector.observability.svc.cluster.local:4318"
 
-# Enable frontend with SUSE Application Collection NGINX (for SUSE variant)
-helm install my-release charts/ai-compare-suse \
-  --set frontend.enabled=true
-
-# Enable Ollama OpenTelemetry observability (optional)
-helm install my-release charts/ai-compare-suse \
-  --set ollama.observability.enabled=true \
-  --set ollama.observability.otlpEndpoint="http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
-
-# Complete observability setup with both AI Compare app and Ollama server telemetry
-helm install my-release charts/ai-compare-suse \
-  --set frontend.enabled=true \
-  --set aiCompare.observability.enabled=true \
-  --set aiCompare.observability.otlpEndpoint="http://opentelemetry-collector.suse-observability.svc.cluster.local:4318" \
-  --set ollama.observability.enabled=true \
-  --set ollama.observability.otlpEndpoint="http://opentelemetry-collector.suse-observability.svc.cluster.local:4318"
-
-# OpenTelemetry Edition - Advanced GenAI observability with token/cost tracking (NEW)
-helm install my-release charts/ai-compare-opentelemetry \
-  --set frontend.enabled=true
+# Render every edition/telemetry combination
+for ed in suse upstream; do for ot in true false; do
+  helm template t charts/ai-compare --set edition=$ed --set observability.enabled=$ot >/dev/null; done; done
 ```
 
 ### Fleet GitOps Deployment
@@ -143,7 +117,7 @@ kubectl label cluster my-cluster needs-llm=true        # For upstream variant
 - **Integration**: Sidecar OpenTelemetry collector sends data to SUSE Observability
 - **Resource Usage**: Minimal overhead (50m CPU, 64Mi memory requests)
 
-**AI Compare OpenTelemetry Edition (NEW):**
+**AI Compare OpenTelemetry (`observability.enabled`, on by default):**
 - **Purpose**: Advanced GenAI observability with comprehensive token-level cost tracking
 - **Default State**: All observability features enabled by default
 - **Enhanced Features**:
@@ -265,7 +239,7 @@ kubectl get configmap ai-compare-demo-config -n ai-compare -o jsonpath='{.data}'
 **Demo Integration:**
 - Frontend toggle button shows real-time ON/OFF state
 - Button reflects actual ConfigMap manipulation results
-- Works in both Gradio UI and optional NGINX frontend
+- Works in the app UI and the HTTP API
 - Requires `kubectl` access from pod for ConfigMap manipulation
 - Falls back to environment variables if ConfigMap access unavailable
 
@@ -336,12 +310,12 @@ The application includes development-specific features disabled by default for p
 **Development Installation Examples**:
 ```bash
 # Enable development mode with observability
-helm install my-release charts/ai-compare-suse \
+helm install my-release charts/ai-compare \
   --set aiCompare.devMode.enabled=true \
   --set aiCompare.observability.enabled=true
 
 # Or use environment variable approach
-helm install my-release charts/ai-compare-suse \
+helm install my-release charts/ai-compare \
   --set-string aiCompare.env.DEV_MODE=true
 ```
 

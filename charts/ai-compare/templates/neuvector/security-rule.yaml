@@ -1,38 +1,41 @@
 {{- if .Values.neuvector.enabled }}
+# NeuVector network security rule for AI Compare OpenTelemetry monitoring
 apiVersion: neuvector.com/v1
 kind: NvSecurityRule
 metadata:
-  name: {{ .Release.Namespace }}-{{ include "ai-compare.fullname" . }}
+  name: {{ include "ai-compare.fullname" . }}-ai-monitoring
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ai-compare.labels" . | nindent 4 }}
 spec:
   target:
     selector:
-      name: {{ .Release.Namespace }}.{{ include "ai-compare.fullname" . }}
-      criteria:
-        - key: namespace
-          op: "="
-          value: {{ .Release.Namespace }}
-        - key: service
-          op: "="
-          value: {{ include "ai-compare.fullname" . }}
-  dlp:
-    status: true
-    settings:
-      - name: {{ include "ai-compare.fullname" . }}-dlp-sensor
-        action: allow
+      name: {{ include "ai-compare.fullname" . }}
   ingress:
-    - action: allow
-      name: Allow from Open WebUI
-      selector:
-        name: open-webui
-    - action: allow
-      name: Allow from Ollama
-      selector:
-        name: ollama
+  - action: allow
+    name: allow-ai-chat-traffic
+    selector:
+      name: external
+    ports: "7860/tcp"
+  - action: allow
+    name: allow-health-checks
+    selector:
+      name: nodes
+    ports: "8080/tcp"
   egress:
-    - action: allow
-      name: Allow external traffic
-      selector:
-        name: external
+  - action: allow
+    name: allow-ollama-access
+    selector:
+      name: ollama
+    ports: "11434/tcp"
+  - action: allow
+    name: allow-webui-access
+    selector:
+      name: open-webui
+    ports: "8080/tcp"
+  - action: allow
+    name: allow-telemetry-export
+    selector:
+      name: opentelemetry-collector
+    ports: "4318/tcp"
 {{- end }}

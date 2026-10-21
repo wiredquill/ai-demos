@@ -1,5 +1,95 @@
 questions:
+# Edition and telemetry
+- variable: edition
+  group: General
+  label: "Edition"
+  description: "<b>suse</b>: SUSE Application Collection and SUSE BCI images (needs the <code>application-collection</code> pull secret).<br><b>upstream</b>: the community images at the same versions (ollama/ollama, ghcr.io/open-webui), for a like-for-like comparison."
+  type: enum
+  options:
+    - "suse"
+    - "upstream"
+  default: "suse"
+
+- variable: observability.enabled
+  group: General
+  label: "Enable OpenTelemetry"
+  description: "Send GenAI traces, metrics and token/cost data from the app, Ollama and Open WebUI to an OpenTelemetry collector, and emit SUSE AI health-check spans. Needs a collector in the cluster (see Observability)."
+  type: boolean
+  default: true
+
 # General Configuration
+- variable: ollama.enabled
+  group: General
+  label: "Enable Ollama Deployment"
+  description: "If true, Ollama will be deployed as part of this chart."
+  type: "boolean"
+  default: true
+
+- variable: ollama.url
+  label: "Ollama URL"
+  type: string
+  description: "URL of an existing Ollama, e.g. the SUSE AI Ollama application installed separately - include http:// and port."
+  required: true
+  default: "http://ollama-service:11434"
+  group: General
+  show_if: "ollama.enabled=false"
+
+- variable: observability.mode
+  label: "Telemetry Collector"
+  description: "Where the apps send telemetry.<br><br><b>existing</b> (default): the cluster's shared SUSE AI collector (<code>opentelemetry-collector</code> in namespace <code>observability</code>, installed from the <code>ai-observability-collector</code> chart). It builds the SUSE AI view for every app in the cluster, so the app, Ollama, the model, Open WebUI and Pipelines all appear with health.<br><br><b>operator</b>: create a separate SUSE AI collector just for this release. Only needed on clusters without the shared SUSE AI collector; requires the OpenTelemetry Operator."
+  type: enum
+  options:
+    - "existing"
+    - "operator"
+  default: "existing"
+  group: Observability
+  show_if: "observability.enabled=true"
+
+- variable: aiCompare.observability.otlpEndpoint
+  label: "OTLP Endpoint (optional)"
+  type: string
+  description: "Leave blank to auto-discover the shared OpenTelemetry collector at install time. Set an explicit URL (e.g. http://my-collector.observability.svc.cluster.local:4318) only to override discovery."
+  required: false
+  default: "http://opentelemetry-collector.observability.svc.cluster.local:4318"
+  group: Observability
+  show_if: "observability.enabled=true && observability.mode=existing"
+
+- variable: opentelemetry.operator.suseObservability.apiUrl
+  label: "SUSE Observability URL"
+  description: "Base URL of SUSE Observability, used by the topology exporter. Example: <code>https://observability.example.com</code>"
+  type: string
+  required: true
+  default: ""
+  group: Observability
+  show_if: "observability.enabled=true && observability.mode=operator"
+
+- variable: opentelemetry.operator.suseObservability.otlpEndpoint
+  label: "SUSE Observability OTLP Endpoint"
+  description: "OTLP gRPC ingestion endpoint as <code>host:port</code>, no scheme. Example: <code>otlp-observability.example.com:443</code>"
+  type: string
+  required: true
+  default: ""
+  group: Observability
+  show_if: "observability.enabled=true && observability.mode=operator"
+
+- variable: opentelemetry.operator.clusterName
+  label: "Cluster Name in SUSE Observability"
+  description: "Optional. Defaults to the Rancher cluster name."
+  type: string
+  required: false
+  default: ""
+  group: Observability
+  show_if: "observability.enabled=true && observability.mode=operator"
+
+- variable: opentelemetry.operator.suseObservability.existingSecret
+  label: "API Key Secret (optional)"
+  description: "Secret in this namespace holding the SUSE Observability API key (key <code>API_KEY</code>). Leave blank to copy <code>open-telemetry-collector</code> from the <code>observability</code> namespace at install time."
+  type: string
+  required: false
+  default: ""
+  group: Observability
+  show_if: "observability.enabled=true && observability.mode=operator"
+
 - variable: ollama.gpu.enabled
   group: General
   label: "Enable GPU Acceleration"
@@ -18,6 +108,22 @@ questions:
     - "nvidia"
     - "amd"
 
+- variable: frontend.loadSimulator.enabled
+  group: General
+  label: "Enable Load Generator"
+  description: "Deploy a load generator that sends a prompt to the app on an interval. Can also be started and stopped from the app UI."
+  type: "boolean"
+  default: true
+
+- variable: frontend.loadSimulator.intervalSeconds
+  label: "Load Generation Interval (seconds)"
+  type: int
+  default: 60
+  description: "Keep at 60 or lower: SUSE AI components expire ~2 minutes after their last telemetry."
+  required: true
+  group: General
+  show_if: "frontend.loadSimulator.enabled=true"
+
 - variable: aiCompare.service.type
   group: General
   label: "AI Compare Service Type"
@@ -35,7 +141,7 @@ questions:
   label: "AI Compare NodePort (Gradio UI)"
   description: "NodePort for the Gradio UI (port 7860). Only used when Service Type is NodePort."
   type: "integer"
-  default: 31701
+  default: 31705
   show_if: "aiCompare.service.type=NodePort"
 
 - variable: aiCompare.service.httpApiNodePort
@@ -43,7 +149,7 @@ questions:
   label: "AI Compare NodePort (HTTP API)"
   description: "NodePort for the HTTP API server (port 8080). Only used when Service Type is NodePort."
   type: "integer"
-  default: 31702
+  default: 31706
   show_if: "aiCompare.service.type=NodePort"
 
 - variable: neuvector.enabled
@@ -54,6 +160,15 @@ questions:
   default: false
 
 # Ollama Deployment Configuration
+- variable: ollama.models.main
+  group: "Ollama Deployment"
+  label: "Ollama Model"
+  description: "The Ollama model to pull and use for inference."
+  type: "string"
+  default: "llama3.2:latest"
+  required: true
+  show_if: "ollama.enabled=true"
+
 - variable: ollama.service.type
   group: "Ollama Deployment"
   label: "Ollama Service Type"
@@ -61,16 +176,19 @@ questions:
   type: "enum"
   required: true
   default: "ClusterIP"
+  show_if: "ollama.enabled=true"
   options:
     - "ClusterIP"
     - "NodePort"
+    - "LoadBalancer"
 
 - variable: ollama.persistence.enabled
   group: "Ollama Deployment"
   label: "Enable Ollama Model Persistence"
   description: "If true, a PersistentVolumeClaim will be created to store Ollama models so they are not re-downloaded on restart."
   type: "boolean"
-  default: false
+  default: true
+  show_if: "ollama.enabled=true"
 
 - variable: ollama.persistence.size
   group: "Ollama Deployment"
@@ -78,7 +196,7 @@ questions:
   description: "The size of the PersistentVolumeClaim for Ollama models (e.g., '10Gi', '50Gi')."
   type: "string"
   default: "10Gi"
-  show_if: "ollama.persistence.enabled=true"
+  show_if: "ollama.enabled=true && ollama.persistence.enabled=true"
 
 - variable: ollama.persistence.storageClassName
   group: "Ollama Deployment"
@@ -86,7 +204,7 @@ questions:
   description: "The storage class name for the Ollama models PVC. Leave empty to use the default storage class."
   type: "string"
   default: ""
-  show_if: "ollama.persistence.enabled=true"
+  show_if: "ollama.enabled=true && ollama.persistence.enabled=true"
 
 - variable: ollama.modelCache.nfs.enabled
   group: "Ollama Deployment"
@@ -94,6 +212,7 @@ questions:
   description: "Mount an NFS share to cache Ollama models across deployments and avoid re-downloading."
   type: "boolean"
   default: false
+  show_if: "ollama.enabled=true"
 
 - variable: ollama.modelCache.nfs.server
   group: "Ollama Deployment"
@@ -101,7 +220,7 @@ questions:
   description: "IP address or hostname of the NFS server."
   type: "string"
   default: ""
-  show_if: "ollama.modelCache.nfs.enabled=true"
+  show_if: "ollama.enabled=true && ollama.modelCache.nfs.enabled=true"
 
 - variable: ollama.modelCache.nfs.path
   group: "Ollama Deployment"
@@ -109,7 +228,7 @@ questions:
   description: "Path on the NFS server to use for caching models (e.g., '/data/ai-models')."
   type: "string"
   default: "/data/ai-models"
-  show_if: "ollama.modelCache.nfs.enabled=true"
+  show_if: "ollama.enabled=true && ollama.modelCache.nfs.enabled=true"
 
 # Ollama Resources - GPU mode (shown when GPU enabled on General page)
 - variable: ollama.resources.requests.cpu
@@ -118,7 +237,7 @@ questions:
   description: "CPU request for Ollama. GPU acceleration reduces CPU dependency."
   type: "string"
   default: "1"
-  show_if: "ollama.gpu.enabled=true"
+  show_if: "ollama.enabled=true && ollama.gpu.enabled=true"
 
 - variable: ollama.resources.requests.memory
   group: "Ollama Resources"
@@ -126,7 +245,7 @@ questions:
   description: "Memory request for Ollama in GPU mode."
   type: "string"
   default: "4Gi"
-  show_if: "ollama.gpu.enabled=true"
+  show_if: "ollama.enabled=true && ollama.gpu.enabled=true"
 
 - variable: ollama.resources.limits.cpu
   group: "Ollama Resources"
@@ -134,7 +253,7 @@ questions:
   description: "CPU limit for Ollama in GPU mode."
   type: "string"
   default: "2"
-  show_if: "ollama.gpu.enabled=true"
+  show_if: "ollama.enabled=true && ollama.gpu.enabled=true"
 
 - variable: ollama.resources.limits.memory
   group: "Ollama Resources"
@@ -142,7 +261,7 @@ questions:
   description: "Memory limit for Ollama in GPU mode."
   type: "string"
   default: "8Gi"
-  show_if: "ollama.gpu.enabled=true"
+  show_if: "ollama.enabled=true && ollama.gpu.enabled=true"
 
 # Ollama Resources - CPU-only mode (shown when GPU disabled on General page)
 - variable: ollama.resourcesCpuOnly.requests.cpu
@@ -151,7 +270,7 @@ questions:
   description: "CPU request for Ollama in CPU-only mode (higher allocation required without GPU)."
   type: "string"
   default: "2"
-  show_if: "ollama.gpu.enabled=false"
+  show_if: "ollama.enabled=true && ollama.gpu.enabled=false"
 
 - variable: ollama.resourcesCpuOnly.requests.memory
   group: "Ollama Resources"
@@ -159,7 +278,7 @@ questions:
   description: "Memory request for Ollama in CPU-only mode."
   type: "string"
   default: "8Gi"
-  show_if: "ollama.gpu.enabled=false"
+  show_if: "ollama.enabled=true && ollama.gpu.enabled=false"
 
 - variable: ollama.resourcesCpuOnly.limits.cpu
   group: "Ollama Resources"
@@ -167,7 +286,7 @@ questions:
   description: "CPU limit for Ollama in CPU-only mode."
   type: "string"
   default: "2"
-  show_if: "ollama.gpu.enabled=false"
+  show_if: "ollama.enabled=true && ollama.gpu.enabled=false"
 
 - variable: ollama.resourcesCpuOnly.limits.memory
   group: "Ollama Resources"
@@ -175,4 +294,4 @@ questions:
   description: "Memory limit for Ollama in CPU-only mode."
   type: "string"
   default: "8Gi"
-  show_if: "ollama.gpu.enabled=false"
+  show_if: "ollama.enabled=true && ollama.gpu.enabled=false"

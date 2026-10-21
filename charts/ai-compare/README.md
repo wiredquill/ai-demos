@@ -1,162 +1,143 @@
-# AI Compare - Upstream Edition
+# AI Compare
 
-## Overview
+Asks the same question of a model twice - directly through Ollama, and through
+Open WebUI with a Pipelines step that rewrites the prompt for an audience level -
+and shows the answers side by side. Includes availability (ConfigMap) and data
+leak (NeuVector DLP) demo scenarios and a load generator.
 
-**AI Compare** is a comprehensive AI response comparison tool that demonstrates differences between direct model access and pipeline-enhanced responses. Built on upstream open-source components, it provides an ideal platform for AI/ML demonstrations, education, and development while showcasing the security differences between upstream images and enterprise-hardened alternatives.
+One chart covers what used to be `ai-compare`, `ai-compare-suse` and
+`ai-compare-opentelemetry`, with two switches:
 
-## 🏗️ Architecture Components
+| Value | Default | Effect |
+|---|---|---|
+| `edition` | `suse` | `suse`: SUSE Application Collection and SUSE BCI images (pull secret `application-collection`). `upstream`: community images at the same versions (`ollama/ollama`, `ghcr.io/open-webui/*`, `ghcr.io/wiredquill/ai-demos`). |
+| `observability.enabled` | `true` | OpenTelemetry for the whole stack: OpenLit GenAI instrumentation with token and cost tracking in the app, Ollama and Open WebUI exporters, the SUSE AI health-check emitter, the collector check. `false` renders none of it. |
 
-This chart deploys a complete AI comparison stack with four main components:
+Both appear in the Rancher install form (General group).
 
-### 🦙 Ollama - Local LLM Server
-- **Purpose**: Local large language model inference
-- **Technology**: Open-source LLM runtime
-- **Models**: TinyLlama, Llama2, and custom models
-- **Features**: GPU acceleration, model caching, API access
+## Install
 
-### 🌐 Open WebUI - Web Interface
-- **Purpose**: Modern web interface for LLM interactions
-- **Technology**: FastAPI + Vue.js frontend
-- **Features**: Chat interface, model management, user authentication
-- **Integration**: Pipeline support for enhanced responses
+```bash
+# SUSE edition with OpenTelemetry (defaults); needs the application-collection
+# pull secret in the namespace and an OpenTelemetry collector in the cluster
+helm install ai-compare charts/ai-compare -n ai-compare --create-namespace
 
-### 🔗 Open WebUI Pipelines - Response Enhancement
-- **Purpose**: Middleware for response processing and enhancement
-- **Technology**: Python-based pipeline framework
-- **Features**: Multi-level responses (Kid, Student, Scientific), automatic configuration
-- **Demo**: Educational response adaptation
+# Upstream edition, no telemetry
+helm install ai-compare charts/ai-compare -n ai-compare --create-namespace \
+  --set edition=upstream --set observability.enabled=false
 
-### 🐍 AI Compare Chat - Custom Comparison App
-- **Purpose**: Side-by-side AI response comparison
-- **Technology**: Python + Gradio web framework
-- **Features**: Direct Ollama vs Pipeline-enhanced responses, automation, security demos
-- **Monitoring**: OpenTelemetry observability integration
-
-## ✨ Key Features
-
-### 🔄 **Response Comparison**
-- Side-by-side comparison of direct model responses vs pipeline-enhanced responses
-- Real-time response analysis and metrics
-- Educational demonstrations with different complexity levels
-
-### 🚀 **Easy Deployment**
-- One-click installation via Rancher Apps & Marketplace
-- Automatic service discovery and configuration
-- GPU acceleration support with NVIDIA runtime
-
-### 📊 **Observability Ready**
-- OpenTelemetry integration with SUSE Observability
-- Request tracing, token usage monitoring, and performance metrics
-- GPU statistics collection and monitoring
-
-### 🔒 **Security Demonstrations**
-- **Data Leak Prevention (DLP)**: Dual data type transmission (credit card + SSN)
-- **Availability Monitoring**: External connectivity and network policy testing
-- **NeuVector Integration**: Automated security policy deployment and DLP detection
-
-### ⚙️ **Automation**
-- Automated testing and response generation
-- Configurable prompt rotation and scheduling
-- Background traffic generation for monitoring demos
-
-## 🚀 Quick Start
-
-1. **Install from Rancher Apps & Marketplace**
-   - Navigate to Apps & Marketplace
-   - Search for "AI Compare"
-   - Click Install
-
-2. **Basic Configuration**
-   - Choose your deployment namespace
-   - Enable GPU support if available
-   - Configure storage preferences
-
-3. **Access the Application**
-   - AI Compare Chat: `http://<cluster-ip>:<node-port>`
-   - Open WebUI: `http://<cluster-ip>:<webui-port>`
-   - Ollama API: `http://<cluster-ip>:<ollama-port>`
-
-## 📋 Prerequisites
-
-- **Kubernetes Cluster**: v1.24+
-- **Storage**: Persistent volumes for model caching (recommended)
-- **GPU Support**: NVIDIA GPU Operator (optional but recommended)
-- **Memory**: 4GB+ available for model loading
-- **CPU**: 2+ cores recommended
-
-## ⚙️ Configuration Options
-
-### Basic Settings
-- **Namespace**: Target deployment namespace
-- **Model Selection**: Choose from available LLM models
-- **Service Types**: NodePort, ClusterIP, or LoadBalancer
-- **Resource Limits**: CPU and memory allocation
-
-### Advanced Settings (Optional)
-- **GPU Acceleration**: Enable NVIDIA GPU support
-- **Persistent Storage**: Model caching and data persistence
-- **Observability**: OpenTelemetry and SUSE Observability integration
-- **Security**: NeuVector DLP policy automation
-- **Automation**: Background testing and monitoring
-
-### Enterprise Features
-- **Image Pull Secrets**: Private registry access
-- **Pipeline Integration**: Response enhancement configuration
-- **Development Mode**: SSH access and code persistence
-
-## 🔧 Customization
-
-The chart supports extensive customization through Helm values:
-
-```yaml
-# GPU acceleration
-ollama:
-  gpu:
-    enabled: true
-    type: nvidia
-
-# Observability
-aiCompare:
-  observability:
-    enabled: true
-    otlpEndpoint: "http://your-collector:4318"
-
-# Security integration
-neuvector:
-  enabled: true
-  controllerUrl: "https://your-neuvector:10443"
+# Without a GPU
+helm install ai-compare charts/ai-compare -n ai-compare --create-namespace \
+  --set ollama.gpu.enabled=false
 ```
 
-## 📈 Monitoring & Observability
+Upgrading a release installed from `ai-compare-opentelemetry` or
+`ai-compare-suse` keeps its resource names when the release name contains
+`ai-compare` (the usual case); set `fullnameOverride` otherwise.
 
-- **OpenTelemetry**: Automatic instrumentation with OpenLIT
-- **Metrics**: Request latency, token usage, GPU utilization
-- **Tracing**: End-to-end request tracing across components
-- **Dashboards**: Compatible with SUSE Observability
+## Images
 
-## 🛡️ Security Features
+`editions.<edition>` holds the default image for every workload (app, Ollama,
+Open WebUI, Pipelines, the Ollama OTel sidecar, and the curl, git and shell
+helper images). Set a workload's own `image.repository` / `image.tag` (for
+example `ollama.image.tag`) to override one image without changing the rest.
+The app image tag is `aiCompare.image.tag`; CI sets it on every merge, and the
+SUSE and upstream app images share it.
 
-- **Enhanced DLP Demonstrations**:
-  - Dual sensitive data transmission (Credit Card: `3412-1234-1234-2222`, SSN: `123-45-6789`)
-  - Single-button multi-pattern detection testing
-  - Clean popup interface for security demos
-- **Network Monitoring**: Availability and connectivity testing
-- **NeuVector Integration**: Automated security policy deployment and real-time DLP detection
-- **Container Security**: SUSE BCI-based images (SUSE variant)
+## Load generator
 
-## 🆘 Support & Documentation
+`frontend.loadSimulator` runs a Deployment that sends a prompt to the app's
+`/api/chat` every `intervalSeconds` (default 60; keep it at 60 or lower so the
+SUSE AI topology stays populated). The app UI shows its status and starts or
+stops it by scaling the Deployment.
 
-- **Documentation**: [Full documentation](https://github.com/wiredquill/ai-demos)
-- **Issues**: [GitHub Issues](https://github.com/wiredquill/ai-demos/issues)
-- **Examples**: [Demo scripts and tutorials](https://github.com/wiredquill/ai-demos/tree/main/demo-*.md)
+## OpenTelemetry
 
-## 🏷️ Version Information
+With `observability.enabled=true` (the default):
 
-- **Chart Version**: 0.1.144
-- **App Version**: 1.0.0
-- **Upstream Components**: Latest stable releases
-- **Compatibility**: Kubernetes 1.24+, Rancher 2.6+
+- `observability.mode=existing` sends to the cluster's shared collector, either
+  `aiCompare.observability.otlpEndpoint` or auto-discovered;
+  `observability.mode=operator` creates a SUSE AI collector for this release
+  through the OpenTelemetry Operator.
+- The per-component flags (`aiCompare.observability.enabled`,
+  `ollama.observability.enabled`, `openWebui.observability.enabled`) turn
+  individual parts off.
 
----
+The OTLP endpoint is **auto-discovered** rather than hardcoded, so the chart
+works on any cluster: a fresh install points telemetry at that cluster's own
+collector. Discovery matches the OpenTelemetry operator's standard labels
+(`app.kubernetes.io/component=opentelemetry-collector`) and the OTLP ports, so
+it works whether the collector is named `ai-observability-collector`,
+`opentelemetry-collector`, or anything else. If discovery finds nothing, the
+chart falls back to the conventional
+`opentelemetry-collector.observability.svc.cluster.local` name rather than
+silently pointing at a cluster that no longer exists.
 
-*Built with ❤️ using upstream open-source components for maximum compatibility and flexibility.*
+#### Pre-install check: "can we even find a collector?"
+
+Installing with telemetry enabled but no reachable collector is a silent
+failure: the app looks healthy while every span is dropped and the
+span-duration monitors quietly go stale. To catch that **before** the install
+rather than days later, the chart validates discovery during
+install/upgrade:
+
+```bash
+helm install ai-compare ./charts/ai-compare -n ai-compare --dry-run=server
+```
+
+If no collector can be found (and no explicit `otlpEndpoint` is set), the
+install **stops** with an actionable message explaining the ways out —
+install the collector first, set `aiCompare.observability.otlpEndpoint`,
+turn telemetry off with `observability.enabled=false`, or accept degraded
+telemetry via `observability.requireCollector=false`.
+
+When discovery succeeds (or an explicit endpoint is set), `NOTES.txt` reports
+the resolved endpoint after install, so the operator can see at a glance which
+collector telemetry is going to.
+
+Notes:
+- Use `--dry-run=server` (not plain `--dry-run`) — only the server-side
+  dry-run executes `lookup`, so it is the true pre-install test.
+- Offline renders (`helm template`, CI linting) skip the check automatically,
+  so pipelines keep working without a cluster.
+- Escape hatch: `--set observability.requireCollector=false` installs anyway
+  and prints a warning in `NOTES.txt` instead of failing.
+
+#### Span-duration health checks (optional, per-app)
+
+SUSE Observability ships "Span duration" monitors with a **5 s** default
+threshold. LLM inference routinely exceeds 5 s, which raises false-positive
+DEVIATING states. This chart can override the threshold **for this app's
+objects only**, leaving the stock 5 s threshold in force for every other
+workload on the cluster:
+
+```yaml
+observability:
+  spanDuration:
+    enabled: true
+    thresholdMilliseconds: 15000   # default 5000
+```
+
+This works by rendering SUSE Observability's per-object monitor-override
+annotations (`monitor.kubernetes-v2.stackstate.io/k8s-service-span-duration`
+and `.../pod-span-duration`) onto this release's Services and Pod templates,
+so the override travels with the install and cannot affect other apps. Set
+`enabled: false` to keep the stock 5 s threshold.
+
+**Not covered:** "Span duration for OpenTelemetry service instances". That
+monitor targets a telemetry URN (`urn:opentelemetry:...`), not a Kubernetes
+object, so no per-object annotation can reach it; tune it globally in SUSE
+Observability if needed.
+
+
+## NeuVector
+
+`neuvector.enabled=true` adds NeuVector DLP sensor and security rules for the
+data leak demo.
+
+## SUSE AI Factory
+
+The blueprints in `catalog/blueprints` install this chart as two components,
+`ai-compare-app` and `ai-compare-load-gen` (`catalog/components`), next to
+separate Ollama, Open WebUI and Pipelines charts. Each blueprint sets
+`aic.edition` on both components.

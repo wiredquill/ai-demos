@@ -1,4 +1,4 @@
-{{- if and .Values.ollama.enabled (.Values.ollama.observability.enabled) }}
+{{- if and (include "ai-compare.otel" .) .Values.ollama.observability.enabled .Values.ollama.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -15,7 +15,7 @@ data:
           - endpoint: http://localhost:{{ .Values.ollama.service.port }}
             method: GET
         collection_interval: 30s
-      
+
       # Prometheus receiver for standard metrics
       prometheus:
         config:
@@ -25,7 +25,7 @@ data:
               static_configs:
                 - targets: ['localhost:{{ .Values.ollama.service.port }}']
               metrics_path: '/metrics'
-              
+
       # OTLP receiver for any traces sent directly
       otlp:
         protocols:
@@ -35,7 +35,7 @@ data:
             endpoint: 0.0.0.0:4318
 
     processors:
-      # Add resource attributes to identify Ollama service
+      # Add resource attributes to identify Ollama service with GenAI context
       resource:
         attributes:
           - key: service.name
@@ -47,16 +47,37 @@ data:
           - key: deployment.environment
             value: "{{ .Release.Namespace }}"
             action: upsert
-          - key: k8s.cluster.name
-            value: "ai-compare-cluster"
-            action: upsert
+          # NOTE: k8s.cluster.name is deliberately NOT stamped by the sidecar.
+          # The shared collector's global resource processor sets it from its
+          # K8S_CLUSTER_NAME env (dev-ai on this cluster). An earlier version
+          # hardcoded "ai-compare-cluster", leaking a wrong cluster label into
+          # the OTEL service view (and overriding the collector's insert).
           - key: k8s.namespace.name
             value: "{{ .Release.Namespace }}"
             action: upsert
           - key: k8s.pod.name
             from_attribute: k8s.pod.name
             action: upsert
-            
+          # GenAI-specific resource attributes for SUSE Observability detection
+          - key: ai.framework
+            value: "ollama"
+            action: upsert
+          - key: ai.model.type
+            value: "llm"
+            action: upsert
+          - key: genai.application
+            value: "true"
+            action: upsert
+          - key: ai.component.type
+            value: "inference-server"
+            action: upsert
+          - key: genai.observability.enabled
+            value: "true"
+            action: upsert
+          - key: ai.application.category
+            value: "model-inference"
+            action: upsert
+
       # Batch processor for efficiency
       batch:
         timeout: 10s
@@ -65,15 +86,15 @@ data:
     exporters:
       # Export to SUSE Observability
       otlphttp:
-        endpoint: {{ .Values.ollama.observability.otlpEndpoint }}
+        endpoint: {{ include "ai-compare.otlpHttpEndpoint" . }}
         headers:
           "Content-Type": "application/x-protobuf"
         compression: gzip
-        
+
       # Debug logging (optional)
       debug:
         verbosity: basic
-        
+
     extensions:
       health_check:
         endpoint: 0.0.0.0:13133

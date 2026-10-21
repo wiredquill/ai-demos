@@ -1,0 +1,16 @@
+# Fleet bundle for the ai-compare chart (see fleet/fleet.yaml).
+defaultNamespace: ai-compare
+helm:
+  releaseName: ai-compare
+  repo: https://wiredquill.github.io/ai-demos/
+  chart: ai-compare
+  values:
+    edition: suse
+targetCustomizations:
+  - name: upstream
+    clusterSelector:
+      matchLabels:
+        needs-llm: "true"
+    helm:
+      values:
+        edition: upstream
