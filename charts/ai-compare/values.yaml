@@ -17,6 +17,11 @@ editions:
   suse:
     imagePullSecrets:
       - name: application-collection
+    # Default NodePorts for the app UI and HTTP API (aiCompare.service.nodePort /
+    # httpApiNodePort override them)
+    nodePorts:
+      ui: 31705
+      api: 31706
     app:
       repository: ghcr.io/wiredquill/ai-demos-suse
     ollama:
@@ -44,6 +49,10 @@ editions:
       tag: "15.7"
   upstream:
     imagePullSecrets: []
+    # Different from suse so both editions can run on one cluster
+    nodePorts:
+      ui: 31701
+      api: 31702
     app:
       repository: ghcr.io/wiredquill/ai-demos
     ollama:
@@ -309,8 +318,9 @@ aiCompare:
   service:
     port: 7860
     type: NodePort
-    nodePort: 31705
-    httpApiNodePort: 31706
+    # Empty = the edition's default (editions.<edition>.nodePorts)
+    nodePort: ""
+    httpApiNodePort: ""
   persistence:
     enabled: false
     size: 1Gi
