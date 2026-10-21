@@ -142,6 +142,17 @@ object, so no per-object annotation can reach it; tune it globally in SUSE
 Observability if needed.
 
 
+## Kubewarden SBOM scanning
+
+`kubewarden.sbomWorkloadScan` (default `true`, "Enable Kubewarden SBOM
+Scanning" in the form) labels the install namespace
+`sbomscanner.kubewarden.io/workloadscan=true`, so Kubewarden SBOMscanner scans
+the images of this app's workloads for CVEs - with both editions installed, the
+SUSE and upstream image results can be compared. A pre-install/upgrade hook Job
+merge-patches the label (Helm cannot own a namespace that already exists); its
+ClusterRole can only patch the release namespace. `namespaceLabels` adds more
+labels the same way. Labels stay on the namespace after uninstall.
+
 ## NeuVector
 
 `neuvector.enabled=true` adds NeuVector DLP sensor and security rules for the

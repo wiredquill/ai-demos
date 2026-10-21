@@ -1,0 +1,115 @@
+{{- $labels := dict }}
+{{- if .Values.kubewarden.sbomWorkloadScan }}
+{{- $_ := set $labels "sbomscanner.kubewarden.io/workloadscan" "true" }}
+{{- end }}
+{{- $labels = merge $labels (.Values.namespaceLabels | default dict) }}
+{{- if and .Values.aiCompare.enabled $labels }}
+{{/*
+Pre-install/upgrade hook that adds labels to the release namespace, e.g.
+sbomscanner.kubewarden.io/workloadscan=true so Kubewarden SBOMscanner scans
+this app's images for CVEs. Helm cannot own a namespace that already exists
+(Rancher creates it before installing), so the labels are merge-patched onto
+it. The ClusterRole only allows patching this one namespace. Labels stay on
+the namespace after uninstall.
+*/}}
+{{- $name := printf "%s-namespace-labels" (include "ai-compare.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- $hook := dict "helm.sh/hook" "pre-install,pre-upgrade" "helm.sh/hook-weight" "-10" "helm.sh/hook-delete-policy" "before-hook-creation" }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- toYaml $hook | nindent 4 }}
+  labels:
+    {{- include "ai-compare.labels" . | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $name }}-{{ .Release.Namespace }}
+  annotations:
+    {{- toYaml $hook | nindent 4 }}
+  labels:
+    {{- include "ai-compare.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    resourceNames: [{{ .Release.Namespace | quote }}]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $name }}-{{ .Release.Namespace }}
+  annotations:
+    {{- toYaml $hook | nindent 4 }}
+  labels:
+    {{- include "ai-compare.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $name }}-{{ .Release.Namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $name }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    {{- include "ai-compare.labels" . | nindent 4 }}
+spec:
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        {{- include "ai-compare.selectorLabels" . | nindent 8 }}
+        app.component: namespace-labels
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ $name }}
+      {{- with (include "ai-compare.imagePullSecrets" . | fromYamlArray) }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: label-namespace
+          image: {{ include "ai-compare.image" (dict "root" . "name" "curl") | quote }}
+          env:
+            - name: PATCH
+              value: {{ dict "metadata" (dict "labels" $labels) | toJson | quote }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              NS="{{ .Release.Namespace }}"
+              CA=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+              echo "==> Labelling namespace $NS: $PATCH"
+              curl -fsS --cacert $CA -X PATCH -H "Authorization: Bearer $TOKEN" \
+                -H "Content-Type: application/merge-patch+json" --data "$PATCH" \
+                "https://kubernetes.default.svc/api/v1/namespaces/$NS" > /dev/null
+              echo "    done"
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 65532
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+{{- end }}
