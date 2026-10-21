@@ -113,7 +113,7 @@ aiCompare:
   enabled: true
   image:
     repository: ghcr.io/wiredquill/ai-demos-suse
-    tag: "319602f"
+    tag: "f40c14d"
   service:
     port: 7860
     type: NodePort
