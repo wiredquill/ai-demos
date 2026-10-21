@@ -10,7 +10,6 @@
 
 # -- Image set: suse | upstream
 edition: suse
-
 # -- Default images per edition. A workload's own image.repository/tag, when
 # set, overrides these. The app image tag is aiCompare.image.tag (set by CI;
 # both app images are built from the same commit).
@@ -69,8 +68,6 @@ editions:
     shell:
       repository: busybox
       tag: "1.37"
-
-
 # -- SUSE Observability span-duration monitor overrides for THIS app only.
 # The SUSE Observability StackPacks ship three "Span duration" health monitors
 # with a default 5 s threshold:
@@ -308,7 +305,7 @@ aiCompare:
   image:
     # Empty = the edition's app image (editions.<edition>.app)
     repository: ""
-    tag: "03fc189"
+    tag: "5b4f81f"
   service:
     port: 7860
     type: NodePort
