@@ -314,11 +314,13 @@ frontend:
     # NOTE: this block now drives the PERSISTENT load-gen Deployment (templates/70-
     # load-generator.yaml) instead of the old */2 CronJob. image.* is unused by
     # the new template (it runs the SUSE curl image + the app image's
-    # health-check-emitter sidecar). intervalSeconds MUST stay < topology-TTL/2
-    # (~2min TTL on the SUSE Observability backend): 45s keeps the SUSE AI view
+    # health-check-emitter sidecar). intervalSeconds MUST stay <= topology-TTL/2
+    # (~2min TTL on the SUSE Observability backend): 60s keeps the SUSE AI view
     # + topology populated; the old */2 cadence left the view empty most of the
     # time (verified against the hr-assistant stack on dev-ai, 2026-08-26).
-    intervalSeconds: 45
+    # The app UI's Load simulator control starts/stops this Deployment (scale 1/0),
+    # including when it is installed as the blueprint's separate load-gen component.
+    intervalSeconds: 60
     requestTimeout: 30
     resources:
       limits:

@@ -6,6 +6,8 @@ metadata:
     ai-factory.suse.com/blueprint-version: 1.0.0
   name: ai-compare-suse-1-0-0
 spec:
+  # Superseded by 1.1.0 (HTML UI, model auto-detection, load-gen status in the UI). Kept for rollback.
+  deprecated: true
   source: Custom  # community, unsupported demo
   displayName: AI Compare (SUSE)
   version: 1.0.0

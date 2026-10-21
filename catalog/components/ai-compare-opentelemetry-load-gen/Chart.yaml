@@ -3,7 +3,7 @@ apiVersion: v2
 name: ai-compare-opentelemetry-load-gen
 description: 'AI Compare (OpenTelemetry) component: Load generator + health-check emitter. One of the components of the ai-compare-opentelemetry SUSE AI Factory blueprint.'
 type: application
-version: 0.1.0
+version: 0.1.1
 appVersion: latest
 dependencies:
 - name: ai-compare-opentelemetry

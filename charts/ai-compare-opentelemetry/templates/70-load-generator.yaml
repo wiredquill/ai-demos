@@ -1,6 +1,6 @@
 {{- if .Values.frontend.loadSimulator.enabled }}
 {{- $fullname := include "ai-compare-opentelemetry.fullname" . }}
-{{- $interval := .Values.frontend.loadSimulator.intervalSeconds | default 45 -}}
+{{- $interval := .Values.frontend.loadSimulator.intervalSeconds | default 60 -}}
 # Persistent load generator (replaces the former */2 CronJob).
 #
 # Why a Deployment instead of a CronJob: the SUSE Observability topology view
@@ -8,7 +8,7 @@
 # health-check-emitter sidecar below is a long-running span producer. A
 # CronJob's pods only live for the duration of each run, so a span emitter
 # inside it could never feed the topology exporter continuously. The polling
-# interval MUST stay < TTL/2 (45s default keeps components populated; the old
+# interval MUST stay <= TTL/2 (60s default keeps components populated; the old
 # */2 CronJob left the SUSE AI view empty most of the time - verified on dev-ai
 # against the hr-assistant stack).
 apiVersion: apps/v1

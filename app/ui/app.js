@@ -362,18 +362,22 @@ async function runDataLeak() {
   }
 }
 
-function renderLoad(running, detail) {
+function renderLoad(running, detail, interval) {
   state.loadRunning = running;
+  if (interval) state.loadInterval = interval;
   const btn = $("#load-toggle");
   btn.disabled = false;
   btn.textContent = running ? "Stop" : "Start";
-  $("#load-detail").textContent = running ? "Running" : detail && detail !== "Not Deployed" ? detail : "Stopped";
+  const every = state.loadInterval ? ` · every ${state.loadInterval}s` : "";
+  $("#load-detail").textContent = running
+    ? `Running${every}`
+    : detail && detail !== "Not Deployed" ? detail : "Stopped";
 }
 
 async function loadLoadStatus() {
   try {
     const s = await api("/api/load-simulator/status", { timeout: 15000 });
-    renderLoad(!!s.is_running, s.detail);
+    renderLoad(!!s.is_running, s.detail, s.interval_seconds);
   } catch {
     $("#load-detail").textContent = "Status unavailable";
     $("#load-toggle").disabled = false;
@@ -388,6 +392,7 @@ async function toggleLoad() {
     const r = await api(`/api/load-simulator/${action}`, { method: "POST", timeout: 40000 });
     log(r.message);
     renderLoad(action === "start", r.message);
+    setTimeout(loadLoadStatus, 5000);
   } catch (err) {
     log(`Load simulator: ${err.message}`, "error");
     toast(`Load simulator ${action} failed: ${err.message}`, "error");

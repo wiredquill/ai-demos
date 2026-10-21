@@ -51,7 +51,7 @@ Q_OTLP = [
 
 VARIANTS = {
     "ai-compare-opentelemetry": dict(
-        title="AI Compare (OpenTelemetry)", base_range="~0.1", version="0.1.0", blueprint="ai-compare-opentelemetry-1-3-0.yaml",
+        title="AI Compare (OpenTelemetry)", base_range="~0.1", version="0.1.1", blueprint="ai-compare-opentelemetry-1-4-0.yaml",
         components=[
             dict(name="app", pod="AI Compare app",
                  summary="The AI Compare app: asks the same prompt of Ollama directly and through Open WebUI + Pipelines, and compares the answers. GenAI telemetry, token and cost tracking go to SUSE Observability.",
@@ -61,14 +61,14 @@ VARIANTS = {
                  summary="Keeps the demo busy by calling the AI Compare HTTP API on an interval, and emits health-check spans for Ollama, Open WebUI and Pipelines so they get a health state in SUSE Observability.",
                  values=lambda v: deep(v, "frontend.loadSimulator.enabled", True),
                  questions=[dict(variable="aic.frontend.loadSimulator.intervalSeconds", label="Load Generation Interval (seconds)", group="Load Generator",
-                                 type="int", default=45, required=True,
-                                 description="Keep at 120 or lower: SUSE AI components expire ~2 minutes after their last telemetry.")] + Q_OTLP),
+                                 type="int", default=60, required=True,
+                                 description="Keep at 60 or lower: SUSE AI components expire ~2 minutes after their last telemetry.")] + Q_OTLP),
         ]),
     # The SUSE and upstream editions deploy the same four pods (Ollama, Open WebUI,
     # Pipelines, app), so their blueprints compare like for like: same app
     # versions, SUSE versus upstream images.
     "ai-compare-suse": dict(
-        title="AI Compare (SUSE)", base_range="~0.1", version="0.1.0", blueprint="ai-compare-suse-1-0-0.yaml", models=False,
+        title="AI Compare (SUSE)", base_range="~0.1", version="0.1.1", blueprint="ai-compare-suse-1-1-0.yaml", models=False,
         components=[
             dict(name="app", pod="AI Compare app",
                  summary="The AI Compare app (SUSE BCI images): asks the same prompt of Ollama directly and through Open WebUI + Pipelines, and compares the answers.",
@@ -76,7 +76,7 @@ VARIANTS = {
                  questions=Q_BACKENDS + q_service(31703, 31704) + Q_OTLP),
         ]),
     "ai-compare": dict(
-        title="AI Compare (upstream)", base_range="~0.1", version="0.1.0", blueprint="ai-compare-1-0-0.yaml", models=False,
+        title="AI Compare (upstream)", base_range="~0.1", version="0.1.1", blueprint="ai-compare-1-1-0.yaml", models=False,
         components=[
             dict(name="app", pod="AI Compare app",
                  summary="The AI Compare app (upstream images): asks the same prompt of Ollama directly and through Open WebUI + Pipelines, and compares the answers.",

@@ -3,9 +3,9 @@ questions:
   label: Load Generation Interval (seconds)
   group: Load Generator
   type: int
-  default: 45
+  default: 60
   required: true
-  description: 'Keep at 120 or lower: SUSE AI components expire ~2 minutes after their last telemetry.'
+  description: 'Keep at 60 or lower: SUSE AI components expire ~2 minutes after their last telemetry.'
 - variable: aic.aiCompare.observability.otlpEndpoint
   label: OTLP Endpoint
   group: Observability

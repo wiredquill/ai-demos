@@ -112,6 +112,11 @@ spec:
               value: "false"
             - name: DEPLOYMENT_NAME
               value: "{{ include "ai-compare-opentelemetry.fullname" . }}-app"
+            # Load generator the UI reports on and scales: rendered by this release
+            # (all-in-one) or by the blueprint's separate load-gen component, which
+            # shares the fullname
+            - name: LOAD_SIMULATOR_DEPLOYMENT
+              value: "{{ include "ai-compare-opentelemetry.fullname" . }}-load-gen"
             # HTTP API configuration
             - name: HTTP_API_ENABLED
               value: {{ .Values.aiCompare.httpApi.enabled | quote }}

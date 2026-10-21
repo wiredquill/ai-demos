@@ -510,6 +510,8 @@ class ObservableAPIServer:
                             "status": "running" if is_running else "stopped",
                             "is_running": is_running,
                             "detail": sim.get("status"),
+                            "interval_seconds": sim.get("interval_seconds"),
+                            "managed": self.chat_interface._load_simulator_managed(),
                             "request_count": getattr(self.chat_interface, "load_simulator_request_count", 0),
                             "last_request": getattr(self.chat_interface, "load_simulator_last_request", None),
                             "timestamp": time.time(),
@@ -1883,7 +1885,29 @@ class ChatInterface:
 
     # --- Load Simulator Management Methods ---
     def _load_simulator_name(self) -> str:
-        return f"{os.getenv('DEPLOYMENT_NAME', 'ai-compare')}-load-simulator"
+        return os.getenv("LOAD_SIMULATOR_DEPLOYMENT") or f"{os.getenv('DEPLOYMENT_NAME', 'ai-compare')}-load-simulator"
+
+    @staticmethod
+    def _load_simulator_managed() -> bool:
+        """True when the chart owns the load-gen Deployment; start/stop then scale it instead of creating it."""
+        return bool(os.getenv("LOAD_SIMULATOR_DEPLOYMENT"))
+
+    def _scale_load_simulator(self, replicas: int) -> tuple:
+        result = subprocess.run(
+            [
+                "kubectl",
+                "scale",
+                "deployment",
+                self._load_simulator_name(),
+                f"--replicas={replicas}",
+                "-n",
+                os.getenv("KUBERNETES_NAMESPACE", "default"),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        return result.returncode == 0, result.stderr.strip()
 
     def check_load_simulator_status(self) -> Dict:
         """Check if load simulator deployment exists and is running."""
@@ -1905,14 +1929,26 @@ class ChatInterface:
             )
 
             if result.returncode == 0:
-                status = json.loads(result.stdout).get("status", {})
+                deployment = json.loads(result.stdout)
+                status = deployment.get("status", {})
+                desired = deployment.get("spec", {}).get("replicas", 1)
                 ready_replicas = status.get("readyReplicas", 0)
+                interval = None
+                for container in deployment.get("spec", {}).get("template", {}).get("spec", {}).get("containers", []):
+                    for env in container.get("env", []):
+                        if env.get("name") == "LOAD_GEN_INTERVAL" and str(env.get("value", "")).isdigit():
+                            interval = int(env["value"])
+                if desired == 0:
+                    label = "Stopped"
+                else:
+                    label = "Running" if ready_replicas > 0 else "Starting"
                 return {
                     "exists": True,
-                    "running": ready_replicas > 0,
+                    "running": desired > 0 and ready_replicas > 0,
                     "replicas": status.get("replicas", 0),
                     "ready_replicas": ready_replicas,
-                    "status": "Running" if ready_replicas > 0 else "Not Ready",
+                    "interval_seconds": interval,
+                    "status": label,
                 }
             return {"exists": False, "running": False, "status": "Not Deployed"}
         except Exception as e:
@@ -1924,6 +1960,12 @@ class ChatInterface:
         try:
             if self.check_load_simulator_status().get("running"):
                 return True, "Load simulator is already running"
+
+            if self._load_simulator_managed():
+                if not self.check_load_simulator_status().get("exists"):
+                    return False, f"Load generator {self._load_simulator_name()} is not installed in this namespace"
+                ok, err = self._scale_load_simulator(1)
+                return (True, "Load simulator started") if ok else (False, f"Failed to start load simulator: {err}")
 
             result = subprocess.run(
                 ["kubectl", "apply", "-f", "-"],
@@ -1945,6 +1987,10 @@ class ChatInterface:
     def stop_load_simulator(self) -> tuple:
         """Stop the load simulator deployment. Returns (success, message)."""
         try:
+            if self._load_simulator_managed():
+                ok, err = self._scale_load_simulator(0)
+                return (True, "Load simulator stopped") if ok else (False, f"Failed to stop load simulator: {err}")
+
             result = subprocess.run(
                 [
                     "kubectl",
