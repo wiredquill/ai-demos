@@ -18,62 +18,62 @@ import json
 import logging
 import requests
 
+
 class Pipeline:
     """Open WebUI Pipeline for Response Level Management"""
-    
+
     def __init__(self):
         # Pipeline metadata required by Open WebUI
         self.name = "Response Level Pipeline"
         self.id = "response_level"
         self.description = "Cycles through different response complexity levels automatically"
         self.version = "1.0.0"
-        
+
         # Response level configurations
         self.levels = [
+            {"name": "Default", "modifier": "", "description": "Standard response without modification"},
             {
-                "name": "Default",
-                "modifier": "",
-                "description": "Standard response without modification"
-            },
-            {
-                "name": "Kid Mode", 
+                "name": "Kid Mode",
                 "modifier": "Explain like I'm 5 years old using simple words, fun examples, and easy-to-understand concepts.",
-                "description": "Simple explanations perfect for young children"
+                "description": "Simple explanations perfect for young children",
             },
             {
                 "name": "Young Scientist",
                 "modifier": "Explain like I'm 12 years old with some science details but keep it understandable and engaging.",
-                "description": "Age-appropriate science explanations for curious pre-teens"
+                "description": "Age-appropriate science explanations for curious pre-teens",
             },
             {
-                "name": "College Student", 
+                "name": "College Student",
                 "modifier": "Explain like I'm a college student with technical context, examples, and deeper analysis.",
-                "description": "Detailed technical explanations with educational context"
+                "description": "Detailed technical explanations with educational context",
             },
             {
                 "name": "Scientific",
                 "modifier": "Give me the full scientific explanation with precise terminology, detailed mechanisms, and technical accuracy.",
-                "description": "Complete technical detail for scientific understanding"
-            }
+                "description": "Complete technical detail for scientific understanding",
+            },
         ]
-        
+
         # Initialize cycling state
         self.current_level_index = 0
         self.mode = os.getenv("PIPELINE_MODE", "auto-cycle")  # "auto-cycle" or "manual"
         self.selected_level = 0  # For manual mode
-        
+
         # Model config checking for demo purposes
         self.model_config_check = os.getenv("MODEL_CONFIG_CHECK", "true").lower() == "true"
-        
+
         # Ollama connection configuration
         self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://ollama-service:11434")
-        if self.ollama_base_url.endswith('/'):
+        if self.ollama_base_url.endswith("/"):
             self.ollama_base_url = self.ollama_base_url[:-1]
-        
+        # Optional pinned model; otherwise the caller's model or the first installed model is used
+        self.default_model = os.getenv("OLLAMA_MODEL", "")
+        self._discovered_model = None
+
         # Setup logging
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
-        
+
         self.logger.info(f"Response Level Pipeline initialized in {self.mode} mode")
         self.logger.info(f"Available levels: {[level['name'] for level in self.levels]}")
         self.logger.info(f"Ollama backend URL: {self.ollama_base_url}")
@@ -100,15 +100,15 @@ class Pipeline:
         """Check ConfigMap for model configuration status"""
         if not self.model_config_check:
             return True, "models-latest"  # Skip check if disabled
-            
+
         try:
             import subprocess
             import json
-            
+
             # Try to get ConfigMap value
             cmd = ["kubectl", "get", "configmap", "ai-compare-config", "-o", "jsonpath={.data.MODEL_CONFIG}"]
             result = subprocess.run(cmd, capture_output=True, text=True, check=False)
-            
+
             if result.returncode == 0 and result.stdout:
                 config_value = result.stdout.strip()
                 self.logger.info(f"ConfigMap MODEL_CONFIG value: {config_value}")
@@ -116,7 +116,7 @@ class Pipeline:
             else:
                 self.logger.info("ConfigMap not found or no MODEL_CONFIG, assuming working state")
                 return True, "models-latest"  # Default to working if ConfigMap not found
-                
+
         except Exception as e:
             self.logger.warning(f"Failed to check ConfigMap: {e}")
             return True, "models-latest"  # Default to working if check fails
@@ -124,13 +124,13 @@ class Pipeline:
     def pipe(self, user_message: str, model_id: str, messages: List[dict], body: dict) -> str:
         """
         Main pipeline function called by Open WebUI
-        
+
         Args:
             user_message: The user's input message
-            model_id: The selected model identifier  
+            model_id: The selected model identifier
             messages: List of conversation messages
             body: Request body from Open WebUI
-            
+
         Returns:
             AI response from Ollama with modified prompt
         """
@@ -140,15 +140,19 @@ class Pipeline:
             if not config_ok:
                 self.logger.error(f"Pipeline broken: MODEL_CONFIG is '{config_value}' instead of 'models-latest'")
                 return f"🔴 **Pipeline Service BROKEN**: Configuration error detected!\n\n❌ Expected: 'models-latest'\n🔧 Current: '{config_value}'\n\n💡 This pipeline cannot process requests with invalid model configuration.\n⚠️ Update the model config to 'models-latest' to restore functionality."
-            # Get current level configuration
-            current_level = self.get_current_level()
-            
+            # Callers may pin the level so their label matches what the pipeline applied
+            requested_level = body.get("response_level") if isinstance(body, dict) else None
+            if isinstance(requested_level, int) and 0 <= requested_level < len(self.levels):
+                current_level = self.levels[requested_level]
+            else:
+                current_level = self.get_current_level()
+
             # Log the pipeline action
             self.logger.info(f"Processing message with level: {current_level['name']}")
             self.logger.info(f"Original message: {user_message[:100]}...")
-            
+
             # Modify the last user message based on current level
-            modified_messages = messages.copy()
+            modified_messages = [dict(m) for m in messages]
             if current_level["modifier"] and modified_messages:
                 # Find the last user message and modify it
                 for i in range(len(modified_messages) - 1, -1, -1):
@@ -159,65 +163,77 @@ class Pipeline:
             elif current_level["modifier"]:
                 # If no messages, create a new modified message
                 modified_messages = [{"role": "user", "content": f"{user_message} {current_level['modifier']}"}]
-            
+
             # Advance to next level for next request (auto-cycle mode)
-            if self.mode == "auto-cycle":
+            if self.mode == "auto-cycle" and requested_level is None:
                 self.advance_level()
                 next_level = self.levels[self.current_level_index]
                 self.logger.info(f"Next level will be: {next_level['name']}")
-            
-            self.logger.info(f"Modified message: {modified_messages[-1]['content'][:150] if modified_messages else 'No messages'}...")
-            
+
+            self.logger.info(
+                f"Modified message: {modified_messages[-1]['content'][:150] if modified_messages else 'No messages'}..."
+            )
+
             # Forward the modified request to Ollama
             try:
-                ollama_response = self._forward_to_ollama(model_id, modified_messages)
+                ollama_response = self._forward_to_ollama(self._resolve_model(body), modified_messages)
                 self.logger.info(f"Ollama response received: {ollama_response[:100] if ollama_response else 'Empty'}...")
                 return ollama_response
             except Exception as ollama_error:
                 self.logger.error(f"Ollama forwarding failed: {str(ollama_error)}")
                 return f"Pipeline processed the request with level '{current_level['name']}', but failed to get AI response: {str(ollama_error)}"
-            
+
         except Exception as e:
             self.logger.error(f"Pipeline error: {str(e)}")
             return f"Pipeline error: {str(e)}"
 
-    def _forward_to_ollama(self, model_id: str, messages: List[dict]) -> str:
+    def _resolve_model(self, body: dict) -> str:
+        """Pick the Ollama model: caller's choice, then OLLAMA_MODEL, then the first installed model.
+
+        The model_id Open WebUI passes to pipe() is the pipeline id, not an Ollama model,
+        so callers send the real model in the "ollama_model" body field.
+        """
+        requested = body.get("ollama_model") if isinstance(body, dict) else None
+        if requested:
+            return requested
+        if self.default_model:
+            return self.default_model
+        if not self._discovered_model:
+            response = requests.get(f"{self.ollama_base_url}/api/tags", timeout=10)
+            response.raise_for_status()
+            models = [m["name"] for m in response.json().get("models", [])]
+            if not models:
+                raise Exception(f"No models installed on Ollama at {self.ollama_base_url}")
+            self._discovered_model = models[0]
+        return self._discovered_model
+
+    def _forward_to_ollama(self, ollama_model: str, messages: List[dict]) -> str:
         """Forward the modified request to Ollama and return the response"""
         try:
-            # The model_id passed to pipeline is the pipeline name, not the Ollama model
-            # Use the actual Ollama model available in the cluster
-            ollama_model = "tinyllama:latest"  # Default model available in cluster
-            
-            self.logger.info(f"Pipeline called with model_id: {model_id}, using Ollama model: {ollama_model}")
-            
+            self.logger.info(f"Forwarding to Ollama model: {ollama_model}")
+
             # Prepare the request payload for Ollama
-            payload = {
-                "model": ollama_model,
-                "messages": messages,
-                "stream": False
-            }
-            
+            payload = {"model": ollama_model, "messages": messages, "stream": False}
+
             # Make the request to Ollama
-            response = requests.post(
-                f"{self.ollama_base_url}/api/chat",
-                json=payload,
-                timeout=120
-            )
+            response = requests.post(f"{self.ollama_base_url}/api/chat", json=payload, timeout=120)
+            if response.status_code == 404:
+                # Ollama answers 404 when the model is not pulled; the URL itself is fine
+                self._discovered_model = None
+                raise Exception(f"Model '{ollama_model}' is not installed on Ollama ({self.ollama_base_url})")
             response.raise_for_status()
-            
+
             # Parse the response
             response_data = response.json()
-            content = response_data.get('message', {}).get('content', '')
-            
+            content = response_data.get("message", {}).get("content", "")
+
             if content:
                 return content
             else:
                 return "No response content received from Ollama"
-                
+
         except requests.exceptions.RequestException as e:
             raise Exception(f"Failed to connect to Ollama: {str(e)}")
-        except Exception as e:
-            raise Exception(f"Error processing Ollama response: {str(e)}")
 
     def get_info(self) -> dict:
         """Return pipeline information for Open WebUI"""
@@ -228,7 +244,7 @@ class Pipeline:
             "version": self.version,
             "mode": self.mode,
             "current_level": self.get_current_level()["name"],
-            "available_levels": [level["name"] for level in self.levels]
+            "available_levels": [level["name"] for level in self.levels],
         }
 
     def get_status(self) -> dict:
@@ -240,7 +256,7 @@ class Pipeline:
             "current_level": current_level["name"],
             "current_index": self.current_level_index if self.mode == "auto-cycle" else self.selected_level,
             "total_levels": len(self.levels),
-            "description": current_level["description"]
+            "description": current_level["description"],
         }
 
 
@@ -254,16 +270,16 @@ def load_pipeline():
 if __name__ == "__main__":
     # Test the pipeline
     pipeline = Pipeline()
-    
+
     test_message = "Why is the sky blue?"
     print(f"Testing pipeline with message: '{test_message}'")
     print()
-    
+
     # Test all levels
     for i in range(len(pipeline.levels)):
         current_status = pipeline.get_status()
         print(f"Level {i+1}: {current_status['current_level']}")
-        result = pipeline.pipe(test_message, "test-model", [], {})
+        result = pipeline.pipe(test_message, "response_level", [], {})
         next_status = pipeline.get_status()
         print(f"Result: {result}")
         print(f"Next: {next_status['current_level']}")

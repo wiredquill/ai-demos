@@ -89,8 +89,8 @@ WORKDIR /app
 COPY app/pricing.json ./pricing.json
 
 # Copy application code in optimal order (least to most frequently changed)
-# Frontend assets (change less frequently)
-COPY frontend/ /app/frontend/
+# Web UI assets (served by the Flask app on 7860 and 8080)
+COPY app/ui/ /app/ui/
 
 # OpenLit module (essential for observability)
 COPY app/openlit_init.py /app/openlit_init.py
