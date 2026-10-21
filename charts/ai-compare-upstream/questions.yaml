@@ -8,6 +8,13 @@ questions:
   type: boolean
   default: true
 
+- variable: kubewarden.sbomWorkloadScan
+  group: General
+  label: "Enable Kubewarden SBOM Scanning"
+  description: "Label the install namespace sbomscanner.kubewarden.io/workloadscan=true so Kubewarden SBOMscanner scans this app's images for CVEs. The label stays on the namespace after uninstall."
+  type: boolean
+  default: true
+
 # General Configuration
 - variable: ollama.enabled
   group: General

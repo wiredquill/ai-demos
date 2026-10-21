@@ -435,6 +435,13 @@ demo:
     validValue: "llama3.2:latest"
     # Invalid config that causes observable failures
     invalidValue: "broken-model:invalid"
+# Kubewarden SBOMscanner: label the release namespace
+# sbomscanner.kubewarden.io/workloadscan=true so the images of this app's
+# workloads are scanned for CVEs (pre-install/upgrade hook Job).
+kubewarden:
+  sbomWorkloadScan: true
+# -- Extra labels for the release namespace, added by the same hook Job
+namespaceLabels: {}
 # NeuVector Security Configuration
 neuvector:
   enabled: false
