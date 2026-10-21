@@ -9,7 +9,7 @@ import pytest
 def test_imports_work():
     """Test that required packages can be imported."""
     try:
-        import gradio  # noqa: F401
+        import flask  # noqa: F401
         import requests  # noqa: F401
 
         assert True
