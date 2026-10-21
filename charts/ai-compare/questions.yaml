@@ -3,7 +3,7 @@ questions:
 - variable: edition
   group: General
   label: "Edition"
-  description: "<b>suse</b>: SUSE Application Collection and SUSE BCI images (needs the <code>application-collection</code> pull secret).<br><b>upstream</b>: the community images at the same versions (ollama/ollama, ghcr.io/open-webui), for a like-for-like comparison."
+  description: "suse: SUSE Application Collection and SUSE BCI images (needs the application-collection pull secret). upstream: the community images at the same versions (ollama/ollama, ghcr.io/open-webui), for a like-for-like comparison. To run both on one cluster, install them in different namespaces."
   type: enum
   options:
     - "suse"
@@ -36,7 +36,7 @@ questions:
 
 - variable: observability.mode
   label: "Telemetry Collector"
-  description: "Where the apps send telemetry.<br><br><b>existing</b> (default): the cluster's shared SUSE AI collector (<code>opentelemetry-collector</code> in namespace <code>observability</code>, installed from the <code>ai-observability-collector</code> chart). It builds the SUSE AI view for every app in the cluster, so the app, Ollama, the model, Open WebUI and Pipelines all appear with health.<br><br><b>operator</b>: create a separate SUSE AI collector just for this release. Only needed on clusters without the shared SUSE AI collector; requires the OpenTelemetry Operator."
+  description: "Where the apps send telemetry. existing (default): the cluster's shared SUSE AI collector (opentelemetry-collector in namespace observability, installed from the ai-observability-collector chart). It builds the SUSE AI view for every app in the cluster, so the app, Ollama, the model, Open WebUI and Pipelines all appear with health. operator: create a separate SUSE AI collector just for this release. Only needed on clusters without the shared SUSE AI collector; requires the OpenTelemetry Operator."
   type: enum
   options:
     - "existing"
@@ -56,7 +56,7 @@ questions:
 
 - variable: opentelemetry.operator.suseObservability.apiUrl
   label: "SUSE Observability URL"
-  description: "Base URL of SUSE Observability, used by the topology exporter. Example: <code>https://observability.example.com</code>"
+  description: "Base URL of SUSE Observability, used by the topology exporter. Example: https://observability.example.com"
   type: string
   required: true
   default: ""
@@ -65,7 +65,7 @@ questions:
 
 - variable: opentelemetry.operator.suseObservability.otlpEndpoint
   label: "SUSE Observability OTLP Endpoint"
-  description: "OTLP gRPC ingestion endpoint as <code>host:port</code>, no scheme. Example: <code>otlp-observability.example.com:443</code>"
+  description: "OTLP gRPC ingestion endpoint as host:port, no scheme. Example: otlp-observability.example.com:443"
   type: string
   required: true
   default: ""
@@ -83,7 +83,7 @@ questions:
 
 - variable: opentelemetry.operator.suseObservability.existingSecret
   label: "API Key Secret (optional)"
-  description: "Secret in this namespace holding the SUSE Observability API key (key <code>API_KEY</code>). Leave blank to copy <code>open-telemetry-collector</code> from the <code>observability</code> namespace at install time."
+  description: "Secret in this namespace holding the SUSE Observability API key (key API_KEY). Leave blank to copy open-telemetry-collector from the observability namespace at install time."
   type: string
   required: false
   default: ""
@@ -138,18 +138,16 @@ questions:
 
 - variable: aiCompare.service.nodePort
   group: General
-  label: "AI Compare NodePort (Gradio UI)"
-  description: "NodePort for the Gradio UI (port 7860). Only used when Service Type is NodePort."
-  type: "integer"
-  default: 31705
+  label: "AI Compare NodePort (UI)"
+  description: "NodePort for the UI (port 7860). Leave blank for the edition default: 31705 for suse, 31701 for upstream."
+  type: "int"
   show_if: "aiCompare.service.type=NodePort"
 
 - variable: aiCompare.service.httpApiNodePort
   group: General
   label: "AI Compare NodePort (HTTP API)"
-  description: "NodePort for the HTTP API server (port 8080). Only used when Service Type is NodePort."
-  type: "integer"
-  default: 31706
+  description: "NodePort for the HTTP API (port 8080). Leave blank for the edition default: 31706 for suse, 31702 for upstream."
+  type: "int"
   show_if: "aiCompare.service.type=NodePort"
 
 - variable: neuvector.enabled

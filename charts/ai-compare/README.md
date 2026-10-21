@@ -31,6 +31,13 @@ helm install ai-compare charts/ai-compare -n ai-compare --create-namespace \
   --set ollama.gpu.enabled=false
 ```
 
+**Both editions on one cluster:** install each in its own namespace (the
+backend Deployments and Services use fixed names such as `ollama-service`).
+Their NodePorts already differ: 31705/31706 for suse and 31701/31702 for
+upstream (`editions.<edition>.nodePorts`; `aiCompare.service.nodePort` and
+`httpApiNodePort` override them). In the Rancher UI, use the arrow on the
+chart's Install/Upgrade button and choose "Install new instance".
+
 Upgrading a release installed from `ai-compare-opentelemetry` or
 `ai-compare-suse` keeps its resource names when the release name contains
 `ai-compare` (the usual case); set `fullnameOverride` otherwise.
