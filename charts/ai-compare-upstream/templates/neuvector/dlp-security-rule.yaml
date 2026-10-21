@@ -1,0 +1,25 @@
+{{- if .Values.neuvector.enabled }}
+apiVersion: neuvector.com/v1
+kind: NvDlpSecurityRule
+metadata:
+  name: {{ include "ai-compare.fullname" . }}-dlp-rule
+  labels:
+    {{- include "ai-compare.labels" . | nindent 4 }}
+spec:
+  sensor:
+    name: {{ include "ai-compare.fullname" . }}-dlp-sensor
+    comment: "DLP sensor for AI Compare sensitive data detection (credit cards and SSN)"
+    rules:
+      - name: credit-card-detection
+        patterns:
+          - key: pattern
+            op: regex
+            value: '\b(?:\d[ -]*?){13,16}\b'
+            context: body
+      - name: ssn-detection
+        patterns:
+          - key: pattern
+            op: regex
+            value: '\b\d{3}-\d{2}-\d{4}\b'
+            context: body
+{{- end }}

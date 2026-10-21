@@ -1,0 +1,6 @@
+# Fleet bundle for the ai-compare-upstream chart; see fleet/fleet.yaml.
+defaultNamespace: ai-compare-upstream
+helm:
+  releaseName: ai-compare-upstream
+  repo: https://wiredquill.github.io/ai-demos/
+  chart: ai-compare-upstream

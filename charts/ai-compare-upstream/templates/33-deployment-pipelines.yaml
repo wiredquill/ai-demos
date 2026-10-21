@@ -1,0 +1,116 @@
+{{- if .Values.pipelines.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pipelines
+  labels:
+    app: pipelines
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pipelines
+  template:
+    metadata:
+      annotations:
+        {{- include "ai-compare.spanDurationPodAnnotations" . | nindent 8 }}
+      labels:
+        app: pipelines
+    spec:
+      {{- with (include "ai-compare.imagePullSecrets" . | fromYamlArray) }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+      {{- if .Values.pipelines.git.enabled }}
+      # Git Sync - Downloads pipelines from repository. Both editions' git images
+      # (SUSE Application Collection git, alpine/git) run `git` as their
+      # entrypoint, so the clone and the copy into the shared volume are two steps.
+      - name: git-clone
+        image: {{ include "ai-compare.image" (dict "root" . "name" "git") | quote }}
+        args:
+          - clone
+          - --branch
+          - {{ .Values.pipelines.git.branch | quote }}
+          - --depth
+          - "1"
+          - {{ .Values.pipelines.git.repo | quote }}
+          - /work/repo
+        env:
+        - name: HOME
+          value: /work
+        volumeMounts:
+        - name: git-work
+          mountPath: /work
+      - name: git-sync
+        image: {{ include "ai-compare.image" (dict "root" . "name" "shell") | quote }}
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - |
+            echo "Repository: {{ .Values.pipelines.git.repo }} ({{ .Values.pipelines.git.branch }}), path: {{ .Values.pipelines.git.path }}"
+            if [ -d "/work/repo/{{ .Values.pipelines.git.path }}" ]; then
+              cp -r /work/repo/{{ .Values.pipelines.git.path }}/* /app/pipelines/
+              ls -la /app/pipelines/
+              echo "Pipeline files copied successfully"
+            else
+              echo "Pipeline directory not found in repository"
+              exit 1
+            fi
+        volumeMounts:
+        - name: git-work
+          mountPath: /work
+        - name: pipeline-storage
+          mountPath: /app/pipelines
+      {{- end }}
+      containers:
+      - name: pipelines
+        image: {{ include "ai-compare.image" (dict "root" . "name" "pipelines" "image" .Values.pipelines.image) | quote }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        ports:
+        - containerPort: {{ .Values.pipelines.service.port }}
+          name: http
+        env:
+        - name: PORT
+          value: "{{ .Values.pipelines.service.port }}"
+        - name: PIPELINE_MODE
+          value: "{{ .Values.pipelines.config.pipelineMode }}"
+        - name: LOG_LEVEL
+          value: "{{ .Values.pipelines.config.logLevel }}"
+        - name: PIPELINES_DIR
+          value: "/app/pipelines"
+        # Ollama connection configuration for pipeline backend
+        - name: OLLAMA_BASE_URL
+          value: "http://ollama-service:11434"
+        - name: OLLAMA_API_BASE_URL
+          value: "http://ollama-service:11434"
+        volumeMounts:
+        - name: pipeline-storage
+          mountPath: /app/pipelines
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.pipelines.service.port }}
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.pipelines.service.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: pipeline-storage
+        emptyDir: {}
+      {{- if .Values.pipelines.git.enabled }}
+      - name: git-work
+        emptyDir: {}
+      {{- end }}
+{{- end }}

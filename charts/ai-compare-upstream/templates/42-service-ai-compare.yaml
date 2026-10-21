@@ -1,0 +1,43 @@
+{{- if .Values.aiCompare.enabled }}
+{{- $editionPorts := (index .Values.editions (include "ai-compare.edition" .)).nodePorts | default dict }}
+{{- $nodePorts := dict "ui" (.Values.aiCompare.service.nodePort | default $editionPorts.ui) "api" (.Values.aiCompare.service.httpApiNodePort | default $editionPorts.api) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ai-compare.fullname" . }}-app-service
+  labels:
+    app.kubernetes.io/name: {{ include "ai-compare.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: genai-chat
+    app.kubernetes.io/part-of: genai-stack
+    ai.framework: "gradio-ollama"
+    genai.application: "true"
+    genai.app: "true"
+  annotations:
+    genai.observability/enabled: "true"
+    genai.observability/type: "chat-application"
+    genai.observability/models: "llama3.2:latest"
+    genai.observability/framework: "ollama"
+    observability.suse.com/genai-app: "true"
+    ai.application.category: "conversational-ai"
+    {{- include "ai-compare.spanDurationServiceAnnotations" . | nindent 4 }}
+spec:
+  selector:
+    app: {{ include "ai-compare.fullname" . }}-app
+  ports:
+  - protocol: TCP
+    port: {{ .Values.aiCompare.service.port }}
+    targetPort: {{ .Values.aiCompare.service.port }}
+    name: gradio
+{{- if and (eq .Values.aiCompare.service.type "NodePort") $nodePorts.ui }}
+    nodePort: {{ $nodePorts.ui }}
+{{- end }}
+  - protocol: TCP
+    port: {{ .Values.aiCompare.httpApi.port }}
+    targetPort: {{ .Values.aiCompare.httpApi.port }}
+    name: http-api
+{{- if and (eq .Values.aiCompare.service.type "NodePort") $nodePorts.api }}
+    nodePort: {{ $nodePorts.api }}
+{{- end }}
+  type: {{ .Values.aiCompare.service.type }}
+{{- end }}

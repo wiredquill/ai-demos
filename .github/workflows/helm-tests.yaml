@@ -5,11 +5,13 @@ on:
     branches: [ main ]
     paths:
       - 'charts/**'
+      - 'scripts/gen-ai-compare-upstream.py'
       - '.github/workflows/helm-tests.yaml'
   pull_request:
     branches: [ main ]
     paths:
       - 'charts/**'
+      - 'scripts/gen-ai-compare-upstream.py'
       - '.github/workflows/helm-tests.yaml'
   workflow_dispatch:
 
@@ -19,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        edition: [suse, upstream]
+        chart: [ai-compare, ai-compare-upstream]
 
     steps:
     - name: Checkout code
@@ -30,24 +32,32 @@ jobs:
       with:
         version: '3.12.0'
 
+    - name: Check ai-compare-upstream is generated from ai-compare
+      run: |
+        python3 scripts/gen-ai-compare-upstream.py .
+        git diff --exit-code charts/ai-compare-upstream || {
+          echo "charts/ai-compare-upstream is out of date: run python3 scripts/gen-ai-compare-upstream.py and commit the result"
+          exit 1
+        }
+
     - name: Lint Helm chart
       run: |
-        echo "🔍 Linting ai-compare chart (edition ${{ matrix.edition }})..."
-        helm lint charts/ai-compare --set edition=${{ matrix.edition }}
+        echo "🔍 Linting ${{ matrix.chart }}..."
+        helm lint charts/${{ matrix.chart }}
 
     - name: Validate template rendering
       run: |
-        echo "🔧 Validating template rendering for edition ${{ matrix.edition }}, with and without OpenTelemetry..."
-        helm template test-release charts/ai-compare --namespace test --set edition=${{ matrix.edition }} > /dev/null
-        helm template test-release charts/ai-compare --namespace test --set edition=${{ matrix.edition }} --set observability.enabled=false > /dev/null
+        echo "🔧 Validating template rendering for ${{ matrix.chart }}, with and without OpenTelemetry..."
+        helm template test-release charts/${{ matrix.chart }} --namespace test > /dev/null
+        helm template test-release charts/${{ matrix.chart }} --namespace test --set observability.enabled=false > /dev/null
         echo "✅ Template validation passed"
 
     - name: Check for test files
       run: |
-        echo "🧪 Checking for test files in ai-compare..."
-        if [ -d "charts/ai-compare/templates/tests" ]; then
+        echo "🧪 Checking for test files in ${{ matrix.chart }}..."
+        if [ -d "charts/${{ matrix.chart }}/templates/tests" ]; then
           echo "✅ Test directory found"
-          ls -la charts/ai-compare/templates/tests/
+          ls -la charts/${{ matrix.chart }}/templates/tests/
         else
           echo "❌ No test directory found"
           exit 1
@@ -59,7 +69,7 @@ jobs:
     needs: helm-lint
     strategy:
       matrix:
-        edition: [suse, upstream]
+        chart: [ai-compare, ai-compare-upstream]
 
     steps:
     - name: Checkout code
@@ -83,10 +93,10 @@ jobs:
 
     - name: Test Helm install (dry-run)
       run: |
-        echo "🚀 Testing Helm install for edition ${{ matrix.edition }}..."
-        helm install test-${{ matrix.edition }} charts/ai-compare \
-          --set edition=${{ matrix.edition }} \
-          --namespace test-${{ matrix.edition }} \
+        echo "🚀 Testing Helm install for edition ${{ matrix.chart }}..."
+        helm install test-${{ matrix.chart }} charts/${{ matrix.chart }} \
+          \
+          --namespace test-${{ matrix.chart }} \
           --create-namespace \
           --dry-run \
           --debug
@@ -94,19 +104,19 @@ jobs:
     - name: Generate test manifests
       run: |
         echo "📄 Generating manifests with test hooks..."
-        helm template test-${{ matrix.edition }} charts/ai-compare \
-          --set edition=${{ matrix.edition }} \
-          --namespace test-${{ matrix.edition }} \
+        helm template test-${{ matrix.chart }} charts/${{ matrix.chart }} \
+          \
+          --namespace test-${{ matrix.chart }} \
           --show-only templates/tests/test-config-validation.yaml \
           --show-only templates/tests/test-security-demo.yaml \
           --show-only templates/tests/test-service-connectivity.yaml \
-          > ai-compare-${{ matrix.edition }}-tests.yaml || echo "No test files found, creating empty test manifest" > ai-compare-${{ matrix.edition }}-tests.yaml
+          > ${{ matrix.chart }}-tests.yaml || echo "No test files found, creating empty test manifest" > ${{ matrix.chart }}-tests.yaml
 
     - name: Upload test manifests
       uses: actions/upload-artifact@v4
       with:
-        name: ai-compare-${{ matrix.edition }}-test-manifests
-        path: ai-compare-${{ matrix.edition }}-tests.yaml
+        name: ${{ matrix.chart }}-test-manifests
+        path: ${{ matrix.chart }}-tests.yaml
 
   integration-test:
     name: Integration Tests (Optional)
@@ -154,13 +164,12 @@ jobs:
 
     - name: Run upstream chart tests
       run: |
-        echo "🧪 Running integration tests for ai-compare..."
-        helm install ai-compare charts/ai-compare \
+        echo "🧪 Running integration tests for ai-compare-upstream..."
+        helm install ai-compare charts/ai-compare-upstream \
           --namespace ai-compare-test \
           --create-namespace \
           --wait \
           --timeout 10m \
-          --set edition=upstream \
           --set observability.enabled=false \
           --set ollama.gpu.enabled=false \
           --set aiCompare.automation.enabled=false \

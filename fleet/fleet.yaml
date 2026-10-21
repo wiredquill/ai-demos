@@ -1,29 +1,42 @@
-# Deploys the ai-compare chart to downstream clusters with Rancher Fleet.
+# Deploys AI Compare to downstream clusters with Rancher Fleet.
 #
 # Apply to the Rancher management cluster:
 #   kubectl apply -f fleet/fleet.yaml
-# then label the target clusters:
-#   needs-llm-suse=true   SUSE edition (SUSE Application Collection / BCI images)
-#   needs-llm=true        upstream edition (community images)
+# then label the target clusters (a cluster can have both labels; the two
+# editions install into separate namespaces for a side-by-side comparison):
+#   needs-llm-suse=true   ai-compare (SUSE Application Collection / BCI images)
+#   needs-llm=true        ai-compare-upstream (community images)
 #
-# The GitRepo points at fleet/ai-compare, whose fleet.yaml installs the chart
-# from the ai-demos Helm repository and sets the edition per cluster label.
-apiVersion: fleet.cattle.io/v1alpha1
-kind: GitRepo
-metadata:
-  name: ai-compare
-  namespace: fleet-default
-spec:
-  repo: "https://github.com/wiredquill/ai-demos.git"
-  branch: main
-  paths:
-    - fleet/ai-compare
-  targets:
-    - name: suse
-      clusterSelector:
-        matchLabels:
-          needs-llm-suse: "true"
-    - name: upstream
-      clusterSelector:
-        matchLabels:
-          needs-llm: "true"
+# Each GitRepo points at a fleet.yaml that installs the chart from the ai-demos
+# Helm repository.
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: fleet.cattle.io/v1alpha1
+    kind: GitRepo
+    metadata:
+      name: ai-compare
+      namespace: fleet-default
+    spec:
+      repo: "https://github.com/wiredquill/ai-demos.git"
+      branch: main
+      paths:
+        - fleet/ai-compare
+      targets:
+        - clusterSelector:
+            matchLabels:
+              needs-llm-suse: "true"
+  - apiVersion: fleet.cattle.io/v1alpha1
+    kind: GitRepo
+    metadata:
+      name: ai-compare-upstream
+      namespace: fleet-default
+    spec:
+      repo: "https://github.com/wiredquill/ai-demos.git"
+      branch: main
+      paths:
+        - fleet/ai-compare-upstream
+      targets:
+        - clusterSelector:
+            matchLabels:
+              needs-llm: "true"

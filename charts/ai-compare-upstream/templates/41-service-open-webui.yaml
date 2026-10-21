@@ -1,0 +1,16 @@
+{{- if .Values.openWebui.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: open-webui-service
+  annotations:
+    {{- include "ai-compare.spanDurationServiceAnnotations" . | nindent 4 }}
+spec:
+  selector:
+    app: open-webui
+  ports:
+  - protocol: TCP
+    port: {{ .Values.openWebui.service.port }}
+    targetPort: {{ .Values.openWebui.service.port }}
+  type: {{ .Values.openWebui.service.type }}
+{{- end }}

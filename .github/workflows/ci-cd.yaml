@@ -188,12 +188,15 @@ jobs:
 
           increment_version "$CHART_PATH"
 
+      - name: Regenerate ai-compare-upstream from ai-compare
+        run: python3 scripts/gen-ai-compare-upstream.py .
+
       - name: Commit and push updated Helm chart files
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-          git add "charts/ai-compare/values.yaml" "charts/ai-compare/Chart.yaml"
+          git add "charts/ai-compare/values.yaml" "charts/ai-compare/Chart.yaml" charts/ai-compare-upstream
 
           if git diff --staged --quiet; then
             echo "No changes to commit in Helm chart files."

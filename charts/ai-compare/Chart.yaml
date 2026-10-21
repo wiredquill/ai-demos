@@ -1,11 +1,12 @@
 annotations:
+  catalog.cattle.io/display-name: AI Compare (SUSE)
   category: AI/ML
   licenses: MIT
   observability.suse.com/compatible: "true"
   opentelemetry.io/instrumented: "true"
 apiVersion: v2
 appVersion: 1.0.0
-description: AI Compare - compares direct Ollama answers with pipeline-enhanced Open WebUI answers. One chart for SUSE (Application Collection / BCI) or upstream images, with optional OpenTelemetry GenAI telemetry, token and cost tracking for SUSE Observability.
+description: AI Compare (SUSE) - compares direct Ollama answers with pipeline-enhanced Open WebUI answers on SUSE Application Collection and SUSE BCI images, with optional OpenTelemetry GenAI telemetry, token and cost tracking for SUSE Observability. ai-compare-upstream is the same app on community images.
 home: https://github.com/wiredquill/ai-demos
 keywords:
   - ai

@@ -34,9 +34,10 @@ This repository provides a curated collection of enterprise-ready AI application
 Production Helm charts for the apps actively developed here:
 
 - **AI Compare** - AI response comparison tool with security and observability demonstrations
-  - `ai-compare`: one chart; the install form picks the SUSE (BCI / Application
-    Collection) or upstream images and turns OpenTelemetry GenAI telemetry
-    (token/cost tracking) on or off
+  - `ai-compare`: SUSE edition (SUSE BCI / Application Collection images)
+  - `ai-compare-upstream`: the same app on community images, for a side-by-side
+    comparison on one cluster (generated from `charts/ai-compare`)
+  - Both have an OpenTelemetry checkbox for GenAI telemetry (token/cost tracking)
 - **HR Assistant** - RAG-based HR assistant
   - `hr-assistant`: Full stack with OpenTelemetry, Qdrant/OpenSearch retrieval
   - `hr-assistant-sovereign-data`: Sovereign-data variant
@@ -68,7 +69,8 @@ Complete deployment automation and configurations:
 
 | Chart Name | Version | Description | Variants |
 |------------|---------|-------------|----------|
-| `ai-compare` | 1.x | AI comparison app | `edition`: suse / upstream; `observability.enabled` |
+| `ai-compare` | 1.x | AI comparison app, SUSE images | `observability.enabled` |
+| `ai-compare-upstream` | 1.x | AI comparison app, community images | `observability.enabled` |
 | `ollama-suse` | 0.1.x | LLM inference server (SUSE) | Enterprise |
 | `ollama-upstream` | 0.1.x | LLM inference server (Upstream) | Community |
 
@@ -446,18 +448,19 @@ helm install my-release ai-demos/ai-compare
 1. Open Rancher cluster management interface
 2. Navigate to **Apps & Marketplace**
 3. Search for "AI Compare"
-4. Select `ai-compare`, then pick the **Edition** (suse or upstream) and
-   whether to **Enable OpenTelemetry** in the form
+4. Select `ai-compare` (SUSE) or `ai-compare-upstream`, and choose whether to
+   **Enable OpenTelemetry** in the form. To compare both on one cluster,
+   install each into its own namespace
 5. Configure and deploy
 
 #### **Option 2: Helm CLI**
 ```bash
 # SUSE edition with OpenTelemetry (the defaults)
-helm install ai-demo charts/ai-compare
+helm install ai-compare charts/ai-compare -n ai-compare --create-namespace
 
-# Upstream edition without OpenTelemetry
-helm install ai-demo charts/ai-compare \
-  --set edition=upstream \
+# Upstream edition next to it, without OpenTelemetry
+helm install ai-compare-upstream charts/ai-compare-upstream \
+  -n ai-compare-upstream --create-namespace \
   --set observability.enabled=false
 ```
 
@@ -466,8 +469,9 @@ helm install ai-demo charts/ai-compare \
 # Deploy Fleet configuration
 kubectl apply -f fleet/fleet.yaml
 
-# Label target clusters
-kubectl label cluster my-cluster needs-llm-suse=true
+# Label target clusters (both labels = both editions, in separate namespaces)
+kubectl label cluster my-cluster needs-llm-suse=true   # ai-compare
+kubectl label cluster my-cluster needs-llm=true        # ai-compare-upstream
 ```
 
 ### **Access the Application**
@@ -491,7 +495,8 @@ ai-demos/
 │   ├── requirements.txt                # Python dependencies
 │   └── tests/                          # Application test suite
 ├── 📦 charts/                        # Production Helm charts
-│   └── ai-compare/                     # AI Compare (SUSE or upstream edition)
+│   ├── ai-compare/                     # AI Compare, SUSE edition (the source)
+│   └── ai-compare-upstream/            # generated: upstream edition
 ├── 📋 Demo Guides/                   # Step-by-step demonstrations
 │   ├── demo-1.md                       # GPU infrastructure with Rancher
 │   ├── demo-2.md                       # Multi-method deployment
