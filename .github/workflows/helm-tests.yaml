@@ -97,7 +97,9 @@ jobs:
         helm template test-${{ matrix.edition }} charts/ai-compare \
           --set edition=${{ matrix.edition }} \
           --namespace test-${{ matrix.edition }} \
-          --show-only templates/tests/test-config-validation.yaml,templates/tests/test-security-demo.yaml,templates/tests/test-service-connectivity.yaml \
+          --show-only templates/tests/test-config-validation.yaml \
+          --show-only templates/tests/test-security-demo.yaml \
+          --show-only templates/tests/test-service-connectivity.yaml \
           > ai-compare-${{ matrix.edition }}-tests.yaml || echo "No test files found, creating empty test manifest" > ai-compare-${{ matrix.edition }}-tests.yaml
 
     - name: Upload test manifests
