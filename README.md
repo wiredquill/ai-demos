@@ -3,7 +3,7 @@
 **Enterprise AI applications and demonstrations for SUSE's cloud-native platform**
 
 This repository is scoped to the applications this project actively develops:
-**AI Compare** and **HR Assistant** (including the sovereign-data variant). Their
+**AI Compare** and **HR Assistant** (Ollama and vLLM variants). Their
 source code lives under `app/`, `frontend/`, `frontend-react/`, and `pipelines/`,
 and their deployable Helm charts under `charts/`.
 
@@ -40,7 +40,7 @@ Production Helm charts for the apps actively developed here:
   - Both have an OpenTelemetry checkbox for GenAI telemetry (token/cost tracking)
 - **HR Assistant** - RAG-based HR assistant
   - `hr-assistant`: Full stack with OpenTelemetry, Qdrant/OpenSearch retrieval
-  - `hr-assistant-sovereign-data`: Sovereign-data variant
+  - `hr-assistant-vllm`: The same app served by SUSE vLLM, with engine-level metrics
 
 > Standalone Ollama / Open WebUI / Rancher AI / Stable Diffusion charts now live in `wiredquill/helm-charts`.
 
