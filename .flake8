@@ -14,4 +14,3 @@ exclude =
     *.egg-info
 per-file-ignores =
     app/hr-assistant/apps/rag102.py: E402
-    app/hr-assistant-sovereign-data/apps/rag102.py: E402
