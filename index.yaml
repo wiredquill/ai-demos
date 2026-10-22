@@ -2,6 +2,35 @@ apiVersion: v1
 entries:
   ai-compare-app:
   - annotations:
+      catalog.cattle.io/display-name: AI Compare - AI Compare app
+    apiVersion: v2
+    appVersion: latest
+    created: "2026-10-22T10:07:31.7658-07:00"
+    dependencies:
+    - alias: aic
+      name: ai-compare
+      repository: file://../../../charts/ai-compare
+      version: ^1.0
+    description: 'AI Compare component: AI Compare app. One of the components of the
+      ai-compare SUSE AI Factory blueprint.'
+    digest: c54a86ef42d96fbdbb28bf7762bfc9a7b3c29839062f1b9fad701f23e3f65c0e
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - ollama
+    - open-webui
+    - demo
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: ai-compare-app
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/ai-compare-app-1.0.0.tgz
+    version: 1.0.0
+  - annotations:
       catalog.cattle.io/display-name: AI Compare (upstream) - AI Compare app
     apiVersion: v2
     appVersion: latest
@@ -30,6 +59,36 @@ entries:
     urls:
     - https://github.com/wiredquill/ai-demos/ai-compare-app-0.1.0.tgz
     version: 0.1.0
+  ai-compare-load-gen:
+  - annotations:
+      catalog.cattle.io/display-name: AI Compare - Load generator + health-check emitter
+    apiVersion: v2
+    appVersion: latest
+    created: "2026-10-22T10:07:31.767402-07:00"
+    dependencies:
+    - alias: aic
+      name: ai-compare
+      repository: file://../../../charts/ai-compare
+      version: ^1.0
+    description: 'AI Compare component: Load generator + health-check emitter. One
+      of the components of the ai-compare SUSE AI Factory blueprint.'
+    digest: d2595956ad51a3deced5606af6caa5424858c39bf7adce4487a31943afcd1094
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - ollama
+    - open-webui
+    - demo
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: ai-compare-load-gen
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/ai-compare-load-gen-1.0.0.tgz
+    version: 1.0.0
   ai-compare-opentelemetry:
   - annotations:
       category: AI/ML
@@ -1066,4 +1125,4 @@ entries:
     urls:
     - https://github.com/wiredquill/ai-demos/vllm-0.1.10.tgz
     version: 0.1.10
-generated: "2026-10-12T15:07:22.553232-07:00"
+generated: "2026-10-22T10:07:31.763195-07:00"
