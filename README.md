@@ -171,7 +171,7 @@ by `scripts/gen-ai-compare-components.py`.
 | `ai-compare-suse` 1.1.0 | `ollama` 1.76.0, `open-webui-pipelines` 0.9.2, `open-webui` 8.19.1 (SUSE charts + forms), `ai-compare-app` 1.0.0, `ai-compare-load-gen` 1.0.0 (5) |
 | `ai-compare` 1.1.0 (upstream) | `ollama` 1.76.0, `pipelines` 0.9.0, `open-webui` 8.19.0 (community charts + forms, repo `wiredquill-upstream`), `ai-compare-app` 1.0.0, `ai-compare-load-gen` 1.0.0 (5) |
 
-The former `ai-compare-opentelemetry` blueprint is deprecated: `ai-compare-suse`
+The former `ai-compare-opentelemetry` blueprint has been removed: `ai-compare-suse`
 now includes OpenTelemetry and the load generator.
 
 **`ai-compare-suse` and `ai-compare` are a matched pair for comparing CVEs.** They
@@ -263,9 +263,11 @@ curl -sk -H "Authorization: Bearer $TOKEN" \
   | jq '.questions | length'
 ```
 
-**4. Add the blueprints.** Either register this repository as a blueprint
-catalog, so Fleet applies every blueprint and keeps them in sync, by adding it
-to the `aif-operator` Helm values:
+**4. Add the blueprints.** Register this repository as a blueprint catalog, so
+Fleet applies every blueprint and keeps them in sync. In **AI Factory →
+Settings → Blueprint Catalogs → Add Catalog** use name `ai-demos`, repository
+`https://github.com/wiredquill/ai-demos.git`, branch `main` and path
+`catalog/blueprints` (no leading `/`). Or add it to the `aif-operator` Helm values:
 ```yaml
 blueprintCatalogs:
   - name: ai-demos                 # = metadata.name in catalog/blueprints/blueprint-catalog.yaml
@@ -273,14 +275,20 @@ blueprintCatalogs:
     branch: main
     paths: [catalog/blueprints]    # not catalog/: components/ and charts/ hold Helm charts Fleet would deploy
 ```
-or apply single blueprints by hand on the management cluster:
+Don't also `kubectl apply` blueprints from this repository: Fleet installs the
+catalog as one Helm release and refuses to adopt a Blueprint it didn't create,
+so a single hand-applied one blocks the whole catalog (GitRepo
+`fleet-local/blueprint-catalog-ai-demos` shows "invalid ownership metadata").
+Delete the hand-applied Blueprint, or add the ownership metadata Fleet expects:
 ```bash
-kubectl apply -f catalog/blueprints/hr-assistant-vllm-1-5-0.yaml   # or any blueprint in catalog/blueprints
-kubectl get blueprints.ai-factory.suse.com -l ai-factory.suse.com/blueprint-name
+kubectl label blueprint <name> app.kubernetes.io/managed-by=Helm
+kubectl annotate blueprint <name> \
+  meta.helm.sh/release-name=blueprint-catalog-ai-demos-catalog-blueprints \
+  meta.helm.sh/release-namespace=default
 ```
 
-**5. Deploy it.** In Rancher, go to **AI Factory → Blueprints → SUSE AI HR
-Assistant (vLLM) 1.5.0 → Deploy**. Pick the target cluster and a namespace that
+**5. Deploy it.** In Rancher, go to **AI Factory → Blueprints → HR Assistant
+(vLLM) 1.5.0 → Deploy**. Pick the target cluster and a namespace that
 nothing else uses, then review each component (the `vllm` component holds the
 model and HF token).
 To deploy from YAML instead, use an AIWorkload. `componentValues` is keyed by

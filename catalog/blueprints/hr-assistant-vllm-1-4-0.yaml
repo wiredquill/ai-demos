@@ -9,7 +9,7 @@ spec:
   # Superseded by 1.4.1 (install forms for vllm and opensearch). Kept for rollback.
   deprecated: true
   source: Custom  # community, unsupported demo
-  displayName: SUSE AI HR Assistant (vLLM)
+  displayName: HR Assistant (vLLM)
   version: 1.4.0
   description: |
     Intelligent Employee Support and Policy Management served by SUSE vLLM

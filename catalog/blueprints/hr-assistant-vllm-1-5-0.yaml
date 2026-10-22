@@ -7,7 +7,7 @@ metadata:
   name: hr-assistant-vllm-1-5-0
 spec:
   source: Custom  # community, unsupported demo
-  displayName: SUSE AI HR Assistant (vLLM)
+  displayName: HR Assistant (vLLM)
   version: 1.5.0
   description: |
     Intelligent Employee Support and Policy Management served by SUSE vLLM

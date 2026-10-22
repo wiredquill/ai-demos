@@ -1,4 +1,4 @@
-# SUSE AI HR Assistant Demo Configuration (vLLM variant)
+# HR Assistant Demo Configuration (vLLM variant)
 # Showcases comprehensive LLM observability with OpenLit integration, PLUS the
 # native engine-level GenAI metrics SUSE's vLLM exposes on /metrics that
 # Ollama cannot (KV-cache utilization, engine-side TTFT/per-token latency).
