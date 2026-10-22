@@ -1,6 +1,6 @@
 apiVersion: v2
 name: hr-assistant-vllm
-description: SUSE AI HR Assistant (vLLM variant) - Intelligent Employee Support and Policy Management served by SUSE vLLM, with native engine-level GenAI metrics
+description: HR Assistant (vLLM variant) - Intelligent Employee Support and Policy Management served by SUSE vLLM, with native engine-level GenAI metrics
 
 # A chart can be either an 'application' or a 'library' chart.
 #

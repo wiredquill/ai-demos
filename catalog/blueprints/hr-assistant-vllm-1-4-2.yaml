@@ -9,7 +9,7 @@ spec:
   # Superseded by 1.5.0 (vllm chart: NFS cache used as HF_HOME, managed-by label fixed). Kept for rollback.
   deprecated: true
   source: Custom  # community, unsupported demo
-  displayName: SUSE AI HR Assistant (vLLM)
+  displayName: HR Assistant (vLLM)
   version: 1.4.2
   description: |
     Intelligent Employee Support and Policy Management served by SUSE vLLM
