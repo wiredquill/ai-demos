@@ -74,6 +74,10 @@ helm install my-release charts/ai-compare-upstream -n ai-compare-upstream --crea
 # After editing charts/ai-compare
 python3 scripts/gen-ai-compare-upstream.py .
 
+# Latest SUSE Application Collection images + upstream equivalents (weekly PR via
+# .github/workflows/sync-ai-compare-versions.yml; HOLDS pins SUSE builds that break)
+python3 scripts/sync-ai-compare-versions.py . --check
+
 # Without a GPU
 helm install my-release charts/ai-compare --set ollama.gpu.enabled=false
 
