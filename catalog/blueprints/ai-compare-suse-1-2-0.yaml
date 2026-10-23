@@ -1,0 +1,164 @@
+apiVersion: ai-factory.suse.com/v1alpha1
+kind: Blueprint
+metadata:
+  labels:
+    ai-factory.suse.com/blueprint-name: ai-compare-suse
+    ai-factory.suse.com/blueprint-version: 1.2.0
+  name: ai-compare-suse-1-2-0
+spec:
+  source: Custom  # community, unsupported demo
+  displayName: AI Compare (SUSE)
+  version: 1.2.0
+  description: |
+    AI Compare, SUSE edition: compares direct Ollama answers with
+    pipeline-enhanced Open WebUI answers, everything on SUSE Application
+    Collection / SUSE BCI images. Pair it with the upstream "ai-compare"
+    blueprint (same chart and app versions, community images) to compare CVEs.
+
+    Five components, five pods:
+      - ollama               SUSE Ollama (1.91.0, Ollama 0.40.9), llama3.2
+      - open-webui-pipelines SUSE Open WebUI Pipelines (0.9.2), loading the
+                             response-level pipeline from this repository
+      - open-webui           SUSE Open WebUI (8.19.1, Open WebUI 0.6.41)
+      - ai-compare-app       the AI Compare app (SUSE BCI Python), with
+                             OpenTelemetry GenAI telemetry (form checkbox)
+      - ai-compare-load-gen  load generator + health-check emitter
+
+    Supersedes the "ai-compare-opentelemetry" blueprint, which this one now
+    covers.
+
+    Prerequisites on the target cluster: an NVIDIA GPU + GPU operator for
+    Ollama, a default StorageClass, and the shared SUSE AI OpenTelemetry
+    collector (`opentelemetry-collector` in namespace `observability`).
+  components:
+    # Release names are pinned so the components find each other by Service
+    # name in the shared target namespace: ollama-service:11434,
+    # pipelines-service:9099, open-webui:80. Telemetry goes to the cluster's
+    # shared SUSE AI collector.
+    #
+    # ollama, open-webui-pipelines and open-webui are SUSE's Application
+    # Collection charts, republished to wiredquill-ai-demos with an added
+    # questions.yaml (upstream ships no install form) and, for ollama,
+    # catalog/charts/ollama/form-friendly-values.patch - see
+    # scripts/package-aif-charts.sh.
+    - chartName: ollama
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "1.91.0"
+      releaseName: ollama-service
+      values:
+        image:
+          tag: "0.40.9-nvidia-1.8"
+        runtimeClassName: nvidia
+        # Ollama 0.40 sizes the default context from GPU memory (32k on a
+        # 24 GB card); the demo prompts are short, so pin it.
+        extraEnv:
+          - name: OLLAMA_CONTEXT_LENGTH
+            value: "4096"
+        ollama:
+          gpu:
+            enabled: true
+            type: nvidia
+            number: 1
+          # A map, not the documented list, so the install form can edit it.
+          models:
+            pull:
+              main: llama3.2:latest
+              secondary: ""
+        # Ollama 0.40 keeps the loaded model and its runner in host memory.
+        resources:
+          requests:
+            cpu: "1"
+            memory: 4Gi
+          limits:
+            cpu: "2"
+            memory: 8Gi
+        persistentVolume:
+          enabled: true
+          size: 10Gi
+        modelCache:
+          nfs:
+            enabled: false
+            server: ""
+            path: /data/ai-models
+        # One GPU: stop the old pod before starting the new one.
+        updateStrategy:
+          type: Recreate
+    - chartName: open-webui-pipelines
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "0.9.2"
+      releaseName: pipelines-service
+      values:
+        image:
+          tag: "0.20250819.030501-8.109"
+        extraEnvVars:
+          - name: PIPELINES_URLS
+            value: "https://raw.githubusercontent.com/wiredquill/ai-demos/main/pipelines/response_level_pipeline.py"
+          - name: PIPELINE_MODE
+            value: auto-cycle
+          - name: LOG_LEVEL
+            value: INFO
+          - name: OLLAMA_BASE_URL
+            value: http://ollama-service:11434
+          - name: OLLAMA_API_BASE_URL
+            value: http://ollama-service:11434
+    - chartName: open-webui
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "8.19.1"
+      releaseName: open-webui
+      values:
+        # 0.6.41-15.13 is the newest SUSE build that starts: later 0.6.41
+        # builds lack langchain.text_splitter and 0.8.0 builds lack mimeparse.
+        image:
+          tag: "0.6.41-15.13"
+        ollama:
+          enabled: false
+        ollamaUrls:
+          - http://ollama-service:11434
+        pipelines:
+          enabled: false
+        enableOpenaiApi: true
+        # External Pipelines: the chart only emits OPENAI_API_BASE_URL(S) for
+        # the list form when its own pipelines subchart is enabled, so use the
+        # single-endpoint form.
+        openaiBaseApiUrl: http://pipelines-service:9099
+        openaiApiKey: "0p3n-w3bu!"
+        tika:
+          enabled: false
+        websocket:
+          enabled: false
+        ingress:
+          enabled: false
+        extraEnvVars:
+          - name: WEBUI_AUTH
+            value: "false"
+          - name: ENABLE_OTEL
+            value: "true"
+          - name: ENABLE_OTEL_METRICS
+            value: "true"
+          - name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: http://opentelemetry-collector-collector.observability.svc.cluster.local:4317
+          - name: OTEL_EXPORTER_OTLP_INSECURE
+            value: "true"
+          - name: OTEL_SERVICE_NAME
+            value: open-webui
+    # The app and load generator are the same two charts in both AI Compare
+    # blueprints (catalog/components/ai-compare-{app,load-gen}); aic.edition
+    # picks SUSE or upstream images.
+    - chartName: ai-compare-app
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "1.0.1"
+      releaseName: ai-compare-suse
+      values:
+        aic:
+          edition: suse
+          aiCompare:
+            service:
+              nodePort: 31703
+              httpApiNodePort: 31704
+    - chartName: ai-compare-load-gen
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "1.0.1"
+      releaseName: load-gen
+      values:
+        aic:
+          edition: suse
