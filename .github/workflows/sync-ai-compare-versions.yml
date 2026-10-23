@@ -1,0 +1,73 @@
+# Weekly: move charts/ai-compare to the latest SUSE Application Collection images
+# and the upstream edition to the equivalent community images, as a PR.
+# The logic (image list, held builds, upstream mapping) is in
+# scripts/sync-ai-compare-versions.py.
+name: Sync AI Compare image versions
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Mondays 09:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-ai-compare-versions
+  cancel-in-progress: false
+
+env:
+  BRANCH: chore/ai-compare-image-sync-auto
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Update image tags
+        run: |
+          python3 scripts/sync-ai-compare-versions.py . --summary "$RUNNER_TEMP/summary.md"
+          python3 scripts/gen-ai-compare-upstream.py .
+          cat "$RUNNER_TEMP/summary.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open or update the PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet; then
+            echo "All images already current."
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git switch -C "$BRANCH"
+          git commit -am "chore(ai-compare): update images to the latest SUSE Application Collection builds"
+          git push --force origin "$BRANCH"
+
+          {
+            echo "Weekly sync from the SUSE Application Collection (\`scripts/sync-ai-compare-versions.py\`)."
+            echo
+            cat "$RUNNER_TEMP/summary.md"
+            echo
+            echo "Before merging: install both editions and check that Ollama, Open WebUI and Pipelines start."
+            echo "A SUSE build that does not start goes into \`HOLDS\` in the script."
+          } > "$RUNNER_TEMP/body.md"
+
+          if gh pr view "$BRANCH" --json state -q .state 2>/dev/null | grep -q OPEN; then
+            gh pr edit "$BRANCH" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh pr create --base main --head "$BRANCH" \
+              --title "chore(ai-compare): update images to the latest SUSE Application Collection builds" \
+              --body-file "$RUNNER_TEMP/body.md"
+          fi
