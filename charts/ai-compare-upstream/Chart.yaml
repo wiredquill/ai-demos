@@ -29,4 +29,4 @@ name: ai-compare-upstream
 sources:
   - https://github.com/wiredquill/ai-demos
 type: application
-version: 1.0.5
+version: 1.0.6
