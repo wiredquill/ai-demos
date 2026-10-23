@@ -25,7 +25,7 @@ collector:
   #    `topology` exporter that populates the SUSE AI topology view.
   #    appco/opentelemetry-collector images do NOT have it.
   image: ghcr.io/suse/suse-ai-opentelemetry-collector
-  tag: "0.156.0"
+  tag: "0.160.0"
   pullPolicy: IfNotPresent
 
   # -- K8S_CLUSTER_NAME stamped on all telemetry as k8s.cluster.name.

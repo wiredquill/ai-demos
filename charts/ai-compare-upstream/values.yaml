@@ -27,7 +27,7 @@ editions:
       repository: ghcr.io/wiredquill/ai-demos-suse
     ollama:
       repository: dp.apps.rancher.io/containers/ollama
-      tag: "0.40.9-nvidia-1.8"
+      tag: "0.40.10-nvidia-1.9"
     openWebui:
       repository: dp.apps.rancher.io/containers/open-webui
       # Newest SUSE build that starts: later 0.6.41 builds lack
@@ -38,7 +38,7 @@ editions:
       tag: "0.20250819.030501-8.109"
     otelCollector:
       repository: dp.apps.rancher.io/containers/opentelemetry-collector
-      tag: "0.163.1-contrib-17.5"
+      tag: "0.163.2-contrib-17.6"
     curl:
       repository: dp.apps.rancher.io/containers/curl
       tag: "8.14.1-14.3"
@@ -58,7 +58,7 @@ editions:
       repository: ghcr.io/wiredquill/ai-demos
     ollama:
       repository: ollama/ollama
-      tag: "0.40.9"
+      tag: "0.40.10"
     openWebui:
       repository: ghcr.io/open-webui/open-webui
       tag: "0.6.41"
@@ -68,7 +68,7 @@ editions:
       tag: "git-039f9c5"
     otelCollector:
       repository: otel/opentelemetry-collector-contrib
-      tag: "0.163.1"
+      tag: "0.163.2"
     curl:
       repository: curlimages/curl
       tag: "8.14.1"
@@ -139,10 +139,10 @@ opentelemetry:
     # registry.suse.com/ai build is only published at 0.149.0, which lacks the
     # otlp_grpc exporter and k8s_attributes processor this pipeline uses, so
     # the SUSE-published ghcr.io/suse build is used, matched to the
-    # OpenTelemetry Operator version (0.156.0).
+    # OpenTelemetry Operator (0.156 or newer; newest SUSE AI build is 0.160.0).
     image:
       repository: ghcr.io/suse/suse-ai-opentelemetry-collector
-      tag: '0.156.0'
+      tag: '0.160.0'
       pullPolicy: IfNotPresent
     imagePullSecrets:
       - name: application-collection

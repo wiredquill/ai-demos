@@ -3,7 +3,7 @@ apiVersion: v2
 name: ai-compare-load-gen
 description: 'AI Compare component: Load generator + health-check emitter. One of the components of the ai-compare SUSE AI Factory blueprint.'
 type: application
-version: 1.0.1
+version: 1.0.2
 appVersion: latest
 dependencies:
 - name: ai-compare

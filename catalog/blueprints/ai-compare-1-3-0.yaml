@@ -1,0 +1,168 @@
+apiVersion: ai-factory.suse.com/v1alpha1
+kind: Blueprint
+metadata:
+  labels:
+    ai-factory.suse.com/blueprint-name: ai-compare
+    ai-factory.suse.com/blueprint-version: 1.3.0
+  name: ai-compare-1-3-0
+spec:
+  source: Custom  # community, unsupported demo
+  displayName: AI Compare (upstream)
+  version: 1.3.0
+  description: |
+    AI Compare, upstream edition: the same stack as the "ai-compare-suse"
+    blueprint on community charts and images, for a side-by-side CVE comparison.
+    Chart and app versions match the SUSE edition: Ollama chart 1.91.0 (Ollama
+    0.40.10), Open WebUI chart 8.19.0 (Open WebUI 0.6.41) and Pipelines chart
+    0.9.0 (commit 039f9c5, the source of SUSE's 0.20250819.030501 build).
+
+    Five components, five pods:
+      - ollama               Ollama (otwld ollama-helm), llama3.2
+      - pipelines            Open WebUI Pipelines, loading the response-level
+                             pipeline from this repository
+      - open-webui           Open WebUI, wired to Ollama and Pipelines
+      - ai-compare-app       the AI Compare app (upstream Python image), with
+                             OpenTelemetry GenAI telemetry (form checkbox)
+      - ai-compare-load-gen  load generator + health-check emitter
+
+    Prerequisites on the target cluster: an NVIDIA GPU + GPU operator for
+    Ollama, a default StorageClass, and the shared SUSE AI OpenTelemetry
+    collector (`opentelemetry-collector` in namespace `observability`).
+  components:
+    # Release names are pinned so the components find each other by Service
+    # name in the shared target namespace: ollama-service:11434,
+    # pipelines-service:9099, open-webui:80. Telemetry goes to the cluster's
+    # shared SUSE AI collector.
+    #
+    # ollama, pipelines and open-webui are the community charts (otwld
+    # ollama-helm, open-webui helm-charts), republished to the
+    # wiredquill-upstream repo with the same install forms and patches as the
+    # SUSE edition (scripts/package-aif-charts.sh <dir> upstream). Chart and
+    # app versions match the ai-compare-suse blueprint; only the images differ.
+    - chartName: ollama
+      chartRepo: wiredquill-upstream
+      chartVersion: "1.91.0"
+      releaseName: ollama-service
+      values:
+        image:
+          repository: ollama/ollama
+          tag: "0.40.10"
+        runtimeClassName: nvidia
+        # Ollama 0.40 sizes the default context from GPU memory (32k on a
+        # 24 GB card); the demo prompts are short, so pin it.
+        extraEnv:
+          - name: OLLAMA_CONTEXT_LENGTH
+            value: "4096"
+        ollama:
+          gpu:
+            enabled: true
+            type: nvidia
+            number: 1
+          # A map, not the documented list, so the install form can edit it.
+          models:
+            pull:
+              main: llama3.2:latest
+              secondary: ""
+        # Ollama 0.40 keeps the loaded model and its runner in host memory.
+        resources:
+          requests:
+            cpu: "1"
+            memory: 4Gi
+          limits:
+            cpu: "2"
+            memory: 8Gi
+        persistentVolume:
+          enabled: true
+          size: 10Gi
+        modelCache:
+          nfs:
+            enabled: false
+            server: ""
+            path: /data/ai-models
+        # One GPU: stop the old pod before starting the new one.
+        updateStrategy:
+          type: Recreate
+    - chartName: pipelines
+      chartRepo: wiredquill-upstream
+      # SUSE's open-webui-pipelines 0.9.2 is a patch build of upstream 0.9.0.
+      chartVersion: "0.9.0"
+      releaseName: pipelines-service
+      values:
+        # SUSE's 0.20250819.030501 build is upstream commit 039f9c5.
+        image:
+          repository: ghcr.io/open-webui/pipelines
+          tag: git-039f9c5
+        extraEnvVars:
+          - name: PIPELINES_URLS
+            value: "https://raw.githubusercontent.com/wiredquill/ai-demos/main/pipelines/response_level_pipeline.py"
+          - name: PIPELINE_MODE
+            value: auto-cycle
+          - name: LOG_LEVEL
+            value: INFO
+          - name: OLLAMA_BASE_URL
+            value: http://ollama-service:11434
+          - name: OLLAMA_API_BASE_URL
+            value: http://ollama-service:11434
+    - chartName: open-webui
+      chartRepo: wiredquill-upstream
+      # SUSE's open-webui 8.19.1 is a patch build of upstream 8.19.0.
+      chartVersion: "8.19.0"
+      releaseName: open-webui
+      values:
+        # 0.6.41-15.13 is the newest SUSE build that starts: later 0.6.41
+        # builds lack langchain.text_splitter and 0.8.0 builds lack mimeparse.
+        image:
+          repository: ghcr.io/open-webui/open-webui
+          tag: "0.6.41"
+        ollama:
+          enabled: false
+        ollamaUrls:
+          - http://ollama-service:11434
+        pipelines:
+          enabled: false
+        enableOpenaiApi: true
+        # External Pipelines: the chart only emits OPENAI_API_BASE_URL(S) for
+        # the list form when its own pipelines subchart is enabled, so use the
+        # single-endpoint form.
+        openaiBaseApiUrl: http://pipelines-service:9099
+        openaiApiKey: "0p3n-w3bu!"
+        tika:
+          enabled: false
+        websocket:
+          enabled: false
+        ingress:
+          enabled: false
+        extraEnvVars:
+          - name: WEBUI_AUTH
+            value: "false"
+          - name: ENABLE_OTEL
+            value: "true"
+          - name: ENABLE_OTEL_METRICS
+            value: "true"
+          - name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: http://opentelemetry-collector-collector.observability.svc.cluster.local:4317
+          - name: OTEL_EXPORTER_OTLP_INSECURE
+            value: "true"
+          - name: OTEL_SERVICE_NAME
+            value: open-webui
+    # The app and load generator are the same two charts in both AI Compare
+    # blueprints (catalog/components/ai-compare-{app,load-gen}); aic.edition
+    # picks SUSE or upstream images.
+    - chartName: ai-compare-app
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "1.0.2"
+      releaseName: ai-compare
+      values:
+        aic:
+          edition: upstream
+          aiCompare:
+            service:
+              nodePort: 31701
+              httpApiNodePort: 31702
+    - chartName: ai-compare-load-gen
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "1.0.2"
+      releaseName: load-gen
+      values:
+        aic:
+          edition: upstream
