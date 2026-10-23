@@ -168,8 +168,8 @@ by `scripts/gen-ai-compare-components.py`.
 
 | Blueprint | Components (pods) |
 |---|---|
-| `ai-compare-suse` 1.1.0 | `ollama` 1.76.0, `open-webui-pipelines` 0.9.2, `open-webui` 8.19.1 (SUSE charts + forms), `ai-compare-app` 1.0.0, `ai-compare-load-gen` 1.0.0 (5) |
-| `ai-compare` 1.1.0 (upstream) | `ollama` 1.76.0, `pipelines` 0.9.0, `open-webui` 8.19.0 (community charts + forms, repo `wiredquill-upstream`), `ai-compare-app` 1.0.0, `ai-compare-load-gen` 1.0.0 (5) |
+| `ai-compare-suse` 1.2.0 | `ollama` 1.91.0, `open-webui-pipelines` 0.9.2, `open-webui` 8.19.1 (SUSE charts + forms), `ai-compare-app` 1.0.1, `ai-compare-load-gen` 1.0.1 (5) |
+| `ai-compare` 1.2.0 (upstream) | `ollama` 1.91.0, `pipelines` 0.9.0, `open-webui` 8.19.0 (community charts + forms, repo `wiredquill-upstream`), `ai-compare-app` 1.0.1, `ai-compare-load-gen` 1.0.1 (5) |
 
 The former `ai-compare-opentelemetry` blueprint has been removed: `ai-compare-suse`
 now includes OpenTelemetry and the load generator.
@@ -179,9 +179,9 @@ run the same stack at the same versions; only the images differ:
 
 | | SUSE edition | Upstream edition |
 |---|---|---|
-| Ollama | chart 1.76.0, `dp.apps.rancher.io/containers/ollama:0.34.4-11.97` | chart 1.76.0 (otwld), `ollama/ollama:0.34.4` |
+| Ollama | chart 1.91.0, `dp.apps.rancher.io/containers/ollama:0.40.9-nvidia-1.8` | chart 1.91.0 (otwld), `ollama/ollama:0.40.9` |
 | Open WebUI | chart 8.19.1, `…/open-webui:0.6.41-15.13` | chart 8.19.0, `ghcr.io/open-webui/open-webui:0.6.41` |
-| Pipelines | chart 0.9.2, `…/open-webui-pipelines:0.20250819.030501-8.103` | chart 0.9.0, `ghcr.io/open-webui/pipelines:git-039f9c5` |
+| Pipelines | chart 0.9.2, `…/open-webui-pipelines:0.20250819.030501-8.109` | chart 0.9.0, `ghcr.io/open-webui/pipelines:git-039f9c5` |
 | AI Compare app | `ghcr.io/wiredquill/ai-demos-suse` (SUSE BCI) | `ghcr.io/wiredquill/ai-demos` (Debian) |
 
 SUSE's open-webui 8.19.1 and open-webui-pipelines 0.9.2 are SUSE patch builds of

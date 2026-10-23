@@ -63,8 +63,8 @@ Q_OTEL = [
 
 VARIANTS = {
     "ai-compare": dict(
-        title="AI Compare", base_range="^1.0", version="1.0.0",
-        blueprints=["ai-compare-suse-1-1-0.yaml", "ai-compare-1-1-0.yaml"],
+        title="AI Compare", base_range="^1.0", version="1.0.1",
+        blueprints=["ai-compare-suse-1-2-0.yaml", "ai-compare-1-2-0.yaml"],
         components=[
             dict(name="app", pod="AI Compare app",
                  summary="The AI Compare app: asks the same prompt of Ollama directly and through Open WebUI + Pipelines, and compares the answers. GenAI telemetry, token and cost tracking go to SUSE Observability.",

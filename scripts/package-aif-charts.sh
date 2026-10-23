@@ -24,14 +24,14 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 SUSE_CHARTS=(
   "vllm 0.1.10 oci://dp.apps.rancher.io/charts/vllm vllm"
   "opensearch 3.8.0 oci://dp.apps.rancher.io/charts/opensearch opensearch"
-  "ollama 1.76.0 oci://dp.apps.rancher.io/charts/ollama ollama"
+  "ollama 1.91.0 oci://dp.apps.rancher.io/charts/ollama ollama"
   "open-webui 8.19.1 oci://dp.apps.rancher.io/charts/open-webui open-webui"
   "open-webui-pipelines 0.9.2 oci://dp.apps.rancher.io/charts/open-webui-pipelines open-webui-pipelines"
 )
 # SUSE's open-webui 8.19.1 and open-webui-pipelines 0.9.2 are SUSE patch builds of
 # upstream 8.19.0 and 0.9.0, the closest upstream releases.
 UPSTREAM_CHARTS=(
-  "ollama 1.76.0 https://github.com/otwld/ollama-helm/releases/download/ollama-1.76.0/ollama-1.76.0.tgz ollama"
+  "ollama 1.91.0 https://github.com/otwld/ollama-helm/releases/download/ollama-1.91.0/ollama-1.91.0.tgz ollama"
   "open-webui 8.19.0 https://github.com/open-webui/helm-charts/releases/download/open-webui-8.19.0/open-webui-8.19.0.tgz open-webui"
   "pipelines 0.9.0 https://github.com/open-webui/helm-charts/releases/download/pipelines-0.9.0/pipelines-0.9.0.tgz open-webui-pipelines"
 )
@@ -58,6 +58,12 @@ for entry in "${CHARTS[@]}"; do
     [ -e "$p" ] || continue
     patch -s -p1 -d "$WORK/$chart" < "$p"
   done
+  # A patch that applies with an offset leaves *.orig backups, and Helm renders
+  # every file under templates/ (a second Deployment). A *.rej means it failed.
+  if find "$WORK/$chart" -name '*.rej' | grep -q .; then
+    echo "$chart $version: patch rejected, update catalog/charts/$form/*.patch" >&2; exit 1
+  fi
+  find "$WORK/$chart" -name '*.orig' -delete
   helm package "$WORK/$chart" -d "$OUT"
   rm -rf "${WORK:?}/$chart" "$WORK/$chart-$version.tgz"
 done

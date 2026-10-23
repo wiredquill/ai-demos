@@ -3,7 +3,7 @@ apiVersion: v2
 name: ai-compare-app
 description: 'AI Compare component: AI Compare app. One of the components of the ai-compare SUSE AI Factory blueprint.'
 type: application
-version: 1.0.0
+version: 1.0.1
 appVersion: latest
 dependencies:
 - name: ai-compare
