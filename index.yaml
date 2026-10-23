@@ -5,6 +5,35 @@ entries:
       catalog.cattle.io/display-name: AI Compare - AI Compare app
     apiVersion: v2
     appVersion: latest
+    created: "2026-10-23T13:48:32.909038-07:00"
+    dependencies:
+    - alias: aic
+      name: ai-compare
+      repository: file://../../../charts/ai-compare
+      version: ^1.0
+    description: 'AI Compare component: AI Compare app. One of the components of the
+      ai-compare SUSE AI Factory blueprint.'
+    digest: 303b183561ea19e638910e4f5c66d1ac4a2d36be32b323c0a8a1d479f2941828
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - ollama
+    - open-webui
+    - demo
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: ai-compare-app
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/ai-compare-app-1.0.2.tgz
+    version: 1.0.2
+  - annotations:
+      catalog.cattle.io/display-name: AI Compare - AI Compare app
+    apiVersion: v2
+    appVersion: latest
     created: "2026-10-23T11:04:50.918004-07:00"
     dependencies:
     - alias: aic
@@ -89,6 +118,35 @@ entries:
     - https://github.com/wiredquill/ai-demos/ai-compare-app-0.1.0.tgz
     version: 0.1.0
   ai-compare-load-gen:
+  - annotations:
+      catalog.cattle.io/display-name: AI Compare - Load generator + health-check emitter
+    apiVersion: v2
+    appVersion: latest
+    created: "2026-10-23T13:48:32.911719-07:00"
+    dependencies:
+    - alias: aic
+      name: ai-compare
+      repository: file://../../../charts/ai-compare
+      version: ^1.0
+    description: 'AI Compare component: Load generator + health-check emitter. One
+      of the components of the ai-compare SUSE AI Factory blueprint.'
+    digest: 84122ffa4f47abc6d1e80f2a478d8907e1c1bcff88ff16e57ef334833e3b80e7
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - ollama
+    - open-webui
+    - demo
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: ai-compare-load-gen
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/ai-compare-load-gen-1.0.2.tgz
+    version: 1.0.2
   - annotations:
       catalog.cattle.io/display-name: AI Compare - Load generator + health-check emitter
     apiVersion: v2
@@ -350,6 +408,35 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (Ollama) - HR Assistant app
     apiVersion: v2
     appVersion: latest
+    created: "2026-10-23T13:48:32.915156-07:00"
+    dependencies:
+    - alias: hr
+      name: hr-assistant
+      repository: file://../../../charts/hr-assistant
+      version: 1.18.0
+    description: 'HR Assistant (Ollama) component: HR Assistant app. One of the components
+      of the hr-assistant SUSE AI Factory blueprint.'
+    digest: ab4f04dcf4a335a55f9c99eb2351581ebf4d42114e09f43e09af7820e4fc8197
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - hr
+    - demo
+    - ollama
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: hr-assistant-app
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/hr-assistant-app-0.1.1.tgz
+    version: 0.1.1
+  - annotations:
+      catalog.cattle.io/display-name: HR Assistant (Ollama) - HR Assistant app
+    apiVersion: v2
+    appVersion: latest
     created: "2026-10-12T15:07:22.560625-07:00"
     dependencies:
     - alias: hr
@@ -376,6 +463,35 @@ entries:
     - https://github.com/wiredquill/ai-demos/hr-assistant-app-0.1.0.tgz
     version: 0.1.0
   hr-assistant-handbook:
+  - annotations:
+      catalog.cattle.io/display-name: HR Assistant (Ollama) - Employee Handbook app
+    apiVersion: v2
+    appVersion: latest
+    created: "2026-10-23T13:48:32.917379-07:00"
+    dependencies:
+    - alias: hr
+      name: hr-assistant
+      repository: file://../../../charts/hr-assistant
+      version: 1.18.0
+    description: 'HR Assistant (Ollama) component: Employee Handbook app. One of the
+      components of the hr-assistant SUSE AI Factory blueprint.'
+    digest: 578435c9311927e429bc5e2e1254710e59452a264332991664af639daf286e21
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - hr
+    - demo
+    - ollama
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: hr-assistant-handbook
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/hr-assistant-handbook-0.1.1.tgz
+    version: 0.1.1
   - annotations:
       catalog.cattle.io/display-name: HR Assistant (Ollama) - Employee Handbook app
     apiVersion: v2
@@ -411,6 +527,36 @@ entries:
         emitter
     apiVersion: v2
     appVersion: latest
+    created: "2026-10-23T13:48:32.9192-07:00"
+    dependencies:
+    - alias: hr
+      name: hr-assistant
+      repository: file://../../../charts/hr-assistant
+      version: 1.18.0
+    description: 'HR Assistant (Ollama) component: Load generator + health-check emitter.
+      One of the components of the hr-assistant SUSE AI Factory blueprint.'
+    digest: 7008f0175f2ca72a6c264c3836656e647f743d47253f41c5fe22e5d300120416
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - hr
+    - demo
+    - ollama
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: hr-assistant-load-gen
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/hr-assistant-load-gen-0.1.1.tgz
+    version: 0.1.1
+  - annotations:
+      catalog.cattle.io/display-name: HR Assistant (Ollama) - Load generator + health-check
+        emitter
+    apiVersion: v2
+    appVersion: latest
     created: "2026-10-12T15:07:22.563381-07:00"
     dependencies:
     - alias: hr
@@ -437,6 +583,35 @@ entries:
     - https://github.com/wiredquill/ai-demos/hr-assistant-load-gen-0.1.0.tgz
     version: 0.1.0
   hr-assistant-policy-db:
+  - annotations:
+      catalog.cattle.io/display-name: HR Assistant (Ollama) - HR Policy DB app + dashboard
+    apiVersion: v2
+    appVersion: latest
+    created: "2026-10-23T13:48:32.920996-07:00"
+    dependencies:
+    - alias: hr
+      name: hr-assistant
+      repository: file://../../../charts/hr-assistant
+      version: 1.18.0
+    description: 'HR Assistant (Ollama) component: HR Policy DB app + dashboard. One
+      of the components of the hr-assistant SUSE AI Factory blueprint.'
+    digest: 7ea17f58fcf172e7662febfdf31209b1407c7c3ab00752fe49e50831f9227db7
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - hr
+    - demo
+    - ollama
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: hr-assistant-policy-db
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/hr-assistant-policy-db-0.1.1.tgz
+    version: 0.1.1
   - annotations:
       catalog.cattle.io/display-name: HR Assistant (Ollama) - HR Policy DB app + dashboard
     apiVersion: v2
@@ -664,6 +839,35 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Assistant app
     apiVersion: v2
     appVersion: latest
+    created: "2026-10-23T13:48:32.925066-07:00"
+    dependencies:
+    - alias: hr
+      name: hr-assistant-vllm
+      repository: file://../../../charts/hr-assistant-vllm
+      version: 0.1.14
+    description: 'HR Assistant (vLLM) component: HR Assistant app. One of the components
+      of the hr-assistant-vllm SUSE AI Factory blueprint.'
+    digest: d1b1a797497261e05cf463416de3d6bf29cb8fe679032762f49099448481ace6
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - hr
+    - demo
+    - vllm
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: hr-assistant-vllm-app
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/hr-assistant-vllm-app-0.1.2.tgz
+    version: 0.1.2
+  - annotations:
+      catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Assistant app
+    apiVersion: v2
+    appVersion: latest
     created: "2026-10-12T15:07:22.582318-07:00"
     dependencies:
     - alias: hr
@@ -753,6 +957,35 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - Employee Handbook app
     apiVersion: v2
     appVersion: latest
+    created: "2026-10-23T13:48:32.929017-07:00"
+    dependencies:
+    - alias: hr
+      name: hr-assistant-vllm
+      repository: file://../../../charts/hr-assistant-vllm
+      version: 0.1.14
+    description: 'HR Assistant (vLLM) component: Employee Handbook app. One of the
+      components of the hr-assistant-vllm SUSE AI Factory blueprint.'
+    digest: 16cea53e225bc7abe729fa5631ac3b0fddd14bbccfef517a4419f5a7a822c5d5
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - hr
+    - demo
+    - vllm
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: hr-assistant-vllm-handbook
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/hr-assistant-vllm-handbook-0.1.2.tgz
+    version: 0.1.2
+  - annotations:
+      catalog.cattle.io/display-name: HR Assistant (vLLM) - Employee Handbook app
+    apiVersion: v2
+    appVersion: latest
     created: "2026-10-12T15:07:22.58896-07:00"
     dependencies:
     - alias: hr
@@ -808,6 +1041,36 @@ entries:
     - https://github.com/wiredquill/ai-demos/hr-assistant-vllm-handbook-0.1.0.tgz
     version: 0.1.0
   hr-assistant-vllm-load-gen:
+  - annotations:
+      catalog.cattle.io/display-name: HR Assistant (vLLM) - Load generator + health-check
+        emitter
+    apiVersion: v2
+    appVersion: latest
+    created: "2026-10-23T13:48:32.93236-07:00"
+    dependencies:
+    - alias: hr
+      name: hr-assistant-vllm
+      repository: file://../../../charts/hr-assistant-vllm
+      version: 0.1.14
+    description: 'HR Assistant (vLLM) component: Load generator + health-check emitter.
+      One of the components of the hr-assistant-vllm SUSE AI Factory blueprint.'
+    digest: eed6c59114984c4973eb3f532925869fc03a11412a3031fa278f85731fa9eb13
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - hr
+    - demo
+    - vllm
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: hr-assistant-vllm-load-gen
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/hr-assistant-vllm-load-gen-0.1.2.tgz
+    version: 0.1.2
   - annotations:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - Load generator + health-check
         emitter
@@ -899,6 +1162,35 @@ entries:
     - https://github.com/wiredquill/ai-demos/hr-assistant-vllm-opensearch-0.1.0.tgz
     version: 0.1.0
   hr-assistant-vllm-policy-db:
+  - annotations:
+      catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Policy DB app + dashboard
+    apiVersion: v2
+    appVersion: latest
+    created: "2026-10-23T13:48:32.936126-07:00"
+    dependencies:
+    - alias: hr
+      name: hr-assistant-vllm
+      repository: file://../../../charts/hr-assistant-vllm
+      version: 0.1.14
+    description: 'HR Assistant (vLLM) component: HR Policy DB app + dashboard. One
+      of the components of the hr-assistant-vllm SUSE AI Factory blueprint.'
+    digest: 0a6fb44161a6fa689b6df941243b9434c7d83f14fc67977bcc88c66fe4bb1c3b
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - hr
+    - demo
+    - vllm
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: hr-assistant-vllm-policy-db
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/hr-assistant-vllm-policy-db-0.1.2.tgz
+    version: 0.1.2
   - annotations:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Policy DB app + dashboard
     apiVersion: v2
@@ -1151,6 +1443,28 @@ entries:
   opensearch:
   - annotations:
       helm.sh/images: |
+        - image: dp.apps.rancher.io/containers/opensearch:3.9.0-16.2
+          name: opensearch
+        - image: dp.apps.rancher.io/containers/bci-busybox:15.7-25.39
+          name: bci-busybox
+      license: Apache-2.0
+    apiVersion: v2
+    appVersion: 3.9.0
+    created: "2026-10-23T13:48:32.937223-07:00"
+    description: OpenSearch is an open-source, enterprise-grade search and observability
+      suite that brings order to unstructured data at scale.
+    digest: d48695817df98f6292b7ef30c5c95c643a88a52971a16f3b050dd9125e08b2af
+    home: https://apps.rancher.io/applications/opensearch
+    icon: https://apps.rancher.io/logos/opensearch.png
+    maintainers:
+    - name: SUSE LLC
+      url: https://www.suse.com/
+    name: opensearch
+    urls:
+    - https://github.com/wiredquill/ai-demos/opensearch-3.9.0.tgz
+    version: 3.9.0
+  - annotations:
+      helm.sh/images: |
         - image: dp.apps.rancher.io/containers/opensearch:3.8.0-15.9
           name: opensearch
         - image: dp.apps.rancher.io/containers/bci-busybox:15.7-25.30
@@ -1204,4 +1518,4 @@ entries:
     urls:
     - https://github.com/wiredquill/ai-demos/vllm-0.1.10.tgz
     version: 0.1.10
-generated: "2026-10-23T11:04:50.915844-07:00"
+generated: "2026-10-23T13:48:32.906827-07:00"
