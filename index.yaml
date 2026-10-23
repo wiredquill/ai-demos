@@ -5,6 +5,35 @@ entries:
       catalog.cattle.io/display-name: AI Compare - AI Compare app
     apiVersion: v2
     appVersion: latest
+    created: "2026-10-23T11:04:50.918004-07:00"
+    dependencies:
+    - alias: aic
+      name: ai-compare
+      repository: file://../../../charts/ai-compare
+      version: ^1.0
+    description: 'AI Compare component: AI Compare app. One of the components of the
+      ai-compare SUSE AI Factory blueprint.'
+    digest: 08768dc14137e031d3b8949ae71fc23adad259353210c5eb166e980d585c6c03
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - ollama
+    - open-webui
+    - demo
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: ai-compare-app
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/ai-compare-app-1.0.1.tgz
+    version: 1.0.1
+  - annotations:
+      catalog.cattle.io/display-name: AI Compare - AI Compare app
+    apiVersion: v2
+    appVersion: latest
     created: "2026-10-22T10:07:31.7658-07:00"
     dependencies:
     - alias: aic
@@ -60,6 +89,35 @@ entries:
     - https://github.com/wiredquill/ai-demos/ai-compare-app-0.1.0.tgz
     version: 0.1.0
   ai-compare-load-gen:
+  - annotations:
+      catalog.cattle.io/display-name: AI Compare - Load generator + health-check emitter
+    apiVersion: v2
+    appVersion: latest
+    created: "2026-10-23T11:04:50.919455-07:00"
+    dependencies:
+    - alias: aic
+      name: ai-compare
+      repository: file://../../../charts/ai-compare
+      version: ^1.0
+    description: 'AI Compare component: Load generator + health-check emitter. One
+      of the components of the ai-compare SUSE AI Factory blueprint.'
+    digest: 60c8034370049dd9ac0a26935f51719ab31c3f022c905f7395989e11cfba0eb7
+    home: https://github.com/wiredquill/ai-demos
+    keywords:
+    - ai
+    - llm
+    - ollama
+    - open-webui
+    - demo
+    - suse-ai-factory
+    maintainers:
+    - email: ai-team@suse.com
+      name: SUSE AI Team
+    name: ai-compare-load-gen
+    type: application
+    urls:
+    - https://github.com/wiredquill/ai-demos/ai-compare-load-gen-1.0.1.tgz
+    version: 1.0.1
   - annotations:
       catalog.cattle.io/display-name: AI Compare - Load generator + health-check emitter
     apiVersion: v2
@@ -962,6 +1020,27 @@ entries:
   ollama:
   - annotations:
       helm.sh/images: |
+        - image: dp.apps.rancher.io/containers/ollama:0.40.9-nvidia-1.8
+          name: ollama-nvidia
+      license: MIT
+    apiVersion: v2
+    appVersion: 0.40.9
+    created: "2026-10-23T11:04:50.920191-07:00"
+    description: Ollama is an open-source platform for running and managing large
+      language models (LLMs) locally, providing a CLI and REST API for model inference,
+      deployment, and integration into AI-powered applications.
+    digest: 4b17e653470fd63f40b0410eed2e3b8f42585f3c67291ebf1126ea0942e1a72f
+    home: https://apps.rancher.io/applications/ollama
+    icon: https://apps.rancher.io/logos/ollama.png
+    maintainers:
+    - name: SUSE LLC
+      url: https://www.suse.com
+    name: ollama
+    urls:
+    - https://github.com/wiredquill/ai-demos/ollama-1.91.0.tgz
+    version: 1.91.0
+  - annotations:
+      helm.sh/images: |
         - image: dp.apps.rancher.io/containers/ollama:0.32.14-11.78
           name: ollama
         - image: dp.apps.rancher.io/containers/bci-busybox:15.7-25.5
@@ -1125,4 +1204,4 @@ entries:
     urls:
     - https://github.com/wiredquill/ai-demos/vllm-0.1.10.tgz
     version: 0.1.10
-generated: "2026-10-22T10:07:31.763195-07:00"
+generated: "2026-10-23T11:04:50.915844-07:00"
