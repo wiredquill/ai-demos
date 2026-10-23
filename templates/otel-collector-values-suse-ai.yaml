@@ -59,7 +59,7 @@ clusterRole:
 # official source.
 image:
   repository: ghcr.io/suse/suse-ai-opentelemetry-collector
-  tag: "0.156.0"
+  tag: "0.160.0"
   pullPolicy: IfNotPresent
 ports:
   metrics:

@@ -23,7 +23,7 @@ questions:
   label: "Collector Image Tag"
   type: string
   required: true
-  default: "0.156.0"
+  default: "0.160.0"
 
 - variable: collector.clusterName
   group: Collector

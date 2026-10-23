@@ -3,11 +3,11 @@ apiVersion: v2
 name: hr-assistant-handbook
 description: 'HR Assistant (Ollama) component: Employee Handbook app. One of the components of the hr-assistant SUSE AI Factory blueprint.'
 type: application
-version: 0.1.0
+version: 0.1.1
 appVersion: latest
 dependencies:
 - name: hr-assistant
-  version: 1.17.0
+  version: 1.18.0
   repository: file://../../../charts/hr-assistant
   alias: hr
 keywords:

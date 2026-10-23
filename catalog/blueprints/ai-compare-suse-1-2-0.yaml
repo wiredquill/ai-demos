@@ -6,6 +6,8 @@ metadata:
     ai-factory.suse.com/blueprint-version: 1.2.0
   name: ai-compare-suse-1-2-0
 spec:
+  # Superseded by 1.3.0 (Ollama 0.40.10, OTel Collector 0.163.2, SUSE AI collector 0.160.0). Kept for rollback.
+  deprecated: true
   source: Custom  # community, unsupported demo
   displayName: AI Compare (SUSE)
   version: 1.2.0

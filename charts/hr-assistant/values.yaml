@@ -80,10 +80,10 @@ opentelemetry:
     # registry.suse.com/ai build is only published at 0.149.0, which lacks the
     # otlp_grpc exporter and k8s_attributes processor this pipeline uses, so
     # the SUSE-published ghcr.io/suse build is used, matched to the
-    # OpenTelemetry Operator version (0.156.0).
+    # OpenTelemetry Operator (0.156 or newer; newest SUSE AI build is 0.160.0).
     image:
       repository: ghcr.io/suse/suse-ai-opentelemetry-collector
-      tag: '0.156.0'
+      tag: '0.160.0'
       pullPolicy: IfNotPresent
     imagePullSecrets:
       - name: application-collection
@@ -169,7 +169,7 @@ jobs:
 ollama:
   enabled: true
   image:
-    tag: "0.34.4-11.97"
+    tag: "0.40.10-nvidia-1.9"
   imagePullSecrets:
     - name: application-collection
   # runtimeClassName required for NVIDIA libraries to be mounted in container
@@ -180,7 +180,7 @@ ollama:
       enabled: true
       type: "nvidia"
       number: 1
-  # Ollama 0.34 holds the chat model and the bge-large embeddings model in
+  # Ollama 0.40 holds the chat model and the bge-large embeddings model in
   # host memory alongside its runner; 4Gi was OOMKilled under the demo load.
   resources:
     requests:
@@ -287,7 +287,7 @@ opensearch:
   # SUSE Application Collection build (3.x line only).
   image:
     repository: dp.apps.rancher.io/containers/opensearch
-    tag: "3.8.0"
+    tag: "3.9.0-16.6"
     pullPolicy: IfNotPresent
   resources:
     requests:

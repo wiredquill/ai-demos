@@ -88,7 +88,7 @@ deploy a blueprint, the AI Factory UI shows each component together with the
 install form from its chart's `questions.yaml`. An **AIWorkload** then deploys
 the components to a downstream cluster as Fleet bundles.
 
-### hr-assistant-vllm 1.5.0: SUSE charts plus the app pods
+### hr-assistant-vllm 1.6.0: SUSE charts plus the app pods
 
 The infrastructure components are SUSE's own charts, so the AI Factory UI shows
 the real chart name and version, just as `simple-chatbot-with-rag` does. SUSE's
@@ -114,11 +114,11 @@ with its own `questions.yaml`. Those charts vendor `charts/hr-assistant-vllm`
 |---|---|---|---|
 | `vllm` | wiredquill-ai-demos 0.1.10 (SUSE chart + form) | `vllm` | engine (GPU) + router (`vllm-router-service`) |
 | `qdrant` | suse-ai-registry 1.19.0 | `qdrant` | Qdrant (`qdrant:6333`) |
-| `opensearch` | wiredquill-ai-demos 3.8.0 (SUSE chart + form) | `opensearch` | OpenSearch (`opensearch-cluster-master:9200`) |
-| `hr-assistant-vllm-policy-db` | wiredquill-ai-demos 0.1.1 | `hr-policy-db` | HR Policy DB + dashboard (NodePort 30081) |
-| `hr-assistant-vllm-handbook` | wiredquill-ai-demos 0.1.1 | `employee-handbook` | Employee Handbook |
-| `hr-assistant-vllm-app` | wiredquill-ai-demos 0.1.1 | `hr-assistant` | HR Assistant |
-| `hr-assistant-vllm-load-gen` | wiredquill-ai-demos 0.1.1 | `load-gen` | load generator + health-check emitter |
+| `opensearch` | wiredquill-ai-demos 3.9.0 (SUSE chart + form) | `opensearch` | OpenSearch (`opensearch-cluster-master:9200`) |
+| `hr-assistant-vllm-policy-db` | wiredquill-ai-demos 0.1.2 | `hr-policy-db` | HR Policy DB + dashboard (NodePort 30081) |
+| `hr-assistant-vllm-handbook` | wiredquill-ai-demos 0.1.2 | `employee-handbook` | Employee Handbook |
+| `hr-assistant-vllm-app` | wiredquill-ai-demos 0.1.2 | `hr-assistant` | HR Assistant |
+| `hr-assistant-vllm-load-gen` | wiredquill-ai-demos 0.1.2 | `load-gen` | load generator + health-check emitter |
 
 That's seven components and eight pods. SUSE's `vllm` chart provides both the
 engine and the router, and a blueprint can list each `chartName` only once.
@@ -136,13 +136,13 @@ The all-in-one `hr-assistant-vllm` chart is unchanged for Rancher Apps installs.
 
 | Component | Repo / version | Release | Pods |
 |---|---|---|---|
-| `ollama` | wiredquill-ai-demos 1.76.0 (SUSE chart + form) | `ollama` | Ollama, GPU (`ollama:11434`) |
+| `ollama` | wiredquill-ai-demos 1.91.0 (SUSE chart + form) | `ollama` | Ollama, GPU (`ollama:11434`) |
 | `qdrant` | suse-ai-registry 1.19.0 | `qdrant` | Qdrant (`qdrant:6333`) |
-| `opensearch` | wiredquill-ai-demos 3.8.0 (SUSE chart + form) | `opensearch` | OpenSearch (`opensearch-cluster-master:9200`) |
-| `hr-assistant-policy-db` | wiredquill-ai-demos 0.1.0 | `hr-policy-db` | HR Policy DB + dashboard (NodePort 30080) |
-| `hr-assistant-handbook` | wiredquill-ai-demos 0.1.0 | `employee-handbook` | Employee Handbook |
-| `hr-assistant-app` | wiredquill-ai-demos 0.1.0 | `hr-assistant` | HR Assistant |
-| `hr-assistant-load-gen` | wiredquill-ai-demos 0.1.0 | `load-gen` | load generator + health-check emitter |
+| `opensearch` | wiredquill-ai-demos 3.9.0 (SUSE chart + form) | `opensearch` | OpenSearch (`opensearch-cluster-master:9200`) |
+| `hr-assistant-policy-db` | wiredquill-ai-demos 0.1.1 | `hr-policy-db` | HR Policy DB + dashboard (NodePort 30080) |
+| `hr-assistant-handbook` | wiredquill-ai-demos 0.1.1 | `employee-handbook` | Employee Handbook |
+| `hr-assistant-app` | wiredquill-ai-demos 0.1.1 | `hr-assistant` | HR Assistant |
+| `hr-assistant-load-gen` | wiredquill-ai-demos 0.1.1 | `load-gen` | load generator + health-check emitter |
 
 That's seven components and seven pods. Ollama pulls its own models at startup,
 from **Main Model** and an optional **Additional Model** on its form, so the
@@ -168,8 +168,8 @@ by `scripts/gen-ai-compare-components.py`.
 
 | Blueprint | Components (pods) |
 |---|---|
-| `ai-compare-suse` 1.2.0 | `ollama` 1.91.0, `open-webui-pipelines` 0.9.2, `open-webui` 8.19.1 (SUSE charts + forms), `ai-compare-app` 1.0.1, `ai-compare-load-gen` 1.0.1 (5) |
-| `ai-compare` 1.2.0 (upstream) | `ollama` 1.91.0, `pipelines` 0.9.0, `open-webui` 8.19.0 (community charts + forms, repo `wiredquill-upstream`), `ai-compare-app` 1.0.1, `ai-compare-load-gen` 1.0.1 (5) |
+| `ai-compare-suse` 1.3.0 | `ollama` 1.91.0, `open-webui-pipelines` 0.9.2, `open-webui` 8.19.1 (SUSE charts + forms), `ai-compare-app` 1.0.2, `ai-compare-load-gen` 1.0.2 (5) |
+| `ai-compare` 1.3.0 (upstream) | `ollama` 1.91.0, `pipelines` 0.9.0, `open-webui` 8.19.0 (community charts + forms, repo `wiredquill-upstream`), `ai-compare-app` 1.0.2, `ai-compare-load-gen` 1.0.2 (5) |
 
 The former `ai-compare-opentelemetry` blueprint has been removed: `ai-compare-suse`
 now includes OpenTelemetry and the load generator.
@@ -179,7 +179,7 @@ run the same stack at the same versions; only the images differ:
 
 | | SUSE edition | Upstream edition |
 |---|---|---|
-| Ollama | chart 1.91.0, `dp.apps.rancher.io/containers/ollama:0.40.9-nvidia-1.8` | chart 1.91.0 (otwld), `ollama/ollama:0.40.9` |
+| Ollama | chart 1.91.0, `dp.apps.rancher.io/containers/ollama:0.40.10-nvidia-1.9` | chart 1.91.0 (otwld), `ollama/ollama:0.40.10` |
 | Open WebUI | chart 8.19.1, `…/open-webui:0.6.41-15.13` | chart 8.19.0, `ghcr.io/open-webui/open-webui:0.6.41` |
 | Pipelines | chart 0.9.2, `…/open-webui-pipelines:0.20250819.030501-8.109` | chart 0.9.0, `ghcr.io/open-webui/pipelines:git-039f9c5` |
 | AI Compare app | `ghcr.io/wiredquill/ai-demos-suse` (SUSE BCI) | `ghcr.io/wiredquill/ai-demos` (Debian) |
@@ -259,7 +259,7 @@ The operator fetches charts from git ClusterRepos at deploy time, which needs
 calls; the response must include a top-level `questions` array:
 ```bash
 curl -sk -H "Authorization: Bearer $TOKEN" \
-  "https://<rancher>/v1/catalog.cattle.io.clusterrepos/wiredquill-ai-demos?link=info&chartName=hr-assistant-vllm-policy-db&version=0.1.1" \
+  "https://<rancher>/v1/catalog.cattle.io.clusterrepos/wiredquill-ai-demos?link=info&chartName=hr-assistant-vllm-policy-db&version=0.1.2" \
   | jq '.questions | length'
 ```
 
@@ -288,7 +288,7 @@ kubectl annotate blueprint <name> \
 ```
 
 **5. Deploy it.** In Rancher, go to **AI Factory → Blueprints → HR Assistant
-(vLLM) 1.5.0 → Deploy**. Pick the target cluster and a namespace that
+(vLLM) 1.6.0 → Deploy**. Pick the target cluster and a namespace that
 nothing else uses, then review each component (the `vllm` component holds the
 model and HF token).
 To deploy from YAML instead, use an AIWorkload. `componentValues` is keyed by
@@ -306,7 +306,7 @@ spec:
     sourceType: Blueprint
     blueprint:
       name: hr-assistant-vllm
-      version: "1.5.0"
+      version: "1.6.0"
   targetClusters:
     - c-m-xxxxxxxx                   # Rancher cluster ID, not the display name
   targetNamespace: hr-assistant-vllm
