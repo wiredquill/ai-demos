@@ -27,7 +27,7 @@ editions:
       repository: ghcr.io/wiredquill/ai-demos-suse
     ollama:
       repository: dp.apps.rancher.io/containers/ollama
-      tag: "0.40.10-nvidia-1.9"
+      tag: "0.40.11-nvidia-2.2"
     openWebui:
       repository: dp.apps.rancher.io/containers/open-webui
       # Newest SUSE build that starts: later 0.6.41 builds lack
@@ -38,13 +38,13 @@ editions:
       tag: "0.20250819.030501-8.109"
     otelCollector:
       repository: dp.apps.rancher.io/containers/opentelemetry-collector
-      tag: "0.163.2-contrib-17.6"
+      tag: "0.163.2-contrib-18.1"
     curl:
       repository: dp.apps.rancher.io/containers/curl
-      tag: "8.14.1-14.3"
+      tag: "8.14.1-15.1"
     git:
       repository: dp.apps.rancher.io/containers/git
-      tag: "2.56.0-32.5"
+      tag: "2.56.0-33.1"
     shell:
       repository: registry.suse.com/bci/bci-base
       tag: "15.7"
@@ -58,7 +58,7 @@ editions:
       repository: ghcr.io/wiredquill/ai-demos
     ollama:
       repository: ollama/ollama
-      tag: "0.40.10"
+      tag: "0.40.11"
     openWebui:
       repository: ghcr.io/open-webui/open-webui
       tag: "0.6.41"
