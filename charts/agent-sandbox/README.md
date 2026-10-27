@@ -74,7 +74,17 @@ kubectl -n agent-sandbox-system rollout status deploy/agent-sandbox-controller
 kubectl -n openshell get sandboxes,pods
 ```
 
+## Install options
+
+- **Namespace:** Rancher installs this app into `agent-sandbox-system`, where the controller
+  always runs. Installed into another namespace, the Helm release lives there but the
+  controller still goes to `agent-sandbox-system`.
+- **Install the Sandbox CRD:** turn it off when the cluster already has
+  `sandboxes.agents.x-k8s.io`. Left on, a CRD this app didn't create is detected and left as
+  it is. The CRD stays on the cluster when this app is uninstalled, so existing sandboxes
+  aren't deleted.
+
 ## Already installed with kubectl?
 
-If the cluster already has the controller from `kubectl apply -f .../sandbox.yaml`, skip
-this app: Helm can't take over resources it didn't create. Go straight to step 2.
+If the cluster already runs the controller from `kubectl apply -f .../sandbox.yaml`, skip
+this app: Helm can't take over the controller's resources. Go straight to step 2.

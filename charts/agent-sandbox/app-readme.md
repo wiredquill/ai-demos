@@ -17,5 +17,6 @@ controller turns each one into a pod.
 
 The chart README has the architecture diagram.
 
-If the cluster already has the controller from `kubectl apply -f .../sandbox.yaml`, don't
-install this app: Helm can't take over resources it didn't create.
+Install it into the **agent-sandbox-system** namespace (Rancher's default for this app).
+If the cluster already has the Sandbox CRD, turn off **Install the Sandbox CRD**. If it already
+runs the controller from `kubectl apply -f .../sandbox.yaml`, don't install this app at all.

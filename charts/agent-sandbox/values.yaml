@@ -1,7 +1,14 @@
 # Agent Sandbox controller (cluster-scoped). Install once per cluster.
 
-# Create the agent-sandbox-system Namespace. Turn off if it already exists
-# (for example, created by an earlier `kubectl apply` of sandbox.yaml).
+# Install the Sandbox CRD (sandboxes.agents.x-k8s.io). Turn off when the
+# cluster already has it. Left on, a CRD this app didn't create is detected
+# and left alone. Never removed on uninstall, so Sandboxes survive it.
+crds:
+  install: true
+
+# Create the agent-sandbox-system Namespace when this app is installed into
+# another namespace and it doesn't exist yet. Installed into
+# agent-sandbox-system itself (the default in Rancher), Rancher creates it.
 createNamespace: true
 
 controller:
