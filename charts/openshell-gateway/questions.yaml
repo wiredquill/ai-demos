@@ -46,7 +46,7 @@ questions:
     <code>openshell-server-tls</code> Secret and upgrade.
 - variable: openshell.sandbox.image.repository
   label: Default sandbox image
-  group: Sandboxes
+  group: Sandbox defaults
   type: enum
   default: ghcr.io/wiredquill/openshell-lab/leap
   options:
@@ -56,24 +56,25 @@ questions:
     - ghcr.io/wiredquill/can-i-nvidia
     - nvcr.io/nvidia/base/ubuntu
   description: >-
-    Used when <code>openshell sandbox create</code> has no <code>--from</code>.
+    Only a default: this app creates no sandbox. Used when <code>openshell sandbox create</code> has no <code>--from</code>;
+    the can-i and Hermes sandbox apps always pick their own image.
     openshell-lab/leap is the lab's openSUSE Leap 16 image; the can-i images are SUSE BCI, openSUSE Leap 16
     and NVIDIA base Ubuntu 24.04; nvcr.io/nvidia/base/ubuntu is NVIDIA's chart default.
 - variable: openshell.sandbox.image.tag
   label: Default sandbox image tag
-  group: Sandboxes
+  group: Sandbox defaults
   type: string
   default: "16.0"
   description: "16.0 for openshell-lab/leap, latest for the can-i images, 24.04 for nvcr.io/nvidia/base/ubuntu."
 - variable: openshell.server.sandboxNamespace
   label: Sandbox namespace
-  group: Sandboxes
+  group: Sandbox defaults
   type: string
   default: ""
   description: Namespace for sandbox pods. Leave blank to use this app's namespace.
 - variable: openshell.server.defaultRuntimeClassName
   label: Default RuntimeClass
-  group: Sandboxes
+  group: Sandbox defaults
   type: string
   default: ""
   description: Applied to sandboxes that don't set one, e.g. <code>nvidia</code> for GPU sandboxes or <code>kata-containers</code>. Blank = cluster default.

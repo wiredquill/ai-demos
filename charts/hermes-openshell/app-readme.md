@@ -1,4 +1,4 @@
-# Hermes Agent in OpenShell
+# OpenShell 3 - Hermes Agent sandbox
 
 [Hermes Agent](https://github.com/NousResearch/hermes-agent) from Nous Research, running as an
 [NVIDIA OpenShell](https://docs.nvidia.com/openshell/) 0.1.5 sandbox on SUSE BCI 16 or openSUSE Leap 16.
@@ -15,7 +15,7 @@ Even under **dangerous**, OpenShell keeps the agent off root, cloud metadata, lo
 Kubernetes API, etcd and kubelet ports.
 
 **Before you install**
-- The **Agent Sandbox controller** and **OpenShell gateway** apps, with this app in the gateway's namespace.
+- **OpenShell 1 - Agent Sandbox controller** (once per cluster) and **OpenShell 2 - Gateway**, with this app in the gateway's namespace.
 - A model: the SUSE **vLLM** router in the same namespace, or an OpenAI-compatible API key.
 
 Open the terminal on the Service's NodePort. The page runs `hermes`, and each browser tab gets its own session.
