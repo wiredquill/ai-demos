@@ -3,3 +3,6 @@ Agent Sandbox controller {{ .Values.controller.image.tag }} is installed in agen
 Check it:
   kubectl get crd sandboxes.agents.x-k8s.io
   kubectl -n agent-sandbox-system rollout status deploy/agent-sandbox-controller
+
+This serves the whole cluster: don't install it again. Next, install
+"OpenShell 2 - Gateway" into the namespace your sandboxes will use (e.g. openshell).
