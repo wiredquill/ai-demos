@@ -119,8 +119,6 @@ else
     # KEY alone = read from the environment, so the key isn't in the process arguments
     export "$KEY_ENV=$api_key"
     provider_args+=(--credential "$KEY_ENV")
-  else
-    provider_args+=(--runtime-credentials)
   fi
   openshell provider create "${provider_args[@]}"
   unset "$KEY_ENV" api_key
