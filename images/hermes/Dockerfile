@@ -51,7 +51,9 @@ RUN zypper -n install --no-recommends python313 git-core curl tar gzip which les
 COPY --from=builder /opt/hermes /opt/hermes
 COPY --from=ttyd /usr/local/bin/ttyd /usr/local/bin/ttyd
 COPY images/hermes/hermes-sandbox-start /usr/local/bin/hermes-sandbox-start
-RUN ln -s /opt/hermes/bin/hermes /usr/local/bin/hermes
+RUN ln -s /opt/hermes/bin/hermes /usr/local/bin/hermes \
+ && printf '%s\n' '# OpenShell sets HOME=/sandbox; the profiles allow writes under /home/hermes' \
+      'export HOME=/home/hermes' > /etc/profile.d/hermes-home.sh
 
 RUN useradd --system --uid 10001 --create-home --home-dir /home/hermes hermes \
  && mkdir -p /home/hermes/workspace && chown -R 10001:10001 /home/hermes

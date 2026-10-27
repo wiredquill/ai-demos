@@ -19,6 +19,10 @@ set -euo pipefail
 : "${HERMES_APPROVALS:=smart}"
 : "${TTYD_PORT:=7681}"
 
+# OpenShell sets HOME=/sandbox; the profiles only let the agent write under
+# /home/hermes and /tmp, so put Hermes's state (~/.hermes) there
+export HOME=/home/hermes
+
 mkdir -p "$HOME/.hermes" "$HOME/workspace"
 config=$HOME/.hermes/config.yaml
 # Keep a config the user changed inside the sandbox (hermes model, hermes config
