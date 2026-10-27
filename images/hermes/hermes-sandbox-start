@@ -46,5 +46,27 @@ if [ ! -s "$config" ]; then
 fi
 
 cd "$HOME/workspace"
-# -W: writable (people type into it); each browser tab gets its own hermes session
-exec ttyd -i 127.0.0.1 -p "$TTYD_PORT" -W -t titleFixed="Hermes in OpenShell" hermes
+
+# Keep ttyd up: it is the sandbox's main process, and if it exits OpenShell
+# marks the sandbox Error and the client's forward stops. Restart it instead,
+# backing off while it keeps failing; pass TERM/INT on when the sandbox stops.
+ttyd_pid=""
+stop() { [ -n "$ttyd_pid" ] && kill "$ttyd_pid" 2>/dev/null; exit 0; }
+trap stop TERM INT
+
+delay=1
+while true; do
+  started=$SECONDS
+  # -W: writable (people type into it); each browser tab gets its own hermes session
+  ttyd -i 127.0.0.1 -p "$TTYD_PORT" -W -t titleFixed="Hermes in OpenShell" hermes &
+  ttyd_pid=$!
+  status=0
+  wait "$ttyd_pid" || status=$?
+  ttyd_pid=""
+  # a run that lasted a minute was healthy: start the backoff over
+  [ $((SECONDS - started)) -ge 60 ] && delay=1
+  echo "hermes-sandbox-start: ttyd exited (status $status); restarting in ${delay}s" >&2
+  # in the background so TERM interrupts the backoff instead of waiting it out
+  sleep "$delay" & wait $!
+  [ "$delay" -lt 30 ] && delay=$((delay * 2))
+done
