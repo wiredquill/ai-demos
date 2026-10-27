@@ -1,0 +1,75 @@
+# Hermes Agent as an OpenShell sandbox. A small client pod (the openshell CLI)
+# creates the sandbox through the gateway, then forwards Hermes's browser
+# terminal to a Service. Install into the same namespace as openshell-gateway.
+
+# What the sandbox may do: lockdown | research | developer | dangerous.
+# Each is a policy file in profiles/ (see README.md for what each allows).
+profile: research
+
+# Hermes's own command approvals for each profile (approvals.mode in its
+# config): manual = ask before every risky command, smart = auto-approve
+# low-risk ones, off = never ask.
+approvals:
+  lockdown: manual
+  research: smart
+  developer: smart
+  dangerous: "off"
+
+sandbox:
+  # Sandbox name in OpenShell (`openshell sandbox get <name>`).
+  name: hermes
+  # The SUSE OS the sandbox runs: suse | opensuse | custom
+  image: suse
+  images:
+    suse: ghcr.io/wiredquill/hermes-openshell:latest              # SUSE BCI 16
+    opensuse: ghcr.io/wiredquill/hermes-openshell-opensuse:latest # openSUSE Leap 16.0
+  # Used when image is "custom". Must be built like images/hermes (hermes,
+  # ttyd and hermes-sandbox-start, user 10001, home /home/hermes).
+  customImage: ""
+  # Request a GPU for the sandbox (needs a GPU node and RuntimeClass).
+  gpu: false
+  # Delete and recreate the sandbox when the client pod restarts, so profile,
+  # image and model changes in this form take effect. Off = reuse a running
+  # sandbox (and its chat history and files).
+  recreate: true
+
+model:
+  # vllm = the SUSE vLLM router in this namespace (hermes-openshell-vllm
+  # blueprint, or your own install). external = any OpenAI-compatible API.
+  backend: vllm
+  vllm:
+    url: http://vllm-router-service/v1
+    # Must match the vllm component's modelURL.
+    name: Qwen/Qwen2.5-7B-Instruct
+  external:
+    url: https://openrouter.ai/api/v1
+    name: nousresearch/hermes-4-70b
+    # The key is handed to the OpenShell gateway, which injects it only into
+    # requests to this URL's host; the sandbox sees a placeholder. Set one:
+    apiKey: ""
+    # ... or an existing Secret in this namespace.
+    existingSecret: ""
+    existingSecretKey: api-key
+
+gateway:
+  # The openshell-gateway chart's Service and client certificate Secret.
+  endpoint: https://openshell:8080
+  tlsSecret: openshell-client-tls
+
+client:
+  image:
+    repository: ghcr.io/wiredquill/hermes-openshell-client
+    tag: latest
+    pullPolicy: Always
+  resources:
+    requests: {cpu: 10m, memory: 32Mi}
+    limits: {memory: 128Mi}
+
+service:
+  # NodePort: the terminal is on every node's IP without a port-forward.
+  type: NodePort
+  port: 80
+  # Only for NodePort; blank = assigned by Kubernetes.
+  nodePort: ""
+
+imagePullSecrets: []

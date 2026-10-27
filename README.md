@@ -207,6 +207,32 @@ spec:
   gitBranch: aif/upstream-charts
 ```
 
+### Agents in OpenShell sandboxes: Hermes and can-i
+
+These blueprints run an agent as an [NVIDIA OpenShell](https://docs.nvidia.com/openshell/)
+0.1.5 sandbox. Each needs the Agent Sandbox controller and the OpenShell gateway,
+which are in `catalog/components/agent-sandbox` and `catalog/components/openshell-gateway`.
+Both were copied from [wiredquill/can-i](https://github.com/wiredquill/can-i).
+`openshell-gateway` vendors NVIDIA's chart with a patch, so rebuild it with
+`scripts/vendor-openshell-chart.sh`, never `helm dependency update`.
+
+| Blueprint | Components (pods) |
+|---|---|
+| `hermes-openshell` 1.0.0 | `agent-sandbox` 1.0.8, `openshell-gateway` 0.1.6, `hermes-openshell` 0.1.0 (3 + sandbox). The model is an external OpenAI-compatible API (OpenRouter by default). |
+| `hermes-openshell-vllm` 1.0.0 | Same as above, plus SUSE `vllm` 0.1.10 serving Qwen2.5-7B-Instruct (4 + sandbox, GPU) |
+| `can-i-openshell` 1.0.0 | `agent-sandbox`, `openshell-gateway` and `can-i` from the `wiredquill-can-i` ClusterRepo (`catalog/clusterrepos/wiredquill-can-i.yaml`) |
+
+`hermes-openshell` runs Nous Research's Hermes Agent on SUSE BCI 16 or openSUSE
+Leap 16, in a browser terminal. Its form has a **Security profile** dropdown:
+**lockdown**, **research**, **developer** or **dangerous**.
+`catalog/components/hermes-openshell/README.md` has what each one allows. The
+images are built from `images/hermes` and `images/hermes-client` by
+`.github/workflows/build-hermes-openshell.yml`.
+
+The `can-i-openshell` blueprint also exists in the can-i repository. Register
+only one of the two blueprint catalogs that contain it, because Fleet won't
+adopt a Blueprint that another catalog created.
+
 ### Installing a blueprint on a cluster with SUSE AI Factory
 
 **Prerequisites**
@@ -229,7 +255,12 @@ mkdir -p /tmp/aif && rm -f /tmp/aif/*.tgz
 # Base charts plus the per-workload component charts (catalog/components/, kept out
 # of the gh-pages repo because they exist only for the blueprints)
 for c in charts/hr-assistant charts/hr-assistant-vllm catalog/components/*/; do
-  helm package "$c" --dependency-update -d /tmp/aif
+  case "$c" in
+    # vendors NVIDIA's patched chart as a .tgz; --dependency-update would fail on it
+    # (rebuild with scripts/vendor-openshell-chart.sh)
+    */openshell-gateway/) helm package "$c" -d /tmp/aif ;;
+    *) helm package "$c" --dependency-update -d /tmp/aif ;;
+  esac
 done
 # SUSE vllm, ollama, opensearch, open-webui and open-webui-pipelines with install forms
 # (needs: helm registry login dp.apps.rancher.io)
@@ -237,7 +268,7 @@ scripts/package-aif-charts.sh /tmp/aif
 git checkout aif/hr-assistant-vllm
 cp /tmp/aif/*.tgz .
 helm repo index . --url https://github.com/wiredquill/ai-demos
-git add index.yaml hr-assistant*.tgz ai-compare*.tgz vllm-*.tgz ollama-*.tgz opensearch-*.tgz open-webui*.tgz
+git add index.yaml hr-assistant*.tgz ai-compare*.tgz vllm-*.tgz ollama-*.tgz opensearch-*.tgz open-webui*.tgz agent-sandbox-*.tgz openshell-gateway-*.tgz hermes-openshell-*.tgz
 git commit -s -m "chore(aif): publish hr-assistant-vllm component charts"
 git push origin aif/hr-assistant-vllm
 ```

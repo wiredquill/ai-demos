@@ -1,0 +1,12 @@
+# Agent Sandbox controller (cluster-scoped). Install once per cluster.
+
+# Create the agent-sandbox-system Namespace. Turn off if it already exists
+# (for example, created by an earlier `kubectl apply` of sandbox.yaml).
+createNamespace: true
+
+controller:
+  replicas: 1
+  image:
+    repository: registry.k8s.io/agent-sandbox/agent-sandbox-controller
+    tag: v1.0.8
+    pullPolicy: IfNotPresent

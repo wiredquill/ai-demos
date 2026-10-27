@@ -1,0 +1,39 @@
+# dangerous: as open as OpenShell allows. Any program may reach any address on
+# 80/443, including private addresses inside the cluster, and Hermes runs its
+# commands without asking (approvals: off). For showing what an unconstrained
+# agent does, never for real data.
+#
+# What still holds, because OpenShell enforces it whatever the policy says:
+#   - no root (run_as_user must not be 0)
+#   - no loopback, link-local or cloud metadata (169.254.169.254)
+#   - no Kubernetes API / etcd / kubelet ports (6443, 2379, 2380, 10250, 10255)
+#   - no writes to /: read_write may not contain "/"
+version: 1
+filesystem_policy:
+  read_only:
+    - /usr
+    - /opt
+    - /lib
+    - /lib64
+    - /etc
+    - /var
+    - /srv
+  read_write:
+    - /home
+    - /tmp
+    - /var/tmp
+landlock:
+  # run even where the kernel can't enforce the filesystem rules
+  compatibility: best_effort
+process:
+  run_as_user: "10001"
+  run_as_group: "10001"
+network_policies:
+  anywhere:
+    name: anywhere
+    endpoints:
+      # A wildcard host needs at least three labels, so "any host" is written
+      # as any address instead. No protocol = plain L4 relay, no L7 checks.
+      - {allowed_ips: ["0.0.0.0/0"], ports: [80, 443]}
+    binaries:
+      - path: "/**"

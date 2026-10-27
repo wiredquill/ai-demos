@@ -1,0 +1,50 @@
+# Lab defaults for the NVIDIA OpenShell gateway. Everything sits under
+# `openshell:` (the alias of the vendored NVIDIA chart); see its values.yaml for
+# the full list. Matches openshell-lab/k8s/values.yaml.
+openshell:
+  # Service, Secrets and certificate SANs are named "openshell" whatever the
+  # release is called, so clients (charts/can-i) can default to
+  # https://openshell:8080 and the openshell-client-tls Secret.
+  fullnameOverride: openshell
+
+  server:
+    auth:
+      # UNSAFE outside a lab: CLI callers holding the client certificate are
+      # accepted without OIDC. Any pod that can reach the Service and read the
+      # openshell-client-tls Secret can drive the gateway.
+      allowUnauthenticatedUsers: true
+    # No anonymous telemetry from the gateway or the sandbox supervisors.
+    telemetryEnabled: false
+    logLevel: info
+    # Empty = sandboxes are created in this release's namespace.
+    sandboxNamespace: ""
+    # e.g. "nvidia" to give every sandbox the NVIDIA runtime by default.
+    defaultRuntimeClassName: ""
+    dataStorageSize: ""
+    dataStorageClass: ""
+
+  # Default workload image when `openshell sandbox create` has no --from.
+  sandbox:
+    image:
+      repository: ghcr.io/wiredquill/openshell-lab/leap
+      tag: "16.0"
+
+  # How the CLI on your workstation reaches the gateway. ClusterIP = through
+  # `kubectl port-forward` (the lab's setup.sh). NodePort/LoadBalancer = directly,
+  # which also needs the address in pkiInitJob.extraServerSans below.
+  service:
+    type: ClusterIP
+    nodePort: ""
+
+  pkiInitJob:
+    # Extra names on the gateway's TLS certificate, comma-separated, e.g.
+    # "10.0.9.50,openshell.lab.example.com". The CLI checks the certificate
+    # against the address it dials. Only applied when the certificate is
+    # first generated (see app-readme.md to regenerate).
+    extraServerSans: ""
+
+  agentSandbox:
+    preflight:
+      # Fails the install when the Agent Sandbox CRDs are missing. The
+      # blueprint turns it off because it installs the controller alongside.
+      enabled: true

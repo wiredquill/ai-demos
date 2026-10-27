@@ -1,0 +1,154 @@
+#!/bin/bash
+# Run Hermes Agent as an OpenShell sandbox and forward its web terminal out of it.
+#
+#   1. register the in-cluster gateway with the CLI (mTLS bundle from a Secret)
+#   2. (re)create the model provider: a custom provider profile that allows the
+#      model's host and, with an API key, binds the key to that host. The sandbox
+#      only ever sees a placeholder for the key.
+#   3. (re)create the sandbox from $SANDBOX_IMAGE under the profile's policy
+#   4. forward 0.0.0.0:$FORWARD_PORT -> ttyd on 127.0.0.1:$TARGET_PORT inside the
+#      sandbox, until the pod stops; then delete the sandbox.
+#
+# The pod is also the demo's CLI: `kubectl exec -it deploy/<release> -- openshell ...`
+set -euo pipefail
+
+: "${GATEWAY_ENDPOINT:=https://openshell:8080}"
+: "${GATEWAY_NAME:=k8s}"
+: "${TLS_DIR:=/etc/openshell/tls}"
+: "${SANDBOX_NAME:=hermes}"
+: "${SANDBOX_IMAGE:?SANDBOX_IMAGE is required}"
+: "${POLICY_FILE:=/etc/hermes/policy.yaml}"
+: "${PROFILE:=research}"
+: "${APPROVALS:=smart}"
+: "${SANDBOX_GPU:=false}"
+: "${RECREATE:=true}"
+: "${DELETE_ON_EXIT:=true}"
+: "${LLM_BASE_URL:?LLM_BASE_URL is required}"
+: "${LLM_MODEL:?LLM_MODEL is required}"
+: "${LLM_API_KEY_FILE:=/etc/hermes/llm/api-key}"
+: "${PROVIDER_NAME:=$SANDBOX_NAME-llm}"
+: "${TARGET_PORT:=7681}"
+: "${FORWARD_PORT:=7681}"
+
+# Executables in the Hermes image that call the model: the venv's python is a
+# symlink, and OpenShell matches real paths.
+LLM_BINARIES=(/usr/bin/python3.13 /usr/bin/curl)
+KEY_ENV=HERMES_LLM_API_KEY
+
+log() { printf '%s hermes-client: %s\n' "$(date -u +%FT%TZ)" "$*"; }
+
+# -- 1. gateway registration ------------------------------------------------------
+# `gateway add --local` expects the client bundle to be in place already.
+mtls="$HOME/.config/openshell/gateways/$GATEWAY_NAME/mtls"
+mkdir -p "$mtls"
+for f in ca.crt tls.crt tls.key; do cp "$TLS_DIR/$f" "$mtls/$f"; done
+chmod 600 "$mtls/tls.key"
+openshell gateway add "$GATEWAY_ENDPOINT" --local --name "$GATEWAY_NAME" >/dev/null 2>&1 || true
+export OPENSHELL_GATEWAY=$GATEWAY_NAME
+
+log "waiting for gateway $GATEWAY_ENDPOINT"
+until openshell status >/dev/null 2>&1; do sleep 5; done
+log "gateway connected"
+
+# -- 2. model provider --------------------------------------------------------------
+# scheme://host[:port]/path -> host and port for the profile's endpoint
+url=${LLM_BASE_URL#*://}
+scheme=${LLM_BASE_URL%%://*}
+hostport=${url%%/*}
+llm_host=${hostport%%:*}
+if [ "$hostport" != "$llm_host" ]; then
+  llm_port=${hostport##*:}
+elif [ "$scheme" = https ]; then
+  llm_port=443
+else
+  llm_port=80
+fi
+
+api_key=""
+[ -s "$LLM_API_KEY_FILE" ] && api_key=$(<"$LLM_API_KEY_FILE")
+
+profile_file=$HOME/llm-profile.yaml
+{
+  echo "id: $PROVIDER_NAME"
+  echo "display_name: Hermes model endpoint"
+  echo "description: OpenAI-compatible endpoint for the $SANDBOX_NAME sandbox"
+  echo "category: inference"
+  echo "inference_capable: true"
+  if [ -n "$api_key" ]; then
+    echo "credentials:"
+    echo "  - name: api_key"
+    echo "    description: API key for $llm_host"
+    echo "    env_vars: [$KEY_ENV]"
+    echo "    required: true"
+    echo "    auth_style: bearer"
+    echo "    header_name: Authorization"
+  fi
+  echo "endpoints:"
+  echo "  - host: $llm_host"
+  echo "    port: $llm_port"
+  echo "    protocol: rest"
+  echo "    access: read-write"
+  echo "    enforcement: enforce"
+  echo "binaries:"
+  for b in "${LLM_BINARIES[@]}"; do echo "  - $b"; done
+} > "$profile_file"
+
+log "provider $PROVIDER_NAME -> $llm_host:$llm_port${api_key:+ (API key bound to this host)}"
+openshell profile lint -f "$profile_file"
+openshell provider delete "$PROVIDER_NAME" >/dev/null 2>&1 || true
+openshell profile import -f "$profile_file" --global >/dev/null 2>&1 \
+  || openshell profile import -f "$profile_file" --global --force
+provider_args=(--name "$PROVIDER_NAME" --type "$PROVIDER_NAME")
+if [ -n "$api_key" ]; then
+  provider_args+=(--credential "$KEY_ENV=$api_key")
+else
+  provider_args+=(--runtime-credentials)
+fi
+openshell provider create "${provider_args[@]}" >/dev/null
+
+# -- 3. sandbox ---------------------------------------------------------------------
+exists() { openshell sandbox get "$SANDBOX_NAME" >/dev/null 2>&1; }
+
+if exists && [ "$RECREATE" = true ]; then
+  log "deleting existing sandbox $SANDBOX_NAME (image, profile or model may have changed)"
+  openshell sandbox delete "$SANDBOX_NAME" >/dev/null || true
+  for _ in $(seq 60); do exists || break; sleep 2; done
+fi
+
+if exists; then
+  log "reusing sandbox $SANDBOX_NAME"
+else
+  args=(--name "$SANDBOX_NAME" --from "$SANDBOX_IMAGE" --policy "$POLICY_FILE"
+        --no-auto-providers --provider "$PROVIDER_NAME" --no-tty --detach
+        --env "HERMES_BASE_URL=$LLM_BASE_URL"
+        --env "HERMES_MODEL=$LLM_MODEL"
+        --env "HERMES_KEY_ENV=${api_key:+$KEY_ENV}"
+        --env "HERMES_APPROVALS=$APPROVALS"
+        --env "TTYD_PORT=$TARGET_PORT")
+  [ "$SANDBOX_GPU" = true ] && args+=(--gpu)
+  log "creating sandbox $SANDBOX_NAME from $SANDBOX_IMAGE, profile $PROFILE (approvals: $APPROVALS)"
+  openshell sandbox create "${args[@]}" -- hermes-sandbox-start
+fi
+
+# -- 4. forward until stopped ---------------------------------------------------------
+fwd=""
+shutdown() {
+  [ -n "$fwd" ] && kill "$fwd" 2>/dev/null
+  if [ "$DELETE_ON_EXIT" = true ]; then
+    log "deleting sandbox $SANDBOX_NAME"
+    openshell sandbox delete "$SANDBOX_NAME" >/dev/null 2>&1 || true
+  fi
+  exit 0
+}
+trap shutdown TERM INT
+
+log "forwarding 0.0.0.0:$FORWARD_PORT -> $SANDBOX_NAME:$TARGET_PORT"
+while true; do
+  # fails while the sandbox is still starting; retry until ttyd answers
+  openshell forward service --target-port "$TARGET_PORT" --local "0.0.0.0:$FORWARD_PORT" "$SANDBOX_NAME" &
+  fwd=$!
+  wait "$fwd" || true
+  fwd=""
+  log "forward exited; retrying in 3s"
+  sleep 3
+done

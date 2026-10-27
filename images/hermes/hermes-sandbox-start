@@ -1,0 +1,46 @@
+#!/bin/bash
+# Sandbox entrypoint: write Hermes's config from the environment the client pod
+# passes to `openshell sandbox create --env`, then serve `hermes` in a browser
+# terminal on 127.0.0.1 (the sandbox has no inbound network; the client pod
+# forwards this port out through the gateway).
+#
+#   HERMES_BASE_URL   OpenAI-compatible endpoint, e.g. http://vllm-router-service/v1
+#   HERMES_MODEL      model name sent in each request
+#   HERMES_KEY_ENV    name of the env var holding the API key ("" = no key). With an
+#                     OpenShell provider it holds a placeholder; the gateway's proxy
+#                     swaps in the real key for the model's host only.
+#   HERMES_APPROVALS  manual | smart | off (the profile picks it)
+#   TTYD_PORT         default 7681
+set -euo pipefail
+
+: "${HERMES_BASE_URL:?HERMES_BASE_URL is required}"
+: "${HERMES_MODEL:?HERMES_MODEL is required}"
+: "${HERMES_KEY_ENV:=}"
+: "${HERMES_APPROVALS:=smart}"
+: "${TTYD_PORT:=7681}"
+
+mkdir -p "$HOME/.hermes" "$HOME/workspace"
+config=$HOME/.hermes/config.yaml
+# Keep a config the user changed inside the sandbox (hermes model, hermes config
+# set); the client recreates the sandbox when the form changes anyway.
+if [ ! -s "$config" ]; then
+  {
+    echo "model:"
+    echo "  provider: custom"
+    echo "  base_url: \"$HERMES_BASE_URL\""
+    echo "  default: \"$HERMES_MODEL\""
+    if [ -n "$HERMES_KEY_ENV" ]; then
+      echo "  key_env: $HERMES_KEY_ENV"
+    fi
+    echo "terminal:"
+    # the sandbox is the isolation: run the agent's commands in it directly
+    echo "  backend: local"
+    echo "  cwd: \"$HOME/workspace\""
+    echo "approvals:"
+    echo "  mode: $HERMES_APPROVALS"
+  } > "$config"
+fi
+
+cd "$HOME/workspace"
+# -W: writable (people type into it); each browser tab gets its own hermes session
+exec ttyd -i 127.0.0.1 -p "$TTYD_PORT" -W -t titleFixed="Hermes in OpenShell" hermes

@@ -1,0 +1,129 @@
+{{- $model := include "hermes-openshell.model" . | fromJson }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hermes-openshell.fullname" . }}
+  labels:
+    {{- include "hermes-openshell.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  # One sandbox per release: the old pod must delete its sandbox before the new
+  # one creates it again, so never run two at once.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "hermes-openshell.selector" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "hermes-openshell.selector" . | nindent 8 }}
+      annotations:
+        # restart (and so recreate the sandbox) when the profile, image or model changes
+        checksum/policy: {{ include "hermes-openshell.policy" . | sha256sum }}
+        checksum/sandbox: {{ printf "%s|%s|%s|%v" (include "hermes-openshell.sandboxImage" .) (toJson $model) (get .Values.approvals .Values.profile) .Values.sandbox.gpu | sha256sum }}
+        checksum/api-key: {{ .Values.model.external.apiKey | sha256sum }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # leave time to delete the sandbox on shutdown
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: client
+          image: "{{ .Values.client.image.repository }}:{{ .Values.client.image.tag }}"
+          imagePullPolicy: {{ .Values.client.image.pullPolicy }}
+          env:
+            - name: HOME
+              value: /home/client
+            - name: GATEWAY_ENDPOINT
+              value: {{ .Values.gateway.endpoint | quote }}
+            - name: SANDBOX_NAME
+              value: {{ .Values.sandbox.name | quote }}
+            - name: SANDBOX_IMAGE
+              value: {{ include "hermes-openshell.sandboxImage" . | quote }}
+            - name: SANDBOX_GPU
+              value: {{ .Values.sandbox.gpu | quote }}
+            - name: RECREATE
+              value: {{ .Values.sandbox.recreate | quote }}
+            - name: PROFILE
+              value: {{ .Values.profile | quote }}
+            - name: APPROVALS
+              value: {{ required (printf "approvals.%s is required" .Values.profile) (get .Values.approvals .Values.profile) | quote }}
+            - name: LLM_BASE_URL
+              value: {{ $model.url | quote }}
+            - name: LLM_MODEL
+              value: {{ $model.name | quote }}
+            - name: FORWARD_PORT
+              value: "7681"
+            # `kubectl exec ... -- openshell ...` uses the registered gateway
+            - name: OPENSHELL_GATEWAY
+              value: k8s
+          ports:
+            - name: http
+              containerPort: 7681
+          readinessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            {{- toYaml .Values.client.resources | nindent 12 }}
+          volumeMounts:
+            - name: home
+              mountPath: /home/client
+            - name: tmp
+              mountPath: /tmp
+            - name: policy
+              mountPath: /etc/hermes/policy.yaml
+              subPath: policy.yaml
+              readOnly: true
+            - name: profiles
+              mountPath: /etc/hermes/profiles
+              readOnly: true
+            {{- if $model.secret }}
+            - name: llm
+              mountPath: /etc/hermes/llm
+              readOnly: true
+            {{- end }}
+            - name: gateway-tls
+              mountPath: /etc/openshell/tls
+              readOnly: true
+      volumes:
+        - name: home
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+        - name: policy
+          configMap:
+            name: {{ include "hermes-openshell.fullname" . }}-policy
+        - name: profiles
+          configMap:
+            name: {{ include "hermes-openshell.fullname" . }}-policy
+            items:
+              {{- range $path, $_ := .Files.Glob "profiles/*.yaml" }}
+              - key: profile-{{ base $path }}
+                path: {{ base $path }}
+              {{- end }}
+        {{- if $model.secret }}
+        - name: llm
+          secret:
+            secretName: {{ $model.secret }}
+            items:
+              - key: {{ if .Values.model.external.existingSecret }}{{ .Values.model.external.existingSecretKey }}{{ else }}api-key{{ end }}
+                path: api-key
+        {{- end }}
+        - name: gateway-tls
+          secret:
+            secretName: {{ .Values.gateway.tlsSecret }}
