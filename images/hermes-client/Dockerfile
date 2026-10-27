@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Hermes client: the openshell CLI plus a script that runs Hermes as an
 # OpenShell sandbox and forwards its web terminal.  Deployed by
-# catalog/components/hermes-openshell.  Build from the repo root:
+# charts/hermes-openshell.  Build from the repo root:
 #   docker build -f images/hermes-client/Dockerfile -t hermes-openshell-client .
 
 FROM registry.suse.com/bci/bci-base:16.0 AS cli
