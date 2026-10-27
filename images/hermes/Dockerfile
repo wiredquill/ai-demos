@@ -7,7 +7,7 @@
 #
 # Runs as uid 10001 (OpenShell rejects root). Everything the agent may write is
 # under /home/hermes and /tmp; the profiles in
-# catalog/components/hermes-openshell decide what else it can touch.
+# charts/hermes-openshell decide what else it can touch.
 ARG BASE=registry.suse.com/bci/bci-base:16.0
 
 # ---- build stage: Hermes in a self-contained virtualenv ------------------------

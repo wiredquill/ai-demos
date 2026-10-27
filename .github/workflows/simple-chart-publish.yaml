@@ -50,7 +50,11 @@ jobs:
           for chart in charts/*/; do
             if [ -f "$chart/Chart.yaml" ]; then
               echo "Packaging chart: $chart"
-              helm package "$chart" --destination .cr-release-packages --dependency-update || \
+              # openshell-gateway commits its patched NVIDIA dependency as a .tgz;
+              # --dependency-update would fail on it (scripts/vendor-openshell-chart.sh)
+              deps=--dependency-update
+              [ "$(basename "$chart")" = openshell-gateway ] && deps=""
+              helm package "$chart" --destination .cr-release-packages $deps || \
                 echo "WARNING: Failed to package $chart (skipping)"
             fi
           done
