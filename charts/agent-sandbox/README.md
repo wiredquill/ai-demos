@@ -41,7 +41,7 @@ pod and nothing to open in a browser.
  ┌───────────────────────┼───────────────┼───────────────────────────────┐
  │                       │               ▼                               │
  │ ┌─────────────────────┴───────┐   ┌───────────────────────────────┐   │
- │ │ 2  OpenShell 2 - Gateway    │   │ sandbox pod  (e.g. "can-i")   │   │
+ │ │ 2  OpenShell 2 - Gateway    │   │ sandbox pod "can-i-sandbox"   │   │
  │ │    statefulset/openshell    │──►│ workload image + OpenShell    │   │
  │ │    svc/openshell:8080 mTLS  │   │ supervisor (policy: network,  │   │
  │ │    creates the Sandbox,     │◄──│ Landlock, seccomp)            │   │
@@ -50,8 +50,8 @@ pod and nothing to open in a browser.
  │               │ openshell CLI over mTLS                               │
  │               │ (sandbox create, policy, exec, forward)               │
  │ ┌─────────────┴───────────────┐                                       │
- │ │ 3  OpenShell 3 - can-i or   │  client pod: deploy/can-i or         │
- │ │    Hermes Agent sandbox     │  deploy/hermes. Forwards the UI       │
+ │ │ 3  OpenShell 3 - can-i or   │  client pod: can-i-client-... or      │
+ │ │    Hermes Agent sandbox     │  hermes-client-... Forwards the UI    │
  │ │                             │  from the sandbox through the gateway │
  │ └─────────────▲───────────────┘                                       │
  │               │ svc/can-i or svc/hermes (NodePort by default)        │
@@ -63,6 +63,15 @@ pod and nothing to open in a browser.
 The browser never talks to the sandbox pod directly. Sandboxes have no inbound network,
 so the client pod runs `openshell forward` through the gateway and publishes the result on
 its own Service.
+
+Pod names with the default settings (release `can-i` or `hermes`):
+
+| Pod | What it is |
+|---|---|
+| `can-i-client-<hash>`, `hermes-client-<hash>` | client: the `openshell` CLI that creates the sandbox and forwards its UI |
+| `can-i-sandbox`, `hermes-sandbox` | sandbox: the workload under the OpenShell supervisor, which enforces the policy |
+| `openshell-0` | the gateway |
+| `agent-sandbox-controller-<hash>` | the controller, in `agent-sandbox-system` |
 
 ## Check it
 

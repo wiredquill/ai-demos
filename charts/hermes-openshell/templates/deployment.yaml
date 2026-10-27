@@ -2,9 +2,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "hermes-openshell.fullname" . }}
+  name: {{ include "hermes-openshell.clientName" . }}
   labels:
     {{- include "hermes-openshell.labels" . | nindent 4 }}
+    app.kubernetes.io/component: openshell-client
 spec:
   replicas: 1
   # One sandbox per release: the old pod must delete its sandbox before the new
@@ -18,6 +19,7 @@ spec:
     metadata:
       labels:
         {{- include "hermes-openshell.selector" . | nindent 8 }}
+        app.kubernetes.io/component: openshell-client
       annotations:
         # restart (and so recreate the sandbox) when the profile, image or model changes
         checksum/policy: {{ include "hermes-openshell.policy" . | sha256sum }}

@@ -16,8 +16,9 @@ approvals:
   dangerous: "off"
 
 sandbox:
-  # Sandbox name in OpenShell (`openshell sandbox get <name>`).
-  name: hermes
+  # Sandbox name in OpenShell (`openshell sandbox get <name>`). The sandbox pod,
+  # which runs the workload and the OpenShell supervisor, is named after it.
+  name: hermes-sandbox
   # The SUSE OS the sandbox runs: suse | opensuse | custom
   image: suse
   images:

@@ -107,7 +107,7 @@ questions:
   label: Sandbox name
   group: Sandbox
   type: string
-  default: hermes
+  default: hermes-sandbox
   required: true
   description: Name in OpenShell, used by openshell sandbox connect and openshell policy set.
 - variable: sandbox.recreate

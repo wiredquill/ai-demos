@@ -9,7 +9,7 @@ Demo use only.
 {{- end }}
 
 Watch the client create it:
-  kubectl -n {{ .Release.Namespace }} logs -f deploy/{{ include "hermes-openshell.fullname" . }}
+  kubectl -n {{ .Release.Namespace }} logs -f deploy/{{ include "hermes-openshell.clientName" . }}
 
 Browser terminal:
 {{- if eq .Values.service.type "NodePort" }}
@@ -20,9 +20,9 @@ Browser terminal:
 {{- end }}
 
 A shell inside the sandbox (run `hermes` there):
-  kubectl -n {{ .Release.Namespace }} exec -it deploy/{{ include "hermes-openshell.fullname" . }} -- openshell sandbox connect {{ .Values.sandbox.name }}
+  kubectl -n {{ .Release.Namespace }} exec -it deploy/{{ include "hermes-openshell.clientName" . }} -- openshell sandbox connect {{ .Values.sandbox.name }}
 
 Swap the network rules live to another profile (filesystem and process rules
 only change when the sandbox is recreated: change the profile in this form):
-  kubectl -n {{ .Release.Namespace }} exec deploy/{{ include "hermes-openshell.fullname" . }} -- \
+  kubectl -n {{ .Release.Namespace }} exec deploy/{{ include "hermes-openshell.clientName" . }} -- \
     openshell policy set {{ .Values.sandbox.name }} --policy /etc/hermes/profiles/lockdown.yaml --wait
