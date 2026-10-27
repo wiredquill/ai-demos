@@ -13,6 +13,10 @@ filesystem_policy:
     - /home/hermes
     - /tmp
     - /var/tmp
+    # pseudo-terminals for ttyd's hermes sessions (not in OpenShell's baseline)
+    - /dev/ptmx
+    - /dev/pts
+    - /dev/tty
 landlock:
   compatibility: hard_requirement
 process:

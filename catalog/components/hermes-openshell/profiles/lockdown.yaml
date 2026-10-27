@@ -14,6 +14,10 @@ filesystem_policy:
   read_write:
     - /home/hermes
     - /tmp
+    # pseudo-terminals for ttyd's hermes sessions (not in OpenShell's baseline)
+    - /dev/ptmx
+    - /dev/pts
+    - /dev/tty
 landlock:
   # refuse to start rather than run without the filesystem rules
   compatibility: hard_requirement

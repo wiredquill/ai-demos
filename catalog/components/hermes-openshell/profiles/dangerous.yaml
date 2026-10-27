@@ -28,6 +28,10 @@ filesystem_policy:
     - /home
     - /tmp
     - /var/tmp
+    # pseudo-terminals for ttyd's hermes sessions (not in OpenShell's baseline)
+    - /dev/ptmx
+    - /dev/pts
+    - /dev/tty
 landlock:
   # run even where the kernel can't enforce the filesystem rules
   compatibility: best_effort
