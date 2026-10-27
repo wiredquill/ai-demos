@@ -2,7 +2,7 @@ apiVersion: v2
 name: hermes-openshell
 description: 'Hermes Agent (Nous Research) in an NVIDIA OpenShell sandbox on a SUSE OS, with a choice of four security profiles and a browser terminal. Install next to the OpenShell gateway app; also a component of the hermes-openshell SUSE AI Factory blueprints.'
 type: application
-version: 0.1.0
+version: 0.1.1
 appVersion: 0.19.0
 keywords:
 - ai
@@ -19,5 +19,5 @@ sources:
 - https://github.com/NousResearch/hermes-agent
 - https://github.com/NVIDIA/OpenShell
 annotations:
-  catalog.cattle.io/display-name: Hermes Agent in OpenShell
+  catalog.cattle.io/display-name: OpenShell 3 - Hermes Agent sandbox
   catalog.cattle.io/release-name: hermes

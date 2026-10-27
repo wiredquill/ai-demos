@@ -231,10 +231,18 @@ images are built from `images/hermes` and `images/hermes-client` by
 
 Unlike the blueprint-only component charts in `catalog/components/`, these three
 charts are standalone apps, so they live in `charts/` and are published to the
-`https://wiredquill.github.io/ai-demos` Helm repository as well. Without AI
-Factory, install them from Rancher **Apps** in this order: **Agent Sandbox
-controller** (once per cluster), **OpenShell gateway**, then **Hermes Agent in
-OpenShell** in the gateway's namespace.
+`https://wiredquill.github.io/ai-demos` Helm repository as well. In Rancher
+**Apps** their names all start with **OpenShell** and give the install order:
+
+| # | Rancher app | Chart | How many |
+|---|---|---|---|
+| 1 | **OpenShell 1 - Agent Sandbox controller** | `agent-sandbox` | **one per cluster**, install first |
+| 2 | **OpenShell 2 - Gateway** | `openshell-gateway` | one per namespace; creates no sandbox |
+| 3 | **OpenShell 3 - Hermes Agent sandbox** | `hermes-openshell` | in the gateway's namespace |
+| 3 | **OpenShell 3 - can-i sandbox** | `can-i` (wiredquill-can-i repo) | in the gateway's namespace |
+
+Only step 3 creates a sandbox and a web UI. The architecture diagram is in
+[`charts/agent-sandbox/README.md`](charts/agent-sandbox/README.md#architecture).
 
 The `can-i-openshell` blueprint also exists in the can-i repository. Register
 only one of the two blueprint catalogs that contain it, because Fleet won't

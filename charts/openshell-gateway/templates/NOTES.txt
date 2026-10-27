@@ -1,6 +1,10 @@
 OpenShell gateway {{ .Chart.AppVersion }} is starting in {{ .Release.Namespace }} as svc/openshell:8080 (mTLS).
 
   kubectl -n {{ .Release.Namespace }} rollout status statefulset/openshell
+
+No sandbox is running yet. Next, install "OpenShell 3 - can-i sandbox" or
+"OpenShell 3 - Hermes Agent sandbox" into {{ .Release.Namespace }}: each creates its
+sandbox through this gateway and publishes its web UI on its own Service.
 {{- if .Values.openshell.server.auth.allowUnauthenticatedUsers }}
 
 WARNING: allowUnauthenticatedUsers is on. Anyone who can read the openshell-client-tls

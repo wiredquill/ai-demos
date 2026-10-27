@@ -1,8 +1,8 @@
 apiVersion: v2
 name: openshell-gateway
-description: NVIDIA OpenShell gateway (control plane for agent sandboxes) with lab defaults and a Rancher install form. Vendors the official NVIDIA chart oci://ghcr.io/nvidia/openshell/helm-chart 0.1.5 in charts/helm-chart, with nvidia-chart.patch applied.
+description: NVIDIA OpenShell gateway (control plane for agent sandboxes; creates no sandbox itself) with lab defaults and a Rancher install form. Vendors the official NVIDIA chart oci://ghcr.io/nvidia/openshell/helm-chart 0.1.5 in charts/helm-chart, with nvidia-chart.patch applied.
 type: application
-version: 0.1.6
+version: 0.1.7
 appVersion: 0.1.5
 keywords: [openshell, nvidia, sandbox, ai-agents, suse-ai-factory]
 home: https://github.com/wiredquill/can-i
@@ -20,5 +20,5 @@ maintainers:
   - name: WiredQuill
     url: https://github.com/wiredquill
 annotations:
-  catalog.cattle.io/display-name: OpenShell gateway
+  catalog.cattle.io/display-name: OpenShell 2 - Gateway
   catalog.cattle.io/release-name: openshell
