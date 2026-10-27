@@ -211,7 +211,7 @@ spec:
 
 These blueprints run an agent as an [NVIDIA OpenShell](https://docs.nvidia.com/openshell/)
 0.1.5 sandbox. Each needs the Agent Sandbox controller and the OpenShell gateway,
-which are in `catalog/components/agent-sandbox` and `catalog/components/openshell-gateway`.
+which are in `charts/agent-sandbox` and `charts/openshell-gateway`.
 Both were copied from [wiredquill/can-i](https://github.com/wiredquill/can-i).
 `openshell-gateway` vendors NVIDIA's chart with a patch, so rebuild it with
 `scripts/vendor-openshell-chart.sh`, never `helm dependency update`.
@@ -225,9 +225,16 @@ Both were copied from [wiredquill/can-i](https://github.com/wiredquill/can-i).
 `hermes-openshell` runs Nous Research's Hermes Agent on SUSE BCI 16 or openSUSE
 Leap 16, in a browser terminal. Its form has a **Security profile** dropdown:
 **lockdown**, **research**, **developer** or **dangerous**.
-`catalog/components/hermes-openshell/README.md` has what each one allows. The
+`charts/hermes-openshell/README.md` has what each one allows. The
 images are built from `images/hermes` and `images/hermes-client` by
 `.github/workflows/build-hermes-openshell.yml`.
+
+Unlike the blueprint-only component charts in `catalog/components/`, these three
+charts are standalone apps, so they live in `charts/` and are published to the
+`https://wiredquill.github.io/ai-demos` Helm repository as well. Without AI
+Factory, install them from Rancher **Apps** in this order: **Agent Sandbox
+controller** (once per cluster), **OpenShell gateway**, then **Hermes Agent in
+OpenShell** in the gateway's namespace.
 
 The `can-i-openshell` blueprint also exists in the can-i repository. Register
 only one of the two blueprint catalogs that contain it, because Fleet won't
@@ -254,11 +261,11 @@ git checkout main && git pull
 mkdir -p /tmp/aif && rm -f /tmp/aif/*.tgz
 # Base charts plus the per-workload component charts (catalog/components/, kept out
 # of the gh-pages repo because they exist only for the blueprints)
-for c in charts/hr-assistant charts/hr-assistant-vllm catalog/components/*/; do
+for c in charts/hr-assistant charts/hr-assistant-vllm charts/agent-sandbox charts/openshell-gateway charts/hermes-openshell catalog/components/*/; do
   case "$c" in
     # vendors NVIDIA's patched chart as a .tgz; --dependency-update would fail on it
     # (rebuild with scripts/vendor-openshell-chart.sh)
-    */openshell-gateway/) helm package "$c" -d /tmp/aif ;;
+    */openshell-gateway) helm package "$c" -d /tmp/aif ;;
     *) helm package "$c" --dependency-update -d /tmp/aif ;;
   esac
 done
