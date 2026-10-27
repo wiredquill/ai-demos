@@ -1,10 +1,16 @@
 {{/* From kubernetes-sigs/agent-sandbox v1.0.8 sandbox.yaml; only the image,
-     replicas and the optional Namespace are templated. */}}
-{{- if .Values.createNamespace }}
+     replicas and the optional Namespace are templated. Installed into
+     agent-sandbox-system (Rancher's default for this app), Rancher or Helm
+     creates the namespace, so the chart only creates it when the release is
+     somewhere else and it doesn't exist yet. */}}
+{{- if and .Values.createNamespace (ne .Release.Namespace "agent-sandbox-system") }}
+{{- $ns := lookup "v1" "Namespace" "" "agent-sandbox-system" }}
+{{- if or (not $ns) (include "agent-sandbox.ownedByRelease" (list $ns .)) }}
 kind: Namespace
 apiVersion: v1
 metadata:
   name: agent-sandbox-system
+{{- end }}
 {{- end }}
 ---
 kind: ServiceAccount

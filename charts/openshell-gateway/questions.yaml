@@ -6,7 +6,7 @@ questions:
   default: true
   description: >-
     Accept CLI calls that present the gateway's client certificate without an OIDC login.
-    Needed for the can-i client and for the lab's kubectl port-forward. <b>Unsafe on shared clusters:</b>
+    Needed for the can-i client and for the lab's kubectl port-forward. Unsafe on shared clusters:
     anyone who can read the openshell-client-tls Secret can run sandboxes.
 - variable: openshell.server.telemetryEnabled
   label: Send anonymous telemetry to NVIDIA
@@ -21,10 +21,10 @@ questions:
   options: [ClusterIP, NodePort, LoadBalancer]
   description: >-
     How the openshell CLI outside the cluster reaches the gateway (gRPC over mTLS on 8080).
-    <b>ClusterIP</b>: through <code>kubectl port-forward svc/openshell 17680:8080</code>, as the lab's setup.sh does.
-    <b>NodePort</b> / <b>LoadBalancer</b>: directly; also put that address in the certificate names below.
+    ClusterIP: through kubectl port-forward svc/openshell 17680:8080, as the lab's setup.sh does.
+    NodePort / LoadBalancer: directly; also put that address in the certificate names below.
     Sandboxes themselves are never exposed: you reach them through the gateway
-    (<code>openshell sandbox connect</code> / <code>forward</code>).
+    (openshell sandbox connect / forward).
 - variable: openshell.service.nodePort
   label: Gateway NodePort
   group: External access
@@ -40,10 +40,10 @@ questions:
   type: string
   default: ""
   description: >-
-    Comma-separated IPs and hostnames the CLI will dial, e.g. <code>10.0.9.50,openshell.lab.example.com</code>
+    Comma-separated IPs and hostnames the CLI will dial, e.g. 10.0.9.50,openshell.lab.example.com
     (a node IP for NodePort, the load balancer address for LoadBalancer). Not needed for port-forward.
     Applied when the certificate is first created; to change it later, delete the
-    <code>openshell-server-tls</code> Secret and upgrade.
+    openshell-server-tls Secret and upgrade.
 - variable: openshell.sandbox.image.repository
   label: Default sandbox image
   group: Sandbox defaults
@@ -56,7 +56,7 @@ questions:
     - ghcr.io/wiredquill/can-i-nvidia
     - nvcr.io/nvidia/base/ubuntu
   description: >-
-    Only a default: this app creates no sandbox. Used when <code>openshell sandbox create</code> has no <code>--from</code>;
+    Only a default: this app creates no sandbox. Used when openshell sandbox create has no --from;
     the can-i and Hermes sandbox apps always pick their own image.
     openshell-lab/leap is the lab's openSUSE Leap 16 image; the can-i images are SUSE BCI, openSUSE Leap 16
     and NVIDIA base Ubuntu 24.04; nvcr.io/nvidia/base/ubuntu is NVIDIA's chart default.
@@ -77,7 +77,7 @@ questions:
   group: Sandbox defaults
   type: string
   default: ""
-  description: Applied to sandboxes that don't set one, e.g. <code>nvidia</code> for GPU sandboxes or <code>kata-containers</code>. Blank = cluster default.
+  description: Applied to sandboxes that don't set one, e.g. nvidia for GPU sandboxes or kata-containers. Blank = cluster default.
 - variable: openshell.server.dataStorageSize
   label: Gateway database volume size
   group: Storage

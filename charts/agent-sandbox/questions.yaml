@@ -1,10 +1,22 @@
 questions:
+- variable: crds.install
+  label: Install the Sandbox CRD
+  group: CRD
+  type: boolean
+  default: true
+  description: >-
+    Turn off if the cluster already has the sandboxes.agents.x-k8s.io CRD, for example from
+    kubectl apply of sandbox.yaml. Left on, a CRD this app didn't create is detected and left
+    as it is. The CRD stays on the cluster when this app is uninstalled, so existing sandboxes
+    aren't deleted.
 - variable: createNamespace
   label: Create agent-sandbox-system namespace
   group: Controller
   type: boolean
   default: true
-  description: The controller always runs in agent-sandbox-system. Turn this off if that namespace already exists.
+  description: >-
+    The controller always runs in agent-sandbox-system. Only used when this app is installed into
+    another namespace; skipped if agent-sandbox-system already exists.
 - variable: controller.replicas
   label: Controller replicas
   group: Controller

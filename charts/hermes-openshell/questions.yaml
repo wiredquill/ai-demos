@@ -12,10 +12,10 @@ questions:
     - dangerous
   description: >-
     What OpenShell lets the agent do. Every profile runs as a non-root user and can reach the model.
-    <b>lockdown</b>: no other network access. Writes only to its home directory and /tmp. Hermes asks before every risky command.
-    <b>research</b>: adds read-only web access (GET only) to Wikipedia, arXiv, GitHub, Python, SUSE, openSUSE and NVIDIA docs.
-    <b>developer</b>: adds GitHub clone, push and pull requests (no deletes) and pip installs from PyPI.
-    <b>dangerous</b>: any program may reach any subdomain of the common TLDs, plus popular bare domains, over HTTP or HTTPS.
+    lockdown: no other network access. Writes only to its home directory and /tmp. Hermes asks before every risky command.
+    research: adds read-only web access (GET only) to Wikipedia, arXiv, GitHub, Python, SUSE, openSUSE and NVIDIA docs.
+    developer: adds GitHub clone, push and pull requests (no deletes) and pip installs from PyPI.
+    dangerous: any program may reach any subdomain of the common TLDs, plus popular bare domains, over HTTP or HTTPS.
     Landlock is best effort, and Hermes runs commands without asking. Demo use only.
     (OpenShell 0.1.5 can't allow every host: no raw IP addresses, cluster Services or unlisted bare domains.)
     Changing the profile recreates the sandbox.
@@ -30,8 +30,8 @@ questions:
     - vllm
     - external
   description: >-
-    <b>vllm</b>: the SUSE vLLM router in this namespace (the hermes-openshell-vllm blueprint installs it).
-    <b>external</b>: any OpenAI-compatible API, such as OpenRouter or OpenAI. The OpenShell gateway holds the API key
+    vllm: the SUSE vLLM router in this namespace (the hermes-openshell-vllm blueprint installs it).
+    external: any OpenAI-compatible API, such as OpenRouter or OpenAI. The OpenShell gateway holds the API key
     and adds it only to requests to that host, so the key never enters the sandbox.
 - variable: model.vllm.url
   label: vLLM endpoint
@@ -59,7 +59,7 @@ questions:
   type: string
   default: nousresearch/hermes-4-70b
   show_if: "model.backend=external"
-  description: The model name the API expects, e.g. <code>nousresearch/hermes-4-70b</code> on OpenRouter.
+  description: The model name the API expects, e.g. nousresearch/hermes-4-70b on OpenRouter.
 - variable: model.external.apiKey
   label: API key
   group: Model
@@ -92,9 +92,9 @@ questions:
     - opensuse
     - custom
   description: >-
-    <b>suse</b> = SUSE BCI 16 (ghcr.io/wiredquill/hermes-openshell),
-    <b>opensuse</b> = openSUSE Leap 16.0 (ghcr.io/wiredquill/hermes-openshell-opensuse),
-    <b>custom</b> = your own image below. Changing it recreates the sandbox.
+    suse = SUSE BCI 16 (ghcr.io/wiredquill/hermes-openshell),
+    opensuse = openSUSE Leap 16.0 (ghcr.io/wiredquill/hermes-openshell-opensuse),
+    custom = your own image below. Changing it recreates the sandbox.
 - variable: sandbox.customImage
   label: Custom sandbox image
   group: Sandbox
@@ -109,7 +109,7 @@ questions:
   type: string
   default: hermes
   required: true
-  description: Name in OpenShell, used by <code>openshell sandbox connect</code> and <code>openshell policy set</code>.
+  description: Name in OpenShell, used by openshell sandbox connect and openshell policy set.
 - variable: sandbox.recreate
   label: Recreate the sandbox when the app restarts
   group: Sandbox
@@ -175,7 +175,7 @@ questions:
   description: >-
     How browsers reach Hermes's web terminal. The sandbox itself has no inbound network:
     this app's client pod forwards the terminal out of it through the gateway.
-    <b>Anyone who can open this page can drive the agent</b>; keep it off public networks.
+    Anyone who can open this page can drive the agent; keep it off public networks.
 - variable: service.nodePort
   label: NodePort
   group: Browser terminal
