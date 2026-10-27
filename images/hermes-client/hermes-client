@@ -108,10 +108,11 @@ else
   } > "$profile_file"
 
   log "provider $PROVIDER_NAME -> $llm_host:$llm_port${api_key:+ (API key bound to this host)}"
-  openshell profile lint -f "$profile_file"
-  # import has no --force: replace the profile (and the provider using it) each time
+  # import has no --force, and lint rejects an id that is already registered:
+  # remove the provider and its profile from an earlier run first
   openshell provider delete "$PROVIDER_NAME" >/dev/null 2>&1 || true
   openshell profile delete "$PROVIDER_NAME" >/dev/null 2>&1 || true
+  openshell profile lint -f "$profile_file"
   openshell profile import -f "$profile_file"
   provider_args=(--name "$PROVIDER_NAME" --type "$PROVIDER_NAME")
   if [ -n "$api_key" ]; then
