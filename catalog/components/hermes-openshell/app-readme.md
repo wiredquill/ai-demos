@@ -9,7 +9,7 @@ Pick a **security profile** and watch what the agent can and can't do under it.
 | **lockdown** | none | home + /tmp only | manual |
 | **research** | read-only (GET) to Wikipedia, arXiv, GitHub, docs sites | home + /tmp | smart |
 | **developer** | + GitHub push/PRs (no deletes), PyPI | home, /tmp, /var/tmp | smart |
-| **dangerous** | anything on 80/443, cluster Services included | Landlock best effort | off |
+| **dangerous** | any subdomain of the common TLDs plus popular bare domains, on 80/443, any program | Landlock best effort | off |
 
 Even under **dangerous**, OpenShell keeps the agent off root, cloud metadata, loopback and the
 Kubernetes API, etcd and kubelet ports.

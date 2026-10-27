@@ -3,9 +3,9 @@ Hermes is starting as OpenShell sandbox "{{ .Values.sandbox.name }}" from
 under the "{{ .Values.profile }}" profile (Hermes approvals: {{ get .Values.approvals .Values.profile }}).
 {{- if eq .Values.profile "dangerous" }}
 
-WARNING: the dangerous profile lets any program in the sandbox reach any
-address on ports 80/443, including Services inside this cluster, and Hermes
-runs commands without asking. Demo use only.
+WARNING: the dangerous profile lets any program in the sandbox reach almost
+any public website on ports 80/443, and Hermes runs commands without asking.
+Demo use only.
 {{- end }}
 
 Watch the client create it:

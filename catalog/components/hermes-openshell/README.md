@@ -34,11 +34,23 @@ Lint them with `openshell policy lint -f profiles/<name>.yaml`.
 | Web, read-only (GET/HEAD/OPTIONS) | | Wikipedia, arXiv, GitHub, docs.python.org, *.suse.com, *.opensuse.org, docs.nvidia.com | same | |
 | GitHub read-write (push, PRs; no DELETE) | | | yes | |
 | PyPI | | | yes | |
-| Any address on 80/443 | | | | yes, cluster Services included |
+| Any host on 80/443 | | | | every `**.*.<tld>` for ~45 common TLDs plus ~30 bare domains (no raw IPs, no cluster Services; see below) |
 | Binaries allowed out | | python3.13, curl | + git, git-remote-http* | all (`/**`) |
 | Writable | /home/hermes, /tmp | same | + /var/tmp | /home, /tmp, /var/tmp |
 | Landlock | hard_requirement | hard_requirement | hard_requirement | best_effort |
 | Hermes `approvals.mode` | manual | smart | smart | off |
+
+**dangerous** is as open as OpenShell 0.1.5 gets, and still not "any host".
+Tested on ai-4090:
+- A wildcard needs a label under the TLD (`**.*.com`; `*.com` and `**.com` are
+  rejected), so bare domains such as `github.com` are listed by name.
+- Hostnames are only approved by host rules. An `allowed_ips`-only rule can't
+  approve a lookup (`policy_dns_ineligible`), and `0.0.0.0/0` is rejected
+  outright because it contains always-blocked ranges.
+- Host rules and `allowed_ips` ranges in one policy make the 0.1.5 gateway fail
+  `policy set` (FAILED_PRECONDITION / RESOURCE_EXHAUSTED), so raw IPs are out.
+- Wildcard hosts never reach private addresses (`policy_dns_no_valid_address`),
+  so cluster Services stay unreachable.
 
 OpenShell enforces these whatever the profile says: no root, no loopback,
 link-local or cloud metadata (169.254.169.254), no Kubernetes API/etcd/kubelet

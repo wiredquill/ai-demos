@@ -15,8 +15,9 @@ questions:
     <b>lockdown</b>: no other network access. Writes only to its home directory and /tmp. Hermes asks before every risky command.
     <b>research</b>: adds read-only web access (GET only) to Wikipedia, arXiv, GitHub, Python, SUSE, openSUSE and NVIDIA docs.
     <b>developer</b>: adds GitHub clone, push and pull requests (no deletes) and pip installs from PyPI.
-    <b>dangerous</b>: any program may reach any address on ports 80 and 443, <b>including Services inside this cluster</b>.
+    <b>dangerous</b>: any program may reach any subdomain of the common TLDs, plus popular bare domains, over HTTP or HTTPS.
     Landlock is best effort, and Hermes runs commands without asking. Demo use only.
+    (OpenShell 0.1.5 can't allow every host: no raw IP addresses, cluster Services or unlisted bare domains.)
     Changing the profile recreates the sandbox.
 
 - variable: model.backend
