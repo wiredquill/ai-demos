@@ -16,7 +16,7 @@ set -euo pipefail
 : "${GATEWAY_ENDPOINT:=https://openshell:8080}"
 : "${GATEWAY_NAME:=k8s}"
 : "${TLS_DIR:=/etc/openshell/tls}"
-: "${SANDBOX_NAME:=hermes}"
+: "${SANDBOX_NAME:=hermes-sandbox}"
 : "${SANDBOX_IMAGE:?SANDBOX_IMAGE is required}"
 : "${POLICY_FILE:=/etc/hermes/policy.yaml}"
 : "${PROFILE:=research}"

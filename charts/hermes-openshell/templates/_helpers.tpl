@@ -2,6 +2,13 @@
 {{- .Release.Name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{/* The client Deployment and its pod (<release>-client-...): the openshell CLI
+     that creates the sandbox and forwards its UI. The sandbox pod, with the
+     OpenShell supervisor, is named after the sandbox (sandbox.name). */}}
+{{- define "hermes-openshell.clientName" -}}
+{{- printf "%s-client" (include "hermes-openshell.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
 {{- define "hermes-openshell.labels" -}}
 app.kubernetes.io/name: hermes-openshell
 app.kubernetes.io/instance: {{ .Release.Name }}
