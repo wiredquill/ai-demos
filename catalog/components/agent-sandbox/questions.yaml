@@ -1,0 +1,26 @@
+questions:
+- variable: createNamespace
+  label: Create agent-sandbox-system namespace
+  group: Controller
+  type: boolean
+  default: true
+  description: The controller always runs in agent-sandbox-system. Turn this off if that namespace already exists.
+- variable: controller.replicas
+  label: Controller replicas
+  group: Controller
+  type: int
+  default: 1
+  min: 1
+  max: 3
+  description: Extra replicas stand by via leader election.
+- variable: controller.image.repository
+  label: Controller image
+  group: Image
+  type: string
+  default: registry.k8s.io/agent-sandbox/agent-sandbox-controller
+  description: Change this to pull from a private registry mirror.
+- variable: controller.image.tag
+  label: Controller image tag
+  group: Image
+  type: string
+  default: v1.0.8

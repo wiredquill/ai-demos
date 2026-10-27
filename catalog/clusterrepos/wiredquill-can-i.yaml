@@ -1,0 +1,10 @@
+# Chart repository for chartRepo: wiredquill-can-i: the can-i chart, published
+# from github.com/wiredquill/can-i (scripts/publish-charts.sh there). Register
+# once per Rancher management cluster (Apps and SUSE AI Factory both read it).
+apiVersion: catalog.cattle.io/v1
+kind: ClusterRepo
+metadata:
+  name: wiredquill-can-i
+spec:
+  gitRepo: https://github.com/wiredquill/can-i
+  gitBranch: aif/charts

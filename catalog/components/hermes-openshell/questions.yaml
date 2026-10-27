@@ -1,0 +1,198 @@
+questions:
+- variable: profile
+  label: Security profile
+  group: Security profile
+  type: enum
+  default: research
+  required: true
+  options:
+    - lockdown
+    - research
+    - developer
+    - dangerous
+  description: >-
+    What OpenShell lets the agent do. Every profile runs as a non-root user and can reach the model.
+    <b>lockdown</b>: no other network access. Writes only to its home directory and /tmp. Hermes asks before every risky command.
+    <b>research</b>: adds read-only web access (GET only) to Wikipedia, arXiv, GitHub, Python, SUSE, openSUSE and NVIDIA docs.
+    <b>developer</b>: adds GitHub clone, push and pull requests (no deletes) and pip installs from PyPI.
+    <b>dangerous</b>: any program may reach any subdomain of the common TLDs, plus popular bare domains, over HTTP or HTTPS.
+    Landlock is best effort, and Hermes runs commands without asking. Demo use only.
+    (OpenShell 0.1.5 can't allow every host: no raw IP addresses, cluster Services or unlisted bare domains.)
+    Changing the profile recreates the sandbox.
+
+- variable: model.backend
+  label: Model backend
+  group: Model
+  type: enum
+  default: vllm
+  required: true
+  options:
+    - vllm
+    - external
+  description: >-
+    <b>vllm</b>: the SUSE vLLM router in this namespace (the hermes-openshell-vllm blueprint installs it).
+    <b>external</b>: any OpenAI-compatible API, such as OpenRouter or OpenAI. The OpenShell gateway holds the API key
+    and adds it only to requests to that host, so the key never enters the sandbox.
+- variable: model.vllm.url
+  label: vLLM endpoint
+  group: Model
+  type: string
+  default: http://vllm-router-service/v1
+  show_if: "model.backend=vllm"
+  description: The vLLM router Service's OpenAI-compatible URL.
+- variable: model.vllm.name
+  label: Model served by vLLM
+  group: Model
+  type: string
+  default: Qwen/Qwen2.5-7B-Instruct
+  show_if: "model.backend=vllm"
+  description: Must match the vllm component's model (modelURL). It needs tool calling, which vLLM enables with --enable-auto-tool-choice.
+- variable: model.external.url
+  label: API base URL
+  group: Model
+  type: string
+  default: https://openrouter.ai/api/v1
+  show_if: "model.backend=external"
+- variable: model.external.name
+  label: Model
+  group: Model
+  type: string
+  default: nousresearch/hermes-4-70b
+  show_if: "model.backend=external"
+  description: The model name the API expects, e.g. <code>nousresearch/hermes-4-70b</code> on OpenRouter.
+- variable: model.external.apiKey
+  label: API key
+  group: Model
+  type: password
+  default: ""
+  show_if: "model.backend=external"
+  description: Stored in a Secret in this namespace and given to the OpenShell gateway, not to the sandbox. Leave blank to use an existing Secret.
+- variable: model.external.existingSecret
+  label: Existing Secret with the API key
+  group: Model
+  type: string
+  default: ""
+  show_if: "model.backend=external"
+  description: Instead of the field above. Key name below.
+- variable: model.external.existingSecretKey
+  label: Key in that Secret
+  group: Model
+  type: string
+  default: api-key
+  show_if: "model.backend=external"
+
+- variable: sandbox.image
+  label: Sandbox OS
+  group: Sandbox
+  type: enum
+  default: suse
+  required: true
+  options:
+    - suse
+    - opensuse
+    - custom
+  description: >-
+    <b>suse</b> = SUSE BCI 16 (ghcr.io/wiredquill/hermes-openshell),
+    <b>opensuse</b> = openSUSE Leap 16.0 (ghcr.io/wiredquill/hermes-openshell-opensuse),
+    <b>custom</b> = your own image below. Changing it recreates the sandbox.
+- variable: sandbox.customImage
+  label: Custom sandbox image
+  group: Sandbox
+  type: string
+  default: ""
+  show_if: "sandbox.image=custom"
+  required: true
+  description: Built like images/hermes in github.com/wiredquill/ai-demos (hermes, ttyd, hermes-sandbox-start, user 10001).
+- variable: sandbox.name
+  label: Sandbox name
+  group: Sandbox
+  type: string
+  default: hermes
+  required: true
+  description: Name in OpenShell, used by <code>openshell sandbox connect</code> and <code>openshell policy set</code>.
+- variable: sandbox.recreate
+  label: Recreate the sandbox when the app restarts
+  group: Sandbox
+  type: boolean
+  default: true
+  description: On, changes in this form take effect on upgrade. Off, a running sandbox is reused and keeps its files, chat history and any live policy changes.
+- variable: sandbox.gpu
+  label: Request a GPU
+  group: Sandbox
+  type: boolean
+  default: false
+  description: Ask OpenShell for a GPU for the sandbox. Hermes doesn't need one; the model runs in vLLM or the external API.
+
+- variable: approvals.lockdown
+  label: Hermes approvals under lockdown
+  group: Hermes approvals
+  type: enum
+  default: manual
+  options: [manual, smart, "off"]
+  show_if: "profile=lockdown"
+  description: Hermes's own prompt before risky commands. manual = always ask, smart = auto-approve low-risk ones, off = never ask.
+- variable: approvals.research
+  label: Hermes approvals under research
+  group: Hermes approvals
+  type: enum
+  default: smart
+  options: [manual, smart, "off"]
+  show_if: "profile=research"
+- variable: approvals.developer
+  label: Hermes approvals under developer
+  group: Hermes approvals
+  type: enum
+  default: smart
+  options: [manual, smart, "off"]
+  show_if: "profile=developer"
+- variable: approvals.dangerous
+  label: Hermes approvals under dangerous
+  group: Hermes approvals
+  type: enum
+  default: "off"
+  options: [manual, smart, "off"]
+  show_if: "profile=dangerous"
+
+- variable: gateway.endpoint
+  label: OpenShell gateway endpoint
+  group: OpenShell gateway
+  type: string
+  default: https://openshell:8080
+  description: The openshell-gateway app's Service. Install this app in the same namespace.
+- variable: gateway.tlsSecret
+  label: Gateway client certificate Secret
+  group: OpenShell gateway
+  type: string
+  default: openshell-client-tls
+  description: Created by the openshell-gateway app in its namespace.
+
+- variable: service.type
+  label: Terminal Service type
+  group: Browser terminal
+  type: enum
+  default: NodePort
+  options: [ClusterIP, NodePort, LoadBalancer]
+  description: >-
+    How browsers reach Hermes's web terminal. The sandbox itself has no inbound network:
+    this app's client pod forwards the terminal out of it through the gateway.
+    <b>Anyone who can open this page can drive the agent</b>; keep it off public networks.
+- variable: service.nodePort
+  label: NodePort
+  group: Browser terminal
+  type: int
+  default: ""
+  min: 30000
+  max: 32767
+  show_if: "service.type=NodePort"
+  description: Blank = assigned by Kubernetes.
+
+- variable: client.image.repository
+  label: Client image
+  group: Advanced
+  type: string
+  default: ghcr.io/wiredquill/hermes-openshell-client
+- variable: client.image.tag
+  label: Client image tag
+  group: Advanced
+  type: string
+  default: latest

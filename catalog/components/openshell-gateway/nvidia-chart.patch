@@ -1,0 +1,29 @@
+diff -ru a b
+--- a/templates/certgen.yaml	2026-10-25 18:22:16
++++ b/templates/certgen.yaml	2026-10-26 06:55:40
+@@ -115,6 +115,12 @@
+             {{- range .Values.pkiInitJob.serverIpAddresses }}
+             - --server-san={{ . }}
+             {{- end }}
++            {{- /* can-i patch: comma-separated SANs, settable from a Rancher form */}}
++            {{- range splitList "," (.Values.pkiInitJob.extraServerSans | default "") }}
++            {{- if trim . }}
++            - --server-san={{ trim . }}
++            {{- end }}
++            {{- end }}
+             {{- end }}
+             {{- if and .Values.grpcRoute.backendTLSPolicy.enabled (not .Values.certManager.enabled) }}
+             - --backend-ca-configmap-name={{ include "openshell.backendCaConfigMapName" . }}
+diff -ru a b
+--- a/values.yaml	2026-10-25 18:22:16
++++ b/values.yaml	2026-10-26 06:55:51
+@@ -646,6 +646,9 @@
+   serverDnsNames: []
+   # -- Extra IP SANs to append to the server certificate.
+   serverIpAddresses: []
++  # -- can-i patch: the same as serverDnsNames/serverIpAddresses, as one
++  # comma-separated string (Rancher install forms can't edit lists).
++  extraServerSans: ""
+   # -- Maximum time in seconds for the certgen hook to poll for cert-manager
+   # certificates. When using cert-manager with BackendTLSPolicy, the hook
+   # polls for this many seconds waiting for the certificate to be issued,

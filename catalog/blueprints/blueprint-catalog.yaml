@@ -8,7 +8,7 @@ metadata:
   name: ai-demos
 spec:
   displayName: WiredQuill AI Demos
-  description: WiredQuill ai-demos applications — HR assistant (vLLM and Ollama) and AI Compare (SUSE and upstream).
+  description: WiredQuill ai-demos applications — HR assistant (vLLM and Ollama), AI Compare (SUSE and upstream), and agents in NVIDIA OpenShell sandboxes (Hermes, can-i).
   categories: [demo, llm, observability]
   maintainer:
     name: WiredQuill
@@ -20,3 +20,6 @@ spec:
     - name: hr-assistant
     - name: ai-compare-suse
     - name: ai-compare
+    - name: can-i-openshell
+    - name: hermes-openshell
+    - name: hermes-openshell-vllm
