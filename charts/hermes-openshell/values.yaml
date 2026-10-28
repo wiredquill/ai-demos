@@ -52,6 +52,26 @@ model:
     existingSecret: ""
     existingSecretKey: api-key
 
+# OpenTelemetry from the agent. OpenLit, in the sandbox image, instruments every
+# model call Hermes makes (tokens, cost, latency, time to first token, errors,
+# and the prompts and replies) and sends GenAI traces, metrics and logs over
+# OTLP/HTTP. The sandbox's policy gets one more rule: the agent's python may
+# POST to the collector's host and port, nothing else.
+observability:
+  enabled: false
+  # OTLP/HTTP (4318) base URL. The default is the Service the
+  # ai-observability-collector chart creates. Name it by hostname: a host rule
+  # in the sandbox policy approves it (wildcards can't reach private addresses,
+  # an explicit host can).
+  otlpEndpoint: http://opentelemetry-collector.observability.svc.cluster.local:4318
+  # service.name and OpenLit's application name.
+  serviceName: hermes-agent
+  # deployment.environment on all telemetry.
+  environment: demo
+  # Put prompts, replies and tool definitions in the spans. Off = only sizes,
+  # tokens and timings.
+  captureContent: true
+
 gateway:
   # The openshell-gateway chart's Service and client certificate Secret.
   endpoint: https://openshell:8080

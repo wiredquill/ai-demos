@@ -130,6 +130,15 @@ else
         --env "HERMES_APPROVALS=$APPROVALS"
         --env "TTYD_PORT=$TARGET_PORT")
   [ -s "$LLM_API_KEY_FILE" ] && args+=(--env "HERMES_KEY_ENV=$KEY_ENV")
+  # OpenTelemetry (the chart's observability.*): every OTEL_* and HERMES_OTEL_*
+  # variable goes on to the sandbox, where the image's sitecustomize.py reads them
+  otel=""
+  for v in $(compgen -e); do
+    case $v in
+      OTEL_*|HERMES_OTEL_*) args+=(--env "$v=${!v}"); otel=1 ;;
+    esac
+  done
+  [ -n "$otel" ] && log "OpenTelemetry on: OTLP to $OTEL_EXPORTER_OTLP_ENDPOINT"
   [ "$SANDBOX_GPU" = true ] && args+=(--gpu)
   log "creating sandbox $SANDBOX_NAME from $SANDBOX_IMAGE, profile $PROFILE (approvals: $APPROVALS)"
   openshell sandbox create "${args[@]}" -- hermes-sandbox-start

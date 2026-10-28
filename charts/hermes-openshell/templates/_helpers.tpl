@@ -38,7 +38,29 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if not $p -}}
 {{- fail (printf "unknown profile %q (lockdown, research, developer or dangerous)" .Values.profile) -}}
 {{- end -}}
-{{- $p -}}
+{{- include "hermes-openshell.withOtel" (dict "root" . "policy" $p) -}}
+{{- end -}}
+
+{{/* A profile's policy as is, or with observability on, plus a network rule
+     that lets the venv's python (the real path; OpenShell matches it) send
+     OTLP to the collector. Re-serialised then, so the file's comments go. */}}
+{{- define "hermes-openshell.withOtel" -}}
+{{- $o := .root.Values.observability -}}
+{{- if not $o.enabled -}}
+{{- .policy -}}
+{{- else -}}
+{{- $u := urlParse (required "observability.otlpEndpoint is required" $o.otlpEndpoint) -}}
+{{- $port := ternary "443" "80" (eq $u.scheme "https") -}}
+{{- $hp := splitList ":" $u.host -}}
+{{- if gt (len $hp) 1 }}{{ $port = last $hp }}{{ end -}}
+{{- $endpoint := dict "host" $u.hostname "port" (atoi $port) "protocol" "rest" "access" "read-write" "enforcement" "enforce" -}}
+{{- $rule := dict "name" "otel-collector" "endpoints" (list $endpoint) "binaries" (list (dict "path" "/usr/bin/python3.13")) -}}
+{{- $p := fromYaml .policy -}}
+{{- $np := $p.network_policies | default dict -}}
+{{- $_ := set $np "otel-collector" $rule -}}
+{{- $_ = set $p "network_policies" $np -}}
+{{- toYaml $p -}}
+{{- end -}}
 {{- end -}}
 
 {{/* The model backend's settings: url, name, and the Secret holding the key. */}}

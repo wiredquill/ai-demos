@@ -61,6 +61,32 @@ changing the profile in the form recreates the sandbox. Network rules can be
 swapped live from the client pod; all four profiles are mounted at
 `/etc/hermes/profiles/` (see NOTES.txt).
 
+## OpenTelemetry
+
+`observability.enabled=true` (the form's **Observability** group) turns on
+GenAI telemetry from inside the sandbox:
+
+- The sandbox image carries OpenLit and `sitecustomize.py` in Hermes's venv.
+  Every start of that python instruments the openai SDK when
+  `OTEL_EXPORTER_OTLP_ENDPOINT` is set, and does nothing otherwise.
+- The client pod passes every `OTEL_*` and `HERMES_OTEL_*` variable to
+  `openshell sandbox create --env`.
+- The policy (and each profile mounted for live switching) gets one more rule,
+  `otel-collector`: `/usr/bin/python3.13` may reach the collector's host and
+  port, nothing else. It names the collector by hostname, because only an
+  explicit host rule can reach a private address.
+
+Each model call becomes a span with `gen_ai.*` attributes (model, token usage,
+cost, finish reason, time to first token) plus the `gen_ai.client.*` metrics.
+`captureContent=false` keeps the prompts and replies out. Exporter errors go to
+`/tmp/hermes-otel.log` in the sandbox, not into the terminal.
+
+Check it from the client pod:
+
+```bash
+kubectl -n <ns> exec deploy/<release>-client -- openshell sandbox exec <sandbox> -- cat /tmp/hermes-otel.log
+```
+
 ## Images
 
 | Image | Built from |

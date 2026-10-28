@@ -153,6 +153,40 @@ questions:
   options: [manual, smart, "off"]
   show_if: "profile=dangerous"
 
+- variable: observability.enabled
+  label: Send OpenTelemetry from the agent
+  group: Observability
+  type: boolean
+  default: false
+  show_subquestion_if: true
+  description: >-
+    OpenLit in the sandbox instruments every model call Hermes makes (tokens, cost, latency, time to first token, errors)
+    and sends GenAI traces, metrics and logs to an OTLP/HTTP collector. The sandbox's policy gets one rule that lets
+    the agent's python reach the collector's host and port, nothing else. Changing this recreates the sandbox.
+  subquestions:
+  - variable: observability.otlpEndpoint
+    label: OTLP/HTTP endpoint
+    type: string
+    default: http://opentelemetry-collector.observability.svc.cluster.local:4318
+    required: true
+    description: >-
+      Collector base URL on port 4318. Use a hostname, not an IP address. The default is the Service the
+      AI Observability Collector app creates.
+  - variable: observability.serviceName
+    label: Service name
+    type: string
+    default: hermes-agent
+  - variable: observability.environment
+    label: Environment
+    type: string
+    default: demo
+    description: deployment.environment on all telemetry.
+  - variable: observability.captureContent
+    label: Record prompts and replies
+    type: boolean
+    default: true
+    description: Off = spans keep token counts and timings but not the text.
+
 - variable: gateway.endpoint
   label: OpenShell gateway endpoint
   group: OpenShell gateway

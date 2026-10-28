@@ -13,12 +13,18 @@ ARG BASE=registry.suse.com/bci/bci-base:16.0
 # ---- build stage: Hermes in a self-contained virtualenv ------------------------
 FROM ${BASE} AS builder
 ARG HERMES_VERSION=0.19.0
+# OpenTelemetry for the model calls (sitecustomize.py turns it on); same pin as
+# the ai-compare app. Resolves cleanly against hermes-agent's exact pins.
+ARG OPENLIT_VERSION=1.44.0
 RUN zypper -n install --no-recommends python313 python313-pip && zypper -n clean -a
 # a venv pins its own sys.path, so it works whatever env the sandbox keeps.
 # PyPI hermes-agent 0.19.0 supports Python 3.11-3.13; its deps are exact-pinned.
 RUN python3.13 -m venv --without-pip /opt/hermes \
  && python3.13 -m pip --python /opt/hermes/bin/python install --no-cache-dir \
-      "hermes-agent==${HERMES_VERSION}"
+      "hermes-agent==${HERMES_VERSION}" "openlit==${OPENLIT_VERSION}"
+# loaded by every start of the venv's python; does nothing without
+# OTEL_EXPORTER_OTLP_ENDPOINT
+COPY images/hermes/sitecustomize.py /opt/hermes/lib/python3.13/site-packages/sitecustomize.py
 
 # ttyd serves the browser terminal the client pod forwards out of the sandbox.
 FROM ${BASE} AS ttyd
