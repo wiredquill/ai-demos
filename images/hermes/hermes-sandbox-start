@@ -20,6 +20,10 @@
 #                     once a minute (cron jobs only fire while something ticks)
 #   OTEL_*, HERMES_OTEL_*  OpenTelemetry for the model calls; read at Python
 #                     startup by /opt/hermes/.../sitecustomize.py, not here
+#   HERMES_PLATFORM_ACCESS, HERMES_PLATFORM_CLUSTER
+#                     cluster access for platform engineers: view | operator, and
+#                     the cluster's name. The client uploads ~/.kube/config; this
+#                     only tells Hermes about it (workspace AGENTS.md)
 set -euo pipefail
 
 : "${HERMES_BASE_URL:?HERMES_BASE_URL is required}"
@@ -31,6 +35,8 @@ set -euo pipefail
 : "${HERMES_CRON_SCHEDULE:=}"
 : "${HERMES_CRON_PROMPT:=}"
 : "${HERMES_CRON_NAME:=token-traffic}"
+: "${HERMES_PLATFORM_ACCESS:=}"
+: "${HERMES_PLATFORM_CLUSTER:=this cluster}"
 
 # OpenShell sets HOME=/sandbox; the profiles only let the agent write under
 # /home/hermes and /tmp, so put Hermes's state (~/.hermes) there
@@ -96,6 +102,30 @@ PY
 fi
 
 cd "$HOME/workspace"
+
+# Cluster access: Hermes reads AGENTS.md from its working directory into the
+# system prompt, so it knows kubectl works and what it may do. Kept if the
+# user changed it in a reused sandbox.
+if [ -n "$HERMES_PLATFORM_ACCESS" ] && [ ! -e AGENTS.md ]; then
+  case $HERMES_PLATFORM_ACCESS in
+    operator) can="read everything except Secrets, restart and scale Deployments, StatefulSets and DaemonSets, and delete Pods so their controller replaces them" ;;
+    *) can="read everything except Secrets; it can't change anything" ;;
+  esac
+  cat > AGENTS.md <<EOF
+# Platform engineering assistant
+
+You help platform engineers run the Kubernetes cluster "$HERMES_PLATFORM_CLUSTER".
+\`kubectl\` in the terminal is already configured for it (~/.kube/config).
+Its ServiceAccount can $can.
+
+- Investigate before answering: \`kubectl get\`, \`describe\`, \`logs\`,
+  \`get events --sort-by=.lastTimestamp\`, \`top\` if metrics-server is there.
+- Use \`-A\` or \`-n <namespace>\` explicitly; say which namespace you looked at.
+- Before any change, say what you will run and why, and wait for a yes.
+- A "forbidden" error is the access you were given, not a fault: say so and
+  give the command a platform engineer could run instead.
+EOF
+fi
 
 # The cron job, once (a reused sandbox keeps it), and its scheduler: a tick
 # just after each minute starts. Each run is a full agent turn, so it shows up

@@ -13,5 +13,5 @@ data:
   #   openshell policy set <sandbox> --policy /etc/hermes/profiles/<name>.yaml
   {{- range $path, $_ := .Files.Glob "profiles/*.yaml" }}
   profile-{{ base $path }}: |
-    {{- include "hermes-openshell.withOtel" (dict "root" $ "policy" ($.Files.Get $path)) | nindent 4 }}
+    {{- include "hermes-openshell.withRules" (dict "root" $ "policy" ($.Files.Get $path)) | nindent 4 }}
   {{- end }}

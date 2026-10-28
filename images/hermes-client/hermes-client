@@ -7,6 +7,8 @@
 #      model's host and, with an API key, binds the key to that host (the sandbox
 #      only ever sees a placeholder); then create the sandbox from
 #      $SANDBOX_IMAGE under the profile's policy
+#   3b. with cluster access ($CLUSTER_DIR holds a ServiceAccount token): upload
+#      a kubeconfig for $CLUSTER_SERVER to ~/.kube/config in the sandbox
 #   4. forward 0.0.0.0:$FORWARD_PORT -> ttyd on 127.0.0.1:$TARGET_PORT inside the
 #      sandbox, until the pod stops; then delete the sandbox.
 #
@@ -30,6 +32,9 @@ set -euo pipefail
 : "${PROVIDER_NAME:=$SANDBOX_NAME-llm}"
 : "${TARGET_PORT:=7681}"
 : "${FORWARD_PORT:=7681}"
+: "${CLUSTER_DIR:=/etc/hermes/cluster}"
+: "${CLUSTER_SERVER:=https://kubernetes.default.svc.cluster.local}"
+: "${CLUSTER_NAME:=cluster}"
 
 # Executables in the Hermes image that call the model: the venv's python is a
 # symlink, and OpenShell matches real paths.
@@ -136,7 +141,7 @@ else
   # API key passes through this environment.)
   for v in $(compgen -e); do
     case $v in
-      OTEL_*|HERMES_OTEL_*|HERMES_SKIN|HERMES_BRANDING_*|HERMES_CRON_*)
+      OTEL_*|HERMES_OTEL_*|HERMES_SKIN|HERMES_BRANDING_*|HERMES_CRON_*|HERMES_PLATFORM_*)
         args+=(--env "$v=${!v}") ;;
     esac
   done
@@ -145,6 +150,50 @@ else
   [ "$SANDBOX_GPU" = true ] && args+=(--gpu)
   log "creating sandbox $SANDBOX_NAME from $SANDBOX_IMAGE, profile $PROFILE (approvals: $APPROVALS)"
   openshell sandbox create "${args[@]}" -- hermes-sandbox-start
+fi
+
+# -- 3b. cluster access ----------------------------------------------------------------
+# `sandbox create --upload` can't be combined with a command, so upload once the
+# sandbox is up, and again into a reused one (the token may have changed).
+# kubectl reads the file per call, so Hermes starting first doesn't matter.
+# The policy's cluster-api rule passes this TLS through untouched (the
+# supervisor doesn't trust the cluster CA), so kubectl checks the API server
+# against ca.crt itself and the token has to be in the sandbox.
+if [ -s "$CLUSTER_DIR/token" ]; then
+  kubeconfig=$HOME/kubeconfig
+  (
+    umask 077
+    cat > "$kubeconfig" <<EOF
+apiVersion: v1
+kind: Config
+clusters:
+  - name: $CLUSTER_NAME
+    cluster:
+      server: $CLUSTER_SERVER
+      certificate-authority-data: $(base64 -w0 < "$CLUSTER_DIR/ca.crt")
+users:
+  - name: hermes
+    user:
+      token: $(<"$CLUSTER_DIR/token")
+contexts:
+  - name: $CLUSTER_NAME
+    context:
+      cluster: $CLUSTER_NAME
+      user: hermes
+current-context: $CLUSTER_NAME
+EOF
+  )
+  log "uploading kubeconfig for $CLUSTER_SERVER (${HERMES_PLATFORM_ACCESS:-view} access)"
+  uploaded=false
+  for _ in $(seq 60); do
+    if openshell sandbox upload "$SANDBOX_NAME" "$kubeconfig" /home/hermes/.kube/config >/dev/null 2>&1; then
+      uploaded=true
+      break
+    fi
+    sleep 3
+  done
+  rm -f "$kubeconfig"
+  $uploaded || log "could not upload the kubeconfig; kubectl in the sandbox has no cluster"
 fi
 
 # -- 4. forward until stopped ---------------------------------------------------------

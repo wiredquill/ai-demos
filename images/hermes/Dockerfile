@@ -44,6 +44,26 @@ RUN set -eu; \
     echo "$sum  /usr/local/bin/ttyd" | sha256sum -c -; \
     chmod 755 /usr/local/bin/ttyd
 
+# kubectl for the chart's platform option (cluster access for platform
+# engineers). Without it the sandbox has no kubeconfig and no network rule to
+# an API server, so it can't reach a cluster with it.
+FROM ${BASE} AS kubectl
+ARG TARGETARCH
+ARG KUBECTL_VERSION=1.35.10
+# sha256 from https://dl.k8s.io/release/v$KUBECTL_VERSION/bin/linux/<arch>/kubectl.sha256
+ARG KUBECTL_SHA256_AMD64=c49a28f1f4efc4d475ed05f47f2ce8e563bf7bef69ed77fe1b924ea6d83b6327
+ARG KUBECTL_SHA256_ARM64=283f1be6a46b3695b625e25030106b8ffe18bd0d3a900f5b65c259ca407f04f5
+RUN zypper -n install --no-recommends curl && zypper -n clean -a
+RUN set -eu; \
+    case "$TARGETARCH" in \
+      amd64) sum=$KUBECTL_SHA256_AMD64 ;; \
+      arm64) sum=$KUBECTL_SHA256_ARM64 ;; \
+      *) echo "unsupported arch: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSLo /usr/local/bin/kubectl https://dl.k8s.io/release/v$KUBECTL_VERSION/bin/linux/$TARGETARCH/kubectl; \
+    echo "$sum  /usr/local/bin/kubectl" | sha256sum -c -; \
+    chmod 755 /usr/local/bin/kubectl
+
 # ---- runtime stage ------------------------------------------------------------------
 FROM ${BASE}
 LABEL org.opencontainers.image.title="Hermes Agent for OpenShell" \
@@ -56,6 +76,7 @@ RUN zypper -n install --no-recommends python313 git-core curl tar gzip which les
       util-linux shadow && zypper -n clean -a
 COPY --from=builder /opt/hermes /opt/hermes
 COPY --from=ttyd /usr/local/bin/ttyd /usr/local/bin/ttyd
+COPY --from=kubectl /usr/local/bin/kubectl /usr/local/bin/kubectl
 COPY images/hermes/hermes-sandbox-start /usr/local/bin/hermes-sandbox-start
 RUN ln -s /opt/hermes/bin/hermes /usr/local/bin/hermes \
  && printf '%s\n' '# OpenShell sets HOME=/sandbox; the profiles allow writes under /home/hermes' \

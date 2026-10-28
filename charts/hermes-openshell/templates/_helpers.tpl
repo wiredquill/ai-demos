@@ -38,29 +38,52 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if not $p -}}
 {{- fail (printf "unknown profile %q (lockdown, research, developer or dangerous)" .Values.profile) -}}
 {{- end -}}
-{{- include "hermes-openshell.withOtel" (dict "root" . "policy" $p) -}}
+{{- include "hermes-openshell.withRules" (dict "root" . "policy" $p) -}}
 {{- end -}}
 
-{{/* A profile's policy as is, or with observability on, plus a network rule
-     that lets the venv's python (the real path; OpenShell matches it) send
-     OTLP to the collector. Re-serialised then, so the file's comments go. */}}
-{{- define "hermes-openshell.withOtel" -}}
-{{- $o := .root.Values.observability -}}
-{{- if not $o.enabled -}}
-{{- .policy -}}
-{{- else -}}
+{{/* A profile's policy as is, or, with observability or cluster access on,
+     plus their network rules. Re-serialised then, so the file's comments go.
+       otel-collector: the venv's python (the real path; OpenShell matches it)
+         may send OTLP to the collector.
+       cluster-api: kubectl may reach the API server. tls: skip, because the
+         supervisor re-encrypts inspected traffic and doesn't trust the cluster
+         CA (OpenShell 0.1.5's Kubernetes driver can't add one), so there is no
+         method filtering here: the ServiceAccount's RBAC is the limit. */}}
+{{- define "hermes-openshell.withRules" -}}
+{{- $v := .root.Values -}}
+{{- $rules := dict -}}
+{{- if $v.observability.enabled -}}
 {{- $u := urlParse (include "hermes-openshell.otlpEndpoint" .root) -}}
 {{- $port := ternary "443" "80" (eq $u.scheme "https") -}}
 {{- $hp := splitList ":" $u.host -}}
 {{- if gt (len $hp) 1 }}{{ $port = last $hp }}{{ end -}}
 {{- $endpoint := dict "host" $u.hostname "port" (atoi $port) "protocol" "rest" "access" "read-write" "enforcement" "enforce" -}}
-{{- $rule := dict "name" "otel-collector" "endpoints" (list $endpoint) "binaries" (list (dict "path" "/usr/bin/python3.13")) -}}
+{{- $_ := set $rules "otel-collector" (dict "name" "otel-collector" "endpoints" (list $endpoint) "binaries" (list (dict "path" "/usr/bin/python3.13"))) -}}
+{{- end -}}
+{{- if $v.platform.enabled -}}
+{{- $endpoint := dict "host" "kubernetes.default.svc.cluster.local" "port" 443 "tls" "skip" -}}
+{{- $_ := set $rules "cluster-api" (dict "name" "cluster-api" "endpoints" (list $endpoint) "binaries" (list (dict "path" "/usr/local/bin/kubectl"))) -}}
+{{- end -}}
+{{- if not $rules -}}
+{{- .policy -}}
+{{- else -}}
 {{- $p := fromYaml .policy -}}
-{{- $np := $p.network_policies | default dict -}}
-{{- $_ := set $np "otel-collector" $rule -}}
-{{- $_ = set $p "network_policies" $np -}}
+{{- $p = set $p "network_policies" (merge $rules ($p.network_policies | default dict)) -}}
 {{- toYaml $p -}}
 {{- end -}}
+{{- end -}}
+
+{{/* Cluster access settings; fails on what isn't built yet. */}}
+{{- define "hermes-openshell.platform" -}}
+{{- $pl := .Values.platform -}}
+{{- if not (has $pl.access (list "view" "operator")) -}}
+{{- fail (printf "unknown platform.access %q (view or operator)" $pl.access) -}}
+{{- end -}}
+{{- if ne $pl.via "kubernetes" -}}
+{{- fail (printf "platform.via %q isn't supported yet (kubernetes)" $pl.via) -}}
+{{- end -}}
+{{- $name := $pl.clusterName | default (dig "cattle" "clusterName" "" (.Values.global | default dict)) | default .Release.Namespace -}}
+{{- dict "access" $pl.access "clusterName" $name "serviceAccount" (printf "%s-platform" (include "hermes-openshell.fullname" .)) | toJson -}}
 {{- end -}}
 
 {{/* The model backend's settings: url, name, and the Secret holding the key. */}}

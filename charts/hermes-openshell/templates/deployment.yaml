@@ -25,6 +25,7 @@ spec:
         checksum/policy: {{ include "hermes-openshell.policy" . | sha256sum }}
         checksum/sandbox: {{ printf "%s|%s|%s|%v|%s" (include "hermes-openshell.sandboxImage" .) (toJson $model) (get .Values.approvals .Values.profile) .Values.sandbox.gpu (toJson .Values.observability) | sha256sum }}
         checksum/hermes: {{ toJson .Values.hermes | sha256sum }}
+        checksum/platform: {{ toJson .Values.platform | sha256sum }}
         checksum/api-key: {{ .Values.model.external.apiKey | sha256sum }}
     spec:
       {{- with .Values.imagePullSecrets }}
@@ -106,6 +107,17 @@ spec:
               value: {{ .captureContent | quote }}
             {{- end }}
             {{- end }}
+            {{- if .Values.platform.enabled }}
+            {{- $pl := include "hermes-openshell.platform" . | fromJson }}
+            # cluster access: the client uploads a kubeconfig from the token in
+            # /etc/hermes/cluster; HERMES_PLATFORM_* go on to the sandbox
+            - name: CLUSTER_NAME
+              value: {{ $pl.clusterName | quote }}
+            - name: HERMES_PLATFORM_ACCESS
+              value: {{ $pl.access | quote }}
+            - name: HERMES_PLATFORM_CLUSTER
+              value: {{ $pl.clusterName | quote }}
+            {{- end }}
             # `kubectl exec ... -- openshell ...` uses the registered gateway
             - name: OPENSHELL_GATEWAY
               value: k8s
@@ -143,6 +155,11 @@ spec:
             - name: gateway-tls
               mountPath: /etc/openshell/tls
               readOnly: true
+            {{- if .Values.platform.enabled }}
+            - name: cluster
+              mountPath: /etc/hermes/cluster
+              readOnly: true
+            {{- end }}
       volumes:
         - name: home
           emptyDir: {}
@@ -170,3 +187,11 @@ spec:
         - name: gateway-tls
           secret:
             secretName: {{ .Values.gateway.tlsSecret }}
+        {{- if .Values.platform.enabled }}
+        - name: cluster
+          secret:
+            secretName: {{ printf "%s-platform-token" (include "hermes-openshell.fullname" .) }}
+            items:
+              - {key: token, path: token}
+              - {key: ca.crt, path: ca.crt}
+        {{- end }}
