@@ -52,6 +52,63 @@ model:
     existingSecret: ""
     existingSecretKey: api-key
 
+# Hermes itself, on the form's "Hermes options" page.
+hermes:
+  # Display skin for each profile, so the terminal shows how open the sandbox
+  # is. Built-ins: default, ares, mono, slate, daylight, warm-lightmode,
+  # poseidon, sisyphus, charizard. Skins in the image's /opt/hermes/skins work
+  # too.
+  skins:
+    lockdown: mono
+    research: poseidon
+    developer: slate
+    dangerous: charizard
+  # Replace the skin's text; blank keeps the skin's own.
+  branding:
+    enabled: false
+    agentName: ""      # banner title and status display
+    welcome: ""        # shown at startup
+    goodbye: ""        # shown on exit
+    responseLabel: ""  # response box header
+    promptSymbol: ""   # before the input prompt
+    helpHeader: ""     # /help header
+  # A Hermes cron job created when the sandbox starts, for steady demo traffic
+  # (every run is a full agent turn: model calls, tokens, telemetry). Results
+  # land in ~/.hermes/cron/output in the sandbox; `hermes cron list` shows it.
+  cron:
+    enabled: false
+    name: token-traffic
+    # cron expression, or Hermes's own "30m" / "every 2h"
+    schedule: "* * * * *"
+    prompt: >-
+      Pick one short, simple question and answer it. Choose from: a basic
+      arithmetic fact, a common word definition, or a quick general-knowledge
+      fact. Answer in a single sentence. Keep it brief — this is just light
+      token traffic, no tools needed.
+
+# OpenTelemetry from the agent. OpenLit, in the sandbox image, instruments every
+# model call Hermes makes (tokens, cost, latency, time to first token, errors,
+# and the prompts and replies) and sends GenAI traces, metrics and logs over
+# OTLP/HTTP. The sandbox's policy gets one more rule: the agent's python may
+# POST to the collector's host and port, nothing else.
+observability:
+  enabled: true
+  # OTLP/HTTP (4318) base URL. Blank = find the shared SUSE AI collector's
+  # Service at install time (collectorNamespace, then observability and
+  # suse-observability), else
+  # http://opentelemetry-collector.observability.svc.cluster.local:4318.
+  # Use a hostname: an explicit host rule in the sandbox policy can reach a
+  # private address, a raw IP can't be allowed next to the profiles' host rules.
+  otlpEndpoint: ""
+  collectorNamespace: observability
+  # service.name and OpenLit's application name.
+  serviceName: hermes-agent
+  # deployment.environment on all telemetry.
+  environment: demo
+  # Put prompts, replies and tool definitions in the spans. Off = only sizes,
+  # tokens and timings.
+  captureContent: true
+
 gateway:
   # The openshell-gateway chart's Service and client certificate Secret.
   endpoint: https://openshell:8080

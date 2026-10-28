@@ -11,6 +11,15 @@
 #                     swaps in the real key for the model's host only.
 #   HERMES_APPROVALS  manual | smart | off (the profile picks it)
 #   TTYD_PORT         default 7681
+#   HERMES_SKIN       display skin: a built-in (mono, slate, poseidon, ...) or
+#                     one shipped in /opt/hermes/skins
+#   HERMES_BRANDING_<KEY>  override that skin's branding text, KEY one of
+#                     AGENT_NAME WELCOME GOODBYE RESPONSE_LABEL PROMPT_SYMBOL HELP_HEADER
+#   HERMES_CRON_SCHEDULE, HERMES_CRON_PROMPT, HERMES_CRON_NAME
+#                     a Hermes cron job created at start, with a scheduler tick
+#                     once a minute (cron jobs only fire while something ticks)
+#   OTEL_*, HERMES_OTEL_*  OpenTelemetry for the model calls; read at Python
+#                     startup by /opt/hermes/.../sitecustomize.py, not here
 set -euo pipefail
 
 : "${HERMES_BASE_URL:?HERMES_BASE_URL is required}"
@@ -18,6 +27,10 @@ set -euo pipefail
 : "${HERMES_KEY_ENV:=}"
 : "${HERMES_APPROVALS:=smart}"
 : "${TTYD_PORT:=7681}"
+: "${HERMES_SKIN:=default}"
+: "${HERMES_CRON_SCHEDULE:=}"
+: "${HERMES_CRON_PROMPT:=}"
+: "${HERMES_CRON_NAME:=token-traffic}"
 
 # OpenShell sets HOME=/sandbox; the profiles only let the agent write under
 # /home/hermes and /tmp, so put Hermes's state (~/.hermes) there
@@ -42,10 +55,64 @@ if [ ! -s "$config" ]; then
     echo "  cwd: \"$HOME/workspace\""
     echo "approvals:"
     echo "  mode: $HERMES_APPROVALS"
+    echo "display:"
+    echo "  skin: $HERMES_SKIN"
   } > "$config"
 fi
 
+# Skins shipped in the image, then the chosen skin with the form's branding.
+# A user skin of the same name replaces a built-in, but its missing keys fall
+# back to "default", not to that built-in: so copy the whole skin and change
+# only the branding. Run without OTEL_*: no telemetry for this helper.
+mkdir -p "$HOME/.hermes/skins"
+for f in /opt/hermes/skins/*.yaml; do
+  [ -e "$f" ] && cp "$f" "$HOME/.hermes/skins/"
+done
+if compgen -e | grep -q '^HERMES_BRANDING_'; then
+  env -u OTEL_EXPORTER_OTLP_ENDPOINT /opt/hermes/bin/python - <<'PY'
+import copy
+import os
+from pathlib import Path
+
+import yaml
+from hermes_cli.skin_engine import _BUILTIN_SKINS
+
+name = os.environ["HERMES_SKIN"]
+path = Path.home() / ".hermes" / "skins" / f"{name}.yaml"
+if path.is_file():
+    skin = yaml.safe_load(path.read_text(encoding="utf-8"))
+else:
+    skin = copy.deepcopy(_BUILTIN_SKINS.get(name) or _BUILTIN_SKINS["default"])
+skin["name"] = name
+branding = skin.setdefault("branding", {})
+for key in ("agent_name", "welcome", "goodbye", "response_label",
+            "prompt_symbol", "help_header"):
+    value = os.environ.get(f"HERMES_BRANDING_{key.upper()}")
+    if value:
+        branding[key] = value
+path.write_text(yaml.safe_dump(skin, allow_unicode=True, sort_keys=False),
+                encoding="utf-8")
+PY
+fi
+
 cd "$HOME/workspace"
+
+# The cron job, once (a reused sandbox keeps it), and its scheduler: a tick
+# just after each minute starts. Each run is a full agent turn, so it shows up
+# in OpenTelemetry like a chat does.
+if [ -n "$HERMES_CRON_SCHEDULE" ] && [ -n "$HERMES_CRON_PROMPT" ]; then
+  if ! hermes cron list 2>/dev/null | grep -Eq "Name:[[:space:]]+$HERMES_CRON_NAME\$"; then
+    hermes cron create "$HERMES_CRON_SCHEDULE" "$HERMES_CRON_PROMPT" \
+      --name "$HERMES_CRON_NAME" --deliver local >/dev/null \
+      || echo "hermes-sandbox-start: could not create cron job $HERMES_CRON_NAME" >&2
+  fi
+  (
+    while true; do
+      sleep $((62 - $(date +%s) % 60)) & wait $!
+      hermes cron tick >/dev/null 2>&1 || true
+    done
+  ) &
+fi
 
 # Keep ttyd up: it is the sandbox's main process, and if it exits OpenShell
 # marks the sandbox Error and the client's forward stops. Restart it instead,

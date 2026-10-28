@@ -38,7 +38,29 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if not $p -}}
 {{- fail (printf "unknown profile %q (lockdown, research, developer or dangerous)" .Values.profile) -}}
 {{- end -}}
-{{- $p -}}
+{{- include "hermes-openshell.withOtel" (dict "root" . "policy" $p) -}}
+{{- end -}}
+
+{{/* A profile's policy as is, or with observability on, plus a network rule
+     that lets the venv's python (the real path; OpenShell matches it) send
+     OTLP to the collector. Re-serialised then, so the file's comments go. */}}
+{{- define "hermes-openshell.withOtel" -}}
+{{- $o := .root.Values.observability -}}
+{{- if not $o.enabled -}}
+{{- .policy -}}
+{{- else -}}
+{{- $u := urlParse (include "hermes-openshell.otlpEndpoint" .root) -}}
+{{- $port := ternary "443" "80" (eq $u.scheme "https") -}}
+{{- $hp := splitList ":" $u.host -}}
+{{- if gt (len $hp) 1 }}{{ $port = last $hp }}{{ end -}}
+{{- $endpoint := dict "host" $u.hostname "port" (atoi $port) "protocol" "rest" "access" "read-write" "enforcement" "enforce" -}}
+{{- $rule := dict "name" "otel-collector" "endpoints" (list $endpoint) "binaries" (list (dict "path" "/usr/bin/python3.13")) -}}
+{{- $p := fromYaml .policy -}}
+{{- $np := $p.network_policies | default dict -}}
+{{- $_ := set $np "otel-collector" $rule -}}
+{{- $_ = set $p "network_policies" $np -}}
+{{- toYaml $p -}}
+{{- end -}}
 {{- end -}}
 
 {{/* The model backend's settings: url, name, and the Secret holding the key. */}}
@@ -54,5 +76,32 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- dict "url" (required "model.external.url is required" $m.external.url) "name" (required "model.external.name is required" $m.external.name) "secret" $secret | toJson -}}
 {{- else -}}
 {{- fail (printf "unknown model.backend %q (vllm or external)" $m.backend) -}}
+{{- end -}}
+{{- end -}}
+
+{{/* OTLP/HTTP endpoint: observability.otlpEndpoint, else the shared SUSE AI
+     collector's Service found at install time (as the hr-assistant chart does:
+     collectorNamespace, then observability, then suse-observability; a Service
+     named *opentelemetry-collector* or labelled so), else the conventional
+     name. `lookup` finds nothing under `helm template`. */}}
+{{- define "hermes-openshell.otlpEndpoint" -}}
+{{- $o := .Values.observability -}}
+{{- if $o.otlpEndpoint -}}
+{{- $o.otlpEndpoint -}}
+{{- else -}}
+{{- $found := "" -}}
+{{- range $ns := compact (uniq (list $o.collectorNamespace "observability" "suse-observability")) -}}
+{{- if not $found -}}
+{{- range $svc := ((lookup "v1" "Service" $ns "").items | default list) -}}
+{{- if not $found -}}
+{{- $name := dig "app.kubernetes.io/name" "" ($svc.metadata.labels | default dict) -}}
+{{- if or (contains "opentelemetry-collector" $svc.metadata.name) (eq $name "opentelemetry-collector") -}}
+{{- $found = printf "http://%s.%s.svc.cluster.local:4318" $svc.metadata.name $ns -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- $found | default "http://opentelemetry-collector.observability.svc.cluster.local:4318" -}}
 {{- end -}}
 {{- end -}}

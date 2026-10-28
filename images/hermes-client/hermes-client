@@ -130,6 +130,18 @@ else
         --env "HERMES_APPROVALS=$APPROVALS"
         --env "TTYD_PORT=$TARGET_PORT")
   [ -s "$LLM_API_KEY_FILE" ] && args+=(--env "HERMES_KEY_ENV=$KEY_ENV")
+  # The chart's Hermes options and OpenTelemetry go on to the sandbox by name:
+  # skin, branding and cron job for hermes-sandbox-start; OTEL_* and
+  # HERMES_OTEL_* for the image's sitecustomize.py. (Never every HERMES_*: the
+  # API key passes through this environment.)
+  for v in $(compgen -e); do
+    case $v in
+      OTEL_*|HERMES_OTEL_*|HERMES_SKIN|HERMES_BRANDING_*|HERMES_CRON_*)
+        args+=(--env "$v=${!v}") ;;
+    esac
+  done
+  [ -n "${OTEL_EXPORTER_OTLP_ENDPOINT:-}" ] && log "OpenTelemetry on: OTLP to $OTEL_EXPORTER_OTLP_ENDPOINT"
+  [ -n "${HERMES_CRON_SCHEDULE:-}" ] && log "cron job ${HERMES_CRON_NAME:-token-traffic} on '$HERMES_CRON_SCHEDULE'"
   [ "$SANDBOX_GPU" = true ] && args+=(--gpu)
   log "creating sandbox $SANDBOX_NAME from $SANDBOX_IMAGE, profile $PROFILE (approvals: $APPROVALS)"
   openshell sandbox create "${args[@]}" -- hermes-sandbox-start

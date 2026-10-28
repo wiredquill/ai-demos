@@ -153,6 +153,199 @@ questions:
   options: [manual, smart, "off"]
   show_if: "profile=dangerous"
 
+- variable: hermes.skins.lockdown
+  label: Skin under lockdown
+  group: Hermes options
+  type: enum
+  default: mono
+  show_if: "profile=lockdown"
+  options:
+    - default
+    - ares
+    - mono
+    - slate
+    - daylight
+    - warm-lightmode
+    - poseidon
+    - sisyphus
+    - charizard
+  description: >-
+    The terminal's look for this profile; the defaults make each profile easy to tell apart
+    (lockdown mono, research poseidon, developer slate, dangerous charizard).
+    Built-in Hermes skins, plus any shipped in the image's /opt/hermes/skins.
+- variable: hermes.skins.research
+  label: Skin under research
+  group: Hermes options
+  type: enum
+  default: poseidon
+  show_if: "profile=research"
+  options:
+    - default
+    - ares
+    - mono
+    - slate
+    - daylight
+    - warm-lightmode
+    - poseidon
+    - sisyphus
+    - charizard
+- variable: hermes.skins.developer
+  label: Skin under developer
+  group: Hermes options
+  type: enum
+  default: slate
+  show_if: "profile=developer"
+  options:
+    - default
+    - ares
+    - mono
+    - slate
+    - daylight
+    - warm-lightmode
+    - poseidon
+    - sisyphus
+    - charizard
+- variable: hermes.skins.dangerous
+  label: Skin under dangerous
+  group: Hermes options
+  type: enum
+  default: charizard
+  show_if: "profile=dangerous"
+  options:
+    - default
+    - ares
+    - mono
+    - slate
+    - daylight
+    - warm-lightmode
+    - poseidon
+    - sisyphus
+    - charizard
+- variable: hermes.branding.enabled
+  label: Customize branding
+  group: Hermes options
+  type: boolean
+  default: false
+  description: Replace the skin's text. Blank fields keep the skin's own; colors and spinners stay the skin's.
+- variable: hermes.branding.agentName
+  label: Agent name
+  group: Hermes options
+  type: string
+  default: ""
+  show_if: "hermes.branding.enabled=true"
+  description: Banner title and status display (Hermes default <code>Hermes Agent</code>).
+- variable: hermes.branding.welcome
+  label: Welcome message
+  group: Hermes options
+  type: string
+  default: ""
+  show_if: "hermes.branding.enabled=true"
+  description: Shown at startup.
+- variable: hermes.branding.goodbye
+  label: Goodbye message
+  group: Hermes options
+  type: string
+  default: ""
+  show_if: "hermes.branding.enabled=true"
+  description: Shown on exit.
+- variable: hermes.branding.responseLabel
+  label: Response label
+  group: Hermes options
+  type: string
+  default: ""
+  show_if: "hermes.branding.enabled=true"
+  description: Response box header (Hermes default <code>⚕ Hermes</code>).
+- variable: hermes.branding.promptSymbol
+  label: Prompt symbol
+  group: Hermes options
+  type: string
+  default: ""
+  show_if: "hermes.branding.enabled=true"
+  description: Before the input prompt (Hermes default <code>❯</code>).
+- variable: hermes.branding.helpHeader
+  label: Help header
+  group: Hermes options
+  type: string
+  default: ""
+  show_if: "hermes.branding.enabled=true"
+  description: Header of the /help output.
+
+- variable: hermes.cron.enabled
+  label: Run a scheduled prompt (cron job)
+  group: Hermes options
+  type: boolean
+  default: false
+  description: >-
+    Creates a Hermes cron job when the sandbox starts, for steady demo traffic. Every run is a full agent turn,
+    so it shows up in OpenTelemetry like a chat. See it with <code>hermes cron list</code> in the terminal;
+    results go to ~/.hermes/cron/output.
+- variable: hermes.cron.schedule
+  label: Schedule
+  group: Hermes options
+  type: string
+  default: "* * * * *"
+  show_if: "hermes.cron.enabled=true"
+  description: Cron expression (<code>* * * * *</code> = every minute) or Hermes's own <code>30m</code> / <code>every 2h</code>.
+- variable: hermes.cron.prompt
+  label: Prompt
+  group: Hermes options
+  type: multiline
+  default: "Pick one short, simple question and answer it. Choose from: a basic arithmetic fact, a common word definition, or a quick general-knowledge fact. Answer in a single sentence. Keep it brief — this is just light token traffic, no tools needed."
+  show_if: "hermes.cron.enabled=true"
+- variable: hermes.cron.name
+  label: Job name
+  group: Hermes options
+  type: string
+  default: token-traffic
+  show_if: "hermes.cron.enabled=true"
+
+- variable: observability.enabled
+  label: Enable OpenTelemetry
+  group: Observability
+  type: boolean
+  default: true
+  description: >-
+    OpenLit in the sandbox instruments every model call Hermes makes (tokens, cost, latency, time to first token, errors)
+    and sends GenAI traces, metrics and logs to the cluster's SUSE AI collector over OTLP/HTTP. The sandbox's policy gets
+    one rule that lets the agent's python reach the collector's host and port, nothing else. Changing this recreates the sandbox.
+- variable: observability.otlpEndpoint
+  label: OTLP Endpoint
+  group: Observability
+  type: string
+  default: ""
+  show_if: "observability.enabled=true"
+  description: >-
+    OTLP/HTTP collector address (scheme://host:4318).<br><br><b>Leave blank to auto-discover:</b> the chart looks up the
+    collector Service in the Collector Namespace below at install time.<br><br>Use a hostname, not an IP address: the sandbox
+    policy can only allow it by name.
+- variable: observability.collectorNamespace
+  label: Collector Namespace
+  group: Observability
+  type: string
+  default: observability
+  show_if: "observability.enabled=true"
+  description: Namespace holding the shared OpenTelemetry collector Service. The chart also checks <code>observability</code> and <code>suse-observability</code>.
+- variable: observability.serviceName
+  label: Service name
+  group: Observability
+  type: string
+  default: hermes-agent
+  show_if: "observability.enabled=true"
+- variable: observability.environment
+  label: Environment
+  group: Observability
+  type: string
+  default: demo
+  show_if: "observability.enabled=true"
+  description: deployment.environment on all telemetry.
+- variable: observability.captureContent
+  label: Record prompts and replies
+  group: Observability
+  type: boolean
+  default: true
+  show_if: "observability.enabled=true"
+  description: Off = spans keep token counts and timings but not the text.
+
 - variable: gateway.endpoint
   label: OpenShell gateway endpoint
   group: OpenShell gateway
