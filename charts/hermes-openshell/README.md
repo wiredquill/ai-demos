@@ -81,11 +81,10 @@ cost, finish reason, time to first token) plus the `gen_ai.client.*` metrics.
 `captureContent=false` keeps the prompts and replies out. Exporter errors go to
 `/tmp/hermes-otel.log` in the sandbox, not into the terminal.
 
-Check it from the client pod:
-
-```bash
-kubectl -n <ns> exec deploy/<release>-client -- openshell sandbox exec <sandbox> -- cat /tmp/hermes-otel.log
-```
+To see it arrive, install the AI Observability Collector with `collector.debug=true`
+and watch its log for `service.name: hermes-agent`. If nothing comes, check
+`/tmp/hermes-otel.log` in the sandbox (`openshell sandbox connect <sandbox>`)
+and the gateway's log for a denied `otel-collector` request.
 
 ## Images
 
