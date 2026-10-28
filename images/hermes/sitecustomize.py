@@ -46,6 +46,28 @@ if os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT"):
             == "true",
         )
 
+        # vLLM answers non-streaming calls (cron jobs, summaries) with
+        # "prompt_tokens_details": null, and OpenLit 1.44.0 calls .get() on it:
+        # the span records an AttributeError and loses its token counts. Hand
+        # OpenLit's openai parser empty dicts instead of nulls.
+        import openlit.instrumentation.openai.utils as _openai_utils
+
+        _as_dict = _openai_utils.response_as_dict
+
+        def _response_as_dict(response):
+            data = _as_dict(response)
+            if isinstance(data, dict):
+                if data.get("usage") is None and "usage" in data:
+                    data["usage"] = {}
+                usage = data.get("usage")
+                if isinstance(usage, dict):
+                    for key in ("prompt_tokens_details", "completion_tokens_details"):
+                        if usage.get(key) is None:
+                            usage[key] = {}
+            return data
+
+        _openai_utils.response_as_dict = _response_as_dict
+
         # One-shot mode (`hermes -z`) leaves through os._exit, past the atexit
         # hooks that flush the exporters, so the model call's span (it ends
         # with the stream) would never be sent. Flush first, briefly: a

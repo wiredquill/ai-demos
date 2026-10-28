@@ -49,7 +49,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if not $o.enabled -}}
 {{- .policy -}}
 {{- else -}}
-{{- $u := urlParse (required "observability.otlpEndpoint is required" $o.otlpEndpoint) -}}
+{{- $u := urlParse (include "hermes-openshell.otlpEndpoint" .root) -}}
 {{- $port := ternary "443" "80" (eq $u.scheme "https") -}}
 {{- $hp := splitList ":" $u.host -}}
 {{- if gt (len $hp) 1 }}{{ $port = last $hp }}{{ end -}}
@@ -76,5 +76,32 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- dict "url" (required "model.external.url is required" $m.external.url) "name" (required "model.external.name is required" $m.external.name) "secret" $secret | toJson -}}
 {{- else -}}
 {{- fail (printf "unknown model.backend %q (vllm or external)" $m.backend) -}}
+{{- end -}}
+{{- end -}}
+
+{{/* OTLP/HTTP endpoint: observability.otlpEndpoint, else the shared SUSE AI
+     collector's Service found at install time (as the hr-assistant chart does:
+     collectorNamespace, then observability, then suse-observability; a Service
+     named *opentelemetry-collector* or labelled so), else the conventional
+     name. `lookup` finds nothing under `helm template`. */}}
+{{- define "hermes-openshell.otlpEndpoint" -}}
+{{- $o := .Values.observability -}}
+{{- if $o.otlpEndpoint -}}
+{{- $o.otlpEndpoint -}}
+{{- else -}}
+{{- $found := "" -}}
+{{- range $ns := compact (uniq (list $o.collectorNamespace "observability" "suse-observability")) -}}
+{{- if not $found -}}
+{{- range $svc := ((lookup "v1" "Service" $ns "").items | default list) -}}
+{{- if not $found -}}
+{{- $name := dig "app.kubernetes.io/name" "" ($svc.metadata.labels | default dict) -}}
+{{- if or (contains "opentelemetry-collector" $svc.metadata.name) (eq $name "opentelemetry-collector") -}}
+{{- $found = printf "http://%s.%s.svc.cluster.local:4318" $svc.metadata.name $ns -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- $found | default "http://opentelemetry-collector.observability.svc.cluster.local:4318" -}}
 {{- end -}}
 {{- end -}}

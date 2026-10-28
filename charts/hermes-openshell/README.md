@@ -61,10 +61,32 @@ changing the profile in the form recreates the sandbox. Network rules can be
 swapped live from the client pod; all four profiles are mounted at
 `/etc/hermes/profiles/` (see NOTES.txt).
 
+## Hermes options
+
+The form's **Hermes options** page:
+
+- **Skin** for each profile, so the terminal shows how open the sandbox is:
+  lockdown `mono`, research `poseidon`, developer `slate`, dangerous
+  `charizard`. Any built-in Hermes skin can be picked; skins added to the image
+  under `/opt/hermes/skins/` are copied to `~/.hermes/skins/` at start and can
+  be named too.
+- **Branding** (`hermes.branding.*`): agent name, welcome and goodbye
+  messages, response label, prompt symbol and /help header. The sandbox writes
+  a copy of the chosen skin with just that text changed, so colors and
+  spinners stay the skin's.
+- **Cron job** (`hermes.cron.*`): a Hermes cron job created at start, and a
+  scheduler that ticks once a minute (Hermes runs cron jobs only while
+  something ticks). The default prompt asks for one short fact a minute:
+  steady, cheap token traffic for the observability demo. `hermes cron list`
+  in the terminal shows it; results go to `~/.hermes/cron/output/`.
+
 ## OpenTelemetry
 
-`observability.enabled=true` (the form's **Observability** group) turns on
-GenAI telemetry from inside the sandbox:
+On by default (`observability.enabled`, the form's **Observability** page):
+GenAI telemetry from inside the sandbox to the cluster's SUSE AI collector.
+A blank `observability.otlpEndpoint` is found at install time the way the
+hr-assistant chart does it: an `*opentelemetry-collector*` Service in
+`collectorNamespace`, `observability` or `suse-observability`.
 
 - The sandbox image carries OpenLit and `sitecustomize.py` in Hermes's venv.
   Every start of that python instruments the openai SDK when
@@ -81,10 +103,17 @@ cost, finish reason, time to first token) plus the `gen_ai.client.*` metrics.
 `captureContent=false` keeps the prompts and replies out. Exporter errors go to
 `/tmp/hermes-otel.log` in the sandbox, not into the terminal.
 
-To see it arrive, install the AI Observability Collector with `collector.debug=true`
-and watch its log for `service.name: hermes-agent`. If nothing comes, check
-`/tmp/hermes-otel.log` in the sandbox (`openshell sandbox connect <sandbox>`)
-and the gateway's log for a denied `otel-collector` request.
+Each delivery shows in the sandbox pod's log as an OpenShell decision:
+`ALLOWED POST http://...:4318/v1/traces [policy:otel-collector]`. If nothing
+arrives, look there for a denial and at the exporter log:
+
+```bash
+kubectl -n <ns> exec deploy/<release>-client -- \
+  openshell sandbox exec <sandbox> -- cat /tmp/hermes-otel.log
+```
+
+OpenLit 1.44.0 fails on vLLM's non-streaming replies (`prompt_tokens_details:
+null`) and drops their token counts; `sitecustomize.py` patches that.
 
 ## Images
 
