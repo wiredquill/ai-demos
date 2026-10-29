@@ -1,4 +1,5 @@
 {{- $pl := include "hermes-rancher.platform" . | fromJson }}
+{{- if eq $pl.via "kubernetes" }}
 {{- $binding := printf "%s-%s-platform" .Release.Namespace (include "hermes-rancher.fullname" .) | trunc 63 | trimSuffix "-" }}
 # Hermes's own identity on the cluster. Only the client pod mounts its token,
 # to build the kubeconfig it uploads into the sandbox; no pod runs as it.
@@ -119,4 +120,5 @@ subjects:
   - kind: ServiceAccount
     name: {{ $pl.serviceAccount }}
     namespace: {{ .Release.Namespace }}
+{{- end }}
 {{- end }}

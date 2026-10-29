@@ -62,8 +62,10 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- $endpoint := dict "host" $u.hostname "port" (atoi $port) "protocol" "rest" "access" "read-write" "enforcement" "enforce" -}}
 {{- $_ := set $rules "otel-collector" (dict "name" "otel-collector" "endpoints" (list $endpoint) "binaries" (list (dict "path" "/usr/bin/python3.13"))) -}}
 {{- end -}}
+{{- if eq $v.platform.via "kubernetes" -}}
 {{- $endpoint := dict "host" "kubernetes.default.svc.cluster.local" "port" 443 "tls" "skip" -}}
 {{- $_ := set $rules "cluster-api" (dict "name" "cluster-api" "endpoints" (list $endpoint) "binaries" (list (dict "path" "/usr/local/bin/kubectl"))) -}}
+{{- end -}}
 {{- $p := fromYaml .policy -}}
 {{- $p = set $p "network_policies" (merge $rules ($p.network_policies | default dict)) -}}
 {{- toYaml $p -}}
@@ -75,11 +77,20 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if not (has $pl.access (list "view" "operator")) -}}
 {{- fail (printf "unknown platform.access %q (view or operator)" $pl.access) -}}
 {{- end -}}
-{{- if ne $pl.via "kubernetes" -}}
-{{- fail (printf "platform.via %q isn't supported yet (kubernetes)" $pl.via) -}}
-{{- end -}}
 {{- $name := $pl.clusterName | default (dig "cattle" "clusterName" "" (.Values.global | default dict)) | default .Release.Namespace -}}
-{{- dict "access" $pl.access "clusterName" $name "serviceAccount" (printf "%s-platform" (include "hermes-rancher.fullname" .)) | toJson -}}
+{{- $out := dict "access" $pl.access "via" $pl.via "clusterName" $name "serviceAccount" (printf "%s-platform" (include "hermes-rancher.fullname" .)) -}}
+{{- if eq $pl.via "rancher" -}}
+{{- $u := urlParse (required "platform.rancher.url is required when platform.via is rancher" $pl.rancher.url) -}}
+{{- if ne $u.scheme "https" -}}
+{{- fail (printf "platform.rancher.url %q must be https" $pl.rancher.url) -}}
+{{- end -}}
+{{- $_ := set $out "rancherUrl" (printf "https://%s" $u.host) -}}
+{{- $_ := set $out "rancherHost" $u.hostname -}}
+{{- $_ := set $out "rancherSecret" (required "platform.rancher.existingSecret is required when platform.via is rancher" $pl.rancher.existingSecret) -}}
+{{- else if ne $pl.via "kubernetes" -}}
+{{- fail (printf "unknown platform.via %q (kubernetes or rancher)" $pl.via) -}}
+{{- end -}}
+{{- $out | toJson -}}
 {{- end -}}
 
 {{/* The model backend's settings: url, name, and the Secret holding the key. */}}

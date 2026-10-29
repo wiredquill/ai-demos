@@ -2,7 +2,12 @@
 Hermes for Rancher is starting as OpenShell sandbox "{{ .Values.sandbox.name }}" from
   {{ include "hermes-rancher.sandboxImage" . }}
 under the "{{ .Values.profile }}" profile (Hermes approvals: {{ get .Values.approvals .Values.profile }}),
+{{- if eq $pl.via "rancher" }}
+with {{ $pl.access }} access to the clusters Rancher at {{ $pl.rancherUrl }} lets the token in
+Secret {{ .Release.Namespace }}/{{ $pl.rancherSecret }} reach (the rancher CLI, and kubectl through Rancher).
+{{- else }}
 with {{ $pl.access }} access to cluster "{{ $pl.clusterName }}" as ServiceAccount {{ .Release.Namespace }}/{{ $pl.serviceAccount }}.
+{{- end }}
 
 Anyone who can open the terminal gets that access.
 {{- if ne .Values.service.type "ClusterIP" }}
@@ -11,8 +16,12 @@ agent's cluster access) is open to anyone who can reach it. ClusterIP limits it
 to people who can port-forward in this namespace.
 {{- end }}
 
+{{- if eq $pl.via "rancher" }}
+What the token's user may do: rancher access clusters (logged in as that user)
+{{- else }}
 What the agent's ServiceAccount may do:
   kubectl auth can-i --list --as system:serviceaccount:{{ .Release.Namespace }}:{{ $pl.serviceAccount }}
+{{- end }}
 {{- if eq .Values.profile "dangerous" }}
 
 WARNING: the dangerous profile lets any program in the sandbox reach almost

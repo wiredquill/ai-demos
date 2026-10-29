@@ -310,12 +310,44 @@ questions:
     view = read everything except Secrets. operator = view, plus restart and scale Deployments, StatefulSets and
     DaemonSets, and delete Pods. Hermes runs kubectl on this cluster as a ServiceAccount of its own; the sandbox's
     policy lets kubectl, and nothing else, reach the API server. Hermes is told to ask before any change.
+- variable: platform.via
+  label: Reach clusters through
+  group: Cluster access
+  type: enum
+  default: kubernetes
+  options:
+    - kubernetes
+    - rancher
+  description: >-
+    kubernetes = kubectl on this cluster as a ServiceAccount the chart creates (access above sets its RBAC).
+    rancher = Rancher's agent CLI, and kubectl through Rancher, on every cluster a Rancher API token can reach; the
+    token's user and its roles are the limit, and view also lets only reads through. The OpenShell gateway holds the
+    token, so it never enters the sandbox.
 - variable: platform.clusterName
   label: Cluster name
   group: Cluster access
   type: string
   default: ""
+  show_if: "platform.via=kubernetes"
   description: "What Hermes calls the cluster. Blank = the Rancher cluster name, else the namespace."
+- variable: platform.rancher.url
+  label: Rancher URL
+  group: Cluster access
+  type: string
+  default: ""
+  required: true
+  show_if: "platform.via=rancher"
+  description: "e.g. https://rancher.example.com. Its certificate must be publicly trusted."
+- variable: platform.rancher.existingSecret
+  label: Rancher token Secret
+  group: Cluster access
+  type: string
+  default: ""
+  required: true
+  show_if: "platform.via=rancher"
+  description: >-
+    Secret in this namespace with a Rancher API token (no scope) under key "token". Create it for a user with
+    only the roles Hermes should have, e.g. kubectl create secret generic rancher-cli --from-literal=token=...
 
 - variable: observability.enabled
   label: Enable OpenTelemetry

@@ -100,13 +100,28 @@ platform:
   # operator = view, plus restart and scale Deployments, StatefulSets and
   # DaemonSets, and delete Pods.
   access: view
-  # How kubectl reaches the cluster. kubernetes = the API server of the cluster
-  # Hermes runs on. (rancher, through Rancher's API with an agent token, is
-  # planned with Rancher's agent CLI.)
+  # How Hermes reaches clusters:
+  # kubernetes = kubectl on the cluster Hermes runs on, as a ServiceAccount
+  #   of its own (access picks its RBAC).
+  # rancher = Rancher's agent CLI (`rancher`, and kubectl through
+  #   `rancher kubeconfig`) on every cluster a Rancher API token can reach. The
+  #   token's user is the limit: give Hermes a user with only the roles it
+  #   should have. The OpenShell gateway holds the token and adds it to
+  #   requests to Rancher; the sandbox only sees a placeholder. view also
+  #   limits those requests to GET/HEAD/OPTIONS and sets the CLI read-only.
   via: kubernetes
-  # Shown to Hermes as the cluster's name; blank = the Rancher cluster name,
-  # else the release namespace.
+  # Shown to Hermes as the cluster's name (via kubernetes); blank = the
+  # Rancher cluster name, else the release namespace.
   clusterName: ""
+  rancher:
+    # Rancher's URL, e.g. https://rancher.example.com. Its certificate must be
+    # publicly trusted: OpenShell inspects this traffic to add the token.
+    url: ""
+    # Secret in this namespace holding a Rancher API token (access-key:secret,
+    # no scope), e.g.:
+    #   kubectl create secret generic rancher-cli --from-literal=token=...
+    existingSecret: ""
+    existingSecretKey: token
 
 # OpenTelemetry from the agent. OpenLit, in the sandbox image, instruments every
 # model call Hermes makes (tokens, cost, latency, time to first token, errors,

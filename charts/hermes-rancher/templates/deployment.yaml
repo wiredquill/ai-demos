@@ -1,4 +1,5 @@
 {{- $model := include "hermes-rancher.model" . | fromJson }}
+{{- $pl := include "hermes-rancher.platform" . | fromJson }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -107,15 +108,27 @@ spec:
               value: {{ .captureContent | quote }}
             {{- end }}
             {{- end }}
-            {{- $pl := include "hermes-rancher.platform" . | fromJson }}
-            # cluster access: the client uploads a kubeconfig from the token in
-            # /etc/hermes/cluster; HERMES_PLATFORM_* go on to the sandbox
-            - name: CLUSTER_NAME
-              value: {{ $pl.clusterName | quote }}
+            # cluster access; HERMES_PLATFORM_* go on to the sandbox
             - name: HERMES_PLATFORM_ACCESS
               value: {{ $pl.access | quote }}
+            - name: HERMES_PLATFORM_VIA
+              value: {{ $pl.via | quote }}
+            {{- if eq $pl.via "rancher" }}
+            # the client makes a provider for Rancher from the token in
+            # /etc/hermes/rancher; the gateway adds it to requests to Rancher
+            - name: RANCHER_URL
+              value: {{ $pl.rancherUrl | quote }}
+            - name: RANCHER_ACCESS
+              value: {{ ternary "read-only" "read-write" (eq $pl.access "view") | quote }}
+            - name: HERMES_PLATFORM_RANCHER
+              value: {{ $pl.rancherUrl | quote }}
+            {{- else }}
+            # the client uploads a kubeconfig from the token in /etc/hermes/cluster
+            - name: CLUSTER_NAME
+              value: {{ $pl.clusterName | quote }}
             - name: HERMES_PLATFORM_CLUSTER
               value: {{ $pl.clusterName | quote }}
+            {{- end }}
             # `kubectl exec ... -- openshell ...` uses the registered gateway
             - name: OPENSHELL_GATEWAY
               value: k8s
@@ -153,9 +166,15 @@ spec:
             - name: gateway-tls
               mountPath: /etc/openshell/tls
               readOnly: true
+            {{- if eq $pl.via "rancher" }}
+            - name: rancher
+              mountPath: /etc/hermes/rancher
+              readOnly: true
+            {{- else }}
             - name: cluster
               mountPath: /etc/hermes/cluster
               readOnly: true
+            {{- end }}
       volumes:
         - name: home
           emptyDir: {}
@@ -183,9 +202,17 @@ spec:
         - name: gateway-tls
           secret:
             secretName: {{ .Values.gateway.tlsSecret }}
+        {{- if eq $pl.via "rancher" }}
+        - name: rancher
+          secret:
+            secretName: {{ $pl.rancherSecret }}
+            items:
+              - {key: {{ .Values.platform.rancher.existingSecretKey }}, path: token}
+        {{- else }}
         - name: cluster
           secret:
             secretName: {{ printf "%s-platform-token" (include "hermes-rancher.fullname" .) }}
             items:
               - {key: token, path: token}
               - {key: ca.crt, path: ca.crt}
+        {{- end }}

@@ -20,9 +20,12 @@
 #                     once a minute (cron jobs only fire while something ticks)
 #   OTEL_*, HERMES_OTEL_*  OpenTelemetry for the model calls; read at Python
 #                     startup by /opt/hermes/.../sitecustomize.py, not here
-#   HERMES_PLATFORM_ACCESS, HERMES_PLATFORM_CLUSTER
-#                     cluster access for platform engineers: view | operator, and
-#                     the cluster's name. The client uploads ~/.kube/config; this
+#   HERMES_PLATFORM_ACCESS, HERMES_PLATFORM_VIA, HERMES_PLATFORM_CLUSTER,
+#   HERMES_PLATFORM_RANCHER
+#                     cluster access for platform engineers: view | operator,
+#                     kubernetes | rancher, the cluster's name (kubernetes: the
+#                     client uploads ~/.kube/config) or Rancher's URL (rancher:
+#                     the CLI reads RANCHER_CLI_URL and RANCHER_CLI_TOKEN). This
 #                     only tells Hermes about it (workspace AGENTS.md)
 set -euo pipefail
 
@@ -37,6 +40,8 @@ set -euo pipefail
 : "${HERMES_CRON_NAME:=token-traffic}"
 : "${HERMES_PLATFORM_ACCESS:=}"
 : "${HERMES_PLATFORM_CLUSTER:=this cluster}"
+: "${HERMES_PLATFORM_VIA:=kubernetes}"
+: "${HERMES_PLATFORM_RANCHER:=}"
 
 # OpenShell sets HOME=/sandbox; the profiles only let the agent write under
 # /home/hermes and /tmp, so put Hermes's state (~/.hermes) there
@@ -113,7 +118,31 @@ cd "$HOME/workspace"
 # Cluster access: Hermes reads AGENTS.md from its working directory into the
 # system prompt, so it knows kubectl works and what it may do. Kept if the
 # user changed it in a reused sandbox.
-if [ -n "$HERMES_PLATFORM_ACCESS" ] && [ ! -e AGENTS.md ]; then
+if [ -n "$HERMES_PLATFORM_ACCESS" ] && [ ! -e AGENTS.md ] && [ "$HERMES_PLATFORM_VIA" = rancher ]; then
+  case $HERMES_PLATFORM_ACCESS in
+    operator) can="Its Rancher token may change what its Rancher roles allow. Use the CLI's safety loop: \`--dry-run\` first, show the plan, \`--apply\` only after a yes." ;;
+    *) can="This is read-only: the CLI is in read-only mode and the sandbox only lets reads through to Rancher." ;;
+  esac
+  cat > AGENTS.md <<EOF
+# Platform engineering assistant
+
+You help platform engineers run the Kubernetes clusters that the Rancher at
+$HERMES_PLATFORM_RANCHER manages.
+The \`rancher\` CLI in the terminal is already logged in (RANCHER_CLI_URL,
+RANCHER_CLI_TOKEN): don't run \`rancher auth login\`. Follow your \`rancher\`
+skill for how to use it. $can
+
+- Start from \`rancher get clusters\`; name the cluster (\`--cluster <name>\`)
+  on every command and say which one you looked at.
+- Investigate before answering: \`rancher inspect\`, \`rancher usage\`,
+  \`rancher logs\`, \`rancher access\`, \`rancher get <type>\`.
+- For kubectl on a cluster: \`rancher kubeconfig --cluster <name> > ~/.kube/config\`
+  (kubectl then goes through Rancher with the same token).
+- Before any change, say what you will run and why, and wait for a yes.
+- A "forbidden" or AUTH error is the access you were given, not a fault: say
+  so and give the command a platform engineer could run instead.
+EOF
+elif [ -n "$HERMES_PLATFORM_ACCESS" ] && [ ! -e AGENTS.md ]; then
   case $HERMES_PLATFORM_ACCESS in
     operator) can="read everything except Secrets, restart and scale Deployments, StatefulSets and DaemonSets, and delete Pods so their controller replaces them" ;;
     *) can="read everything except Secrets; it can't change anything" ;;
