@@ -64,7 +64,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 {{- if eq $v.platform.via "kubernetes" -}}
 {{- $endpoint := dict "host" "kubernetes.default.svc.cluster.local" "port" 443 "tls" "skip" -}}
-{{- $_ := set $rules "cluster-api" (dict "name" "cluster-api" "endpoints" (list $endpoint) "binaries" (list (dict "path" "/usr/local/bin/kubectl"))) -}}
+{{- $_ := set $rules "cluster-api" (dict "name" "cluster-api" "endpoints" (list $endpoint) "binaries" (list (dict "path" "/usr/local/bin/kubectl") (dict "path" "/usr/local/bin/helm"))) -}}
 {{- end -}}
 {{- $p := fromYaml .policy -}}
 {{- $p = set $p "network_policies" (merge $rules ($p.network_policies | default dict)) -}}

@@ -309,7 +309,7 @@ questions:
   description: >-
     view = read everything except Secrets. operator = view, plus restart and scale Deployments, StatefulSets and
     DaemonSets, and delete Pods. Hermes runs kubectl on this cluster as a ServiceAccount of its own; the sandbox's
-    policy lets kubectl, and nothing else, reach the API server. Hermes is told to ask before any change.
+    policy lets kubectl and helm, and nothing else, reach the API server. Hermes is told to ask before any change.
 - variable: platform.via
   label: Reach clusters through
   group: Cluster access

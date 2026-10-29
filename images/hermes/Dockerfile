@@ -64,6 +64,33 @@ RUN set -eu; \
     echo "$sum  /usr/local/bin/kubectl" | sha256sum -c -; \
     chmod 755 /usr/local/bin/kubectl
 
+# helm and yq for the agent to read releases and YAML with. Upstream static
+# binaries, checked like kubectl.
+FROM ${BASE} AS tools
+ARG TARGETARCH
+ARG HELM_VERSION=4.3.1
+# sha256 from https://get.helm.sh/helm-v$HELM_VERSION-linux-<arch>.tar.gz.sha256sum
+ARG HELM_SHA256_AMD64=0403a88ae20913d11b10a2467b50087721fea7581736da6b9d3992f5357fe54b
+ARG HELM_SHA256_ARM64=8cf8f66ecbc252ac8f7f06cca68aba88508ddfde3a6a34feb1678ad1694b4f88
+ARG YQ_VERSION=4.54.1
+# sha256 from the release's checksums file (SHA-256 column)
+ARG YQ_SHA256_AMD64=8e34fc298390875de416e6a4afcb8cabeceb25d9aa8506c1a2f9353cf702ea5f
+ARG YQ_SHA256_ARM64=189088da0c6429ec5178dfaab1a114805f6cab0b61b165ab236efedf1d57a71b
+RUN zypper -n install --no-recommends curl tar gzip && zypper -n clean -a
+RUN set -eu; \
+    case "$TARGETARCH" in \
+      amd64) helm_sum=$HELM_SHA256_AMD64; yq_sum=$YQ_SHA256_AMD64 ;; \
+      arm64) helm_sum=$HELM_SHA256_ARM64; yq_sum=$YQ_SHA256_ARM64 ;; \
+      *) echo "unsupported arch: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSLo /tmp/helm.tgz https://get.helm.sh/helm-v$HELM_VERSION-linux-$TARGETARCH.tar.gz; \
+    echo "$helm_sum  /tmp/helm.tgz" | sha256sum -c -; \
+    tar -xzf /tmp/helm.tgz -C /tmp; \
+    install -m 755 /tmp/linux-$TARGETARCH/helm /usr/local/bin/helm; \
+    curl -fsSLo /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v$YQ_VERSION/yq_linux_$TARGETARCH; \
+    echo "$yq_sum  /usr/local/bin/yq" | sha256sum -c -; \
+    chmod 755 /usr/local/bin/yq
+
 # ---- runtime stage ------------------------------------------------------------------
 FROM ${BASE}
 LABEL org.opencontainers.image.title="Hermes Agent for OpenShell" \
@@ -72,11 +99,16 @@ LABEL org.opencontainers.image.title="Hermes Agent for OpenShell" \
 
 # The agent's terminal tool runs commands right here, so give it the usual
 # tools; what they may reach is up to the OpenShell profile, not the image.
+# The sandbox can't install anything itself (no root, no package repos), so
+# what the agent reaches for goes in here; hermes-sandbox-start lists it in
+# AGENTS.md. python3 is the name models try first.
 RUN zypper -n install --no-recommends python313 git-core curl tar gzip which less \
-      util-linux shadow && zypper -n clean -a
+      util-linux shadow jq gawk openssl && zypper -n clean -a \
+ && ln -s /usr/bin/python3.13 /usr/local/bin/python3
 COPY --from=builder /opt/hermes /opt/hermes
 COPY --from=ttyd /usr/local/bin/ttyd /usr/local/bin/ttyd
 COPY --from=kubectl /usr/local/bin/kubectl /usr/local/bin/kubectl
+COPY --from=tools /usr/local/bin/helm /usr/local/bin/yq /usr/local/bin/
 COPY images/hermes/hermes-sandbox-start /usr/local/bin/hermes-sandbox-start
 RUN ln -s /opt/hermes/bin/hermes /usr/local/bin/hermes \
  && printf '%s\n' '# OpenShell sets HOME=/sandbox; the profiles allow writes under /home/hermes' \

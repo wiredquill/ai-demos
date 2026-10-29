@@ -137,6 +137,7 @@ if [ -n "$HERMES_PLATFORM_ACCESS" ] && [ ! -e AGENTS.md ] && [ "$HERMES_PLATFORM
   else
     known="- none found: run \`rancher-kubeconfig\` (log in /tmp/rancher-kubeconfig.log)"
   fi
+  extra=", rancher"
   cat > AGENTS.md <<EOF
 # Platform engineering assistant
 
@@ -158,6 +159,11 @@ $known
 - kubectl is already configured: one context per cluster above, through
   Rancher with the same token. Don't run \`rancher kubeconfig\`: it mints new
   tokens.
+- Tools here: kubectl, helm, jq, yq, awk, python3, curl, git, openssl$extra.
+  Nothing can be installed (no root, no package repositories). kubectl
+  \`-o jsonpath\`/\`custom-columns\` and \`rancher -o template=...\` often need no
+  parser at all. helm reads releases from Secrets, so \`helm list\` needs Secret
+  access.
 - Before any change, say what you will run and why, and wait for a yes.
 - A "forbidden" or AUTH error is the access you were given, not a fault: say
   so and give the command a platform engineer could run instead.
@@ -167,6 +173,7 @@ elif [ -n "$HERMES_PLATFORM_ACCESS" ] && [ ! -e AGENTS.md ]; then
     operator) can="read everything except Secrets, restart and scale Deployments, StatefulSets and DaemonSets, and delete Pods so their controller replaces them" ;;
     *) can="read everything except Secrets; it can't change anything" ;;
   esac
+  extra=""
   cat > AGENTS.md <<EOF
 # Platform engineering assistant
 
@@ -177,6 +184,11 @@ Its ServiceAccount can $can.
 - Investigate before answering: \`kubectl get\`, \`describe\`, \`logs\`,
   \`get events --sort-by=.lastTimestamp\`, \`top\` if metrics-server is there.
 - Use \`-A\` or \`-n <namespace>\` explicitly; say which namespace you looked at.
+- Tools here: kubectl, helm, jq, yq, awk, python3, curl, git, openssl$extra.
+  Nothing can be installed (no root, no package repositories). kubectl
+  \`-o jsonpath\`/\`custom-columns\` and \`rancher -o template=...\` often need no
+  parser at all. helm reads releases from Secrets, so \`helm list\` needs Secret
+  access.
 - Before any change, say what you will run and why, and wait for a yes.
 - A "forbidden" error is the access you were given, not a fault: say so and
   give the command a platform engineer could run instead.

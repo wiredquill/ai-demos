@@ -39,8 +39,9 @@ How the access gets to the agent, and what fences it:
   client's disk. (`sandbox create --upload` can't be combined with a start
   command, and `sandbox upload` needs ssh and git in the client image.)
 - **One network rule.** The policy (and each live-switch profile) gets
-  `cluster-api`: `/usr/local/bin/kubectl`, and nothing else, may reach
-  `kubernetes.default.svc.cluster.local:443`. Python, curl and git still can't.
+  `cluster-api`: `/usr/local/bin/kubectl` and `/usr/local/bin/helm`, and
+  nothing else, may reach `kubernetes.default.svc.cluster.local:443`. Python,
+  curl and git still can't.
 - **`tls: skip`, so RBAC is the limit.** OpenShell's L7 proxy re-encrypts
   inspected HTTPS and checks the upstream against its own trust store, which
   lacks the cluster CA (`NET:FAIL` in the supervisor log). OpenShell 0.1.5 has
@@ -84,8 +85,8 @@ platform:
 - **The gateway holds the token.** The client binds it to Rancher's host as an
   OpenShell provider (`<sandbox>-rancher`), as it does the model's key. The
   sandbox's `RANCHER_CLI_TOKEN` is a placeholder the proxy swaps for the token
-  on requests to Rancher; only `/usr/local/bin/rancher` and
-  `/usr/local/bin/kubectl` may make them. Rancher's certificate must be
+  on requests to Rancher; only `/usr/local/bin/rancher`,
+  `/usr/local/bin/kubectl` and `/usr/local/bin/helm` may make them. Rancher's certificate must be
   publicly trusted, since the proxy terminates this TLS to add the token.
 - **view is reads only, twice.** The provider's endpoint is `access:
   read-only`, so the proxy refuses anything but GET/HEAD/OPTIONS (shown as
@@ -208,6 +209,16 @@ kubectl -n <ns> exec deploy/<release>-client -- \
 
 OpenLit 1.44.0 fails on vLLM's non-streaming replies (`prompt_tokens_details:
 null`) and drops their token counts; `sitecustomize.py` patches that.
+
+## Tools in the sandbox
+
+The sandbox can't install anything (no root, and no profile reaches a package
+repository), so the image carries what an agent reaches for: kubectl, helm
+4.3.1, yq 4.54.1, jq, gawk, openssl, python3 (`python3.13`), curl, git, and
+`rancher` in `hermes-rancher`. AGENTS.md lists them, so Hermes doesn't probe.
+helm keeps release data in Secrets, which view can't read, so `helm list`
+needs a role with Secret access. For more, build an image `FROM
+ghcr.io/wiredquill/hermes-rancher` and set `sandbox.image: custom`.
 
 ## Images
 

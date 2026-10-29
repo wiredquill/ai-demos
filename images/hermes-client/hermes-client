@@ -47,9 +47,9 @@ set -euo pipefail
 # symlink, and OpenShell matches real paths.
 LLM_BINARIES=(/usr/bin/python3.13 /usr/bin/curl)
 KEY_ENV=HERMES_LLM_API_KEY
-# What may call Rancher with its token: the CLI, and kubectl, which reaches
-# downstream clusters through Rancher's /k8s/clusters/<id> proxy.
-RANCHER_BINARIES=(/usr/local/bin/rancher /usr/local/bin/kubectl)
+# What may call Rancher with its token: the CLI, and kubectl and helm, which
+# reach downstream clusters through Rancher's /k8s/clusters/<id> proxy.
+RANCHER_BINARIES=(/usr/local/bin/rancher /usr/local/bin/kubectl /usr/local/bin/helm)
 RANCHER_KEY_ENV=RANCHER_CLI_TOKEN
 
 log() { printf '%s hermes-client: %s\n' "$(date -u +%FT%TZ)" "$*"; }
