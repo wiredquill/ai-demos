@@ -156,9 +156,11 @@ questions:
   label: Skin under lockdown
   group: Hermes options
   type: enum
-  default: mono
+  default: suse-dark
   show_if: "profile=lockdown"
   options:
+    - suse-dark
+    - suse-light
     - default
     - ares
     - mono
@@ -169,16 +171,18 @@ questions:
     - sisyphus
     - charizard
   description: >-
-    The terminal's look for this profile; the defaults make each profile easy to tell apart
-    (lockdown mono, research poseidon, developer slate, dangerous charizard).
-    Built-in Hermes skins, plus any shipped in the image's /opt/hermes/skins.
+    The terminal's look for this profile. suse-dark and suse-light are SUSE brand skins (suse-dark for dark
+    terminals, the default); the rest are built-in Hermes skins. The session text below names the profile whatever
+    the skin.
 - variable: hermes.skins.research
   label: Skin under research
   group: Hermes options
   type: enum
-  default: poseidon
+  default: suse-dark
   show_if: "profile=research"
   options:
+    - suse-dark
+    - suse-light
     - default
     - ares
     - mono
@@ -192,9 +196,11 @@ questions:
   label: Skin under developer
   group: Hermes options
   type: enum
-  default: slate
+  default: suse-dark
   show_if: "profile=developer"
   options:
+    - suse-dark
+    - suse-light
     - default
     - ares
     - mono
@@ -208,9 +214,11 @@ questions:
   label: Skin under dangerous
   group: Hermes options
   type: enum
-  default: charizard
+  default: suse-dark
   show_if: "profile=dangerous"
   options:
+    - suse-dark
+    - suse-light
     - default
     - ares
     - mono
@@ -220,12 +228,21 @@ questions:
     - poseidon
     - sisyphus
     - charizard
+- variable: hermes.session.enabled
+  label: Show the session in the terminal
+  group: Hermes options
+  type: boolean
+  default: true
+  description: >-
+    Puts the profile in the prompt (<code>research ❯</code>), the response header (<code>Hermes · research</code>)
+    and the browser tab title, and starts with a welcome line saying what the profile allows and its approvals
+    mode and cluster access. The branding fields below win over these.
 - variable: hermes.branding.enabled
   label: Customize branding
   group: Hermes options
   type: boolean
   default: true
-  description: Replace the skin's text. Blank fields keep the skin's own; colors and spinners stay the skin's.
+  description: Replace the skin's text. Blank fields keep the skin's own (or the session's); colors and spinners stay the skin's.
 - variable: hermes.branding.agentName
   label: Agent name
   group: Hermes options

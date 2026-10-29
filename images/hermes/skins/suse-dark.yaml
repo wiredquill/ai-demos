@@ -1,0 +1,42 @@
+name: suse-dark
+description: SUSE brand dark theme - Pine, Jungle and Mint on dark terminals
+colors:
+  banner_border: "#30ba78"
+  banner_title: "#90ebcd"
+  banner_accent: "#30ba78"
+  banner_dim: "#00bda7"
+  banner_text: "#efefef"
+  ui_accent: "#30ba78"
+  ui_label: "#90ebcd"
+  ui_ok: "#42d29f"
+  ui_error: "#ff5a2b"
+  ui_warn: "#ffb184"
+  prompt: "#efefef"
+  input_rule: "#008657"
+  response_border: "#30ba78"
+  status_bar_bg: "#0c322c"
+  status_bar_text: "#efefef"
+  status_bar_strong: "#90ebcd"
+  status_bar_dim: "#999999"
+  status_bar_good: "#42d29f"
+  status_bar_warn: "#ffb184"
+  status_bar_bad: "#fe7c3f"
+  status_bar_critical: "#ff5a2b"
+  session_label: "#90ebcd"
+  session_border: "#008657"
+  completion_menu_bg: "#0c322c"
+  completion_menu_current_bg: "#025937"
+  selection_bg: "#025937"
+  shell_dollar: "#81aefc"
+  voice_status_bg: "#0c322c"
+branding:
+  agent_name: "SUSE Hermes"
+  welcome: "Welcome to SUSE Hermes. Type your message or /help for commands."
+  goodbye: "Choice Happens."
+  response_label: " Hermes "
+  prompt_symbol: "❯"
+  help_header: "Available commands"
+tool_prefix: "│"
+customCSS: |
+  @import url("https://fonts.googleapis.com/css2?family=SUSE:wght@300;400;500;600&display=swap");
+  body { font-family: "SUSE", sans-serif; }

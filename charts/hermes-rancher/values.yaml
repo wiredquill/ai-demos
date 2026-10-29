@@ -57,16 +57,27 @@ model:
 
 # Hermes itself, on the form's "Hermes options" page.
 hermes:
-  # Display skin for each profile, so the terminal shows how open the sandbox
-  # is. Built-ins: default, ares, mono, slate, daylight, warm-lightmode,
-  # poseidon, sisyphus, charizard. Skins in the image's /opt/hermes/skins work
-  # too.
+  # Display skin for each profile. SUSE brand skins (in the image's
+  # /opt/hermes/skins): suse-dark, suse-light. Hermes built-ins: default, ares,
+  # mono, slate, daylight, warm-lightmode, poseidon, sisyphus, charizard.
   skins:
-    lockdown: mono
-    research: poseidon
-    developer: slate
-    dangerous: charizard
-  # Replace the skin's text; blank keeps the skin's own.
+    lockdown: suse-dark
+    research: suse-dark
+    developer: suse-dark
+    dangerous: suse-dark
+  # Words that say which session this is, whatever the skin: the profile in
+  # the prompt ("research ❯"), the response header and the browser tab title,
+  # and a welcome line with what the profile allows, its approvals mode and
+  # the cluster access, e.g. "Research session: read-only web (GET) to docs
+  # sites. Approvals: smart." The branding fields below win over these.
+  session:
+    enabled: true
+    welcome:
+      lockdown: "Lockdown session: no network beyond the model."
+      research: "Research session: read-only web (GET) to docs sites."
+      developer: "Developer session: GitHub (clone, push, pull requests) and PyPI."
+      dangerous: "DANGEROUS session: open internet, demo use only."
+  # Replace the skin's text; blank keeps the skin's own (or the session's).
   branding:
     enabled: true
     agentName: "Hermes for Rancher"  # banner title and status display

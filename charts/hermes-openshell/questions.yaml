@@ -160,6 +160,8 @@ questions:
   default: mono
   show_if: "profile=lockdown"
   options:
+    - suse-dark
+    - suse-light
     - default
     - ares
     - mono
@@ -172,7 +174,7 @@ questions:
   description: >-
     The terminal's look for this profile; the defaults make each profile easy to tell apart
     (lockdown mono, research poseidon, developer slate, dangerous charizard).
-    Built-in Hermes skins, plus any shipped in the image's /opt/hermes/skins.
+    suse-dark and suse-light are SUSE brand skins (dark and light terminals); the rest are built-in Hermes skins.
 - variable: hermes.skins.research
   label: Skin under research
   group: Hermes options
@@ -180,6 +182,8 @@ questions:
   default: poseidon
   show_if: "profile=research"
   options:
+    - suse-dark
+    - suse-light
     - default
     - ares
     - mono
@@ -196,6 +200,8 @@ questions:
   default: slate
   show_if: "profile=developer"
   options:
+    - suse-dark
+    - suse-light
     - default
     - ares
     - mono
@@ -212,6 +218,8 @@ questions:
   default: charizard
   show_if: "profile=dangerous"
   options:
+    - suse-dark
+    - suse-light
     - default
     - ares
     - mono
@@ -221,12 +229,21 @@ questions:
     - poseidon
     - sisyphus
     - charizard
+- variable: hermes.session.enabled
+  label: Show the session in the terminal
+  group: Hermes options
+  type: boolean
+  default: true
+  description: >-
+    Puts the profile in the prompt (<code>research ❯</code>), the response header (<code>Hermes · research</code>)
+    and the browser tab title, and starts with a welcome line saying what the profile allows and its approvals
+    mode. The branding fields below win over these.
 - variable: hermes.branding.enabled
   label: Customize branding
   group: Hermes options
   type: boolean
   default: false
-  description: Replace the skin's text. Blank fields keep the skin's own; colors and spinners stay the skin's.
+  description: Replace the skin's text. Blank fields keep the skin's own (or the session's); colors and spinners stay the skin's.
 - variable: hermes.branding.agentName
   label: Agent name
   group: Hermes options

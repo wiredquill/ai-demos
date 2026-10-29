@@ -193,12 +193,12 @@ else
     log "no Rancher token in $RANCHER_TOKEN_FILE: the rancher CLI in the sandbox has no access"
   fi
   # The chart's Hermes options and OpenTelemetry go on to the sandbox by name:
-  # skin, branding and cron job for hermes-sandbox-start; OTEL_* and
+  # skin, title, branding and cron job for hermes-sandbox-start; OTEL_* and
   # HERMES_OTEL_* for the image's sitecustomize.py. (Never every HERMES_*: the
   # API key passes through this environment.)
   for v in $(compgen -e); do
     case $v in
-      OTEL_*|HERMES_OTEL_*|HERMES_SKIN|HERMES_BRANDING_*|HERMES_CRON_*|HERMES_PLATFORM_*)
+      OTEL_*|HERMES_OTEL_*|HERMES_SKIN|HERMES_TITLE|HERMES_BRANDING_*|HERMES_CRON_*|HERMES_PLATFORM_*)
         args+=(--env "$v=${!v}") ;;
     esac
   done
