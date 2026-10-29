@@ -13,7 +13,7 @@ spec:
     Intelligent Employee Support and Policy Management served by SUSE Ollama
     (llama3.2), with full OpenLIT observability into SUSE Observability.
 
-    Seven components, seven pods:
+    Eight components, seven pods (the topology component is a CronJob):
       - ollama        SUSE Ollama (Application Collection 1.91.0), GPU
       - qdrant        SUSE AI Qdrant vector database
       - opensearch    OpenSearch search engine (Application Collection 3.9.0)
@@ -21,11 +21,15 @@ spec:
       - hr-assistant-handbook   Employee Handbook RAG app
       - hr-assistant-app        HR Assistant app
       - hr-assistant-load-gen   load generator + health-check emitter
+      - hr-assistant-topology   declares the SUSE AI topology up front
 
     Prerequisites on the target cluster: a node with an NVIDIA GPU + GPU
     operator, a default StorageClass (model store, Qdrant), and the shared
     SUSE AI OpenTelemetry collector (`opentelemetry-collector` in namespace
     `observability`, installed from the ai-observability-collector chart).
+    The topology component also needs SUSE Observability 2.12 or later with
+    the SUSE AI Declared Topology StackPack 1.0.0
+    (stackpacks/suse-ai-declared-topology).
   components:
     # Install everything into one target namespace. The apps reach the SUSE
     # charts by their Service names, so these release names are pinned:
@@ -142,3 +146,12 @@ spec:
       chartRepo: wiredquill-ai-demos
       chartVersion: "0.1.2"
       releaseName: load-gen
+    # Declares the topology above (apps -> ollama -> model, hr-policy-db ->
+    # qdrant / opensearch) so SUSE Observability shows it without waiting for
+    # traffic. The model name must match ollama's main model.
+    - chartName: hr-assistant-topology
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "0.1.0"
+      releaseName: topology
+      values:
+        model: llama3.2:latest

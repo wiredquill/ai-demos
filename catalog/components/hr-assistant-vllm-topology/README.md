@@ -21,7 +21,8 @@ After an uninstall they expire 15 minutes after the last refresh.
 
 This chart is one component of the `hr-assistant-vllm` SUSE AI Factory blueprint
 (`catalog/blueprints/hr-assistant-vllm-1-7-0.yaml`). Unlike the other
-components it does not vendor `charts/hr-assistant-vllm`.
+components it does not vendor `charts/hr-assistant-vllm`. The Ollama variant's
+`hr-assistant-topology` is a copy with Ollama defaults; keep the two in step.
 
 ## Prerequisite: the SUSE AI Declared Topology StackPack
 

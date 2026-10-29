@@ -1,0 +1,20 @@
+apiVersion: v2
+name: hr-assistant-topology
+description: 'HR Assistant (Ollama) component: declared SUSE AI topology. One of the components of the hr-assistant SUSE AI Factory blueprint.'
+type: application
+version: 0.1.0
+appVersion: 0.1.0
+keywords:
+- ai
+- llm
+- hr
+- demo
+- ollama
+- suse-ai-factory
+- observability
+maintainers:
+- name: SUSE AI Team
+  email: ai-team@suse.com
+home: https://github.com/wiredquill/ai-demos
+annotations:
+  catalog.cattle.io/display-name: HR Assistant (Ollama) - Declared topology

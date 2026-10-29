@@ -145,8 +145,10 @@ The all-in-one `hr-assistant-vllm` chart is unchanged for Rancher Apps installs.
 | `hr-assistant-handbook` | wiredquill-ai-demos 0.1.2 | `employee-handbook` | Employee Handbook |
 | `hr-assistant-app` | wiredquill-ai-demos 0.1.2 | `hr-assistant` | HR Assistant |
 | `hr-assistant-load-gen` | wiredquill-ai-demos 0.1.2 | `load-gen` | load generator + health-check emitter |
+| `hr-assistant-topology` | wiredquill-ai-demos 0.1.0 | `topology` | CronJob declaring the SUSE AI topology (1.2.0+) |
 
-That's seven components and seven pods. Ollama pulls its own models at startup,
+That's eight components and seven pods (1.1.0: seven components; 1.2.0 adds
+the topology component, a CronJob). Ollama pulls its own models at startup,
 from **Main Model** and an optional **Additional Model** on its form, so the
 all-in-one chart's model-puller Job isn't used. The republished `ollama` chart
 applies `catalog/charts/ollama/form-friendly-values.patch`:
@@ -225,9 +227,9 @@ images, moved to [wiredquill/openshell](https://github.com/wiredquill/openshell)
   - a default StorageClass;
   - the shared SUSE AI collector (`charts/ai-observability-collector`, Service
     `opentelemetry-collector` in namespace `observability`);
-  - for hr-assistant-vllm 1.7.0+, SUSE Observability 2.12 or later with the SUSE
-    AI Declared Topology StackPack 1.0.0 (`sts stackpack test-deploy -d
-    stackpacks/suse-ai-declared-topology`);
+  - for hr-assistant-vllm 1.7.0+ and hr-assistant 1.2.0+, SUSE Observability
+    2.12 or later with the SUSE AI Declared Topology StackPack 1.0.0
+    (`sts stackpack test-deploy -d stackpacks/suse-ai-declared-topology`);
   - pull secrets named `application-collection` and `suse-registry` in the target
     namespace, or set `hr.imagePullSecrets` in each form.
 
