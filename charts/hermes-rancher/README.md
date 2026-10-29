@@ -64,25 +64,49 @@ kubectl -n <ns> exec deploy/<release>-client -- \
 kubectl auth can-i --list --as system:serviceaccount:<ns>:<release>-platform | head
 ```
 
-### Planned: Rancher's API (`platform.via: rancher`)
+### Through Rancher (`platform.via: rancher`)
 
-`platform.via` is `kubernetes` for now; `rancher` is reserved for Rancher's
-agent CLI. Through Rancher (`https://<rancher>/k8s/clusters/<id>`, or the CLI's
-own API calls) the picture improves: Rancher's certificate is publicly trusted
-(Let's Encrypt on the lab's Rancher), so OpenShell can inspect the traffic.
-That allows:
+Instead of a ServiceAccount on this cluster, Hermes uses a Rancher API token,
+on every cluster Rancher lets that token's user into:
 
-- a provider for the Rancher host that holds a scoped Rancher token, so the
-  sandbox sees only a placeholder and the gateway injects the token (as the
-  model's API key is handled today);
-- `protocol: rest` with `access: read-only` for view, a second limit beside
-  Rancher's RBAC;
-- one rule for every downstream cluster Rancher manages, with Rancher's audit
-  log per user token.
+```yaml
+platform:
+  access: view
+  via: rancher
+  rancher:
+    url: https://rancher.example.com
+    existingSecret: rancher-cli   # key "token": access-key:secret, no scope
+```
 
-The CLI and its skill are already in the sandbox image (see Images); the
-route adds the provider, the rule for `/usr/local/bin/rancher`, and
-`RANCHER_CLI_URL`.
+- **The token's user is the limit.** Create a user for Hermes (Standard User)
+  with only the cluster roles it should have, and an API key with no scope as
+  that user. The chart creates no ServiceAccount and no `cluster-api` rule.
+- **The gateway holds the token.** The client binds it to Rancher's host as an
+  OpenShell provider (`<sandbox>-rancher`), as it does the model's key. The
+  sandbox's `RANCHER_CLI_TOKEN` is a placeholder the proxy swaps for the token
+  on requests to Rancher; only `/usr/local/bin/rancher` and
+  `/usr/local/bin/kubectl` may make them. Rancher's certificate must be
+  publicly trusted, since the proxy terminates this TLS to add the token.
+- **view is reads only, twice.** The provider's endpoint is `access:
+  read-only`, so the proxy refuses anything but GET/HEAD/OPTIONS (shown as
+  `DENIED POST ...` in the sandbox's supervisor log), and the CLI runs with
+  `RANCHER_CLI_READONLY`. operator lets writes through to Rancher's RBAC and
+  tells Hermes to use the CLI's `--dry-run`/`--apply` loop.
+- **kubectl goes through Rancher too.** At start the sandbox runs
+  `rancher-kubeconfig` (in `images/hermes-rancher`): it lists the clusters the
+  token can see from Rancher's `/v1` API and writes one context per cluster,
+  `https://<rancher>/k8s/clusters/<id>` with the placeholder token. Not
+  `rancher kubeconfig`, whose exec plugin mints a token per cluster (a POST,
+  refused under view). `rancher get clusters` reads through Rancher's `local`
+  cluster and is refused to users without access to it; the cluster list in
+  AGENTS.md comes from `rancher-kubeconfig` instead.
+- **Hermes knows it.** AGENTS.md names Rancher, the clusters (by name and id)
+  and the access, and the image carries the CLI's own agent skill.
+
+Tested on ai-4090 with a Standard User holding view roles on three clusters:
+`rancher get pods/nodes`, `rancher usage`, `rancher inspect cluster` and
+`kubectl get`/`top` work; Secrets are forbidden by Rancher; deletes and
+patches are refused by the proxy; curl can't reach Rancher.
 
 The model is reached through an OpenShell **provider**, not a policy rule. The
 client imports a custom provider profile (`<sandbox>-llm`) for the model's host

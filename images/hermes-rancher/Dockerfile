@@ -23,6 +23,8 @@ LABEL org.opencontainers.image.title="Hermes for Rancher" \
 
 # this branch's start script, which copies the skill (the base image may predate it)
 COPY images/hermes/hermes-sandbox-start /usr/local/bin/hermes-sandbox-start
+# kubectl contexts for every cluster the token can see, through Rancher
+COPY --chmod=755 images/hermes-rancher/rancher-kubeconfig /usr/local/bin/rancher-kubeconfig
 COPY images/hermes-rancher/rancher-linux-amd64.gz /tmp/rancher.gz
 USER 0
 # The skill is embedded in the binary; `skill install` writes it under

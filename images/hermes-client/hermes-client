@@ -189,6 +189,8 @@ else
     unset "$RANCHER_KEY_ENV"
     args+=(--provider "$RANCHER_PROVIDER" --env "RANCHER_CLI_URL=$RANCHER_URL")
     [ "$RANCHER_ACCESS" = read-only ] && args+=(--env RANCHER_CLI_READONLY=true)
+  elif [ -n "$RANCHER_URL" ]; then
+    log "no Rancher token in $RANCHER_TOKEN_FILE: the rancher CLI in the sandbox has no access"
   fi
   # The chart's Hermes options and OpenTelemetry go on to the sandbox by name:
   # skin, branding and cron job for hermes-sandbox-start; OTEL_* and
