@@ -299,35 +299,6 @@ questions:
   default: token-traffic
   show_if: "hermes.cron.enabled=true"
 
-- variable: platform.enabled
-  label: Cluster access for platform engineers
-  group: Platform engineering
-  type: boolean
-  default: false
-  description: >-
-    Give Hermes kubectl on this cluster, as a ServiceAccount of its own. The sandbox's policy gets one rule: kubectl may
-    reach the API server, nothing else may. Anyone who can open the terminal gets this access, so set Service Type to
-    ClusterIP (reached with kubectl port-forward by people allowed into this namespace) rather than NodePort.
-- variable: platform.access
-  label: Access
-  group: Platform engineering
-  type: enum
-  default: view
-  options:
-    - view
-    - operator
-  description: >-
-    view = read everything except Secrets. operator = view, plus restart and scale Deployments, StatefulSets and
-    DaemonSets, and delete Pods. Hermes is told to ask before any change.
-  show_if: "platform.enabled=true"
-- variable: platform.clusterName
-  label: Cluster name
-  group: Platform engineering
-  type: string
-  default: ""
-  description: "What Hermes calls the cluster. Blank = the Rancher cluster name, else the namespace."
-  show_if: "platform.enabled=true"
-
 - variable: observability.enabled
   label: Enable OpenTelemetry
   group: Observability

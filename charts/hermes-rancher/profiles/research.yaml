@@ -1,0 +1,41 @@
+# research: lockdown plus reading the web. Requests to the sites below are
+# limited to GET/HEAD/OPTIONS by the L7 proxy, so the agent can read pages and
+# APIs but can't post, push or sign up for anything. No package installs.
+version: 1
+filesystem_policy:
+  read_only:
+    - /usr
+    - /opt/hermes
+    - /lib
+    - /lib64
+    - /etc
+  read_write:
+    - /home/hermes
+    - /tmp
+    # pseudo-terminals for ttyd's hermes sessions (not in OpenShell's baseline)
+    - /dev/ptmx
+    - /dev/pts
+    - /dev/tty
+landlock:
+  compatibility: hard_requirement
+process:
+  run_as_user: "10001"
+  run_as_group: "10001"
+network_policies:
+  web-read:
+    name: web-read
+    endpoints:
+      - {host: "*.wikipedia.org", port: 443, protocol: rest, access: read-only, enforcement: enforce}
+      - {host: arxiv.org, port: 443, protocol: rest, access: read-only, enforcement: enforce}
+      - {host: export.arxiv.org, port: 443, protocol: rest, access: read-only, enforcement: enforce}
+      - {host: github.com, port: 443, protocol: rest, access: read-only, enforcement: enforce}
+      - {host: api.github.com, port: 443, protocol: rest, access: read-only, enforcement: enforce}
+      - {host: raw.githubusercontent.com, port: 443, protocol: rest, access: read-only, enforcement: enforce}
+      - {host: docs.python.org, port: 443, protocol: rest, access: read-only, enforcement: enforce}
+      - {host: "*.suse.com", port: 443, protocol: rest, access: read-only, enforcement: enforce}
+      - {host: "*.opensuse.org", port: 443, protocol: rest, access: read-only, enforcement: enforce}
+      - {host: docs.nvidia.com, port: 443, protocol: rest, access: read-only, enforcement: enforce}
+    # Hermes's web tools (python) and the curl its terminal tool runs
+    binaries:
+      - path: /usr/bin/python3.13
+      - path: /usr/bin/curl

@@ -1,0 +1,62 @@
+# developer: research plus the things a coding agent needs: clone, push and
+# open PRs on GitHub, and pip installs from PyPI into the home directory.
+# Still a fixed list of hosts and binaries; everything else stays denied.
+version: 1
+filesystem_policy:
+  read_only:
+    - /usr
+    - /opt/hermes
+    - /lib
+    - /lib64
+    - /etc
+  read_write:
+    - /home/hermes
+    - /tmp
+    - /var/tmp
+    # pseudo-terminals for ttyd's hermes sessions (not in OpenShell's baseline)
+    - /dev/ptmx
+    - /dev/pts
+    - /dev/tty
+landlock:
+  compatibility: hard_requirement
+process:
+  run_as_user: "10001"
+  run_as_group: "10001"
+network_policies:
+  web-read:
+    name: web-read
+    endpoints:
+      - {host: "*.wikipedia.org", port: 443, protocol: rest, access: read-only, enforcement: enforce}
+      - {host: arxiv.org, port: 443, protocol: rest, access: read-only, enforcement: enforce}
+      - {host: export.arxiv.org, port: 443, protocol: rest, access: read-only, enforcement: enforce}
+      - {host: docs.python.org, port: 443, protocol: rest, access: read-only, enforcement: enforce}
+      - {host: "*.suse.com", port: 443, protocol: rest, access: read-only, enforcement: enforce}
+      - {host: "*.opensuse.org", port: 443, protocol: rest, access: read-only, enforcement: enforce}
+      - {host: docs.nvidia.com, port: 443, protocol: rest, access: read-only, enforcement: enforce}
+    binaries:
+      - path: /usr/bin/python3.13
+      - path: /usr/bin/curl
+  github:
+    name: github
+    endpoints:
+      # read-write = GET/HEAD/OPTIONS + POST/PUT/PATCH: git push (POST
+      # git-receive-pack) and creating issues/PRs, but no DELETE (no deleting
+      # repos or branches through the API)
+      - {host: github.com, port: 443, protocol: rest, access: read-write, enforcement: enforce}
+      - {host: api.github.com, port: 443, protocol: rest, access: read-write, enforcement: enforce}
+      - {host: raw.githubusercontent.com, port: 443, protocol: rest, access: read-only, enforcement: enforce}
+      - {host: codeload.github.com, port: 443, protocol: rest, access: read-only, enforcement: enforce}
+    binaries:
+      - path: /usr/bin/python3.13
+      - path: /usr/bin/curl
+      - path: /usr/bin/git
+      # git's HTTPS helper; the libexec path differs between distributions
+      - path: /usr/libexec/git*/git-remote-http*
+  pypi:
+    name: pypi
+    endpoints:
+      - {host: pypi.org, port: 443, protocol: rest, access: read-only, enforcement: enforce}
+      - {host: files.pythonhosted.org, port: 443, protocol: rest, access: read-only, enforcement: enforce}
+    # pip runs as python
+    binaries:
+      - path: /usr/bin/python3.13

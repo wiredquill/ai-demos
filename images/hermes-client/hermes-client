@@ -7,7 +7,7 @@
 #      model's host and, with an API key, binds the key to that host (the sandbox
 #      only ever sees a placeholder); then create the sandbox from
 #      $SANDBOX_IMAGE under the profile's policy
-#   3b. with cluster access ($CLUSTER_DIR holds a ServiceAccount token): upload
+#   3b. with cluster access ($CLUSTER_DIR holds a ServiceAccount token): write
 #      a kubeconfig for $CLUSTER_SERVER to ~/.kube/config in the sandbox
 #   4. forward 0.0.0.0:$FORWARD_PORT -> ttyd on 127.0.0.1:$TARGET_PORT inside the
 #      sandbox, until the pod stops; then delete the sandbox.
@@ -153,17 +153,15 @@ else
 fi
 
 # -- 3b. cluster access ----------------------------------------------------------------
-# `sandbox create --upload` can't be combined with a command, so upload once the
-# sandbox is up, and again into a reused one (the token may have changed).
-# kubectl reads the file per call, so Hermes starting first doesn't matter.
+# Written once the sandbox is up, and again into a reused one (the token may
+# have changed); kubectl reads it per call, so Hermes starting first doesn't
+# matter. Piped through `sandbox exec`, so the token never lands on this pod's
+# disk (`sandbox upload` would also need ssh and git, which this image lacks).
 # The policy's cluster-api rule passes this TLS through untouched (the
 # supervisor doesn't trust the cluster CA), so kubectl checks the API server
 # against ca.crt itself and the token has to be in the sandbox.
-if [ -s "$CLUSTER_DIR/token" ]; then
-  kubeconfig=$HOME/kubeconfig
-  (
-    umask 077
-    cat > "$kubeconfig" <<EOF
+kubeconfig() {
+  cat <<EOF
 apiVersion: v1
 kind: Config
 clusters:
@@ -182,18 +180,19 @@ contexts:
       user: hermes
 current-context: $CLUSTER_NAME
 EOF
-  )
-  log "uploading kubeconfig for $CLUSTER_SERVER (${HERMES_PLATFORM_ACCESS:-view} access)"
-  uploaded=false
+}
+if [ -s "$CLUSTER_DIR/token" ]; then
+  log "writing kubeconfig for $CLUSTER_SERVER (${HERMES_PLATFORM_ACCESS:-view} access)"
+  written=false
   for _ in $(seq 60); do
-    if openshell sandbox upload "$SANDBOX_NAME" "$kubeconfig" /home/hermes/.kube/config >/dev/null 2>&1; then
-      uploaded=true
+    if kubeconfig | openshell sandbox exec "$SANDBOX_NAME" --no-tty --timeout 30 -- \
+        sh -c 'umask 077 && mkdir -p /home/hermes/.kube && cat > /home/hermes/.kube/config' >/dev/null 2>&1; then
+      written=true
       break
     fi
     sleep 3
   done
-  rm -f "$kubeconfig"
-  $uploaded || log "could not upload the kubeconfig; kubectl in the sandbox has no cluster"
+  $written || log "could not write the kubeconfig; kubectl in the sandbox has no cluster"
 fi
 
 # -- 4. forward until stopped ---------------------------------------------------------

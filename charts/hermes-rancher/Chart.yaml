@@ -1,0 +1,26 @@
+apiVersion: v2
+name: hermes-rancher
+description: 'Hermes for Rancher: Hermes Agent (Nous Research) for platform engineers, in an NVIDIA OpenShell sandbox on a SUSE OS, with kubectl on the cluster under a ServiceAccount of its own (view or operator). Install next to the OpenShell gateway app; also the hermes-rancher SUSE AI Factory blueprint.'
+type: application
+version: 0.1.0
+appVersion: 0.19.0
+keywords:
+- ai
+- agent
+- hermes
+- openshell
+- sandbox
+- rancher
+- kubernetes
+- platform-engineering
+- suse-ai-factory
+maintainers:
+- name: WiredQuill
+  url: https://github.com/wiredquill
+home: https://github.com/wiredquill/ai-demos
+sources:
+- https://github.com/NousResearch/hermes-agent
+- https://github.com/NVIDIA/OpenShell
+annotations:
+  catalog.cattle.io/display-name: Hermes for Rancher
+  catalog.cattle.io/release-name: hermes-rancher

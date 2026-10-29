@@ -1,6 +1,5 @@
-{{- if .Values.platform.enabled }}
-{{- $pl := include "hermes-openshell.platform" . | fromJson }}
-{{- $binding := printf "%s-%s-platform" .Release.Namespace (include "hermes-openshell.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- $pl := include "hermes-rancher.platform" . | fromJson }}
+{{- $binding := printf "%s-%s-platform" .Release.Namespace (include "hermes-rancher.fullname" .) | trunc 63 | trimSuffix "-" }}
 # Hermes's own identity on the cluster. Only the client pod mounts its token,
 # to build the kubeconfig it uploads into the sandbox; no pod runs as it.
 apiVersion: v1
@@ -8,7 +7,7 @@ kind: ServiceAccount
 metadata:
   name: {{ $pl.serviceAccount }}
   labels:
-    {{- include "hermes-openshell.labels" . | nindent 4 }}
+    {{- include "hermes-rancher.labels" . | nindent 4 }}
 automountServiceAccountToken: false
 ---
 apiVersion: v1
@@ -16,7 +15,7 @@ kind: Secret
 metadata:
   name: {{ $pl.serviceAccount }}-token
   labels:
-    {{- include "hermes-openshell.labels" . | nindent 4 }}
+    {{- include "hermes-rancher.labels" . | nindent 4 }}
   annotations:
     kubernetes.io/service-account.name: {{ $pl.serviceAccount }}
 type: kubernetes.io/service-account-token
@@ -27,7 +26,7 @@ kind: ClusterRoleBinding
 metadata:
   name: {{ $binding }}-view
   labels:
-    {{- include "hermes-openshell.labels" . | nindent 4 }}
+    {{- include "hermes-rancher.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -45,7 +44,7 @@ kind: ClusterRole
 metadata:
   name: {{ $binding }}-operator
   labels:
-    {{- include "hermes-openshell.labels" . | nindent 4 }}
+    {{- include "hermes-rancher.labels" . | nindent 4 }}
 rules:
   - apiGroups: [apps]
     resources: [deployments, statefulsets, daemonsets]
@@ -62,7 +61,7 @@ kind: ClusterRoleBinding
 metadata:
   name: {{ $binding }}-operator
   labels:
-    {{- include "hermes-openshell.labels" . | nindent 4 }}
+    {{- include "hermes-rancher.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -71,5 +70,4 @@ subjects:
   - kind: ServiceAccount
     name: {{ $pl.serviceAccount }}
     namespace: {{ .Release.Namespace }}
-{{- end }}
 {{- end }}
