@@ -89,11 +89,10 @@ questions:
   required: true
   options:
     - suse
-    - opensuse
     - custom
   description: >-
-    suse = SUSE BCI 16 (ghcr.io/wiredquill/hermes-openshell),
-    opensuse = openSUSE Leap 16.0 (ghcr.io/wiredquill/hermes-openshell-opensuse),
+    suse = SUSE BCI 16 with kubectl and Rancher's agent CLI
+    (ghcr.io/wiredquill/hermes-rancher, amd64 nodes only),
     custom = your own image below. Changing it recreates the sandbox.
 - variable: sandbox.customImage
   label: Custom sandbox image
@@ -102,7 +101,7 @@ questions:
   default: ""
   show_if: "sandbox.image=custom"
   required: true
-  description: Built like images/hermes in github.com/wiredquill/ai-demos (hermes, ttyd, hermes-sandbox-start, user 10001).
+  description: Built like images/hermes-rancher in github.com/wiredquill/ai-demos (hermes, ttyd, hermes-sandbox-start, kubectl, rancher, user 10001).
 - variable: sandbox.name
   label: Sandbox name
   group: Sandbox

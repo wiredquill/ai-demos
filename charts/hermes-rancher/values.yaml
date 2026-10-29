@@ -21,13 +21,14 @@ sandbox:
   # Sandbox name in OpenShell (`openshell sandbox get <name>`). The sandbox pod,
   # which runs the workload and the OpenShell supervisor, is named after it.
   name: hermes-rancher
-  # The SUSE OS the sandbox runs: suse | opensuse | custom
+  # The sandbox image: suse | custom. suse is images/hermes-rancher: the
+  # hermes-openshell image (SUSE BCI 16) plus Rancher's agent CLI and its
+  # skill; linux/amd64 only, as the CLI is.
   image: suse
   images:
-    suse: ghcr.io/wiredquill/hermes-openshell:latest              # SUSE BCI 16
-    opensuse: ghcr.io/wiredquill/hermes-openshell-opensuse:latest # openSUSE Leap 16.0
-  # Used when image is "custom". Must be built like images/hermes (hermes,
-  # ttyd and hermes-sandbox-start, user 10001, home /home/hermes).
+    suse: ghcr.io/wiredquill/hermes-rancher:latest
+  # Used when image is "custom". Must be built like images/hermes-rancher
+  # (hermes, ttyd, hermes-sandbox-start, kubectl, rancher, user 10001).
   customImage: ""
   # Request a GPU for the sandbox (needs a GPU node and RuntimeClass).
   gpu: false

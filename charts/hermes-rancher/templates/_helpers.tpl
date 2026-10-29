@@ -27,7 +27,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if eq .Values.sandbox.image "custom" -}}
 {{- required "sandbox.customImage is required when sandbox.image is custom" .Values.sandbox.customImage -}}
 {{- else -}}
-{{- required (printf "unknown sandbox.image %q (suse, opensuse or custom)" .Values.sandbox.image) (get .Values.sandbox.images .Values.sandbox.image) -}}
+{{- required (printf "unknown sandbox.image %q (suse or custom)" .Values.sandbox.image) (get .Values.sandbox.images .Values.sandbox.image) -}}
 {{- end -}}
 {{- end -}}
 

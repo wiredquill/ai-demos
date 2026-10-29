@@ -80,8 +80,9 @@ That allows:
 - one rule for every downstream cluster Rancher manages, with Rancher's audit
   log per user token.
 
-The CLI binary goes in `images/hermes` next to kubectl, and its path into the
-rule's `binaries`.
+The CLI and its skill are already in the sandbox image (see Images); the
+route adds the provider, the rule for `/usr/local/bin/rancher`, and
+`RANCHER_CLI_URL`.
 
 The model is reached through an OpenShell **provider**, not a policy rule. The
 client imports a custom provider profile (`<sandbox>-llm`) for the model's host
@@ -188,8 +189,15 @@ null`) and drops their token counts; `sitecustomize.py` patches that.
 
 | Image | Built from |
 |---|---|
-| `ghcr.io/wiredquill/hermes-openshell` | `images/hermes/Dockerfile` (SUSE BCI 16) |
-| `ghcr.io/wiredquill/hermes-openshell-opensuse` | same, `--build-arg BASE=registry.opensuse.org/opensuse/leap:16.0` |
+| `ghcr.io/wiredquill/hermes-rancher` (sandbox) | `images/hermes-rancher/Dockerfile`: the `hermes-openshell` image (`images/hermes`, SUSE BCI 16) of the same commit, plus Rancher's agent CLI and its skill. linux/amd64 only |
 | `ghcr.io/wiredquill/hermes-openshell-client` | `images/hermes-client/Dockerfile` |
 
-Build from the repository root; both Dockerfiles copy their scripts from `images/`.
+Build from the repository root; the Dockerfiles copy their scripts from `images/`.
+The workflow `build-hermes-openshell.yml` builds `hermes-rancher` after the
+Hermes images, on the sandbox image it just pushed.
+
+The `rancher` CLI (v0.1.0-alpha.7) comes from a private repository, so its
+linux/amd64 binary is kept gzipped in `images/hermes-rancher/`, checked
+against a pinned SHA-256 at build. The image also extracts the CLI's agent
+skill (`rancher skill install`) to `/opt/hermes/skills/rancher`, which the
+sandbox copies into `~/.hermes/skills` at start.

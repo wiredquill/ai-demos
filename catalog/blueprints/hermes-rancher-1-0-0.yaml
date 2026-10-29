@@ -11,8 +11,8 @@ spec:
   version: 1.0.0
   description: |
     Nous Research's Hermes Agent for platform engineers: an NVIDIA OpenShell
-    0.1.5 sandbox on SUSE BCI 16 with kubectl on the cluster it runs on, as a
-    ServiceAccount of its own. view access (default) reads everything except
+    0.1.5 sandbox on SUSE BCI 16 (amd64) with kubectl on the cluster it runs
+    on, as a ServiceAccount of its own, and Rancher's agent CLI with its skill. view access (default) reads everything except
     Secrets; operator adds restarting and scaling workloads and deleting Pods.
     The sandbox's policy lets only kubectl reach the API server, and the
     research profile allows read-only access to docs sites besides. The model

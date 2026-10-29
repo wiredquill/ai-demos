@@ -74,6 +74,13 @@ mkdir -p "$HOME/.hermes/skins"
 for f in /opt/hermes/skins/*.yaml; do
   [ -e "$f" ] && cp "$f" "$HOME/.hermes/skins/"
 done
+
+# Skills shipped in an image built on this one (hermes-rancher: the rancher
+# CLI's skill); the image's copy wins, so it matches the binary.
+mkdir -p "$HOME/.hermes/skills"
+for d in /opt/hermes/skills/*/; do
+  [ -e "$d" ] && cp -r "$d" "$HOME/.hermes/skills/"
+done
 if compgen -e | grep -q '^HERMES_BRANDING_'; then
   env -u OTEL_EXPORTER_OTLP_ENDPOINT /opt/hermes/bin/python - <<'PY'
 import copy
