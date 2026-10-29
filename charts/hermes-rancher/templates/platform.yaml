@@ -35,6 +35,55 @@ subjects:
   - kind: ServiceAccount
     name: {{ $pl.serviceAccount }}
     namespace: {{ .Release.Namespace }}
+---
+# view is for namespaced resources; a platform engineer also asks about the
+# cluster's own: nodes, storage, CRDs, and `kubectl top`
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $binding }}-cluster-read
+  labels:
+    {{- include "hermes-rancher.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: [nodes, persistentvolumes]
+    verbs: [get, list, watch]
+  - apiGroups: [storage.k8s.io]
+    resources: [storageclasses, csidrivers, csinodes, volumeattachments]
+    verbs: [get, list, watch]
+  - apiGroups: [apiextensions.k8s.io]
+    resources: [customresourcedefinitions]
+    verbs: [get, list, watch]
+  - apiGroups: [apiregistration.k8s.io]
+    resources: [apiservices]
+    verbs: [get, list, watch]
+  - apiGroups: [scheduling.k8s.io]
+    resources: [priorityclasses]
+    verbs: [get, list, watch]
+  - apiGroups: [node.k8s.io]
+    resources: [runtimeclasses]
+    verbs: [get, list, watch]
+  - apiGroups: [networking.k8s.io]
+    resources: [ingressclasses]
+    verbs: [get, list, watch]
+  - apiGroups: [metrics.k8s.io]
+    resources: [nodes, pods]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $binding }}-cluster-read
+  labels:
+    {{- include "hermes-rancher.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $binding }}-cluster-read
+subjects:
+  - kind: ServiceAccount
+    name: {{ $pl.serviceAccount }}
+    namespace: {{ .Release.Namespace }}
 {{- if eq $pl.access "operator" }}
 ---
 # operator: day-2 fixes on top of view. `kubectl rollout restart` patches the

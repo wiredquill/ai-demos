@@ -26,7 +26,7 @@ browser ──port-forward──▶ client pod (openshell CLI) ══ gateway (m
 
 | Access | RBAC |
 |---|---|
-| **view** (default) | the built-in `view` ClusterRole: read everything except Secrets |
+| **view** (default) | the built-in `view` ClusterRole (namespaced resources, no Secrets), plus `<ns>-<release>-cluster-read`: nodes, PVs, StorageClasses and other storage objects, CRDs, APIServices, PriorityClasses, RuntimeClasses, IngressClasses, and `kubectl top` |
 | **operator** | `view`, plus `patch` on Deployments/StatefulSets/DaemonSets (`kubectl rollout restart`), `get/patch/update` on their `scale`, and `delete` on Pods |
 
 How the access gets to the agent, and what fences it:

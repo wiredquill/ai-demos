@@ -94,7 +94,8 @@ hermes:
 # ClusterIP: reached with kubectl port-forward, so only by people allowed into
 # this namespace.
 platform:
-  # view = read everything but Secrets (the built-in "view" ClusterRole).
+  # view = read everything but Secrets (the built-in "view" ClusterRole, plus
+  # nodes, storage, CRDs and `kubectl top`).
   # operator = view, plus restart and scale Deployments, StatefulSets and
   # DaemonSets, and delete Pods.
   access: view
