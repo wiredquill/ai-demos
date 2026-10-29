@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "topology.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "topology.labels" . | nindent 4 }}
+data:
+  payload.json: |
+    {{- include "topology.payload" . | nindent 4 }}
+  # Stamps the data points and posts them to the collector's OTLP/HTTP
+  # receiver. Uses only curl and shell, so it runs on bci-base.
+  push.sh: |
+    set -eu
+    NOW="$(date +%s)000000000"
+    STATUS=$(sed "s/__NOW__/$NOW/g" /topology/payload.json |
+      curl -sS -o /dev/null -w '%{http_code}' -X POST -H "Content-Type: application/json" \
+        --data-binary @- "$OTLP_ENDPOINT/v1/metrics" || echo 000)
+    case "$STATUS" in
+      2??) echo "Declared topology sent to $OTLP_ENDPOINT (HTTP $STATUS)" ;;
+      *) echo "ERROR: $OTLP_ENDPOINT/v1/metrics returned HTTP $STATUS" >&2; exit 1 ;;
+    esac

@@ -1,0 +1,45 @@
+# Refreshes the declared topology; the StackPack expires elements 15 minutes
+# after their last refresh, so an uninstalled release's topology goes away.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "topology.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "topology.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.refreshSchedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            {{- include "topology.labels" . | nindent 12 }}
+            app.component: topology
+        spec:
+          {{- include "topology.podSpec" . | nindent 10 }}
+---
+# Posts the topology right away instead of waiting for the first refresh.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "topology.fullname" . }}-init
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    {{- include "topology.labels" . | nindent 4 }}
+spec:
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        {{- include "topology.labels" . | nindent 8 }}
+        app.component: topology
+    spec:
+      {{- include "topology.podSpec" . | nindent 6 }}

@@ -214,7 +214,7 @@ topology sent components=5 relations=4 status=200
 
 ## 7. SUSE AI Factory blueprint
 
-The `hr-assistant` blueprint (`catalog/blueprints/hr-assistant-1-0-0.yaml`) deploys
+The `hr-assistant` blueprint (`catalog/blueprints/hr-assistant-1-2-0.yaml`) deploys
 this demo as SUSE's `ollama`, `qdrant` and `opensearch` charts plus four app
 components. Each app pod has a thin chart in `charts/hr-assistant-<component>`,
 which vendors this chart (alias `hr`) with only its own workload switched on:

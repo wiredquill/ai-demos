@@ -1,0 +1,64 @@
+# One SUSE AI component per data point of the suse_ai_declared_component
+# gauge. Applications send it to their OpenTelemetry collector (see
+# catalog/components/hr-assistant-vllm-topology) instead of waiting for the
+# SUSE AI collector to infer the component from live spans.
+#
+# The identifier is the SUSE AI collector's own (urn:suse-ai:product:<type>:<name>),
+# so a declared component and the one the SUSE AI StackPack syncs are one
+# node. The SUSE AI sync is an external topology sync, so its name, type,
+# layer and domain win; this mapping only adds tags, and keeps the component
+# (and the relations below) alive while there is no traffic.
+nodes:
+  - _type: "OtelComponentMapping"
+    name: "Declared SUSE AI component"
+    description: "Creates a SUSE AI component an application declares up front"
+    identifier: "urn:stackpack:suse-ai-declared-topology:shared:otel-component-mapping:declared-component"
+    input:
+      signal:
+        - "METRICS"
+      resource:
+        condition: "'suse.ai.topology.declared' in resource.attributes"
+        scope:
+          condition: "scope.name == 'suse-ai-declared-topology'"
+          metric:
+            condition: "metric.name == 'suse_ai_declared_component'"
+            datapoint:
+              condition: "'type' in datapoint.attributes && 'name' in datapoint.attributes"
+              action: "'CREATE'"
+    vars:
+      - name: "type"
+        value: "datapoint.attributes['type']"
+      - name: "name"
+        value: "datapoint.attributes['name']"
+      # The SUSE AI StackPack component type, e.g. inference-engine.vllm,
+      # which carries the product's metric bindings and monitors.
+      - name: "typeName"
+        value: >-
+          'type_name' in datapoint.attributes && datapoint.attributes['type_name'] != '' ?
+          datapoint.attributes['type_name'] :
+          datapoint.attributes['type']
+    output:
+      identifier: "'urn:suse-ai:product:' + vars.type + ':' + vars.name"
+      name: "vars.name"
+      typeName: "vars.typeName"
+      required:
+        tags:
+          - source: "'suse-ai-declared-topology'"
+            target: "stackpack"
+          - source: "'declared'"
+            target: "suse.ai.topology.source"
+          - source: "vars.type"
+            target: "suse.ai.component.type"
+      optional:
+        tags:
+          - source: "resource.attributes['k8s.namespace.name']"
+            target: "k8s.namespace.name"
+          - source: "resource.attributes['k8s.cluster.name']"
+            target: "k8s.cluster.name"
+          - source: "resource.attributes['k8s.cluster.name']"
+            target: "cluster-name"
+    # Senders refresh every few minutes; an uninstalled application's
+    # components go away 15 minutes after its last refresh.
+    expireAfter: 900000
+    rank:
+      specificity: 250

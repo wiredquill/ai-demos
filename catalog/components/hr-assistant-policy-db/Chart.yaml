@@ -3,11 +3,11 @@ apiVersion: v2
 name: hr-assistant-policy-db
 description: 'HR Assistant (Ollama) component: HR Policy DB app + dashboard. One of the components of the hr-assistant SUSE AI Factory blueprint.'
 type: application
-version: 0.1.1
+version: 0.1.2
 appVersion: latest
 dependencies:
 - name: hr-assistant
-  version: 1.18.0
+  version: 1.19.0
   repository: file://../../../charts/hr-assistant
   alias: hr
 keywords:

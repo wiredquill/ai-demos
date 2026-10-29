@@ -14,7 +14,7 @@ default `observability.mode=existing` finds it automatically.
 
 ## What it collects
 
-- OTLP traces and metrics from the apps, with the SUSE AI topology inference
+- OTLP traces, metrics and logs from the apps, with the SUSE AI topology inference
   (app -> inference engine -> model, app -> vector DB / search engine)
 - vLLM serving engines, any namespace (`vllm:` renamed to `vllm_`, plus the two
   vLLM 0.19 aliases the SUSE AI dashboard queries)
@@ -23,8 +23,9 @@ default `observability.mode=existing` finds it automatically.
   `app.component=opensearch`; feeds the OpenSearch health monitors, which
   expect the cluster to be named `opensearch-cluster`)
 - NVIDIA DCGM GPU metrics
-- span metrics for service health; OTLP logs are dropped (SUSE Observability
-  2.10 has no OTLP logs service, the agent collects logs)
+- span metrics for service health
+- OTLP logs, forwarded to SUSE Observability (needs 2.11 or later; 2.10 has no
+  OTLP logs service)
 
 ## Prerequisites
 

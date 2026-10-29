@@ -3,11 +3,11 @@ apiVersion: v2
 name: hr-assistant-vllm-app
 description: 'HR Assistant (vLLM) component: HR Assistant app. One of the components of the hr-assistant-vllm SUSE AI Factory blueprint.'
 type: application
-version: 0.1.2
+version: 0.1.3
 appVersion: latest
 dependencies:
 - name: hr-assistant-vllm
-  version: 0.1.14
+  version: 0.1.15
   repository: file://../../../charts/hr-assistant-vllm
   alias: hr
 keywords:
