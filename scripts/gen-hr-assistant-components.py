@@ -14,7 +14,7 @@ ROOT = sys.argv[1]
 
 VARIANTS = {
     "hr-assistant-vllm": dict(
-        title="HR Assistant (vLLM)", base_version="0.1.14", version="0.1.2", blueprint="hr-assistant-vllm-1-6-0.yaml",
+        title="HR Assistant (vLLM)", base_version="0.1.15", version="0.1.3", blueprint="hr-assistant-vllm-1-7-0.yaml",
         engine="vllm", engine_desc="SUSE vLLM, Qdrant and OpenSearch", nodeport=30081,
         models=["Qwen/Qwen2.5-7B-Instruct", "Qwen/Qwen3.6-35B-A3B", "meta-llama/Llama-3.3-70B-Instruct", "openai/gpt-oss-120b"],
         llm_values={"vllm": {"enabled": False}, "vllmEndpoint": "http://vllm-router-service:80"},
@@ -22,7 +22,7 @@ VARIANTS = {
                         description="OpenAI-compatible endpoint of the <b>vllm</b> component's router (release <code>vllm</code> creates Service <code>vllm-router-service</code>)."),
         model_label="Model served by vLLM", calls="the vLLM router"),
     "hr-assistant": dict(
-        title="HR Assistant (Ollama)", base_version="1.18.0", version="0.1.1", blueprint="hr-assistant-1-1-0.yaml",
+        title="HR Assistant (Ollama)", base_version="1.19.0", version="0.1.2", blueprint="hr-assistant-1-2-0.yaml",
         engine="ollama", engine_desc="SUSE Ollama, Qdrant and OpenSearch", nodeport=30080,
         models=["llama3.2:latest", "llama3.2:1b", "llama3.1:8b", "qwen2.5:7b"],
         llm_values={"ollama": {"enabled": False}, "ollamaEndpoint": "http://ollama:11434"},

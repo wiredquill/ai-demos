@@ -1,0 +1,157 @@
+apiVersion: ai-factory.suse.com/v1alpha1
+kind: Blueprint
+metadata:
+  labels:
+    ai-factory.suse.com/blueprint-name: hr-assistant
+    ai-factory.suse.com/blueprint-version: 1.2.0
+  name: hr-assistant-1-2-0
+spec:
+  source: Custom  # community, unsupported demo
+  displayName: HR Assistant (Ollama)
+  version: 1.2.0
+  description: |
+    Intelligent Employee Support and Policy Management served by SUSE Ollama
+    (llama3.2), with full OpenLIT observability into SUSE Observability.
+
+    Eight components, seven pods (the topology component is a CronJob):
+      - ollama        SUSE Ollama (Application Collection 1.91.0), GPU
+      - qdrant        SUSE AI Qdrant vector database
+      - opensearch    OpenSearch search engine (Application Collection 3.9.0)
+      - hr-assistant-policy-db  HR Policy DB app + demo dashboard
+      - hr-assistant-handbook   Employee Handbook RAG app
+      - hr-assistant-app        HR Assistant app
+      - hr-assistant-load-gen   load generator + health-check emitter
+      - hr-assistant-topology   declares the SUSE AI topology up front
+
+    Prerequisites on the target cluster: a node with an NVIDIA GPU + GPU
+    operator, a default StorageClass (model store, Qdrant), and the shared
+    SUSE AI OpenTelemetry collector (`opentelemetry-collector` in namespace
+    `observability`, installed from the ai-observability-collector chart).
+    The topology component also needs SUSE Observability 2.12 or later with
+    the SUSE AI Declared Topology StackPack 1.0.0
+    (stackpacks/suse-ai-declared-topology).
+  components:
+    # Install everything into one target namespace. The apps reach the SUSE
+    # charts by their Service names, so these release names are pinned:
+    # ollama -> ollama:11434, qdrant -> qdrant:6333, opensearch ->
+    # opensearch-cluster-master:9200 (the apps' form defaults).
+    #
+    # ollama and opensearch are SUSE's Application Collection charts,
+    # republished to wiredquill-ai-demos with an added questions.yaml (upstream
+    # ships no install form) and, for ollama,
+    # catalog/charts/ollama/form-friendly-values.patch (NFS model cache, blank
+    # model fields) - see scripts/package-aif-charts.sh.
+    - chartName: ollama
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "1.91.0"
+      releaseName: ollama
+      vendor: suse
+      values:
+        image:
+          tag: "0.40.10-nvidia-1.9"
+        runtimeClassName: nvidia
+        # Ollama 0.40 sizes the default context from GPU memory (32k on a
+        # 24 GB card); the demo prompts are short, so pin it.
+        extraEnv:
+          - name: OLLAMA_CONTEXT_LENGTH
+            value: "4096"
+        ollama:
+          gpu:
+            enabled: true
+            type: nvidia
+            number: 1
+          # A map, not the documented list, so the install form can edit it.
+          models:
+            pull:
+              main: llama3.2:latest
+              secondary: ""
+        # Ollama 0.40 keeps the loaded model and its runner in host memory.
+        resources:
+          requests:
+            cpu: "1"
+            memory: 4Gi
+          limits:
+            cpu: "2"
+            memory: 8Gi
+        persistentVolume:
+          enabled: true
+          size: 30Gi
+        modelCache:
+          nfs:
+            enabled: false
+            server: ""
+            path: /data/ai-models
+        # One GPU: stop the old pod before starting the new one.
+        updateStrategy:
+          type: Recreate
+    - chartName: qdrant
+      chartRepo: suse-ai-registry
+      chartVersion: "1.19.0"
+      releaseName: qdrant
+      vendor: suse
+      values:
+        persistence:
+          size: 10Gi
+    - chartName: opensearch
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "3.9.0"
+      releaseName: opensearch
+      vendor: suse
+      values:
+        # The chart defaults to the build it shipped with; pin the newest SUSE build.
+        image:
+          tag: "3.9.0-16.6"
+        # Single-node demo, security plugin off: the apps and the collector's
+        # elasticsearch receiver talk plain HTTP without auth.
+        singleNode: true
+        replicas: 1
+        protocol: http
+        # The SUSE AI StackPack's OpenSearch metric bindings match
+        # elasticsearch_cluster_name="opensearch-cluster".
+        clusterName: opensearch-cluster
+        # The shared collector creates an elasticsearch receiver for pods
+        # labelled app.component=opensearch on port 9200.
+        labels:
+          app.component: opensearch
+        opensearchJavaOpts: "-Xms512m -Xmx512m"
+        extraEnvs:
+          - name: DISABLE_SECURITY_PLUGIN
+            value: "true"
+          - name: DISABLE_INSTALL_DEMO_CONFIG
+            value: "true"
+        securityConfig:
+          enabled: false
+        persistence:
+          enabled: false
+        resources:
+          requests:
+            cpu: 250m
+            memory: 1Gi
+          limits:
+            cpu: "1"
+            memory: 2Gi
+    - chartName: hr-assistant-policy-db
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "0.1.2"
+      releaseName: hr-policy-db
+    - chartName: hr-assistant-handbook
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "0.1.2"
+      releaseName: employee-handbook
+    - chartName: hr-assistant-app
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "0.1.2"
+      releaseName: hr-assistant
+    - chartName: hr-assistant-load-gen
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "0.1.2"
+      releaseName: load-gen
+    # Declares the topology above (apps -> ollama -> model, hr-policy-db ->
+    # qdrant / opensearch) so SUSE Observability shows it without waiting for
+    # traffic. The model name must match ollama's main model.
+    - chartName: hr-assistant-topology
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "0.1.0"
+      releaseName: topology
+      values:
+        model: llama3.2:latest

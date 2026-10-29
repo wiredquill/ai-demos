@@ -3,8 +3,8 @@
 #
 # Uses the SUSE AI collector image, which ships the `topology` exporter that
 # builds the SUSE AI view (the Application Collection collector images do not
-# have it). Built for SUSE Observability 2.10.x with the SUSE AI Observability
-# Extension 2.1.x:
+# have it). Built for SUSE Observability 2.12 with the SUSE AI Observability
+# Extension 2.2:
 #   - GenAI topology: app -> inference engine -> model relations, inferred from
 #     the gen_ai.* telemetry the apps emit (same pipeline as the per-release
 #     collector in the hr-assistant charts)
@@ -14,8 +14,9 @@
 #   - the metric names the SUSE AI StackPack monitors query: vllm_* (renamed
 #     from vllm:*, with vLLM 0.19 aliases), Qdrant's native metrics,
 #     elasticsearch_cluster_health for cluster "opensearch-cluster"
-#   - span metrics for service health; OTLP logs are dropped (SUSE
-#     Observability 2.10 has no OTLP logs service; the agent collects logs)
+#   - span metrics for service health
+#   - OTLP logs forwarded to SUSE Observability (2.11 or later; 2.10 has no
+#     OTLP logs service)
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
@@ -429,7 +430,6 @@ spec:
         cluster_name: ${env:K8S_CLUSTER_NAME}
         tls:
           insecure_skip_verify: {{ .Values.collector.skipTlsVerify }}
-      nop: {}
       {{- if .Values.collector.debug }}
       debug:
         verbosity: basic
@@ -486,8 +486,8 @@ spec:
           exporters: [otlp_grpc]
         logs:
           receivers: [otlp]
-          processors: [memory_limiter]
-          exporters: [nop]
+          processors: [memory_limiter, k8s_attributes, resource, batch]
+          exporters: [otlp_grpc]
       telemetry:
         metrics:
           readers:

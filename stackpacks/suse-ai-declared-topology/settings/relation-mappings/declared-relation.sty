@@ -1,0 +1,29 @@
+# One relation per data point of the suse_ai_declared_relation gauge, between
+# two SUSE AI components (urn:suse-ai:product:<type>:<name>). The endpoints can
+# be declared components or ones the SUSE AI StackPack syncs; the relation
+# appears once both exist.
+nodes:
+  - _type: "OtelRelationMapping"
+    name: "Declared SUSE AI relation"
+    description: "Connects two SUSE AI components as an application declares"
+    identifier: "urn:stackpack:suse-ai-declared-topology:shared:otel-relation-mapping:declared-relation"
+    input:
+      signal:
+        - "METRICS"
+      resource:
+        condition: "'suse.ai.topology.declared' in resource.attributes"
+        scope:
+          condition: "scope.name == 'suse-ai-declared-topology'"
+          metric:
+            condition: "metric.name == 'suse_ai_declared_relation'"
+            datapoint:
+              condition: >-
+                'source.type' in datapoint.attributes && 'source.name' in datapoint.attributes &&
+                'target.type' in datapoint.attributes && 'target.name' in datapoint.attributes
+              action: "'CREATE'"
+    output:
+      sourceId: "'urn:suse-ai:product:' + datapoint.attributes['source.type'] + ':' + datapoint.attributes['source.name']"
+      targetId: "'urn:suse-ai:product:' + datapoint.attributes['target.type'] + ':' + datapoint.attributes['target.name']"
+      typeName: "'type' in datapoint.attributes ? datapoint.attributes['type'] : 'uses'"
+      dependencyType: "'CONNECTION'"
+    expireAfter: 900000

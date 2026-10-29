@@ -1,0 +1,77 @@
+# Declared SUSE AI topology for the hr-assistant (Ollama) blueprint.
+#
+# Instead of waiting for the SUSE AI collector to infer the topology from live
+# spans, this component sends it as OpenTelemetry metrics to the cluster's
+# collector at install/upgrade and refreshes it on a schedule. The SUSE AI
+# Declared Topology StackPack (stackpacks/suse-ai-declared-topology, SUSE
+# Observability 2.12+) maps them to components with the collector's own
+# identifiers (urn:suse-ai:product:<type>:<name>), so declared and inferred
+# elements merge into one node.
+
+# OTLP/HTTP endpoint of the shared SUSE AI collector (ai-observability-collector
+# chart). No API key: the collector forwards to SUSE Observability.
+otlpEndpoint: http://opentelemetry-collector.observability.svc.cluster.local:4318
+
+# k8s.cluster.name on the components. Defaults to the Rancher-injected
+# global.cattle.clusterName; the collector also stamps it.
+clusterName: ''
+# k8s.namespace.name on the components. Defaults to the release namespace.
+namespace: ''
+
+# The model the apps request from Ollama (its main model), used as the
+# llm-model component's name.
+model: llama3.2:latest
+
+# Refresh interval. The StackPack expires elements 15 minutes after their last
+# refresh, so keep this well under that.
+refreshSchedule: '*/5 * * * *'
+
+image: registry.suse.com/bci/bci-base:15.7
+
+# type: the SUSE AI component type in the identifier (the collector's
+#   suse.ai.component.type: agent, application, inference-engine, llm-model,
+#   vectordb, search-engine, ...). Must match what the collector would emit
+#   for the two to merge.
+# typeName: the SUSE Observability component type shown; defaults to type.
+#   The product types (inference-engine.ollama, vectordb.qdrant, ...) carry the
+#   product metric bindings and monitors.
+# name: the component name; rendered with tpl, so it can use values.
+#
+# Relations reference components by name.
+topology:
+  components:
+    - name: hr-assistant
+      type: agent
+    - name: hr-policy-db
+      type: agent
+    - name: employee-handbook
+      type: agent
+    - name: ollama
+      type: inference-engine
+      typeName: inference-engine.ollama
+    - name: '{{ .Values.model }}'
+      type: llm-model
+      typeName: llm-model.ollama
+    - name: qdrant
+      type: vectordb
+      typeName: vectordb.qdrant
+    - name: opensearch
+      type: search-engine
+      typeName: search-engine.opensearch
+  relations:
+    - {source: hr-assistant, target: hr-policy-db, type: uses}
+    - {source: hr-assistant, target: employee-handbook, type: uses}
+    - {source: hr-assistant, target: ollama, type: uses}
+    - {source: hr-policy-db, target: ollama, type: uses}
+    - {source: employee-handbook, target: ollama, type: uses}
+    - {source: hr-policy-db, target: qdrant, type: uses}
+    - {source: hr-policy-db, target: opensearch, type: uses}
+    - {source: ollama, target: '{{ .Values.model }}', type: runs}
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 64Mi

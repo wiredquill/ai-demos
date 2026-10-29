@@ -1,0 +1,15 @@
+questions:
+- variable: model
+  label: Model
+  group: Topology
+  type: string
+  required: true
+  default: llama3.2:latest
+  description: The model the apps request from Ollama (the ollama component's Main Model). Names the declared llm-model component, so it must match the model the apps request.
+- variable: otlpEndpoint
+  label: OTLP Endpoint
+  group: Observability
+  type: string
+  required: true
+  default: http://opentelemetry-collector.observability.svc.cluster.local:4318
+  description: OTLP/HTTP endpoint of the shared SUSE AI OpenTelemetry collector (installed from the ai-observability-collector chart). The declared topology is sent there as metrics.

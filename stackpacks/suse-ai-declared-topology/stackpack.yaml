@@ -1,0 +1,16 @@
+schemaVersion: "2.0"
+name: "suse-ai-declared-topology"
+displayName: "SUSE AI Declared Topology"
+version: "1.0.0"
+logoUrl: !resource "logo.png"
+categories: [ "AI", "GenAI" ]
+overviewUrl: !resource "overview.md"
+configurationUrls:
+  NOT_INSTALLED: !resource "notinstalled.md"
+  PROVISIONING: !resource "provisioning.md"
+  WAITING_FOR_DATA: !resource "waitingfordata.md"
+  INSTALLED: !resource "installed.md"
+  DEPROVISIONING: !resource "deprovisioning.md"
+  ERROR: !resource "error.md"
+provision:
+  companionStackPacks: []

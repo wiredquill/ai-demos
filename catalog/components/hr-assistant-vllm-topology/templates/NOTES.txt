@@ -1,0 +1,3 @@
+Declared SUSE AI topology installed as release {{ .Release.Name }} in namespace {{ .Release.Namespace }}.
+It is sent to {{ .Values.otlpEndpoint }} at install/upgrade and refreshed on the schedule "{{ .Values.refreshSchedule }}".
+SUSE Observability shows it once the SUSE AI Declared Topology StackPack (1.0.0+) is installed.
