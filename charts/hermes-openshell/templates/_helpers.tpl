@@ -105,3 +105,34 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- $found | default "http://opentelemetry-collector.observability.svc.cluster.local:4318" -}}
 {{- end -}}
 {{- end -}}
+
+{{/* Hermes's branding text, as {KEY: text} for HERMES_BRANDING_<KEY>: the
+     form's branding fields, over the session's words (hermes.session): the
+     profile in the prompt and response header, and a welcome line with what
+     the profile allows. */}}
+{{- define "hermes-openshell.branding" -}}
+{{- $v := .Values -}}
+{{- $profile := $v.profile -}}
+{{- $out := dict -}}
+{{- if $v.hermes.session.enabled -}}
+{{- $welcome := printf "%s Approvals: %s." (get $v.hermes.session.welcome $profile) (get $v.approvals $profile) | trim -}}
+{{- $_ := set $out "WELCOME" (printf "%s Type /help for commands." $welcome) -}}
+{{- $_ := set $out "RESPONSE_LABEL" (printf " Hermes · %s " $profile) -}}
+{{- $_ := set $out "PROMPT_SYMBOL" (printf "%s ❯" $profile) -}}
+{{- end -}}
+{{- if $v.hermes.branding.enabled -}}
+{{- range $key, $env := dict "agentName" "AGENT_NAME" "welcome" "WELCOME" "goodbye" "GOODBYE" "responseLabel" "RESPONSE_LABEL" "promptSymbol" "PROMPT_SYMBOL" "helpHeader" "HELP_HEADER" -}}
+{{- with get $v.hermes.branding $key }}{{ $_ := set $out $env . }}{{ end -}}
+{{- end -}}
+{{- end -}}
+{{- toYaml $out -}}
+{{- end -}}
+
+{{/* The browser tab's title: the agent's name and the profile. */}}
+{{- define "hermes-openshell.title" -}}
+{{- $name := "Hermes in OpenShell" -}}
+{{- with .Values.hermes.branding -}}
+{{- if and .enabled .agentName }}{{ $name = .agentName }}{{ end -}}
+{{- end -}}
+{{- printf "%s · %s" $name .Values.profile -}}
+{{- end -}}

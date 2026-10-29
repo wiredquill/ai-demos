@@ -160,15 +160,20 @@ swapped live from the client pod; all four profiles are mounted at
 
 The form's **Hermes options** page:
 
-- **Skin** for each profile, so the terminal shows how open the sandbox is:
-  lockdown `mono`, research `poseidon`, developer `slate`, dangerous
-  `charizard`. Any built-in Hermes skin can be picked; skins added to the image
-  under `/opt/hermes/skins/` are copied to `~/.hermes/skins/` at start and can
-  be named too.
+- **Skin** for each profile: `suse-dark` for every profile. The image ships two SUSE brand
+  skins, `suse-dark` and `suse-light` (`images/hermes/skins/`); any built-in
+  Hermes skin can be picked too. Skins in the image under `/opt/hermes/skins/`
+  are copied to `~/.hermes/skins/` at start.
+- **Session** (`hermes.session.*`, on by default): words that say which
+  session this is, whatever the skin. The profile goes in the prompt
+  (`research ❯`), the response header (`Hermes · research`) and the browser
+  tab title, and Hermes starts with a welcome line saying what the profile
+  allows, its approvals mode, the cluster access (`hermes.session.welcome.<profile>`
+  holds the first part).
 - **Branding** (`hermes.branding.*`): agent name, welcome and goodbye
   messages, response label, prompt symbol and /help header. The sandbox writes
   a copy of the chosen skin with just that text changed, so colors and
-  spinners stay the skin's.
+  spinners stay the skin's. Fields set here win over the session's words.
 - **Cron job** (`hermes.cron.*`): a Hermes cron job created at start, and a
   scheduler that ticks once a minute (Hermes runs cron jobs only while
   something ticks). The default prompt asks for one short fact a minute:

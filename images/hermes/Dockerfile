@@ -110,6 +110,9 @@ COPY --from=ttyd /usr/local/bin/ttyd /usr/local/bin/ttyd
 COPY --from=kubectl /usr/local/bin/kubectl /usr/local/bin/kubectl
 COPY --from=tools /usr/local/bin/helm /usr/local/bin/yq /usr/local/bin/
 COPY images/hermes/hermes-sandbox-start /usr/local/bin/hermes-sandbox-start
+# SUSE brand skins (suse-dark, suse-light); hermes-sandbox-start copies them
+# into ~/.hermes/skins, so the chart's skin dropdown can name them
+COPY images/hermes/skins/ /opt/hermes/skins/
 RUN ln -s /opt/hermes/bin/hermes /usr/local/bin/hermes \
  && printf '%s\n' '# OpenShell sets HOME=/sandbox; the profiles allow writes under /home/hermes' \
       'export HOME=/home/hermes' > /etc/profile.d/hermes-home.sh

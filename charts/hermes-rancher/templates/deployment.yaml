@@ -71,15 +71,13 @@ spec:
             # Hermes options, handed on to the sandbox (images/hermes/hermes-sandbox-start)
             - name: HERMES_SKIN
               value: {{ required (printf "hermes.skins.%s is required" .Values.profile) (get .Values.hermes.skins .Values.profile) | quote }}
-            {{- with .Values.hermes.branding }}
-            {{- if .enabled }}
-            {{- range $key, $env := dict "agentName" "AGENT_NAME" "welcome" "WELCOME" "goodbye" "GOODBYE" "responseLabel" "RESPONSE_LABEL" "promptSymbol" "PROMPT_SYMBOL" "helpHeader" "HELP_HEADER" }}
-            {{- with get $.Values.hermes.branding $key }}
+            {{- range $env, $value := include "hermes-rancher.branding" . | fromYaml }}
             - name: HERMES_BRANDING_{{ $env }}
-              value: {{ . | quote }}
+              value: {{ $value | quote }}
             {{- end }}
-            {{- end }}
-            {{- end }}
+            {{- if .Values.hermes.session.enabled }}
+            - name: HERMES_TITLE
+              value: {{ include "hermes-rancher.title" . | quote }}
             {{- end }}
             {{- with .Values.hermes.cron }}
             {{- if .enabled }}

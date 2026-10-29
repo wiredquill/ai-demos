@@ -1,0 +1,42 @@
+name: suse-light
+description: SUSE brand light theme - Pine text with Jungle accents on light terminals
+colors:
+  banner_border: "#008657"
+  banner_title: "#0c322c"
+  banner_accent: "#008657"
+  banner_dim: "#6f6f6f"
+  banner_text: "#0c322c"
+  ui_accent: "#008657"
+  ui_label: "#025937"
+  ui_ok: "#008657"
+  ui_error: "#bd3314"
+  ui_warn: "#8e2810"
+  prompt: "#0c322c"
+  input_rule: "#008657"
+  response_border: "#008657"
+  status_bar_bg: "#efefef"
+  status_bar_text: "#0c322c"
+  status_bar_strong: "#025937"
+  status_bar_dim: "#6f6f6f"
+  status_bar_good: "#025937"
+  status_bar_warn: "#8e2810"
+  status_bar_bad: "#bd3314"
+  status_bar_critical: "#8e2810"
+  session_label: "#025937"
+  session_border: "#6f6f6f"
+  completion_menu_bg: "#eafaf4"
+  completion_menu_current_bg: "#c0efde"
+  selection_bg: "#c0efde"
+  shell_dollar: "#2453ff"
+  voice_status_bg: "#efefef"
+branding:
+  agent_name: "SUSE Hermes"
+  welcome: "Welcome to SUSE Hermes. Type your message or /help for commands."
+  goodbye: "Choice Happens."
+  response_label: " Hermes "
+  prompt_symbol: "❯"
+  help_header: "Available commands"
+tool_prefix: "│"
+customCSS: |
+  @import url("https://fonts.googleapis.com/css2?family=SUSE:wght@300;400;500;600&display=swap");
+  body { font-family: "SUSE", sans-serif; }

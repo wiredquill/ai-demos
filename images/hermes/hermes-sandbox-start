@@ -11,6 +11,7 @@
 #                     swaps in the real key for the model's host only.
 #   HERMES_APPROVALS  manual | smart | off (the profile picks it)
 #   TTYD_PORT         default 7681
+#   HERMES_TITLE      the browser tab's title (the chart adds the profile)
 #   HERMES_SKIN       display skin: a built-in (mono, slate, poseidon, ...) or
 #                     one shipped in /opt/hermes/skins
 #   HERMES_BRANDING_<KEY>  override that skin's branding text, KEY one of
@@ -34,6 +35,7 @@ set -euo pipefail
 : "${HERMES_KEY_ENV:=}"
 : "${HERMES_APPROVALS:=smart}"
 : "${TTYD_PORT:=7681}"
+: "${HERMES_TITLE:=Hermes in OpenShell}"
 : "${HERMES_SKIN:=default}"
 : "${HERMES_CRON_SCHEDULE:=}"
 : "${HERMES_CRON_PROMPT:=}"
@@ -223,7 +225,7 @@ delay=1
 while true; do
   started=$SECONDS
   # -W: writable (people type into it); each browser tab gets its own hermes session
-  ttyd -i 127.0.0.1 -p "$TTYD_PORT" -W -t titleFixed="Hermes in OpenShell" hermes &
+  ttyd -i 127.0.0.1 -p "$TTYD_PORT" -W -t titleFixed="$HERMES_TITLE" hermes &
   ttyd_pid=$!
   status=0
   wait "$ttyd_pid" || status=$?
