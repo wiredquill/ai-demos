@@ -1,0 +1,124 @@
+# dangerous: as open as OpenShell 0.1.5 allows. Any program may reach any
+# subdomain of the common TLDs and the bare domains listed below, over HTTP or
+# HTTPS, and Hermes runs its commands without asking (approvals: off). For
+# showing what an unconstrained agent does, never for real data.
+#
+# OpenShell can't express "any host": a wildcard needs a label under the TLD
+# ("**.*.com", never "*.com"), so bare domains are listed by name. Raw IP
+# addresses (allowed_ips) are left out: the 0.1.5 gateway rejects a policy
+# that mixes them with these host rules. Wildcard hosts never resolve to
+# private addresses, so cluster Services stay unreachable.
+#
+# What still holds, because OpenShell enforces it whatever the policy says:
+#   - no root (run_as_user must not be 0)
+#   - no loopback, link-local or cloud metadata (169.254.169.254)
+#   - no Kubernetes API / etcd / kubelet ports (6443, 2379, 2380, 10250, 10255)
+#   - no writes to /: read_write may not contain "/"
+version: 1
+filesystem_policy:
+  read_only:
+    - /usr
+    - /opt
+    - /lib
+    - /lib64
+    - /etc
+    - /var
+    - /srv
+  read_write:
+    - /home
+    - /tmp
+    - /var/tmp
+    # pseudo-terminals for ttyd's hermes sessions (not in OpenShell's baseline)
+    - /dev/ptmx
+    - /dev/pts
+    - /dev/tty
+landlock:
+  # run even where the kernel can't enforce the filesystem rules
+  compatibility: best_effort
+process:
+  run_as_user: "10001"
+  run_as_group: "10001"
+network_policies:
+  anywhere:
+    name: anywhere
+    endpoints:
+      # every subdomain of these TLDs (no protocol = plain L4 relay, no L7 checks)
+      - {host: "**.*.com", ports: [80, 443]}
+      - {host: "**.*.org", ports: [80, 443]}
+      - {host: "**.*.net", ports: [80, 443]}
+      - {host: "**.*.io", ports: [80, 443]}
+      - {host: "**.*.ai", ports: [80, 443]}
+      - {host: "**.*.dev", ports: [80, 443]}
+      - {host: "**.*.app", ports: [80, 443]}
+      - {host: "**.*.co", ports: [80, 443]}
+      - {host: "**.*.cloud", ports: [80, 443]}
+      - {host: "**.*.sh", ports: [80, 443]}
+      - {host: "**.*.me", ports: [80, 443]}
+      - {host: "**.*.info", ports: [80, 443]}
+      - {host: "**.*.biz", ports: [80, 443]}
+      - {host: "**.*.xyz", ports: [80, 443]}
+      - {host: "**.*.edu", ports: [80, 443]}
+      - {host: "**.*.gov", ports: [80, 443]}
+      - {host: "**.*.int", ports: [80, 443]}
+      - {host: "**.*.eu", ports: [80, 443]}
+      - {host: "**.*.de", ports: [80, 443]}
+      - {host: "**.*.uk", ports: [80, 443]}
+      - {host: "**.*.fr", ports: [80, 443]}
+      - {host: "**.*.nl", ports: [80, 443]}
+      - {host: "**.*.ch", ports: [80, 443]}
+      - {host: "**.*.at", ports: [80, 443]}
+      - {host: "**.*.it", ports: [80, 443]}
+      - {host: "**.*.es", ports: [80, 443]}
+      - {host: "**.*.se", ports: [80, 443]}
+      - {host: "**.*.no", ports: [80, 443]}
+      - {host: "**.*.dk", ports: [80, 443]}
+      - {host: "**.*.fi", ports: [80, 443]}
+      - {host: "**.*.pl", ports: [80, 443]}
+      - {host: "**.*.cz", ports: [80, 443]}
+      - {host: "**.*.be", ports: [80, 443]}
+      - {host: "**.*.ie", ports: [80, 443]}
+      - {host: "**.*.pt", ports: [80, 443]}
+      - {host: "**.*.us", ports: [80, 443]}
+      - {host: "**.*.ca", ports: [80, 443]}
+      - {host: "**.*.au", ports: [80, 443]}
+      - {host: "**.*.nz", ports: [80, 443]}
+      - {host: "**.*.jp", ports: [80, 443]}
+      - {host: "**.*.cn", ports: [80, 443]}
+      - {host: "**.*.kr", ports: [80, 443]}
+      - {host: "**.*.in", ports: [80, 443]}
+      - {host: "**.*.br", ports: [80, 443]}
+      - {host: "**.*.mx", ports: [80, 443]}
+      - {host: "**.*.za", ports: [80, 443]}
+      # bare domains, which no wildcard can match
+      - {host: github.com, ports: [80, 443]}
+      - {host: githubusercontent.com, ports: [80, 443]}
+      - {host: pypi.org, ports: [80, 443]}
+      - {host: pythonhosted.org, ports: [80, 443]}
+      - {host: npmjs.org, ports: [80, 443]}
+      - {host: npmjs.com, ports: [80, 443]}
+      - {host: wikipedia.org, ports: [80, 443]}
+      - {host: google.com, ports: [80, 443]}
+      - {host: youtube.com, ports: [80, 443]}
+      - {host: x.com, ports: [80, 443]}
+      - {host: reddit.com, ports: [80, 443]}
+      - {host: stackoverflow.com, ports: [80, 443]}
+      - {host: example.com, ports: [80, 443]}
+      - {host: example.org, ports: [80, 443]}
+      - {host: neverssl.com, ports: [80, 443]}
+      - {host: suse.com, ports: [80, 443]}
+      - {host: opensuse.org, ports: [80, 443]}
+      - {host: nvidia.com, ports: [80, 443]}
+      - {host: huggingface.co, ports: [80, 443]}
+      - {host: openai.com, ports: [80, 443]}
+      - {host: anthropic.com, ports: [80, 443]}
+      - {host: openrouter.ai, ports: [80, 443]}
+      - {host: docker.com, ports: [80, 443]}
+      - {host: docker.io, ports: [80, 443]}
+      - {host: quay.io, ports: [80, 443]}
+      - {host: ghcr.io, ports: [80, 443]}
+      - {host: gitlab.com, ports: [80, 443]}
+      - {host: bitbucket.org, ports: [80, 443]}
+      - {host: cloudflare.com, ports: [80, 443]}
+      - {host: amazonaws.com, ports: [80, 443]}
+    binaries:
+      - path: "/**"

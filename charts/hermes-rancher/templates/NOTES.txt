@@ -1,0 +1,49 @@
+{{- $pl := include "hermes-rancher.platform" . | fromJson -}}
+Hermes for Rancher is starting as OpenShell sandbox "{{ .Values.sandbox.name }}" from
+  {{ include "hermes-rancher.sandboxImage" . }}
+under the "{{ .Values.profile }}" profile (Hermes approvals: {{ get .Values.approvals .Values.profile }}),
+{{- if eq $pl.via "rancher" }}
+with {{ $pl.access }} access to the clusters Rancher at {{ $pl.rancherUrl }} lets the token in
+Secret {{ .Release.Namespace }}/{{ $pl.rancherSecret }} reach (the rancher CLI, and kubectl through Rancher).
+{{- else }}
+with {{ $pl.access }} access to cluster "{{ $pl.clusterName }}" as ServiceAccount {{ .Release.Namespace }}/{{ $pl.serviceAccount }}.
+{{- end }}
+
+Anyone who can open the terminal gets that access.
+{{- if ne .Values.service.type "ClusterIP" }}
+WARNING: service.type is {{ .Values.service.type }}, so the terminal (and the
+agent's cluster access) is open to anyone who can reach it. ClusterIP limits it
+to people who can port-forward in this namespace.
+{{- end }}
+
+{{- if eq $pl.via "rancher" }}
+What the token's user may do: rancher access clusters (logged in as that user)
+{{- else }}
+What the agent's ServiceAccount may do:
+  kubectl auth can-i --list --as system:serviceaccount:{{ .Release.Namespace }}:{{ $pl.serviceAccount }}
+{{- end }}
+{{- if eq .Values.profile "dangerous" }}
+
+WARNING: the dangerous profile lets any program in the sandbox reach almost
+any public website on ports 80/443, and Hermes runs commands without asking.
+Demo use only.
+{{- end }}
+
+Watch the client create it:
+  kubectl -n {{ .Release.Namespace }} logs -f deploy/{{ include "hermes-rancher.clientName" . }}
+
+Browser terminal:
+{{- if eq .Values.service.type "NodePort" }}
+  kubectl -n {{ .Release.Namespace }} get svc {{ include "hermes-rancher.fullname" . }}   # http://<node>:<nodePort>
+{{- else }}
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "hermes-rancher.fullname" . }} 7681:{{ .Values.service.port }}
+  # then http://localhost:7681
+{{- end }}
+
+A shell inside the sandbox (run `hermes` there):
+  kubectl -n {{ .Release.Namespace }} exec -it deploy/{{ include "hermes-rancher.clientName" . }} -- openshell sandbox connect {{ .Values.sandbox.name }}
+
+Swap the network rules live to another profile (filesystem and process rules
+only change when the sandbox is recreated: change the profile in this form):
+  kubectl -n {{ .Release.Namespace }} exec deploy/{{ include "hermes-rancher.clientName" . }} -- \
+    openshell policy set {{ .Values.sandbox.name }} --policy /etc/hermes/profiles/lockdown.yaml --wait

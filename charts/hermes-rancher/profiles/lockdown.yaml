@@ -1,0 +1,26 @@
+# lockdown: Hermes can think and edit files in its workspace, nothing else.
+# The only way out is the model endpoint, which the provider attached by the
+# client adds on its own; no network_policies here means every other
+# destination is denied.
+version: 1
+filesystem_policy:
+  # /opt/hermes is the venv; /usr/local/bin holds hermes, ttyd and the entrypoint
+  read_only:
+    - /usr
+    - /opt/hermes
+    - /lib
+    - /lib64
+    - /etc
+  read_write:
+    - /home/hermes
+    - /tmp
+    # pseudo-terminals for ttyd's hermes sessions (not in OpenShell's baseline)
+    - /dev/ptmx
+    - /dev/pts
+    - /dev/tty
+landlock:
+  # refuse to start rather than run without the filesystem rules
+  compatibility: hard_requirement
+process:
+  run_as_user: "10001"
+  run_as_group: "10001"

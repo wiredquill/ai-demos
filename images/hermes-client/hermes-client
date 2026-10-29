@@ -7,6 +7,11 @@
 #      model's host and, with an API key, binds the key to that host (the sandbox
 #      only ever sees a placeholder); then create the sandbox from
 #      $SANDBOX_IMAGE under the profile's policy
+#      With $RANCHER_URL and a token in $RANCHER_TOKEN_FILE, a second provider
+#      binds that token to Rancher's host the same way, for the rancher CLI
+#      and kubectl
+#   3b. with cluster access ($CLUSTER_DIR holds a ServiceAccount token): write
+#      a kubeconfig for $CLUSTER_SERVER to ~/.kube/config in the sandbox
 #   4. forward 0.0.0.0:$FORWARD_PORT -> ttyd on 127.0.0.1:$TARGET_PORT inside the
 #      sandbox, until the pod stops; then delete the sandbox.
 #
@@ -30,11 +35,22 @@ set -euo pipefail
 : "${PROVIDER_NAME:=$SANDBOX_NAME-llm}"
 : "${TARGET_PORT:=7681}"
 : "${FORWARD_PORT:=7681}"
+: "${CLUSTER_DIR:=/etc/hermes/cluster}"
+: "${CLUSTER_SERVER:=https://kubernetes.default.svc.cluster.local}"
+: "${CLUSTER_NAME:=cluster}"
+: "${RANCHER_URL:=}"
+: "${RANCHER_TOKEN_FILE:=/etc/hermes/rancher/token}"
+: "${RANCHER_ACCESS:=read-only}"
+: "${RANCHER_PROVIDER:=$SANDBOX_NAME-rancher}"
 
 # Executables in the Hermes image that call the model: the venv's python is a
 # symlink, and OpenShell matches real paths.
 LLM_BINARIES=(/usr/bin/python3.13 /usr/bin/curl)
 KEY_ENV=HERMES_LLM_API_KEY
+# What may call Rancher with its token: the CLI, and kubectl and helm, which
+# reach downstream clusters through Rancher's /k8s/clusters/<id> proxy.
+RANCHER_BINARIES=(/usr/local/bin/rancher /usr/local/bin/kubectl /usr/local/bin/helm)
+RANCHER_KEY_ENV=RANCHER_CLI_TOKEN
 
 log() { printf '%s hermes-client: %s\n' "$(date -u +%FT%TZ)" "$*"; }
 
@@ -130,13 +146,59 @@ else
         --env "HERMES_APPROVALS=$APPROVALS"
         --env "TTYD_PORT=$TARGET_PORT")
   [ -s "$LLM_API_KEY_FILE" ] && args+=(--env "HERMES_KEY_ENV=$KEY_ENV")
+
+  # Rancher: the token goes to the gateway only, bound to Rancher's host;
+  # the sandbox's RANCHER_CLI_TOKEN is a placeholder the proxy swaps for it
+  if [ -n "$RANCHER_URL" ] && [ -s "$RANCHER_TOKEN_FILE" ]; then
+    rancher_host=${RANCHER_URL#https://}
+    rancher_host=${rancher_host%%/*}
+    rancher_port=443
+    if [ "${rancher_host%:*}" != "$rancher_host" ]; then
+      rancher_port=${rancher_host##*:}
+      rancher_host=${rancher_host%:*}
+    fi
+    rancher_file=$HOME/rancher-profile.yaml
+    {
+      echo "id: $RANCHER_PROVIDER"
+      echo "display_name: Rancher API"
+      echo "description: Rancher's API for the $SANDBOX_NAME sandbox"
+      echo "category: other"
+      echo "credentials:"
+      echo "  - name: token"
+      echo "    description: Rancher API token for $rancher_host"
+      echo "    env_vars: [$RANCHER_KEY_ENV]"
+      echo "    required: true"
+      echo "    auth_style: bearer"
+      echo "    header_name: Authorization"
+      echo "endpoints:"
+      echo "  - host: $rancher_host"
+      echo "    port: $rancher_port"
+      echo "    protocol: rest"
+      echo "    access: $RANCHER_ACCESS"
+      echo "    enforcement: enforce"
+      echo "binaries:"
+      for b in "${RANCHER_BINARIES[@]}"; do echo "  - $b"; done
+    } > "$rancher_file"
+    log "provider $RANCHER_PROVIDER -> $rancher_host:$rancher_port ($RANCHER_ACCESS, token bound to this host)"
+    openshell provider delete "$RANCHER_PROVIDER" >/dev/null 2>&1 || true
+    openshell profile delete "$RANCHER_PROVIDER" >/dev/null 2>&1 || true
+    openshell profile lint -f "$rancher_file"
+    openshell profile import -f "$rancher_file"
+    export "$RANCHER_KEY_ENV=$(<"$RANCHER_TOKEN_FILE")"
+    openshell provider create --name "$RANCHER_PROVIDER" --type "$RANCHER_PROVIDER" --credential "$RANCHER_KEY_ENV"
+    unset "$RANCHER_KEY_ENV"
+    args+=(--provider "$RANCHER_PROVIDER" --env "RANCHER_CLI_URL=$RANCHER_URL")
+    [ "$RANCHER_ACCESS" = read-only ] && args+=(--env RANCHER_CLI_READONLY=true)
+  elif [ -n "$RANCHER_URL" ]; then
+    log "no Rancher token in $RANCHER_TOKEN_FILE: the rancher CLI in the sandbox has no access"
+  fi
   # The chart's Hermes options and OpenTelemetry go on to the sandbox by name:
   # skin, branding and cron job for hermes-sandbox-start; OTEL_* and
   # HERMES_OTEL_* for the image's sitecustomize.py. (Never every HERMES_*: the
   # API key passes through this environment.)
   for v in $(compgen -e); do
     case $v in
-      OTEL_*|HERMES_OTEL_*|HERMES_SKIN|HERMES_BRANDING_*|HERMES_CRON_*)
+      OTEL_*|HERMES_OTEL_*|HERMES_SKIN|HERMES_BRANDING_*|HERMES_CRON_*|HERMES_PLATFORM_*)
         args+=(--env "$v=${!v}") ;;
     esac
   done
@@ -145,6 +207,49 @@ else
   [ "$SANDBOX_GPU" = true ] && args+=(--gpu)
   log "creating sandbox $SANDBOX_NAME from $SANDBOX_IMAGE, profile $PROFILE (approvals: $APPROVALS)"
   openshell sandbox create "${args[@]}" -- hermes-sandbox-start
+fi
+
+# -- 3b. cluster access ----------------------------------------------------------------
+# Written once the sandbox is up, and again into a reused one (the token may
+# have changed); kubectl reads it per call, so Hermes starting first doesn't
+# matter. Piped through `sandbox exec`, so the token never lands on this pod's
+# disk (`sandbox upload` would also need ssh and git, which this image lacks).
+# The policy's cluster-api rule passes this TLS through untouched (the
+# supervisor doesn't trust the cluster CA), so kubectl checks the API server
+# against ca.crt itself and the token has to be in the sandbox.
+kubeconfig() {
+  cat <<EOF
+apiVersion: v1
+kind: Config
+clusters:
+  - name: $CLUSTER_NAME
+    cluster:
+      server: $CLUSTER_SERVER
+      certificate-authority-data: $(base64 -w0 < "$CLUSTER_DIR/ca.crt")
+users:
+  - name: hermes
+    user:
+      token: $(<"$CLUSTER_DIR/token")
+contexts:
+  - name: $CLUSTER_NAME
+    context:
+      cluster: $CLUSTER_NAME
+      user: hermes
+current-context: $CLUSTER_NAME
+EOF
+}
+if [ -s "$CLUSTER_DIR/token" ]; then
+  log "writing kubeconfig for $CLUSTER_SERVER (${HERMES_PLATFORM_ACCESS:-view} access)"
+  written=false
+  for _ in $(seq 60); do
+    if kubeconfig | openshell sandbox exec "$SANDBOX_NAME" --no-tty --timeout 30 -- \
+        sh -c 'umask 077 && mkdir -p /home/hermes/.kube && cat > /home/hermes/.kube/config' >/dev/null 2>&1; then
+      written=true
+      break
+    fi
+    sleep 3
+  done
+  $written || log "could not write the kubeconfig; kubectl in the sandbox has no cluster"
 fi
 
 # -- 4. forward until stopped ---------------------------------------------------------

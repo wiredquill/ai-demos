@@ -20,6 +20,13 @@
 #                     once a minute (cron jobs only fire while something ticks)
 #   OTEL_*, HERMES_OTEL_*  OpenTelemetry for the model calls; read at Python
 #                     startup by /opt/hermes/.../sitecustomize.py, not here
+#   HERMES_PLATFORM_ACCESS, HERMES_PLATFORM_VIA, HERMES_PLATFORM_CLUSTER,
+#   HERMES_PLATFORM_RANCHER
+#                     cluster access for platform engineers: view | operator,
+#                     kubernetes | rancher, the cluster's name (kubernetes: the
+#                     client uploads ~/.kube/config) or Rancher's URL (rancher:
+#                     the CLI reads RANCHER_CLI_URL and RANCHER_CLI_TOKEN). This
+#                     only tells Hermes about it (workspace AGENTS.md)
 set -euo pipefail
 
 : "${HERMES_BASE_URL:?HERMES_BASE_URL is required}"
@@ -31,6 +38,10 @@ set -euo pipefail
 : "${HERMES_CRON_SCHEDULE:=}"
 : "${HERMES_CRON_PROMPT:=}"
 : "${HERMES_CRON_NAME:=token-traffic}"
+: "${HERMES_PLATFORM_ACCESS:=}"
+: "${HERMES_PLATFORM_CLUSTER:=this cluster}"
+: "${HERMES_PLATFORM_VIA:=kubernetes}"
+: "${HERMES_PLATFORM_RANCHER:=}"
 
 # OpenShell sets HOME=/sandbox; the profiles only let the agent write under
 # /home/hermes and /tmp, so put Hermes's state (~/.hermes) there
@@ -68,6 +79,13 @@ mkdir -p "$HOME/.hermes/skins"
 for f in /opt/hermes/skins/*.yaml; do
   [ -e "$f" ] && cp "$f" "$HOME/.hermes/skins/"
 done
+
+# Skills shipped in an image built on this one (hermes-rancher: the rancher
+# CLI's skill); the image's copy wins, so it matches the binary.
+mkdir -p "$HOME/.hermes/skills"
+for d in /opt/hermes/skills/*/; do
+  [ -e "$d" ] && cp -r "$d" "$HOME/.hermes/skills/"
+done
 if compgen -e | grep -q '^HERMES_BRANDING_'; then
   env -u OTEL_EXPORTER_OTLP_ENDPOINT /opt/hermes/bin/python - <<'PY'
 import copy
@@ -96,6 +114,86 @@ PY
 fi
 
 cd "$HOME/workspace"
+
+# Cluster access: Hermes reads AGENTS.md from its working directory into the
+# system prompt, so it knows kubectl works and what it may do. Kept if the
+# user changed it in a reused sandbox.
+if [ -n "$HERMES_PLATFORM_ACCESS" ] && [ ! -e AGENTS.md ] && [ "$HERMES_PLATFORM_VIA" = rancher ]; then
+  case $HERMES_PLATFORM_ACCESS in
+    operator) can="Its Rancher token may change what its Rancher roles allow. Use the CLI's safety loop: \`--dry-run\` first, show the plan, \`--apply\` only after a yes." ;;
+    *) can="This is read-only: the CLI is in read-only mode and the sandbox only lets reads through to Rancher." ;;
+  esac
+  # kubectl contexts, one per cluster (images/hermes-rancher); the sandbox's
+  # network may take a moment after start
+  clusters=""
+  if command -v rancher-kubeconfig >/dev/null; then
+    for _ in 1 2 3 4 5; do
+      clusters=$(rancher-kubeconfig 2>/tmp/rancher-kubeconfig.log) && break
+      sleep 3
+    done
+  fi
+  if [ -n "$clusters" ]; then
+    known=$(printf -- '- %s (id %s)\n' $clusters)
+  else
+    known="- none found: run \`rancher-kubeconfig\` (log in /tmp/rancher-kubeconfig.log)"
+  fi
+  extra=", rancher"
+  cat > AGENTS.md <<EOF
+# Platform engineering assistant
+
+You help platform engineers run the Kubernetes clusters that the Rancher at
+$HERMES_PLATFORM_RANCHER manages.
+The \`rancher\` CLI in the terminal is already logged in (RANCHER_CLI_URL,
+RANCHER_CLI_TOKEN): don't run \`rancher auth login\`. Follow your \`rancher\`
+skill for how to use it. $can
+
+Clusters you can reach:
+$known
+
+- Name the cluster on every command (\`rancher ... --cluster <name>\`,
+  \`kubectl --context <name>\`) and say which one you looked at.
+  (\`rancher get clusters\` may be refused: it needs access to Rancher's own
+  local cluster. The list above comes from \`rancher-kubeconfig\`.)
+- Investigate before answering: \`rancher inspect\`, \`rancher usage\`,
+  \`rancher logs\`, \`rancher access\`, \`rancher get <type>\`, and kubectl.
+- kubectl is already configured: one context per cluster above, through
+  Rancher with the same token. Don't run \`rancher kubeconfig\`: it mints new
+  tokens.
+- Tools here: kubectl, helm, jq, yq, awk, python3, curl, git, openssl$extra.
+  Nothing can be installed (no root, no package repositories). kubectl
+  \`-o jsonpath\`/\`custom-columns\` and \`rancher -o template=...\` often need no
+  parser at all. helm reads releases from Secrets, so \`helm list\` needs Secret
+  access.
+- Before any change, say what you will run and why, and wait for a yes.
+- A "forbidden" or AUTH error is the access you were given, not a fault: say
+  so and give the command a platform engineer could run instead.
+EOF
+elif [ -n "$HERMES_PLATFORM_ACCESS" ] && [ ! -e AGENTS.md ]; then
+  case $HERMES_PLATFORM_ACCESS in
+    operator) can="read everything except Secrets, restart and scale Deployments, StatefulSets and DaemonSets, and delete Pods so their controller replaces them" ;;
+    *) can="read everything except Secrets; it can't change anything" ;;
+  esac
+  extra=""
+  cat > AGENTS.md <<EOF
+# Platform engineering assistant
+
+You help platform engineers run the Kubernetes cluster "$HERMES_PLATFORM_CLUSTER".
+\`kubectl\` in the terminal is already configured for it (~/.kube/config).
+Its ServiceAccount can $can.
+
+- Investigate before answering: \`kubectl get\`, \`describe\`, \`logs\`,
+  \`get events --sort-by=.lastTimestamp\`, \`top\` if metrics-server is there.
+- Use \`-A\` or \`-n <namespace>\` explicitly; say which namespace you looked at.
+- Tools here: kubectl, helm, jq, yq, awk, python3, curl, git, openssl$extra.
+  Nothing can be installed (no root, no package repositories). kubectl
+  \`-o jsonpath\`/\`custom-columns\` and \`rancher -o template=...\` often need no
+  parser at all. helm reads releases from Secrets, so \`helm list\` needs Secret
+  access.
+- Before any change, say what you will run and why, and wait for a yes.
+- A "forbidden" error is the access you were given, not a fault: say so and
+  give the command a platform engineer could run instead.
+EOF
+fi
 
 # The cron job, once (a reused sandbox keeps it), and its scheduler: a tick
 # just after each minute starts. Each run is a full agent turn, so it shows up

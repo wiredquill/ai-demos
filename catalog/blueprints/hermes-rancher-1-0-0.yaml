@@ -1,0 +1,73 @@
+apiVersion: ai-factory.suse.com/v1alpha1
+kind: Blueprint
+metadata:
+  labels:
+    ai-factory.suse.com/blueprint-name: hermes-rancher
+    ai-factory.suse.com/blueprint-version: 1.0.0
+  name: hermes-rancher-1-0-0
+spec:
+  source: Custom  # community, unsupported demo
+  displayName: Hermes for Rancher
+  version: 1.0.0
+  description: |
+    Nous Research's Hermes Agent for platform engineers: an NVIDIA OpenShell
+    0.1.5 sandbox on SUSE BCI 16 (amd64) with kubectl on the cluster it runs
+    on, as a ServiceAccount of its own, and Rancher's agent CLI with its skill. view access (default) reads everything except
+    Secrets; operator adds restarting and scaling workloads and deleting Pods.
+    The sandbox's policy lets only kubectl and helm reach the API server, and the
+    research profile allows read-only access to docs sites besides. The model
+    is an OpenAI-compatible API (OpenRouter by default), whose key the
+    OpenShell gateway holds so it never enters the sandbox.
+
+    Three components, three pods plus the sandbox:
+      - agent-sandbox       Agent Sandbox CRD + controller (agent-sandbox-system)
+      - openshell-gateway   OpenShell gateway (control plane, svc/openshell)
+      - hermes-rancher      client pod: creates the Hermes sandbox, hands it a
+                            kubeconfig and serves its terminal (ClusterIP:
+                            open it with kubectl port-forward)
+
+    Anyone who can open the terminal gets the agent's cluster access, so the
+    terminal is only reachable by people allowed into this namespace.
+
+    Prerequisites on the target cluster: a CNI that enforces NetworkPolicy
+    (RKE2's Canal/Calico/Cilium do), a default StorageClass for the gateway
+    database, no earlier Agent Sandbox install that Helm would conflict with,
+    and an API key for the model provider (set in the hermes-rancher form).
+  components:
+    # Install everything into one namespace: hermes-rancher reads the
+    # gateway's openshell-client-tls Secret and calls https://openshell:8080.
+    - chartName: agent-sandbox
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "1.0.10"
+      releaseName: agent-sandbox
+    - chartName: openshell-gateway
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "0.1.8"
+      releaseName: openshell
+      values:
+        openshell:
+          agentSandbox:
+            preflight:
+              # The components install in parallel, so the Agent Sandbox CRDs
+              # may not be served yet when this renders; skip the render-time
+              # check instead of failing the bundle.
+              enabled: false
+    - chartName: hermes-rancher
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "0.1.0"
+      releaseName: hermes-rancher
+      values:
+        profile: research
+        platform:
+          access: view
+        model:
+          backend: external
+          external:
+            url: https://openrouter.ai/api/v1
+            name: nousresearch/hermes-4-70b
+            # Set at deploy time (the form's API key field).
+            apiKey: ""
+        sandbox:
+          image: suse
+        service:
+          type: ClusterIP

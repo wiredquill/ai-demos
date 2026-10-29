@@ -1,0 +1,124 @@
+{{- $pl := include "hermes-rancher.platform" . | fromJson }}
+{{- if eq $pl.via "kubernetes" }}
+{{- $binding := printf "%s-%s-platform" .Release.Namespace (include "hermes-rancher.fullname" .) | trunc 63 | trimSuffix "-" }}
+# Hermes's own identity on the cluster. Only the client pod mounts its token,
+# to build the kubeconfig it uploads into the sandbox; no pod runs as it.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $pl.serviceAccount }}
+  labels:
+    {{- include "hermes-rancher.labels" . | nindent 4 }}
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $pl.serviceAccount }}-token
+  labels:
+    {{- include "hermes-rancher.labels" . | nindent 4 }}
+  annotations:
+    kubernetes.io/service-account.name: {{ $pl.serviceAccount }}
+type: kubernetes.io/service-account-token
+---
+# view: everything but Secrets, read-only
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $binding }}-view
+  labels:
+    {{- include "hermes-rancher.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+  - kind: ServiceAccount
+    name: {{ $pl.serviceAccount }}
+    namespace: {{ .Release.Namespace }}
+---
+# view is for namespaced resources; a platform engineer also asks about the
+# cluster's own: nodes, storage, CRDs, and `kubectl top`
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $binding }}-cluster-read
+  labels:
+    {{- include "hermes-rancher.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: [nodes, persistentvolumes]
+    verbs: [get, list, watch]
+  - apiGroups: [storage.k8s.io]
+    resources: [storageclasses, csidrivers, csinodes, volumeattachments]
+    verbs: [get, list, watch]
+  - apiGroups: [apiextensions.k8s.io]
+    resources: [customresourcedefinitions]
+    verbs: [get, list, watch]
+  - apiGroups: [apiregistration.k8s.io]
+    resources: [apiservices]
+    verbs: [get, list, watch]
+  - apiGroups: [scheduling.k8s.io]
+    resources: [priorityclasses]
+    verbs: [get, list, watch]
+  - apiGroups: [node.k8s.io]
+    resources: [runtimeclasses]
+    verbs: [get, list, watch]
+  - apiGroups: [networking.k8s.io]
+    resources: [ingressclasses]
+    verbs: [get, list, watch]
+  - apiGroups: [metrics.k8s.io]
+    resources: [nodes, pods]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $binding }}-cluster-read
+  labels:
+    {{- include "hermes-rancher.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $binding }}-cluster-read
+subjects:
+  - kind: ServiceAccount
+    name: {{ $pl.serviceAccount }}
+    namespace: {{ .Release.Namespace }}
+{{- if eq $pl.access "operator" }}
+---
+# operator: day-2 fixes on top of view. `kubectl rollout restart` patches the
+# pod template; deleting a Pod lets its controller replace it.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $binding }}-operator
+  labels:
+    {{- include "hermes-rancher.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [apps]
+    resources: [deployments, statefulsets, daemonsets]
+    verbs: [patch]
+  - apiGroups: [apps]
+    resources: [deployments/scale, statefulsets/scale]
+    verbs: [get, patch, update]
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $binding }}-operator
+  labels:
+    {{- include "hermes-rancher.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $binding }}-operator
+subjects:
+  - kind: ServiceAccount
+    name: {{ $pl.serviceAccount }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
+{{- end }}

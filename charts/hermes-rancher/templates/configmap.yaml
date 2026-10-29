@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "hermes-rancher.fullname" . }}-policy
+  labels:
+    {{- include "hermes-rancher.labels" . | nindent 4 }}
+data:
+  # The profile chosen in the form; the sandbox is created with this one.
+  policy.yaml: |
+    # OpenShell v0.1.5 policy, profile "{{ .Values.profile }}" (hermes-rancher chart)
+    {{- include "hermes-rancher.policy" . | nindent 4 }}
+  # Every profile, for switching the network rules live:
+  #   openshell policy set <sandbox> --policy /etc/hermes/profiles/<name>.yaml
+  {{- range $path, $_ := .Files.Glob "profiles/*.yaml" }}
+  profile-{{ base $path }}: |
+    {{- include "hermes-rancher.withRules" (dict "root" $ "policy" ($.Files.Get $path)) | nindent 4 }}
+  {{- end }}
