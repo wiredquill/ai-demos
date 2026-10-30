@@ -11,13 +11,19 @@ scope `suse-ai-declared-topology`:
 
 | Metric | One data point per | Data point attributes |
 |---|---|---|
-| `suse_ai_declared_component` | component | `type` (SUSE AI component type, e.g. `inference-engine`), `name`, optional `type_name` (e.g. `inference-engine.vllm`) |
-| `suse_ai_declared_relation` | relation | `source.type`, `source.name`, `target.type`, `target.name`, optional `type` (default `uses`) |
+| `suse_ai_declared_component` | component | `type` (SUSE AI component type, e.g. `inference-engine`), `name`, optional `type_name` (e.g. `inference-engine.vllm`), optional `instance` |
+| `suse_ai_declared_relation` | relation | `source.type`, `source.name`, `target.type`, `target.name`, optional `type` (default `uses`), optional `source.instance` / `target.instance` |
 
 `settings/component-mappings/declared-component.sty` turns each component data
-point into `urn:suse-ai:product:<type>:<name>`, the SUSE AI collector's own
-identifier, so the declared and inferred components are one node (the SUSE AI
-sync's name and type win). `settings/relation-mappings/declared-relation.sty`
+point into one of the SUSE AI collector's own identifiers, so the declared and
+inferred components are one node (the SUSE AI sync's name and type win):
+
+- with `instance` (the `service.instance.id` the component reports) and a
+  `k8s.namespace.name` resource attribute:
+  `urn:suse-ai:urn:opentelemetry:namespace/<namespace>:service/<name>:serviceInstance/<instance>`.
+  The same application installed in two namespaces stays two components.
+- otherwise `urn:suse-ai:product:<type>:<name>`, which every namespace shares.
+  Use it when the instance id is not fixed (e.g. the pod uid). `settings/relation-mappings/declared-relation.sty`
 connects them. Elements expire 15 minutes after the last data point, so send
 them every few minutes. `charts/hr-assistant-vllm` (`templates/topology.yaml`) is a
 sender.
