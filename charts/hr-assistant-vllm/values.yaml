@@ -152,6 +152,26 @@ components:
   employeeHandbook: true
   hrPolicyDb: true
 
+# Declared SUSE AI topology (templates/topology.yaml). A post-install Job and a
+# CronJob send the apps -> inference engine -> model and hr-policy-db ->
+# Qdrant / OpenSearch graph to the collector as OTLP metrics, so SUSE
+# Observability shows it before the first request and keeps the edges the
+# collector only infers from live traffic. Needs SUSE Observability 2.12+ with
+# the SUSE AI Declared Topology StackPack (stackpacks/suse-ai-declared-topology);
+# without it the metrics are stored and nothing else happens.
+topology:
+  enabled: true
+  # The StackPack expires elements 15 minutes after their last refresh.
+  refreshSchedule: '*/5 * * * *'
+  image: registry.suse.com/bci/bci-base:15.7
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
 # Persistent load generator. Replaces the old CronJob approach, which created a
 # new pod every cycle and let it terminate — that churn made the load-gen pod
 # flap offline/online in the SUSE AI topology view every few minutes.

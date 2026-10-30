@@ -94,6 +94,13 @@ questions:
   group: Observability
   show_if: "observability.mode=operator"
 
+- variable: topology.enabled
+  label: "Declare the SUSE AI topology"
+  description: "Show the apps, inference engine, model, Qdrant and OpenSearch connected in SUSE Observability's SUSE AI view before the first request. Needs SUSE Observability 2.12+ with the SUSE AI Declared Topology StackPack."
+  type: boolean
+  default: true
+  group: Observability
+
 # --- vLLM Configuration (Form Page) ---
 - variable: vllm.enabled
   group: "vLLM Deployment"

@@ -1,0 +1,68 @@
+{{- if .Values.topology.enabled }}
+# Declares the SUSE AI topology up front (see templates/_topology.tpl), so
+# SUSE Observability shows it before the first request and keeps the edges
+# the collector infers only intermittently. Sent as OTLP metrics to the
+# collector at install/upgrade and on topology.refreshSchedule; the SUSE AI
+# Declared Topology StackPack (SUSE Observability 2.12+) expires it 15 minutes
+# after the last refresh.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "hr-assistant.fullname" . }}-topology
+  labels:
+    {{- include "hr-assistant.labels" . | nindent 4 }}
+data:
+  payload.json: |
+    {{- include "hr-assistant.topologyPayload" . | nindent 4 }}
+  push.sh: |
+    set -eu
+    NOW="$(date +%s)000000000"
+    STATUS=$(sed "s/__NOW__/$NOW/g" /topology/payload.json |
+      curl -sS -o /dev/null -w '%{http_code}' -X POST -H "Content-Type: application/json" \
+        --data-binary @- "$OTLP_ENDPOINT/v1/metrics" || echo 000)
+    case "$STATUS" in
+      2??) echo "Declared topology sent to $OTLP_ENDPOINT (HTTP $STATUS)" ;;
+      *) echo "ERROR: $OTLP_ENDPOINT/v1/metrics returned HTTP $STATUS" >&2; exit 1 ;;
+    esac
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "hr-assistant.fullname" . }}-topology
+  labels:
+    {{- include "hr-assistant.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.topology.refreshSchedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            {{- include "hr-assistant.labels" . | nindent 12 }}
+            app.component: topology
+        spec:
+          {{- include "hr-assistant.topologyPodSpec" . | nindent 10 }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "hr-assistant.fullname" . }}-topology-init
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    {{- include "hr-assistant.labels" . | nindent 4 }}
+spec:
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        {{- include "hr-assistant.labels" . | nindent 8 }}
+        app.component: topology
+    spec:
+      {{- include "hr-assistant.topologyPodSpec" . | nindent 6 }}
+{{- end }}

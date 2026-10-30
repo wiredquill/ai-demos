@@ -170,10 +170,8 @@ spec:
       releaseName: load-gen
     # Declares the topology above (apps -> vllm -> model, hr-policy-db ->
     # qdrant / opensearch) so SUSE Observability shows it without waiting for
-    # traffic. The model name must match vllm's modelURL.
+    # traffic. Its Model field must match the vllm component's model.
     - chartName: hr-assistant-vllm-topology
       chartRepo: wiredquill-ai-demos
-      chartVersion: "0.1.0"
+      chartVersion: "0.1.3"
       releaseName: topology
-      values:
-        model: Qwen/Qwen2.5-7B-Instruct
