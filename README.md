@@ -119,7 +119,7 @@ with its own `questions.yaml`. Those charts vendor `charts/hr-assistant-vllm`
 | `hr-assistant-vllm-handbook` | wiredquill-ai-demos 0.1.3 | `employee-handbook` | Employee Handbook |
 | `hr-assistant-vllm-app` | wiredquill-ai-demos 0.1.3 | `hr-assistant` | HR Assistant |
 | `hr-assistant-vllm-load-gen` | wiredquill-ai-demos 0.1.3 | `load-gen` | load generator + health-check emitter |
-| `hr-assistant-vllm-topology` | wiredquill-ai-demos 0.1.0 | `topology` | CronJob declaring the SUSE AI topology (1.7.0+) |
+| `hr-assistant-vllm-topology` | wiredquill-ai-demos 0.1.3 | `topology` | CronJob declaring the SUSE AI topology (1.7.0+) |
 
 That's eight components and eight pods (1.6.0: seven; 1.7.0 adds the topology
 component, which is a CronJob, not a long-running pod). SUSE's `vllm` chart provides both the
@@ -145,7 +145,7 @@ The all-in-one `hr-assistant-vllm` chart is unchanged for Rancher Apps installs.
 | `hr-assistant-handbook` | wiredquill-ai-demos 0.1.2 | `employee-handbook` | Employee Handbook |
 | `hr-assistant-app` | wiredquill-ai-demos 0.1.2 | `hr-assistant` | HR Assistant |
 | `hr-assistant-load-gen` | wiredquill-ai-demos 0.1.2 | `load-gen` | load generator + health-check emitter |
-| `hr-assistant-topology` | wiredquill-ai-demos 0.1.0 | `topology` | CronJob declaring the SUSE AI topology (1.2.0+) |
+| `hr-assistant-topology` | wiredquill-ai-demos 0.1.2 | `topology` | CronJob declaring the SUSE AI topology (1.2.0+) |
 
 That's eight components and seven pods (1.1.0: seven components; 1.2.0 adds
 the topology component, a CronJob). Ollama pulls its own models at startup,

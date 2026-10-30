@@ -7,7 +7,7 @@ version: 0.1.3
 appVersion: latest
 dependencies:
 - name: hr-assistant-vllm
-  version: 0.1.16
+  version: 0.1.17
   repository: file://../../../charts/hr-assistant-vllm
   alias: hr
 keywords:

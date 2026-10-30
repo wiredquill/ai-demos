@@ -19,7 +19,7 @@ point into `urn:suse-ai:product:<type>:<name>`, the SUSE AI collector's own
 identifier, so the declared and inferred components are one node (the SUSE AI
 sync's name and type win). `settings/relation-mappings/declared-relation.sty`
 connects them. Elements expire 15 minutes after the last data point, so send
-them every few minutes. `catalog/components/hr-assistant-vllm-topology` is a
+them every few minutes. `charts/hr-assistant-vllm` (`templates/topology.yaml`) is a
 sender.
 
 ## Install

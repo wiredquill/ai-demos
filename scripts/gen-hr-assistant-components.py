@@ -14,7 +14,7 @@ ROOT = sys.argv[1]
 
 VARIANTS = {
     "hr-assistant-vllm": dict(
-        title="HR Assistant (vLLM)", base_version="0.1.16", version="0.1.3", blueprint="hr-assistant-vllm-1-7-0.yaml",
+        title="HR Assistant (vLLM)", base_version="0.1.17", version="0.1.3", blueprint="hr-assistant-vllm-1-7-0.yaml",
         engine="vllm", engine_desc="SUSE vLLM, Qdrant and OpenSearch", nodeport=30081,
         models=["Qwen/Qwen2.5-7B-Instruct", "Qwen/Qwen3.6-35B-A3B", "meta-llama/Llama-3.3-70B-Instruct", "openai/gpt-oss-120b"],
         llm_values={"vllm": {"enabled": False}, "vllmEndpoint": "http://vllm-router-service:80"},
@@ -22,7 +22,7 @@ VARIANTS = {
                         description="OpenAI-compatible endpoint of the <b>vllm</b> component's router (release <code>vllm</code> creates Service <code>vllm-router-service</code>)."),
         model_label="Model served by vLLM", calls="the vLLM router"),
     "hr-assistant": dict(
-        title="HR Assistant (Ollama)", base_version="1.19.1", version="0.1.2", blueprint="hr-assistant-1-2-0.yaml",
+        title="HR Assistant (Ollama)", base_version="1.20.0", version="0.1.2", blueprint="hr-assistant-1-2-0.yaml",
         engine="ollama", engine_desc="SUSE Ollama, Qdrant and OpenSearch", nodeport=30080,
         models=["llama3.2:latest", "llama3.2:1b", "llama3.1:8b", "qwen2.5:7b"],
         llm_values={"ollama": {"enabled": False}, "ollamaEndpoint": "http://ollama:11434"},
@@ -44,6 +44,7 @@ def off(variant, cfg):
         "serviceAccount": {"create": False},
         "components": {"hrAssistant": False, "employeeHandbook": False, "hrPolicyDb": False},
         "loadGenerator": {"enabled": False},
+        "topology": {"enabled": False},
         "qdrant": {"enabled": False, "url": "http://qdrant:6333"},
         "opensearch": {"enabled": False, "url": "http://opensearch-cluster-master:9200"},
         # App images are public (ghcr.io, registry.suse.com/bci); AI Factory delivers
@@ -103,6 +104,11 @@ def components(cfg):
            values=lambda v: (deep(v, "loadGenerator.enabled", True), deep(v, "observability.connectivityCheck", True)),
            questions=[dict(variable="hr.loadGenerator.intervalSeconds", label="Load Generation Interval (seconds)", group="Load Generator", type="int", default=45, required=True,
                            description="How often the three apps are polled. Keep at 120 or lower: SUSE AI components expire ~2 minutes after their last telemetry.")] + Q_OTLP),
+      dict(name="topology", pod="Declared topology (CronJob)",
+           summary=f"Declares the demo's SUSE AI topology (apps -> {cfg['engine']} -> model, hr-policy-db -> Qdrant / OpenSearch) to SUSE Observability up front, "
+                   "so it shows before the first request. Needs SUSE Observability 2.12+ with the SUSE AI Declared Topology StackPack (stackpacks/suse-ai-declared-topology).",
+           values=lambda v: deep(v, "topology.enabled", True),
+           questions=[q_llm(cfg)[0]] + Q_OTLP),
     ]
 
 class Dumper(yaml.SafeDumper):

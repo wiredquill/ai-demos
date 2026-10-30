@@ -1,5 +1,5 @@
-# HR Assistant (Ollama): Declared topology
+# HR Assistant (Ollama): Declared topology (CronJob)
 
-Declares the demo's SUSE AI topology (apps -> Ollama -> model, apps -> Qdrant / OpenSearch) to SUSE Observability up front, so the topology does not depend on live traffic.
+Declares the demo's SUSE AI topology (apps -> ollama -> model, hr-policy-db -> Qdrant / OpenSearch) to SUSE Observability up front, so it shows before the first request. Needs SUSE Observability 2.12+ with the SUSE AI Declared Topology StackPack (stackpacks/suse-ai-declared-topology).
 
-Requires SUSE Observability 2.12+ with the **SUSE AI Declared Topology** StackPack 1.0.0 (`stackpacks/suse-ai-declared-topology`), and the shared SUSE AI collector. Part of the **hr-assistant** SUSE AI Factory blueprint.
+Part of the **hr-assistant** SUSE AI Factory blueprint (SUSE Ollama, Qdrant and OpenSearch plus four app components). Install all components into the same namespace (the blueprint does this for you).

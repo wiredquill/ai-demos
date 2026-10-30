@@ -1,15 +1,27 @@
 questions:
-- variable: model
-  label: Model
-  group: Topology
-  type: string
+- variable: hr.model
+  label: Model served by vLLM
+  group: LLM
+  type: enum
   required: true
   default: Qwen/Qwen2.5-7B-Instruct
-  description: The model vLLM serves (its modelURL). Names the declared llm-model component, so it must match the model the apps request.
-- variable: otlpEndpoint
+  options:
+  - Qwen/Qwen2.5-7B-Instruct
+  - Qwen/Qwen3.6-35B-A3B
+  - meta-llama/Llama-3.3-70B-Instruct
+  - openai/gpt-oss-120b
+  description: Must match the model served by the <b>vllm</b> component. Reported as gen_ai.request.model and sent on every request.
+- variable: hr.otlpEndpoint
   label: OTLP Endpoint
   group: Observability
   type: string
-  required: true
-  default: http://opentelemetry-collector.observability.svc.cluster.local:4318
-  description: OTLP/HTTP endpoint of the shared SUSE AI OpenTelemetry collector (installed from the ai-observability-collector chart). The declared topology is sent there as metrics.
+  required: false
+  default: ''
+  description: OpenTelemetry collector address (scheme://host:port).<br><br><b>Leave blank to auto-discover</b> the shared SUSE AI collector in the Collector Namespace below.
+- variable: hr.observability.collectorNamespace
+  label: Collector Namespace
+  group: Observability
+  type: string
+  required: false
+  default: observability
+  description: Namespace holding the shared SUSE AI OpenTelemetry collector (installed from the ai-observability-collector chart).

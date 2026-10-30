@@ -148,10 +148,8 @@ spec:
       releaseName: load-gen
     # Declares the topology above (apps -> ollama -> model, hr-policy-db ->
     # qdrant / opensearch) so SUSE Observability shows it without waiting for
-    # traffic. The model name must match ollama's main model.
+    # traffic. Its Model field must match the ollama component's model.
     - chartName: hr-assistant-topology
       chartRepo: wiredquill-ai-demos
-      chartVersion: "0.1.0"
+      chartVersion: "0.1.2"
       releaseName: topology
-      values:
-        model: llama3.2:latest
