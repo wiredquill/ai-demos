@@ -49,6 +49,12 @@ nodes:
             target: "suse.ai.topology.source"
           - source: "vars.type"
             target: "suse.ai.component.type"
+          # The SUSE AI views select on suse.ai.category, so a component
+          # that is only declared (no traffic yet) still shows in them.
+          - source: "vars.type"
+            target: "suse.ai.category"
+          - source: "'true'"
+            target: "suse.ai.managed"
       optional:
         tags:
           - source: "resource.attributes['k8s.namespace.name']"
