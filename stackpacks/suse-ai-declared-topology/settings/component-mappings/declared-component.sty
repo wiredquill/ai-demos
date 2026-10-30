@@ -3,9 +3,12 @@
 # charts/hr-assistant-vllm templates/topology.yaml) instead of waiting for the
 # SUSE AI collector to infer the component from live spans.
 #
-# The identifier is the SUSE AI collector's own (urn:suse-ai:product:<type>:<name>),
-# so a declared component and the one the SUSE AI StackPack syncs are one
-# node. The SUSE AI sync is an external topology sync, so its name, type,
+# The identifier is the SUSE AI collector's own, so a declared component and
+# the one the SUSE AI StackPack syncs are one node. With an `instance` data
+# point attribute (the service.instance.id the component reports) it is the
+# per-namespace one, urn:suse-ai:urn:opentelemetry:namespace/<ns>:service/<name>:serviceInstance/<instance>,
+# so the same application in two namespaces stays two components; without it,
+# urn:suse-ai:product:<type>:<name>, which one name shares across namespaces. The SUSE AI sync is an external topology sync, so its name, type,
 # layer and domain win; this mapping only adds tags, and keeps the component
 # (and the relations below) alive while there is no traffic.
 nodes:
@@ -37,8 +40,14 @@ nodes:
           'type_name' in datapoint.attributes && datapoint.attributes['type_name'] != '' ?
           datapoint.attributes['type_name'] :
           datapoint.attributes['type']
+      - name: "id"
+        value: >-
+          'instance' in datapoint.attributes && 'k8s.namespace.name' in resource.attributes ?
+          'urn:suse-ai:urn:opentelemetry:namespace/' + resource.attributes['k8s.namespace.name'] +
+          ':service/' + datapoint.attributes['name'] + ':serviceInstance/' + datapoint.attributes['instance'] :
+          'urn:suse-ai:product:' + datapoint.attributes['type'] + ':' + datapoint.attributes['name']
     output:
-      identifier: "'urn:suse-ai:product:' + vars.type + ':' + vars.name"
+      identifier: "vars.id"
       name: "vars.name"
       typeName: "vars.typeName"
       required:

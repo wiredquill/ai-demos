@@ -1,5 +1,7 @@
 # One relation per data point of the suse_ai_declared_relation gauge, between
-# two SUSE AI components (urn:suse-ai:product:<type>:<name>). The endpoints can
+# two SUSE AI components, identified as in declared-component.sty: the
+# per-namespace identifier when the end has source.instance / target.instance,
+# else urn:suse-ai:product:<type>:<name>. The endpoints can
 # be declared components or ones the SUSE AI StackPack syncs; the relation
 # appears once both exist.
 nodes:
@@ -21,9 +23,22 @@ nodes:
                 'source.type' in datapoint.attributes && 'source.name' in datapoint.attributes &&
                 'target.type' in datapoint.attributes && 'target.name' in datapoint.attributes
               action: "'CREATE'"
+    vars:
+      - name: "sourceId"
+        value: >-
+          'k8s.namespace.name' in resource.attributes && 'source.instance' in datapoint.attributes ?
+          'urn:suse-ai:urn:opentelemetry:namespace/' + resource.attributes['k8s.namespace.name'] +
+          ':service/' + datapoint.attributes['source.name'] + ':serviceInstance/' + datapoint.attributes['source.instance'] :
+          'urn:suse-ai:product:' + datapoint.attributes['source.type'] + ':' + datapoint.attributes['source.name']
+      - name: "targetId"
+        value: >-
+          'k8s.namespace.name' in resource.attributes && 'target.instance' in datapoint.attributes ?
+          'urn:suse-ai:urn:opentelemetry:namespace/' + resource.attributes['k8s.namespace.name'] +
+          ':service/' + datapoint.attributes['target.name'] + ':serviceInstance/' + datapoint.attributes['target.instance'] :
+          'urn:suse-ai:product:' + datapoint.attributes['target.type'] + ':' + datapoint.attributes['target.name']
     output:
-      sourceId: "'urn:suse-ai:product:' + datapoint.attributes['source.type'] + ':' + datapoint.attributes['source.name']"
-      targetId: "'urn:suse-ai:product:' + datapoint.attributes['target.type'] + ':' + datapoint.attributes['target.name']"
+      sourceId: "vars.sourceId"
+      targetId: "vars.targetId"
       typeName: "'type' in datapoint.attributes ? datapoint.attributes['type'] : 'uses'"
       dependencyType: "'CONNECTION'"
     expireAfter: 900000
