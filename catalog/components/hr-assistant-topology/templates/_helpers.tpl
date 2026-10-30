@@ -63,6 +63,9 @@ Pod spec shared by the install/upgrade Job and the refresh CronJob.
 {{- define "topology.podSpec" -}}
 restartPolicy: OnFailure
 automountServiceAccountToken: false
+securityContext:
+  seccompProfile:
+    type: RuntimeDefault
 containers:
   - name: push
     image: {{ .Values.image | quote }}
