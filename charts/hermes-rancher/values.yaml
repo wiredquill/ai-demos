@@ -117,8 +117,11 @@ platform:
     # Rancher's URL, e.g. https://rancher.example.com. Its certificate must be
     # publicly trusted: OpenShell inspects this traffic to add the token.
     url: ""
-    # Secret in this namespace holding a Rancher API token (access-key:secret,
-    # no scope), e.g.:
+    # Rancher API token (access-key:secret, no scope). Stored in a Secret in
+    # this namespace and given to the OpenShell gateway, not to the sandbox.
+    # Helm keeps it in the release too; use existingSecret to keep it out.
+    token: ""
+    # ... or an existing Secret in this namespace (takes precedence), e.g.:
     #   kubectl create secret generic rancher-cli --from-literal=token=...
     existingSecret: ""
     existingSecretKey: token

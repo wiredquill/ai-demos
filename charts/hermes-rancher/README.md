@@ -76,7 +76,17 @@ platform:
   via: rancher
   rancher:
     url: https://rancher.example.com
-    existingSecret: rancher-cli   # key "token": access-key:secret, no scope
+    token: token-abcde:...        # access-key:secret, no scope
+```
+
+The chart stores `token` in a Secret (`<release>-rancher`). Helm also keeps it
+in the release, so anyone who can read Secrets in the namespace can read it.
+To keep it out of Helm, create the Secret yourself and point at it instead
+(it takes precedence over `token`):
+
+```yaml
+    existingSecret: rancher-cli   # kubectl create secret generic rancher-cli --from-literal=token=...
+    existingSecretKey: token
 ```
 
 - **The token's user is the limit.** Create a user for Hermes (Standard User)

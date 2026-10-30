@@ -338,16 +338,30 @@ questions:
   required: true
   show_if: "platform.via=rancher"
   description: "e.g. https://rancher.example.com. Its certificate must be publicly trusted."
+- variable: platform.rancher.token
+  label: Rancher API token
+  group: Cluster access
+  type: password
+  default: ""
+  show_if: "platform.via=rancher"
+  description: >-
+    An API key (no scope) for a user with only the roles Hermes should have. Stored in a Secret in this namespace
+    and given to the OpenShell gateway, not to the sandbox. Leave blank to use an existing Secret.
 - variable: platform.rancher.existingSecret
-  label: Rancher token Secret
+  label: Existing Secret with the Rancher token
   group: Cluster access
   type: string
   default: ""
-  required: true
   show_if: "platform.via=rancher"
   description: >-
-    Secret in this namespace with a Rancher API token (no scope) under key "token". Create it for a user with
-    only the roles Hermes should have, e.g. kubectl create secret generic rancher-cli --from-literal=token=...
+    Instead of the field above, keeps the token out of the Helm release, e.g.
+    kubectl create secret generic rancher-cli --from-literal=token=...
+- variable: platform.rancher.existingSecretKey
+  label: Key in that Secret
+  group: Cluster access
+  type: string
+  default: token
+  show_if: "platform.via=rancher"
 
 - variable: observability.enabled
   label: Enable OpenTelemetry

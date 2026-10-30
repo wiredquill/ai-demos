@@ -86,7 +86,15 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 {{- $_ := set $out "rancherUrl" (printf "https://%s" $u.host) -}}
 {{- $_ := set $out "rancherHost" $u.hostname -}}
-{{- $_ := set $out "rancherSecret" (required "platform.rancher.existingSecret is required when platform.via is rancher" $pl.rancher.existingSecret) -}}
+{{- if $pl.rancher.existingSecret -}}
+{{- $_ := set $out "rancherSecret" $pl.rancher.existingSecret -}}
+{{- $_ := set $out "rancherSecretKey" $pl.rancher.existingSecretKey -}}
+{{- else if $pl.rancher.token -}}
+{{- $_ := set $out "rancherSecret" (printf "%s-rancher" (include "hermes-rancher.fullname" .)) -}}
+{{- $_ := set $out "rancherSecretKey" "token" -}}
+{{- else -}}
+{{- fail "platform.rancher.token or platform.rancher.existingSecret is required when platform.via is rancher" -}}
+{{- end -}}
 {{- else if ne $pl.via "kubernetes" -}}
 {{- fail (printf "unknown platform.via %q (kubernetes or rancher)" $pl.via) -}}
 {{- end -}}
