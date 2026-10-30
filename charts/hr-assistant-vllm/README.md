@@ -299,3 +299,5 @@ Blueprints") for publishing and installing the blueprint.
   SUSE Application Collection opensearch chart). The all-in-one render is unchanged.
 - **0.1.15** — The operator-mode collector forwards OTLP logs to SUSE
   Observability instead of dropping them (needs SUSE Observability 2.11 or later).
+- **0.1.16** — The operator-mode collector sets `db.system` on Qdrant and
+  OpenSearch client spans, so the SUSE AI topology connects hr-policy-db to them.
