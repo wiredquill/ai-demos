@@ -361,6 +361,11 @@ spec:
             statements:
               - set(attributes["peer.service"], "qdrant") where attributes["db.system.name"] == "qdrant" or attributes["db.system"] == "qdrant"
               - set(attributes["peer.service"], "opensearch") where IsMatch(attributes["server.address"], ".*opensearch.*") or IsMatch(attributes["net.peer.name"], ".*opensearch.*") or IsMatch(attributes["url.full"], ".*opensearch.*") or IsMatch(attributes["http.url"], ".*opensearch.*")
+              # The SUSE AI topology exporter draws app -> vector DB / search engine
+              # edges only from a span's db.system (not peer.service). OpenLIT 1.44+
+              # writes db.system.name, and OpenSearch REST calls are plain HTTP spans.
+              - set(attributes["db.system"], "qdrant") where attributes["db.system.name"] == "qdrant"
+              - set(attributes["db.system"], "opensearch") where attributes["db.system"] == nil and (IsMatch(attributes["server.address"], ".*opensearch.*") or IsMatch(attributes["net.peer.name"], ".*opensearch.*") or IsMatch(attributes["url.full"], ".*opensearch.*") or IsMatch(attributes["http.url"], ".*opensearch.*"))
       transform/topology-provider:
         error_mode: ignore
         trace_statements:
