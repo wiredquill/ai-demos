@@ -1,0 +1,211 @@
+# Install form for the SUSE Application Collection vllm-stack chart ("vLLM
+# Production Stack"), added when scripts/package-aif-charts.sh republishes it to
+# the wiredquill-ai-demos repo (the upstream chart ships none).
+#
+# modelSpec is a map keyed "llm" and "embed" instead of the documented list:
+# Rancher forms cannot write list elements, and the chart ranges over modelSpec,
+# so a map works the same. "preset", "servedModelName", "extraArgsText" and the
+# "auto" values come from model-presets.patch (templates/_model-presets.tpl):
+# one dropdown sets the model, its served name, parsers and context length.
+questions:
+# --- Model --------------------------------------------------------------------
+- variable: servingEngineSpec.modelSpec.llm.preset
+  group: Model
+  label: Model
+  description: >-
+    Served name in brackets: clients (Hermes, Open WebUI, LiteLLM) use it as "model".
+    All presets turn on tool calling.<br>
+    <b>DGX Spark / Blackwell (NVFP4)</b><br>
+    hermes-qwen3.8-27b-nvfp4: the Hermes model from dgx-spark-fleet, 256K context [qwen3.8-27b]<br>
+    hermes-qwen3.8-27b-nvfp4-dflash: identical to dgx-spark-fleet vllm-node, plus DFlash speculative decoding and instanttensor loading; needs a vLLM build with both [qwen3.8-27b]<br>
+    gemma-4-31b-it-nvfp4: Gemma 4 31B, 128K context [gemma-4-31b]<br>
+    <b>16-24GB GPU (RTX 4090, L4, A10)</b><br>
+    qwen3-4b-instruct-2507: 64K context [qwen3-4b]<br>
+    gemma-4-e4b-it: Gemma 4 E4B, 64K context [gemma-4-e4b]<br>
+    gpt-oss-20b: 128K context [gpt-oss-20b]<br>
+    <b>80GB GPU (A100/H100) or DGX Spark</b><br>
+    gemma-4-26b-a4b-it: Gemma 4 MoE, 128K context [gemma-4-26b-a4b]<br>
+    gemma-4-31b-it-fp8: Gemma 4 31B FP8 (Hopper/Blackwell), 64K context [gemma-4-31b]<br>
+    qwen3.6-35b-a3b: Qwen3.6 MoE, 128K context [qwen3.6-35b-a3b]<br>
+    gpt-oss-120b: 128K context [gpt-oss-120b]<br>
+    custom: any Hugging Face model; set it below.
+  type: enum
+  required: true
+  default: hermes-qwen3.8-27b-nvfp4
+  options:
+    - hermes-qwen3.8-27b-nvfp4
+    - hermes-qwen3.8-27b-nvfp4-dflash
+    - gemma-4-31b-it-nvfp4
+    - qwen3-4b-instruct-2507
+    - gemma-4-e4b-it
+    - gpt-oss-20b
+    - gemma-4-26b-a4b-it
+    - gemma-4-31b-it-fp8
+    - qwen3.6-35b-a3b
+    - gpt-oss-120b
+    - custom
+- variable: servingEngineSpec.modelSpec.llm.modelURL
+  group: Model
+  label: Custom Model — Hugging Face ID
+  description: "e.g. Qwen/Qwen3-8B. Add tool-calling flags under Extra vLLM Arguments (e.g. --enable-auto-tool-choice, --tool-call-parser hermes)."
+  type: string
+  default: Qwen/Qwen3-8B
+  show_if: servingEngineSpec.modelSpec.llm.preset=custom
+- variable: servingEngineSpec.modelSpec.llm.servedModelName
+  group: Model
+  label: Served Model Name
+  description: "The model name clients ask for. Leave empty to use the preset's name (in brackets above); a custom model is otherwise served under its Hugging Face ID."
+  type: string
+  default: ""
+- variable: servingEngineSpec.modelSpec.llm.hf_token
+  group: Model
+  label: Hugging Face Token
+  description: "Needed for gated models (google/gemma-4-*, meta-llama/*); recommended for all to avoid anonymous rate limits. Stored in a Secret and injected as HF_TOKEN."
+  type: password
+  default: ""
+- variable: servingEngineSpec.vllmApiKey
+  group: Model
+  label: API Key (optional)
+  description: "Clients must send it as a Bearer token (Hermes: the provider's API key). Leave empty for no authentication."
+  type: password
+  default: ""
+# --- Engine sizing -------------------------------------------------------------
+- variable: servingEngineSpec.modelSpec.llm.requestGPU
+  group: Engine Resources
+  label: GPUs
+  description: "GPUs for the engine (also its tensor-parallel size). 'auto' = 1."
+  type: string
+  default: auto
+- variable: servingEngineSpec.modelSpec.llm.vllmConfig.maxModelLen
+  group: Engine Resources
+  label: Context Length (tokens)
+  description: "'auto' = the preset's (above). Hermes Agent wants at least 64K. Lower it if the engine reports too little KV cache."
+  type: string
+  default: auto
+- variable: servingEngineSpec.modelSpec.llm.vllmConfig.gpuMemoryUtilization
+  group: Engine Resources
+  label: GPU Memory Fraction
+  description: "Share of GPU memory vLLM takes for weights and KV cache. 'auto' = 0.9, or 0.6 for the DGX Spark presets (unified memory is shared with the OS and other pods)."
+  type: string
+  default: auto
+- variable: servingEngineSpec.modelSpec.llm.requestMemory
+  group: Engine Resources
+  label: Memory Request
+  description: "Host RAM. 'auto' = sized for the preset (on DGX Spark this includes the model, e.g. 80Gi)."
+  type: string
+  default: auto
+- variable: servingEngineSpec.modelSpec.llm.limitMemory
+  group: Engine Resources
+  label: Memory Limit
+  description: "'auto' = sized for the preset. Must exceed the model size while loading, or the pod is OOM-killed."
+  type: string
+  default: auto
+- variable: servingEngineSpec.modelSpec.llm.requestCPU
+  group: Engine Resources
+  label: CPU Request (cores)
+  type: int
+  default: 4
+- variable: servingEngineSpec.modelSpec.llm.extraArgsText
+  group: Engine Resources
+  label: Extra vLLM Arguments (one per line)
+  description: "Appended after the preset's arguments; a flag given here wins. Put a flag and its value on separate lines, e.g.<br>--max-num-seqs<br>16"
+  type: multiline
+  default: ""
+- variable: servingEngineSpec.modelSpec.llm.lmcacheConfig.enabled
+  group: Engine Resources
+  label: LMCache KV Offload to CPU RAM
+  description: "Keeps evicted KV cache in host RAM so repeated long prompts (agent histories, RAG) skip prefill. Uses the size below on top of the memory request. Turn off again if the engine fails to start with this model."
+  type: boolean
+  default: false
+- variable: servingEngineSpec.modelSpec.llm.lmcacheConfig.cpuOffloadingBufferSize
+  group: Engine Resources
+  label: LMCache CPU Buffer (GB)
+  type: string
+  default: "20"
+  show_if: servingEngineSpec.modelSpec.llm.lmcacheConfig.enabled=true
+# --- Embedding model ----------------------------------------------------------
+- variable: servingEngineSpec.modelSpec.embed.enabled
+  group: Embedding Model
+  label: Also Serve an Embedding Model
+  description: "nomic-embed-text-v1 on the same router (served name nomic-embed-text-v1), the equivalent of dgx-spark-fleet honcho-embed for Hermes memory. It is a second pod asking for one GPU: on a single-GPU node that needs GPU time-slicing or MPS in the GPU operator."
+  type: boolean
+  default: false
+# --- Storage ------------------------------------------------------------------
+- variable: servingEngineSpec.modelSpec.llm.pvcStorage
+  group: Storage
+  label: Model Cache PVC Size
+  description: "Weights are downloaded once into this PVC. 27-35B models need 40-70Gi, gpt-oss-120b about 70Gi."
+  type: string
+  default: 150Gi
+- variable: servingEngineSpec.modelSpec.llm.storageClass
+  group: Storage
+  label: Storage Class
+  description: "StorageClass for the model cache PVC. 'Default' uses the cluster's default StorageClass."
+  type: string
+  default: Default
+- variable: sharedPvcStorage.enabled
+  group: Storage
+  label: Enable Shared NFS Model Cache (skip re-downloads)
+  description: "Cache model weights once on a shared NFS volume that every install reuses instead of re-downloading. Needs TCP 2049 from the cluster nodes to the NFS server."
+  type: boolean
+  default: false
+- variable: sharedPvcStorage.nfs.server
+  group: Storage
+  label: Shared NFS Model Cache — Server
+  description: NFS server hosting the shared cache, e.g. 10.0.9.10.
+  type: string
+  default: ""
+  show_if: sharedPvcStorage.enabled=true
+- variable: sharedPvcStorage.nfs.path
+  group: Storage
+  label: Shared NFS Model Cache — Path
+  description: Directory on the NFS server for the model cache, e.g. /data/ai-models.
+  type: string
+  default: /data/ai-models
+  show_if: sharedPvcStorage.enabled=true
+- variable: sharedPvcStorage.size
+  group: Storage
+  label: Shared NFS Model Cache — Size
+  type: string
+  default: 500Gi
+  show_if: sharedPvcStorage.enabled=true
+# --- Router / API endpoint ------------------------------------------------------
+- variable: routerSpec.serviceType
+  group: API Endpoint
+  label: Router Service Type
+  description: "The OpenAI-compatible endpoint is http://<release>-router-service.<namespace>.svc/v1 in the cluster. NodePort exposes it on every node for clients outside the cluster (Hermes on another cluster, LiteLLM)."
+  type: enum
+  default: ClusterIP
+  options:
+    - ClusterIP
+    - NodePort
+    - LoadBalancer
+- variable: routerSpec.nodePort
+  group: API Endpoint
+  label: Router NodePort
+  description: "30400 matches the LiteLLM endpoint Hermes used on the DGX Spark (http://<node>:30400/v1)."
+  type: int
+  default: 30400
+  show_if: routerSpec.serviceType=NodePort
+- variable: routerSpec.routingLogic
+  group: API Endpoint
+  label: Routing Logic
+  description: "With one engine replica all choices behave the same. prefixaware sends requests sharing a prompt prefix to the same engine (better cache hits with replicas)."
+  type: enum
+  default: roundrobin
+  options:
+    - roundrobin
+    - session
+    - prefixaware
+# --- Observability ------------------------------------------------------------
+- variable: routerSpec.otel.endpoint
+  group: SUSE Observability
+  label: Router OTLP gRPC Endpoint
+  description: "Router request traces (OTLP gRPC, 4317) to the shared SUSE AI collector. Leave blank to disable. Engine metrics are scraped by the collector (ai-observability-collector 0.3.2 or later) without any setting here."
+  type: string
+  default: http://opentelemetry-collector-collector.observability.svc.cluster.local:4317
+- variable: routerSpec.otel.serviceName
+  group: SUSE Observability
+  label: Router Trace Service Name
+  type: string
+  default: vllm-router
