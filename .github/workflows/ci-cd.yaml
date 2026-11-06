@@ -154,7 +154,7 @@ jobs:
           tags: |
             ghcr.io/${{ env.OWNER_LC }}/${{ env.BASE_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
             ghcr.io/${{ env.OWNER_LC }}/${{ env.BASE_IMAGE_NAME }}:latest
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -168,7 +168,7 @@ jobs:
           tags: |
             ghcr.io/${{ env.OWNER_LC }}/${{ env.SUSE_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
             ghcr.io/${{ env.OWNER_LC }}/${{ env.SUSE_IMAGE_NAME }}:latest
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -182,7 +182,7 @@ jobs:
           tags: |
             ghcr.io/${{ env.OWNER_LC }}/${{ env.BASE_IMAGE_NAME }}-load-simulator:${{ env.IMAGE_TAG }}
             ghcr.io/${{ env.OWNER_LC }}/${{ env.BASE_IMAGE_NAME }}-load-simulator:latest
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -196,7 +196,7 @@ jobs:
           tags: |
             ghcr.io/${{ env.OWNER_LC }}/${{ env.BASE_IMAGE_NAME }}-frontend-react:${{ env.IMAGE_TAG }}
             ghcr.io/${{ env.OWNER_LC }}/${{ env.BASE_IMAGE_NAME }}-frontend-react:latest
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
