@@ -12,23 +12,7 @@ questions:
 - variable: servingEngineSpec.modelSpec.llm.preset
   group: Model
   label: Model
-  description: >-
-    Served name in brackets: clients (Hermes, Open WebUI, LiteLLM) use it as "model".
-    All presets turn on tool calling.<br>
-    <b>DGX Spark / Blackwell (NVFP4)</b><br>
-    hermes-qwen3.8-27b-nvfp4: the Hermes model from dgx-spark-fleet, 256K context [qwen3.8-27b]<br>
-    hermes-qwen3.8-27b-nvfp4-dflash: identical to dgx-spark-fleet vllm-node, plus DFlash speculative decoding and instanttensor loading; needs a vLLM build with both [qwen3.8-27b]<br>
-    gemma-4-31b-it-nvfp4: Gemma 4 31B, 128K context [gemma-4-31b]<br>
-    <b>16-24GB GPU (RTX 4090, L4, A10)</b><br>
-    qwen3-4b-instruct-2507: 64K context [qwen3-4b]<br>
-    gemma-4-e4b-it: Gemma 4 E4B, 64K context [gemma-4-e4b]<br>
-    gpt-oss-20b: 128K context [gpt-oss-20b]<br>
-    <b>80GB GPU (A100/H100) or DGX Spark</b><br>
-    gemma-4-26b-a4b-it: Gemma 4 MoE, 128K context [gemma-4-26b-a4b]<br>
-    gemma-4-31b-it-fp8: Gemma 4 31B FP8 (Hopper/Blackwell), 64K context [gemma-4-31b]<br>
-    qwen3.6-35b-a3b: Qwen3.6 MoE, 128K context [qwen3.6-35b-a3b]<br>
-    gpt-oss-120b: 128K context [gpt-oss-120b]<br>
-    custom: any Hugging Face model; set it below.
+  description: "Pick by GPU memory. DGX Spark / Blackwell: hermes-qwen3.8-27b-nvfp4 (the Hermes model from dgx-spark-fleet, 256K context), its -dflash variant (adds DFlash speculative decoding; needs a vLLM build with it) and gemma-4-31b-it-nvfp4. 16-24GB GPU: qwen3-4b-instruct-2507, gemma-4-e4b-it, gpt-oss-20b. 80GB GPU or DGX Spark: gemma-4-26b-a4b-it, gemma-4-31b-it-fp8, qwen3.6-35b-a3b, gpt-oss-120b. All presets enable tool calling. Custom: any Hugging Face model."
   type: enum
   required: true
   default: hermes-qwen3.8-27b-nvfp4
@@ -54,7 +38,7 @@ questions:
 - variable: servingEngineSpec.modelSpec.llm.servedModelName
   group: Model
   label: Served Model Name
-  description: "The model name clients ask for. Leave empty to use the preset's name (in brackets above); a custom model is otherwise served under its Hugging Face ID."
+  description: "The name clients put in \"model\" (Hermes, Open WebUI, LiteLLM). Empty = the preset's name: qwen3.8-27b, gemma-4-31b, qwen3-4b, gemma-4-e4b, gpt-oss-20b, gemma-4-26b-a4b, qwen3.6-35b-a3b or gpt-oss-120b; a custom model keeps its Hugging Face ID."
   type: string
   default: ""
 - variable: servingEngineSpec.modelSpec.llm.hf_token
@@ -108,7 +92,7 @@ questions:
 - variable: servingEngineSpec.modelSpec.llm.extraArgsText
   group: Engine Resources
   label: Extra vLLM Arguments (one per line)
-  description: "Appended after the preset's arguments; a flag given here wins. Put a flag and its value on separate lines, e.g.<br>--max-num-seqs<br>16"
+  description: "Appended after the preset's arguments; a flag given here wins. One per line, flag and value on separate lines (e.g. --max-num-seqs, then 16)."
   type: multiline
   default: ""
 - variable: servingEngineSpec.modelSpec.llm.lmcacheConfig.enabled
@@ -211,7 +195,7 @@ questions:
   label: Router OTLP gRPC Endpoint
   description: "Router request traces (OTLP gRPC, 4317) to the shared SUSE AI collector. Leave blank to disable. Engine metrics are scraped by the collector (ai-observability-collector 0.3.2 or later) without any setting here."
   type: string
-  default: http://opentelemetry-collector-collector.observability.svc.cluster.local:4317
+  default: http://opentelemetry-collector.observability.svc.cluster.local:4317
 - variable: routerSpec.otel.serviceName
   group: SUSE Observability
   label: Router Trace Service Name
