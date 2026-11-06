@@ -166,7 +166,13 @@ spec:
                 enableChunkedPrefill: true
                 maxModelLen: auto
                 gpuMemoryUtilization: auto
-              extraArgsText: ""
+              # Qwen3.x GDN (linear attention) prefill: vLLM's "auto" picks
+              # FlashInfer's kernel, which needs the cutlass.cute DSL that this
+              # image lacks ("No module named 'cutlass.cute'"; warmup fails and
+              # real prefills would too). Triton/FLA needs no JIT. Keep this
+              # line if you add your own extra args here.
+              extraArgsText: |
+                --gdn-prefill-backend=triton
               lmcacheConfig:
                 enabled: false
                 cpuOffloadingBufferSize: "20"
