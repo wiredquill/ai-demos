@@ -12,8 +12,12 @@
 # plus any catalog/charts/<form>/*.patch where the templates misread form values.
 # Chart names and versions are kept, so blueprints still show e.g. "vllm 0.1.10".
 #
-# Usage: scripts/package-aif-charts.sh <output-dir> [suse|upstream]
-# Needs: helm registry login dp.apps.rancher.io (for suse)
+# Charts in OCI_CHARTS are too big for the git ClusterRepo (Fleet bundles are
+# capped at 1 MiB), so they go to an OCI registry instead of aif/charts: set
+# OCI_REPO to push them there (ClusterRepo catalog/clusterrepos/wiredquill-charts-oci.yaml).
+#
+# Usage: [OCI_REPO=oci://ghcr.io/wiredquill/charts] scripts/package-aif-charts.sh <output-dir> [suse|upstream]
+# Needs: helm registry login dp.apps.rancher.io (for suse); helm registry login ghcr.io (for OCI_REPO)
 set -euo pipefail
 
 OUT=${1:?usage: $0 <output-dir> [suse|upstream]}
@@ -36,6 +40,8 @@ UPSTREAM_CHARTS=(
   "open-webui 8.19.0 https://github.com/open-webui/helm-charts/releases/download/open-webui-8.19.0/open-webui-8.19.0.tgz open-webui"
   "pipelines 0.9.0 https://github.com/open-webui/helm-charts/releases/download/pipelines-0.9.0/pipelines-0.9.0.tgz open-webui-pipelines"
 )
+
+OCI_CHARTS=" vllm-stack "
 
 case "$SET" in
   suse) CHARTS=("${SUSE_CHARTS[@]}") ;;
@@ -66,5 +72,12 @@ for entry in "${CHARTS[@]}"; do
   fi
   find "$WORK/$chart" -name '*.orig' -delete
   helm package "$WORK/$chart" -d "$OUT"
+  if [[ "$OCI_CHARTS" == *" $chart "* ]]; then
+    if [ -n "${OCI_REPO:-}" ]; then
+      helm push "$OUT/$chart-$version.tgz" "$OCI_REPO"
+    else
+      echo "$chart $version: too big for aif/charts; push it with OCI_REPO=oci://ghcr.io/wiredquill/charts" >&2
+    fi
+  fi
   rm -rf "${WORK:?}/$chart" "$WORK/$chart-$version.tgz"
 done

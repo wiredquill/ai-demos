@@ -1,0 +1,13 @@
+# Chart repository for chartRepo: wiredquill-charts-oci. vllm-stack (SUSE chart +
+# install form + model presets) is too big for the git ClusterRepo: AI Factory
+# deploys git-backed charts as Fleet bundles, which are capped at 1 MiB, and the
+# chart's bundled prometheus-operator CRDs push it over. Charts from an OCI
+# ClusterRepo are not subject to that limit.
+# Publish with: OCI_REPO=oci://ghcr.io/wiredquill/charts scripts/package-aif-charts.sh <dir>
+# GHCR does not list a whole namespace, so the URL names the chart itself.
+apiVersion: catalog.cattle.io/v1
+kind: ClusterRepo
+metadata:
+  name: wiredquill-charts-oci
+spec:
+  url: oci://ghcr.io/wiredquill/charts/vllm-stack

@@ -48,7 +48,7 @@ spec:
     # questions.yaml) and catalog/charts/vllm-stack/model-presets.patch, which
     # adds the model presets and form fixes (scripts/package-aif-charts.sh).
     - chartName: vllm-stack
-      chartRepo: wiredquill-ai-demos
+      chartRepo: wiredquill-charts-oci
       chartVersion: "0.1.13"
       releaseName: vllm
       vendor: suse
