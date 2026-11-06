@@ -258,15 +258,65 @@ git commit -s -m "chore(aif): publish SUSE charts with install forms"
 git push origin HEAD:aif/charts
 ```
 
-**2. Register the ClusterRepos** (once per management cluster). The blueprints
-reference `wiredquill-ai-demos` and `wiredquill-upstream` as `chartRepo`; their
-definitions are in `catalog/clusterrepos/`:
+**2. Register the ClusterRepos** (once per management cluster). Each blueprint
+component names its chart repository in `chartRepo:`, and AI Factory looks it up
+as a ClusterRepo **with exactly that name**. If the names differ (for example a
+repository added in the UI as `ai-demos` instead of `wiredquill-ai-demos`), the
+blueprint editor finds no chart, shows raw YAML instead of the install forms, and
+the components can't install. The blueprints in this repository use:
+
+| ClusterRepo name | Source | Used by |
+|---|---|---|
+| `wiredquill-ai-demos` | git `wiredquill/ai-demos`, branch `aif/charts` | every blueprint (app components, SUSE charts with forms) |
+| `wiredquill-upstream` | git `wiredquill/ai-demos`, branch `aif/upstream-charts` | ai-compare (upstream edition) |
+| `suse-ai-registry` | `oci://registry.suse.com/ai/charts` | hr-assistant, hr-assistant-vllm (qdrant) |
+| `application-collection` | `oci://dp.apps.rancher.io/charts` (needs a login) | only the old hr-assistant-vllm 1.1.0, 1.2.0 and 1.4.0 |
+
+In Rancher, open the **local** cluster, click **Import YAML** (the up-arrow icon
+in the top bar) and paste this. Or apply the same files from
+`catalog/clusterrepos/` with `kubectl apply -f catalog/clusterrepos/` against the
+local cluster.
+```yaml
+apiVersion: catalog.cattle.io/v1
+kind: ClusterRepo
+metadata:
+  name: wiredquill-ai-demos
+spec:
+  gitRepo: https://github.com/wiredquill/ai-demos
+  gitBranch: aif/charts
+---
+apiVersion: catalog.cattle.io/v1
+kind: ClusterRepo
+metadata:
+  name: wiredquill-upstream
+spec:
+  gitRepo: https://github.com/wiredquill/ai-demos
+  gitBranch: aif/upstream-charts
+---
+apiVersion: catalog.cattle.io/v1
+kind: ClusterRepo
+metadata:
+  name: suse-ai-registry
+spec:
+  url: oci://registry.suse.com/ai/charts
+```
+`application-collection` is only needed for those old versions and takes your SUSE
+Application Collection credentials, so
+add it under **Apps → Repositories → Create** (type OCI, URL
+`oci://dp.apps.rancher.io/charts`, an HTTP basic auth secret), using that exact
+name. Skip any of these that already exist with the right name and source. Then
+check that each shows **Active**:
 ```bash
-kubectl apply -f catalog/clusterrepos/
-# after a push, force a refresh and confirm the new commit was picked up
+kubectl get clusterrepos wiredquill-ai-demos wiredquill-upstream suse-ai-registry application-collection
+# after a chart push, force a refresh and confirm the new commit was picked up
 kubectl patch clusterrepo wiredquill-ai-demos --type=merge -p "{\"spec\":{\"forceUpdate\":\"$(date -u +%FT%TZ)\"}}"
 kubectl get clusterrepo wiredquill-ai-demos -o jsonpath='{.status.commit}'
 ```
+The `ai-demos` repository from [Adding the Repository](#adding-the-repository)
+(the gh-pages Helm repo) is for installing the full charts from Apps; the
+blueprints don't use it. The OpenShell blueprints need `wiredquill-openshell` and
+`wiredquill-can-i` too: see
+[wiredquill/openshell](https://github.com/wiredquill/openshell).
 The operator fetches charts from git ClusterRepos at deploy time, which needs
 `Settings.spec.rancherCatalog` set (a Rancher token in a secret). On vimes, use
 `url: https://rancher.cattle-system` and `insecureSkipVerify: true`.
