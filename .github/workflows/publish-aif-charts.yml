@@ -13,6 +13,7 @@ on:
       - 'charts/hr-assistant-vllm/**'
       - 'charts/ai-compare/**'
       - 'scripts/publish-aif-charts.sh'
+      - '.github/workflows/publish-aif-charts.yml'
   workflow_dispatch:
 
 permissions:
