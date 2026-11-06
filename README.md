@@ -267,13 +267,14 @@ the components can't install. The blueprints in this repository use:
 
 | ClusterRepo name | Source | Used by |
 |---|---|---|
-| `wiredquill-ai-demos` | git `wiredquill/ai-demos`, branch `aif/charts` | every blueprint (app components, SUSE charts with forms) |
+| `wiredquill-ai-demos` | git `wiredquill/ai-demos`, branch `aif/charts` | every blueprint (app components, SUSE charts with forms) except vllm-production-stack |
+| `wiredquill-charts-oci` | `oci://ghcr.io/wiredquill/charts/vllm-stack` | vllm-production-stack (`vllm-stack` is over Fleet's 1 MiB bundle limit, so it can't come from a git repo) |
 | `wiredquill-upstream` | git `wiredquill/ai-demos`, branch `aif/upstream-charts` | ai-compare (upstream edition) |
 | `suse-ai-registry` | `oci://registry.suse.com/ai/charts` | hr-assistant, hr-assistant-vllm (qdrant) |
 | `application-collection` | `oci://dp.apps.rancher.io/charts` (needs a login) | only the old hr-assistant-vllm 1.1.0, 1.2.0 and 1.4.0 |
 
 In Rancher, open the **local** cluster, click **Import YAML** (the up-arrow icon
-in the top bar) and paste this. `catalog/clusterrepos/` holds the two this
+in the top bar) and paste this. `catalog/clusterrepos/` holds the three this
 repository owns (`kubectl apply -f catalog/clusterrepos/` against the local
 cluster); `suse-ai-registry` is SUSE's, so it is only here.
 ```yaml
@@ -296,6 +297,13 @@ spec:
 apiVersion: catalog.cattle.io/v1
 kind: ClusterRepo
 metadata:
+  name: wiredquill-charts-oci
+spec:
+  url: oci://ghcr.io/wiredquill/charts/vllm-stack
+---
+apiVersion: catalog.cattle.io/v1
+kind: ClusterRepo
+metadata:
   name: suse-ai-registry
 spec:
   url: oci://registry.suse.com/ai/charts
@@ -307,7 +315,7 @@ add it under **Apps → Repositories → Create** (type OCI, URL
 name. Skip any of these that already exist with the right name and source. Then
 check that each shows **Active**:
 ```bash
-kubectl get clusterrepos wiredquill-ai-demos wiredquill-upstream suse-ai-registry application-collection
+kubectl get clusterrepos wiredquill-ai-demos wiredquill-upstream wiredquill-charts-oci suse-ai-registry application-collection
 # after a chart push, force a refresh and confirm the new commit was picked up
 kubectl patch clusterrepo wiredquill-ai-demos --type=merge -p "{\"spec\":{\"forceUpdate\":\"$(date -u +%FT%TZ)\"}}"
 kubectl get clusterrepo wiredquill-ai-demos -o jsonpath='{.status.commit}'
