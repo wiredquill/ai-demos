@@ -13,6 +13,7 @@ on:
       - 'charts/hr-assistant-vllm/**'
       - 'charts/ai-compare/**'
       - 'scripts/publish-aif-charts.sh'
+      - '.github/workflows/publish-aif-charts.yml'
   workflow_dispatch:
 
 permissions:
@@ -38,6 +39,14 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # charts/hr-assistant pulls its ollama dependency from the Application
+      # Collection, which needs a login (same secrets as simple-chart-publish).
+      - name: Log in to SUSE Application Collection
+        run: |
+          helm registry login dp.apps.rancher.io \
+            --username "${{ secrets.APPCOLLECTION_USERNAME }}" \
+            --password "${{ secrets.APPCOLLECTION_PASSWORD }}"
 
       - name: Publish
         run: scripts/publish-aif-charts.sh --push

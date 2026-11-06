@@ -273,9 +273,9 @@ the components can't install. The blueprints in this repository use:
 | `application-collection` | `oci://dp.apps.rancher.io/charts` (needs a login) | only the old hr-assistant-vllm 1.1.0, 1.2.0 and 1.4.0 |
 
 In Rancher, open the **local** cluster, click **Import YAML** (the up-arrow icon
-in the top bar) and paste this. Or apply the same files from
-`catalog/clusterrepos/` with `kubectl apply -f catalog/clusterrepos/` against the
-local cluster.
+in the top bar) and paste this. `catalog/clusterrepos/` holds the two this
+repository owns (`kubectl apply -f catalog/clusterrepos/` against the local
+cluster); `suse-ai-registry` is SUSE's, so it is only here.
 ```yaml
 apiVersion: catalog.cattle.io/v1
 kind: ClusterRepo
