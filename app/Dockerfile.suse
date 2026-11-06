@@ -20,8 +20,10 @@ RUN zypper refresh && \
     zypper clean -a
 
 # Download kubectl in separate layer for better caching
+# TARGETARCH is set by BuildKit (amd64/arm64) so multi-arch builds get a native binary
+ARG TARGETARCH
 RUN KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt) && \
-    curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" && \
+    curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${TARGETARCH:-amd64}/kubectl" && \
     chmod +x kubectl && \
     mv kubectl /usr/local/bin/kubectl
 
