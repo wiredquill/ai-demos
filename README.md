@@ -235,24 +235,27 @@ images, moved to [wiredquill/openshell](https://github.com/wiredquill/openshell)
 
 **1. Publish the charts to the git ClusterRepo AI Factory reads.** Rancher's git
 catalog indexes only a root `index.yaml` plus packaged `.tgz` files on the tracked
-branch (`aif/hr-assistant-vllm`):
+branch (`aif/charts`). The component charts (`catalog/components/`, kept out of
+the gh-pages repo because they exist only for the blueprints) and the hr-assistant
+base charts publish automatically: `.github/workflows/publish-aif-charts.yml` runs
+`scripts/publish-aif-charts.sh --push` when they change on `main`. Published
+versions are never replaced or removed, because blueprints pin exact versions, so
+bump a chart's version to ship a change. To publish by hand:
 ```bash
-git checkout main && git pull
+scripts/publish-aif-charts.sh --push
+```
+The SUSE vllm, ollama, opensearch, open-webui and open-webui-pipelines charts with
+install forms need a registry login, so they stay manual:
+```bash
+helm registry login dp.apps.rancher.io
 mkdir -p /tmp/aif && rm -f /tmp/aif/*.tgz
-# Base charts plus the per-workload component charts (catalog/components/, kept out
-# of the gh-pages repo because they exist only for the blueprints)
-for c in charts/hr-assistant charts/hr-assistant-vllm catalog/components/*/; do
-  helm package "$c" --dependency-update -d /tmp/aif
-done
-# SUSE vllm, ollama, opensearch, open-webui and open-webui-pipelines with install forms
-# (needs: helm registry login dp.apps.rancher.io)
 scripts/package-aif-charts.sh /tmp/aif
-git checkout aif/hr-assistant-vllm
-cp /tmp/aif/*.tgz .
-helm repo index . --url https://github.com/wiredquill/ai-demos
-git add index.yaml hr-assistant*.tgz ai-compare*.tgz vllm-*.tgz ollama-*.tgz opensearch-*.tgz open-webui*.tgz
-git commit -s -m "chore(aif): publish hr-assistant-vllm component charts"
-git push origin aif/hr-assistant-vllm
+git fetch origin && git worktree add /tmp/aif-charts origin/aif/charts && cd /tmp/aif-charts
+cp -n /tmp/aif/*.tgz .   # -n: never overwrite a published version
+helm repo index . --url https://github.com/wiredquill/ai-demos --merge index.yaml
+git add index.yaml ./*.tgz
+git commit -s -m "chore(aif): publish SUSE charts with install forms"
+git push origin HEAD:aif/charts
 ```
 
 **2. Register the ClusterRepos** (once per management cluster). The blueprints

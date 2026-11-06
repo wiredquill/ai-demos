@@ -8,4 +8,4 @@ metadata:
   name: wiredquill-ai-demos
 spec:
   gitRepo: https://github.com/wiredquill/ai-demos
-  gitBranch: aif/hr-assistant-vllm
+  gitBranch: aif/charts
