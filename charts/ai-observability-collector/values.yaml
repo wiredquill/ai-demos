@@ -79,7 +79,8 @@ discovery:
   # -- Prometheus scrape interval for discovered targets.
   scrapeInterval: 10s
 
-  # -- vLLM serving engines (Services labelled app.kubernetes.io/part-of=vllm,
+  # -- vLLM serving engines (Services labelled app.kubernetes.io/part-of=vllm
+  #    or vllm-stack,
   #    component=serving-engine), any namespace. Feeds the vLLM monitors.
   vllm:
     enabled: true

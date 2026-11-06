@@ -71,8 +71,10 @@ spec:
           scrape_configs:
             {{- if .Values.discovery.vllm.enabled }}
             # vLLM serving engines only (vLLM production-stack labels), HTTP
-            # port 80. The router also carries part-of=vllm but its per-backend
-            # vllm: stats share names with the engine's and would double-count.
+            # port 80: part-of=vllm from SUSE's vllm chart, part-of=vllm-stack
+            # from SUSE's vllm-stack chart (vLLM Production Stack). The router
+            # carries the same part-of but its per-backend vllm: stats share
+            # names with the engine's and would double-count.
             - job_name: vllm
               scrape_interval: {{ .Values.discovery.scrapeInterval }}
               metrics_path: /metrics
@@ -81,7 +83,7 @@ spec:
               relabel_configs:
                 - action: keep
                   source_labels: [__meta_kubernetes_service_label_app_kubernetes_io_part_of]
-                  regex: vllm
+                  regex: vllm|vllm-stack
                 - action: keep
                   source_labels: [__meta_kubernetes_service_label_app_kubernetes_io_component]
                   regex: serving-engine

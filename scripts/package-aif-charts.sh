@@ -23,6 +23,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 # <chart> <version> <source> <form dir under catalog/charts>
 SUSE_CHARTS=(
   "vllm 0.1.10 oci://dp.apps.rancher.io/charts/vllm vllm"
+  "vllm-stack 0.1.13 oci://dp.apps.rancher.io/charts/vllm-stack vllm-stack"
   "opensearch 3.9.0 oci://dp.apps.rancher.io/charts/opensearch opensearch"
   "ollama 1.91.0 oci://dp.apps.rancher.io/charts/ollama ollama"
   "open-webui 8.19.1 oci://dp.apps.rancher.io/charts/open-webui open-webui"

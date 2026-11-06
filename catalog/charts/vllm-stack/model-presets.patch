@@ -1,0 +1,498 @@
+# Applied to SUSE's vllm-stack chart (vLLM Production Stack) by
+# scripts/package-aif-charts.sh so the install form and Fleet work:
+#  - templates/_model-presets.tpl: modelSpec entries take `preset: <name>`, which
+#    sets the model, served name, parsers and context length; fields left at
+#    "auto" take the preset's sizing. Also servedModelName, extraArgsText (one
+#    vLLM argument per line) and tensorParallelSize following requestGPU.
+#    The engine Deployment resolves the preset before rendering.
+#  - disabled modelSpec entries (enabled: false) get no PVC and no Service
+#  - modelSpec.storageClass and sharedPvcStorage.storageClass ""/"Default" omit
+#    storageClassName (cluster default class)
+#  - the router no longer references a missing secret key when the API key is
+#    an empty string (the form's "no key")
+#  - the engine/router Deployments' and Services' own metadata.labels say
+#    app.kubernetes.io/managed-by: Helm. Upstream's "helm" is rewritten on the
+#    cluster, so Fleet reported the bundle Modified. Selectors and pod labels keep
+#    "helm" (selectors are immutable).
+diff -ruN a/templates/_model-presets.tpl b/templates/_model-presets.tpl
+--- a/templates/_model-presets.tpl	1969-12-31 16:00:00
++++ b/templates/_model-presets.tpl	2026-11-06 05:46:04
+@@ -0,0 +1,344 @@
++{{/*
++Model presets for the install form (added by the wiredquill-ai-demos republish,
++catalog/charts/vllm-stack/model-presets.patch).
++
++A modelSpec entry with `preset: <name>` gets that preset's model and engine
++arguments. Keys under a preset's `auto:` are only defaults: they fill fields the
++form left empty or set to "auto", so GPU count, memory, context length and GPU
++memory fraction can still be overridden. `preset: custom` (or no preset) leaves
++the entry as written, the upstream behaviour.
++
++After the preset, for every entry:
++  - servedModelName (if set) is passed as --served-model-name, overriding the
++    preset's name;
++  - extraArgsText (one argument per line) is appended to vllmConfig.extraArgs,
++    so it wins over the preset (vLLM keeps the last occurrence of a flag);
++  - vllmConfig.tensorParallelSize follows requestGPU.
++*/}}
++{{- define "vllmstack.resolveModelSpec" -}}
++{{- $spec := deepCopy .spec -}}
++{{- $name := toString (default "custom" $spec.preset) -}}
++{{- if ne $name "custom" -}}
++  {{- $presets := include "vllmstack.modelPresets" . | fromYaml -}}
++  {{- if not (hasKey $presets $name) -}}
++    {{- fail (printf "unknown model preset %q (choose one from the install form, or \"custom\")" $name) -}}
++  {{- end -}}
++  {{- $p := deepCopy (index $presets $name) -}}
++  {{- $auto := default (dict) $p.auto -}}
++  {{- range $k, $v := $auto -}}
++    {{- if eq $k "vllmConfig" -}}
++      {{- $cfg := default (dict) $spec.vllmConfig -}}
++      {{- range $k2, $v2 := $v -}}
++        {{- if or (not (hasKey $cfg $k2)) (eq (toString (index $cfg $k2)) "") (eq (toString (index $cfg $k2)) "auto") -}}
++          {{- $_ := set $cfg $k2 $v2 -}}
++        {{- end -}}
++      {{- end -}}
++      {{- $_ := set $spec "vllmConfig" $cfg -}}
++    {{- else if or (not (hasKey $spec $k)) (eq (toString (index $spec $k)) "") (eq (toString (index $spec $k)) "auto") -}}
++      {{- $_ := set $spec $k $v -}}
++    {{- end -}}
++  {{- end -}}
++  {{- $spec = mergeOverwrite $spec (omit $p "auto") -}}
++{{- end -}}
++{{- /* "custom" model with fields left at auto */ -}}
++{{- range $k, $v := dict "requestMemory" "16Gi" "limitMemory" "64Gi" "shmSize" "16Gi" -}}
++  {{- if and (hasKey $spec $k) (eq (toString (index $spec $k)) "auto") -}}
++    {{- $_ := set $spec $k $v -}}
++  {{- end -}}
++{{- end -}}
++{{- $cfg := default (dict) $spec.vllmConfig -}}
++{{- $args := default (list) $cfg.extraArgs -}}
++{{- with $spec.servedModelName -}}
++  {{- if ne (toString .) "auto" -}}
++    {{- $args = concat $args (list "--served-model-name" (toString .)) -}}
++  {{- end -}}
++{{- end -}}
++{{- with $spec.extraArgsText -}}
++  {{- range splitList "\n" (toString .) -}}
++    {{- $a := trim . -}}
++    {{- if $a -}}{{- $args = append $args $a -}}{{- end -}}
++  {{- end -}}
++{{- end -}}
++{{- $_ := set $cfg "extraArgs" $args -}}
++{{- if eq (toString (default "" $spec.requestGPU)) "auto" -}}
++  {{- $_ := set $spec "requestGPU" 1 -}}
++{{- end -}}
++{{- $_ := set $cfg "tensorParallelSize" (int (default 1 $spec.requestGPU)) -}}
++{{- range $k := list "maxModelLen" "gpuMemoryUtilization" "maxNumSeqs" -}}
++  {{- if and (hasKey $cfg $k) (has (toString (index $cfg $k)) (list "" "auto")) -}}
++    {{- $_ := unset $cfg $k -}}
++  {{- end -}}
++{{- end -}}
++{{- $_ := set $spec "vllmConfig" $cfg -}}
++{{- toYaml $spec -}}
++{{- end -}}
++
++{{/*
++The presets. served model names are what clients (Hermes, LiteLLM, Open WebUI)
++put in "model". Memory figures are for the engine pod's CPU RAM; on unified
++memory systems (DGX Spark / GB10) they cover the model too.
++*/}}
++{{- define "vllmstack.modelPresets" -}}
++# --- Hermes on DGX Spark (dgx-spark-fleet vllm-node) -------------------------
++# The same model, name, context and parsers as vllm-node, without the two flags
++# that need a custom vLLM build (DFlash speculative decoding, instanttensor).
++hermes-qwen3.8-27b-nvfp4:
++  modelURL: RadixArk/Qwen3.8-27B-NVFP4
++  vllmConfig:
++    enableChunkedPrefill: true
++    enablePrefixCaching: true
++    extraArgs:
++      - --served-model-name
++      - qwen3.8-27b
++      - --trust-remote-code
++      - --kv-cache-dtype
++      - fp8
++      - --max-num-batched-tokens
++      - "16384"
++      - --async-scheduling
++      - --reasoning-parser
++      - qwen3
++      - --enable-auto-tool-choice
++      - --tool-call-parser
++      - qwen3_xml
++  auto:
++    requestGPU: 1
++    requestMemory: 80Gi
++    limitMemory: 112Gi
++    shmSize: 64Gi
++    vllmConfig:
++      maxModelLen: 262144
++      maxNumSeqs: 8
++      gpuMemoryUtilization: 0.6
++# vllm-node exactly, including DFlash speculative decoding and instanttensor
++# loading. Needs an engine image whose vLLM has both.
++hermes-qwen3.8-27b-nvfp4-dflash:
++  modelURL: RadixArk/Qwen3.8-27B-NVFP4
++  vllmConfig:
++    enableChunkedPrefill: true
++    enablePrefixCaching: true
++    extraArgs:
++      - --served-model-name
++      - qwen3.8-27b
++      - --trust-remote-code
++      - --kv-cache-dtype
++      - fp8
++      - --max-num-batched-tokens
++      - "16384"
++      - --async-scheduling
++      - --speculative-config
++      - '{"method":"dflash","model":"z-lab/Qwen3.8-27B-DFlash2","num_speculative_tokens":8,"draft_tensor_parallel_size":1}'
++      - --load-format
++      - instanttensor
++      - --reasoning-parser
++      - qwen3
++      - --enable-auto-tool-choice
++      - --tool-call-parser
++      - qwen3_xml
++  auto:
++    requestGPU: 1
++    requestMemory: 80Gi
++    limitMemory: 112Gi
++    shmSize: 64Gi
++    vllmConfig:
++      maxModelLen: 262144
++      maxNumSeqs: 8
++      gpuMemoryUtilization: 0.6
++# --- Qwen ----------------------------------------------------------------------
++qwen3-4b-instruct-2507:
++  modelURL: Qwen/Qwen3-4B-Instruct-2507
++  vllmConfig:
++    enableChunkedPrefill: true
++    enablePrefixCaching: true
++    extraArgs:
++      - --served-model-name
++      - qwen3-4b
++      - --enable-auto-tool-choice
++      - --tool-call-parser
++      - hermes
++  auto:
++    requestGPU: 1
++    requestMemory: 8Gi
++    limitMemory: 24Gi
++    shmSize: 8Gi
++    vllmConfig:
++      maxModelLen: 65536
++      gpuMemoryUtilization: 0.9
++qwen3.6-35b-a3b:
++  modelURL: Qwen/Qwen3.6-35B-A3B
++  vllmConfig:
++    enableChunkedPrefill: true
++    enablePrefixCaching: true
++    extraArgs:
++      - --served-model-name
++      - qwen3.6-35b-a3b
++      - --kv-cache-dtype
++      - fp8
++      - --reasoning-parser
++      - qwen3
++      - --enable-auto-tool-choice
++      - --tool-call-parser
++      - qwen3_xml
++  auto:
++    requestGPU: 1
++    requestMemory: 32Gi
++    limitMemory: 96Gi
++    shmSize: 16Gi
++    vllmConfig:
++      maxModelLen: 131072
++      gpuMemoryUtilization: 0.9
++# --- Gemma 4 -------------------------------------------------------------------
++gemma-4-e4b-it:
++  modelURL: google/gemma-4-E4B-it
++  vllmConfig:
++    enableChunkedPrefill: true
++    enablePrefixCaching: true
++    extraArgs:
++      - --served-model-name
++      - gemma-4-e4b
++      - --reasoning-parser
++      - gemma4
++      - --enable-auto-tool-choice
++      - --tool-call-parser
++      - gemma4
++  auto:
++    requestGPU: 1
++    requestMemory: 12Gi
++    limitMemory: 32Gi
++    shmSize: 8Gi
++    vllmConfig:
++      maxModelLen: 65536
++      gpuMemoryUtilization: 0.9
++gemma-4-26b-a4b-it:
++  modelURL: google/gemma-4-26B-A4B-it
++  vllmConfig:
++    enableChunkedPrefill: true
++    enablePrefixCaching: true
++    extraArgs:
++      - --served-model-name
++      - gemma-4-26b-a4b
++      - --kv-cache-dtype
++      - fp8
++      - --reasoning-parser
++      - gemma4
++      - --enable-auto-tool-choice
++      - --tool-call-parser
++      - gemma4
++  auto:
++    requestGPU: 1
++    requestMemory: 32Gi
++    limitMemory: 80Gi
++    shmSize: 16Gi
++    vllmConfig:
++      maxModelLen: 131072
++      gpuMemoryUtilization: 0.9
++gemma-4-31b-it-fp8:
++  modelURL: RedHatAI/gemma-4-31B-it-FP8-dynamic
++  vllmConfig:
++    enableChunkedPrefill: true
++    enablePrefixCaching: true
++    extraArgs:
++      - --served-model-name
++      - gemma-4-31b
++      - --kv-cache-dtype
++      - fp8
++      - --reasoning-parser
++      - gemma4
++      - --enable-auto-tool-choice
++      - --tool-call-parser
++      - gemma4
++  auto:
++    requestGPU: 1
++    requestMemory: 32Gi
++    limitMemory: 64Gi
++    shmSize: 16Gi
++    vllmConfig:
++      maxModelLen: 65536
++      gpuMemoryUtilization: 0.9
++gemma-4-31b-it-nvfp4:
++  modelURL: nvidia/gemma-4-31B-it-NVFP4
++  vllmConfig:
++    enableChunkedPrefill: true
++    enablePrefixCaching: true
++    extraArgs:
++      - --served-model-name
++      - gemma-4-31b
++      - --kv-cache-dtype
++      - fp8
++      - --async-scheduling
++      - --reasoning-parser
++      - gemma4
++      - --enable-auto-tool-choice
++      - --tool-call-parser
++      - gemma4
++  auto:
++    requestGPU: 1
++    requestMemory: 64Gi
++    limitMemory: 112Gi
++    shmSize: 32Gi
++    vllmConfig:
++      maxModelLen: 131072
++      gpuMemoryUtilization: 0.6
++# --- gpt-oss -------------------------------------------------------------------
++gpt-oss-20b:
++  modelURL: openai/gpt-oss-20b
++  vllmConfig:
++    enableChunkedPrefill: true
++    enablePrefixCaching: true
++    extraArgs:
++      - --served-model-name
++      - gpt-oss-20b
++      - --reasoning-parser
++      - openai_gptoss
++      - --enable-auto-tool-choice
++      - --tool-call-parser
++      - openai
++  auto:
++    requestGPU: 1
++    requestMemory: 16Gi
++    limitMemory: 32Gi
++    shmSize: 8Gi
++    vllmConfig:
++      maxModelLen: 131072
++      gpuMemoryUtilization: 0.9
++gpt-oss-120b:
++  modelURL: openai/gpt-oss-120b
++  vllmConfig:
++    enableChunkedPrefill: true
++    enablePrefixCaching: true
++    extraArgs:
++      - --served-model-name
++      - gpt-oss-120b
++      - --reasoning-parser
++      - openai_gptoss
++      - --enable-auto-tool-choice
++      - --tool-call-parser
++      - openai
++  auto:
++    requestGPU: 1
++    requestMemory: 64Gi
++    limitMemory: 112Gi
++    shmSize: 32Gi
++    vllmConfig:
++      maxModelLen: 131072
++      gpuMemoryUtilization: 0.9
++# --- Embeddings (Hermes / Honcho memory) -----------------------------------------
++# dgx-spark-fleet honcho-embed: nomic-embed-text-v1, small context, ~8% of the GPU.
++nomic-embed-text-v1:
++  modelURL: nomic-ai/nomic-embed-text-v1
++  vllmConfig:
++    runner: pooling
++    enablePrefixCaching: false
++    extraArgs:
++      - --served-model-name
++      - nomic-embed-text-v1
++      - --trust-remote-code
++  auto:
++    requestGPU: 1
++    requestMemory: 2Gi
++    limitMemory: 8Gi
++    shmSize: 2Gi
++    vllmConfig:
++      maxModelLen: 512
++      gpuMemoryUtilization: 0.08
++{{- end -}}
+diff -ruN a/templates/deployment-router.yaml b/templates/deployment-router.yaml
+--- a/templates/deployment-router.yaml	2026-11-06 05:44:44
++++ b/templates/deployment-router.yaml	2026-11-06 05:45:15
+@@ -5,7 +5,7 @@
+   name: "{{ .Release.Name }}-deployment-router"
+   namespace: {{ .Release.Namespace }}
+   labels:
+-  {{- include "chart.routerStandardLabels" (dict "releaseName" .Release.Name "chartName" .Chart.Name) | nindent 4 }}
++  {{- include "chart.routerStandardLabels" (dict "releaseName" .Release.Name "chartName" .Chart.Name) | replace "managed-by: helm" "managed-by: Helm" | nindent 4 }}
+   {{- include "chart.routerLabels" . | nindent 4 }}
+ spec:
+ {{- if not .Values.routerSpec.autoscaling.enabled }}
+@@ -82,13 +82,13 @@
+                 name: {{ .Values.routerSpec.vllmApiKey.secretName }}
+                 key: {{ .Values.routerSpec.vllmApiKey.secretKey }}
+           {{- else if and .Values.servingEngineSpec.enableEngine }}
+-          {{- if kindIs "string" .Values.servingEngineSpec.vllmApiKey }}
++          {{- if and (kindIs "string" .Values.servingEngineSpec.vllmApiKey) .Values.servingEngineSpec.vllmApiKey }}
+           - name: VLLM_API_KEY
+             valueFrom:
+               secretKeyRef:
+                 name: {{ .Release.Name }}-secrets
+                 key: vllmApiKey
+-          {{- else if and .Values.servingEngineSpec.vllmApiKey.secretName .Values.servingEngineSpec.vllmApiKey.secretKey }}
++          {{- else if and (kindIs "map" .Values.servingEngineSpec.vllmApiKey) .Values.servingEngineSpec.vllmApiKey.secretName .Values.servingEngineSpec.vllmApiKey.secretKey }}
+           - name: VLLM_API_KEY
+             valueFrom:
+               secretKeyRef:
+diff -ruN a/templates/deployment-vllm-multi.yaml b/templates/deployment-vllm-multi.yaml
+--- a/templates/deployment-vllm-multi.yaml	2026-11-06 05:44:44
++++ b/templates/deployment-vllm-multi.yaml	2026-11-06 05:45:15
+@@ -1,5 +1,6 @@
+ {{- if .Values.servingEngineSpec.enableEngine -}}
+ {{- range $modelSpec := .Values.servingEngineSpec.modelSpec }}
++{{- $modelSpec = include "vllmstack.resolveModelSpec" (dict "spec" $modelSpec "root" $) | fromYaml }}
+ {{- if ne $modelSpec.enabled false }}
+ {{- if not (and (hasKey $modelSpec "raySpec") $modelSpec.raySpec.enabled) }}
+ {{- $kv_role := "kv_both" }}
+@@ -24,7 +25,7 @@
+   labels:
+     model: {{ $modelSpec.name }}
+     helm-release-name: {{ .Release.Name }}
+-  {{- include "chart.engineStandardLabels" (dict "releaseName" .Release.Name "modelName" $modelSpec.name "chartName" .Chart.Name) | nindent 4 }}
++  {{- include "chart.engineStandardLabels" (dict "releaseName" .Release.Name "modelName" $modelSpec.name "chartName" .Chart.Name) | replace "managed-by: helm" "managed-by: Helm" | nindent 4 }}
+   {{- include "chart.engineLabels" . | nindent 4 }}
+   {{- with $modelSpec.labels }}
+     {{- toYaml . | nindent 4 }}
+diff -ruN a/templates/pvc.yaml b/templates/pvc.yaml
+--- a/templates/pvc.yaml
++++ b/templates/pvc.yaml
+@@ -1,6 +1,7 @@
+ 
+ {{- if .Values.servingEngineSpec.enableEngine -}}
+ {{- range $modelSpec := .Values.servingEngineSpec.modelSpec }}
++{{- if ne $modelSpec.enabled false }}
+ {{- with $ -}}
+ {{- if and (hasKey $modelSpec "pvcStorage") (not (empty $modelSpec.pvcStorage)) (kindIs "string" $modelSpec.pvcStorage) (empty $modelSpec.pvcExistingClaimName) }}
+ apiVersion: v1
+@@ -26,7 +27,7 @@
+   resources:
+     requests:
+       storage: {{ $modelSpec.pvcStorage }}
+-  {{- if hasKey $modelSpec "storageClass" }}
++  {{- if and (hasKey $modelSpec "storageClass") (not (empty $modelSpec.storageClass)) (ne $modelSpec.storageClass "Default") }}
+   storageClassName: "{{ $modelSpec.storageClass }}"
+   {{- end }}
+   {{- if not (empty $modelSpec.pvcMatchLabels) }}
+@@ -34,6 +35,7 @@
+     matchLabels:
+       {{- toYaml $modelSpec.pvcMatchLabels | nindent 8 }}
+   {{- end }}
++{{- end }}
+ {{- end }}
+ {{- end }}
+ ---
+diff -ruN a/templates/service-router.yaml b/templates/service-router.yaml
+--- a/templates/service-router.yaml	2026-11-06 05:44:44
++++ b/templates/service-router.yaml	2026-11-06 05:45:15
+@@ -8,7 +8,7 @@
+   annotations: {{- toYaml .Values.routerSpec.serviceAnnotations | nindent 4 }}
+   {{- end }}
+   labels:
+-  {{- include "chart.routerStandardLabels" (dict "releaseName" .Release.Name "chartName" .Chart.Name) | nindent 4 }}
++  {{- include "chart.routerStandardLabels" (dict "releaseName" .Release.Name "chartName" .Chart.Name) | replace "managed-by: helm" "managed-by: Helm" | nindent 4 }}
+   {{- include "chart.routerLabels" . | nindent 4 }}
+ spec:
+   type: {{ .Values.routerSpec.serviceType }}
+diff -ruN a/templates/service-vllm.yaml b/templates/service-vllm.yaml
+--- a/templates/service-vllm.yaml
++++ b/templates/service-vllm.yaml
+@@ -1,5 +1,6 @@
+ {{- if .Values.servingEngineSpec.enableEngine -}}
+ {{- range $modelSpec := .Values.servingEngineSpec.modelSpec }}
++{{- if ne $modelSpec.enabled false }}
+ ---
+ apiVersion: v1
+ kind: Service
+@@ -7,7 +8,7 @@
+   name: "{{ $.Release.Name }}-{{ $modelSpec.name }}-engine-service"
+   namespace: {{ $.Release.Namespace }}
+   labels:
+-  {{- include "chart.engineStandardLabels" (dict "releaseName" $.Release.Name "modelName" $modelSpec.name "chartName" $.Chart.Name) | nindent 4 }}
++  {{- include "chart.engineStandardLabels" (dict "releaseName" $.Release.Name "modelName" $modelSpec.name "chartName" $.Chart.Name) | replace "managed-by: helm" "managed-by: Helm" | nindent 4 }}
+   {{- include "chart.engineLabels" $ | nindent 4 }}
+   {{- with $modelSpec.serviceAnnotations }}
+   annotations:
+@@ -34,5 +35,6 @@
+     helm-release-name: "{{ $.Release.Name }}"
+   {{- include "chart.engineStandardLabels" (dict "releaseName" $.Release.Name "modelName" $modelSpec.name "chartName" $.Chart.Name) | nindent 4 }}
+   {{- include "chart.engineLabels" $ | nindent 4 }}
++{{- end }}
+ {{- end }}
+ {{- end}}
+diff -ruN a/templates/shared-storage.yaml b/templates/shared-storage.yaml
+--- a/templates/shared-storage.yaml	2026-11-06 05:44:44
++++ b/templates/shared-storage.yaml	2026-11-06 05:45:15
+@@ -10,7 +10,7 @@
+     app: {{ .Release.Name }}
+     component: shared-pvc-storage
+ spec:
+-  {{- if .Values.sharedPvcStorage.storageClass }}
++  {{- if and .Values.sharedPvcStorage.storageClass (ne .Values.sharedPvcStorage.storageClass "Default") }}
+   storageClassName: {{ .Values.sharedPvcStorage.storageClass }}
+   {{- end }}
+   capacity:
+@@ -38,7 +38,7 @@
+     app: {{ .Release.Name }}
+     component: shared-pvc-storage
+ spec:
+-  {{- if .Values.sharedPvcStorage.storageClass }}
++  {{- if and .Values.sharedPvcStorage.storageClass (ne .Values.sharedPvcStorage.storageClass "Default") }}
+   storageClassName: {{ .Values.sharedPvcStorage.storageClass }}
+   {{- end}}
+   accessModes:
