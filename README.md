@@ -172,8 +172,8 @@ by `scripts/gen-ai-compare-components.py`.
 
 | Blueprint | Components (pods) |
 |---|---|
-| `ai-compare-suse` 1.3.0 | `ollama` 1.91.0, `open-webui-pipelines` 0.9.2, `open-webui` 8.19.1 (SUSE charts + forms), `ai-compare-app` 1.0.2, `ai-compare-load-gen` 1.0.2 (5) |
-| `ai-compare` 1.3.0 (upstream) | `ollama` 1.91.0, `pipelines` 0.9.0, `open-webui` 8.19.0 (community charts + forms, repo `wiredquill-upstream`), `ai-compare-app` 1.0.2, `ai-compare-load-gen` 1.0.2 (5) |
+| `ai-compare-suse` 1.4.0 | `ollama` 1.91.0, `open-webui-pipelines` 0.9.2, `open-webui` 8.19.1 (SUSE charts + forms), `ai-compare-app` 1.0.3, `ai-compare-load-gen` 1.0.3 (5) |
+| `ai-compare` 1.4.0 (upstream) | `ollama` 1.91.0, `pipelines` 0.9.0, `open-webui` 8.19.0 (community charts + forms, repo `wiredquill-upstream`), `ai-compare-app` 1.0.3, `ai-compare-load-gen` 1.0.3 (5) |
 
 The former `ai-compare-opentelemetry` blueprint has been removed: `ai-compare-suse`
 now includes OpenTelemetry and the load generator.
@@ -314,9 +314,10 @@ kubectl get clusterrepo wiredquill-ai-demos -o jsonpath='{.status.commit}'
 ```
 The `ai-demos` repository from [Adding the Repository](#adding-the-repository)
 (the gh-pages Helm repo) is for installing the full charts from Apps; the
-blueprints don't use it. The OpenShell blueprints need `wiredquill-openshell` and
-`wiredquill-can-i` too: see
-[wiredquill/openshell](https://github.com/wiredquill/openshell).
+blueprints don't use it. The OpenShell blueprints need `wiredquill-openshell` too: see
+[wiredquill/openshell](https://github.com/wiredquill/openshell). can-i moved to
+[SUSE-Technical-Marketing/can-i](https://github.com/SUSE-Technical-Marketing/can-i)
+(ClusterRepo `suse-tm-can-i`).
 The operator fetches charts from git ClusterRepos at deploy time, which needs
 `Settings.spec.rancherCatalog` set (a Rancher token in a secret). On vimes, use
 `url: https://rancher.cattle-system` and `insecureSkipVerify: true`.
