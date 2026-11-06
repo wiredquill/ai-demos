@@ -1,0 +1,151 @@
+apiVersion: ai-factory.suse.com/v1alpha1
+kind: Blueprint
+metadata:
+  labels:
+    ai-factory.suse.com/blueprint-name: vllm-production-stack
+    ai-factory.suse.com/blueprint-version: 1.0.1
+  name: vllm-production-stack-1-0-1
+spec:
+  source: Custom  # community, unsupported demo
+  displayName: vLLM Production Stack (Hermes-ready)
+  version: 1.0.1
+  description: |
+    Shared OpenAI-compatible model endpoint for Hermes Agent and other apps,
+    served by SUSE's vLLM Production Stack (Application Collection vllm-stack
+    0.1.13: vLLM engine with LMCache + request router), visible in SUSE
+    Observability.
+
+    Pick a model from the install form's dropdown. The default,
+    hermes-qwen3.8-27b-nvfp4, is the model that backs Hermes on the DGX Spark
+    (dgx-spark-fleet vllm-node: RadixArk/Qwen3.8-27B-NVFP4 served as
+    "qwen3.8-27b", 256K context, qwen3 reasoning + qwen3_xml tool calls).
+    The other presets cover Gemma 4 (E4B, 26B-A4B, 31B), Qwen3 4B, Qwen3.6
+    35B-A3B and gpt-oss 20B/120B, from 16GB GPUs to 80GB / DGX Spark. An
+    optional nomic-embed-text-v1 engine stands in for honcho-embed.
+
+    Endpoint for clients: http://<node>:30400/v1 by default (NodePort, the
+    same URL Hermes used for LiteLLM on the DGX Spark), or a LoadBalancer
+    with an optional fixed IP; in the cluster also
+    http://vllm-router-service.<namespace>.svc/v1. Model = the preset's
+    served name.
+
+    Observability: the shared SUSE AI OpenTelemetry collector scrapes the
+    engine's vLLM metrics (ai-observability-collector 0.3.2 or later, which
+    discovers vllm-stack's Services) and the router sends request traces to
+    it over OTLP. vLLM then shows up as a SUSE AI inference engine with its
+    model, tokens, latency and KV-cache metrics.
+
+    Prerequisites: a node with an NVIDIA GPU + GPU operator (runtime class
+    "nvidia"), a default StorageClass for the model cache, and the shared
+    collector (`opentelemetry-collector` in namespace `observability`). Gated
+    models (Gemma 4) need a Hugging Face token.
+  components:
+    # Release name "vllm" gives the Services vllm-router-service (the API)
+    # and vllm-llm-engine-service (scraped by the collector).
+    #
+    # vllm-stack is SUSE's Application Collection chart, republished to
+    # wiredquill-ai-demos with an install form (catalog/charts/vllm-stack/
+    # questions.yaml) and catalog/charts/vllm-stack/model-presets.patch, which
+    # adds the model presets and form fixes (scripts/package-aif-charts.sh).
+    - chartName: vllm-stack
+      chartRepo: wiredquill-ai-demos
+      chartVersion: "0.1.13"
+      releaseName: vllm
+      vendor: suse
+      values:
+        servingEngineSpec:
+          enableEngine: true
+          # One GPU per model: stop the old engine before starting the new
+          # one. The default rolling update (maxSurge 100%) starts a second
+          # engine that cannot get the GPU and never becomes ready.
+          strategy:
+            type: Recreate
+          runtimeClassName: nvidia
+          # The image is ~4.5GB; do not pull it on every restart.
+          imagePullPolicy: IfNotPresent
+          # First start downloads the weights (15-70GB) and compiles kernels:
+          # allow 15s + 180 x 10s = ~30 minutes before the engine is restarted.
+          startupProbe:
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 180
+            httpGet:
+              path: /health
+              port: 8000
+          # The router discovers engines by these labels.
+          labels:
+            environment: production
+            release: vllm-production-stack
+          # Empty = no API key. A map keyed "llm"/"embed" (not the documented
+          # list) so the install form can edit it; the chart ranges over it.
+          vllmApiKey: ""
+          modelSpec:
+            llm:
+              name: llm
+              preset: hermes-qwen3.8-27b-nvfp4
+              # Used only when preset is "custom".
+              modelURL: Qwen/Qwen3-8B
+              servedModelName: ""
+              hf_token: ""
+              replicaCount: 1
+              # "auto" = sized by the preset (templates/_model-presets.tpl).
+              requestGPU: auto
+              requestCPU: 4
+              requestMemory: auto
+              limitMemory: auto
+              shmSize: auto
+              pvcStorage: 150Gi
+              # "Default" = cluster default StorageClass (patched chart).
+              storageClass: Default
+              enableLoRA: false
+              vllmConfig:
+                # Presets set these too; kept here for a custom model.
+                enablePrefixCaching: true
+                enableChunkedPrefill: true
+                maxModelLen: auto
+                gpuMemoryUtilization: auto
+              extraArgsText: ""
+              lmcacheConfig:
+                enabled: false
+                cpuOffloadingBufferSize: "20"
+            # Embedding engine (the honcho-embed equivalent), off by default.
+            # No pvcStorage: the small model downloads to the container on start,
+            # and a disabled entry creates no PVC.
+            embed:
+              name: embed
+              enabled: false
+              preset: nomic-embed-text-v1
+              hf_token: ""
+              replicaCount: 1
+              requestGPU: auto
+              requestCPU: 1
+              requestMemory: auto
+              limitMemory: auto
+              shmSize: auto
+              enableLoRA: false
+              vllmConfig:
+                maxModelLen: auto
+                gpuMemoryUtilization: auto
+        # Shared NFS model cache, off by default; the form turns it on.
+        sharedPvcStorage:
+          enabled: false
+          nfs:
+            server: ""
+            path: /data/ai-models
+          size: 500Gi
+          storageClass: Default
+          accessModes:
+            - ReadWriteMany
+        routerSpec:
+          enableRouter: true
+          routingLogic: roundrobin
+          # NodePort 30400 by default: http://<node>:30400/v1, the URL Hermes
+          # used for LiteLLM on the DGX Spark. LoadBalancer also keeps 30400
+          # and can request a fixed IP (loadBalancerIP, patched chart).
+          serviceType: NodePort
+          nodePort: 30400
+          loadBalancerIP: ""
+          imagePullPolicy: IfNotPresent
+          otel:
+            endpoint: http://opentelemetry-collector-collector.observability.svc.cluster.local:4317
+            serviceName: vllm-router
