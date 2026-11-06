@@ -314,9 +314,10 @@ kubectl get clusterrepo wiredquill-ai-demos -o jsonpath='{.status.commit}'
 ```
 The `ai-demos` repository from [Adding the Repository](#adding-the-repository)
 (the gh-pages Helm repo) is for installing the full charts from Apps; the
-blueprints don't use it. The OpenShell blueprints need `wiredquill-openshell` and
-`wiredquill-can-i` too: see
-[wiredquill/openshell](https://github.com/wiredquill/openshell).
+blueprints don't use it. The OpenShell blueprints need `wiredquill-openshell` too: see
+[wiredquill/openshell](https://github.com/wiredquill/openshell). can-i moved to
+[SUSE-Technical-Marketing/can-i](https://github.com/SUSE-Technical-Marketing/can-i)
+(ClusterRepo `suse-tm-can-i`).
 The operator fetches charts from git ClusterRepos at deploy time, which needs
 `Settings.spec.rancherCatalog` set (a Rancher token in a secret). On vimes, use
 `url: https://rancher.cattle-system` and `insecureSkipVerify: true`.
