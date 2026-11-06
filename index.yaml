@@ -5,7 +5,7 @@ entries:
       catalog.cattle.io/display-name: AI Compare - AI Compare app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.163661-08:00"
+    created: "2026-11-06T06:49:57.844701-08:00"
     dependencies:
     - alias: aic
       name: ai-compare
@@ -34,7 +34,7 @@ entries:
       catalog.cattle.io/display-name: AI Compare - AI Compare app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.16244-08:00"
+    created: "2026-11-06T06:49:57.840518-08:00"
     dependencies:
     - alias: aic
       name: ai-compare
@@ -63,7 +63,7 @@ entries:
       catalog.cattle.io/display-name: AI Compare - AI Compare app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.161486-08:00"
+    created: "2026-11-06T06:49:57.839414-08:00"
     dependencies:
     - alias: aic
       name: ai-compare
@@ -92,7 +92,7 @@ entries:
       catalog.cattle.io/display-name: AI Compare - AI Compare app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.160482-08:00"
+    created: "2026-11-06T06:49:57.838274-08:00"
     dependencies:
     - alias: aic
       name: ai-compare
@@ -121,7 +121,7 @@ entries:
       catalog.cattle.io/display-name: AI Compare (upstream) - AI Compare app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.156646-08:00"
+    created: "2026-11-06T06:49:57.834773-08:00"
     dependencies:
     - alias: aic
       name: ai-compare
@@ -151,7 +151,7 @@ entries:
       catalog.cattle.io/display-name: AI Compare - Load generator + health-check emitter
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.171411-08:00"
+    created: "2026-11-06T06:49:57.8515-08:00"
     dependencies:
     - alias: aic
       name: ai-compare
@@ -180,7 +180,7 @@ entries:
       catalog.cattle.io/display-name: AI Compare - Load generator + health-check emitter
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.168924-08:00"
+    created: "2026-11-06T06:49:57.849169-08:00"
     dependencies:
     - alias: aic
       name: ai-compare
@@ -209,7 +209,7 @@ entries:
       catalog.cattle.io/display-name: AI Compare - Load generator + health-check emitter
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.166854-08:00"
+    created: "2026-11-06T06:49:57.847971-08:00"
     dependencies:
     - alias: aic
       name: ai-compare
@@ -238,7 +238,7 @@ entries:
       catalog.cattle.io/display-name: AI Compare - Load generator + health-check emitter
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.165443-08:00"
+    created: "2026-11-06T06:49:57.846581-08:00"
     dependencies:
     - alias: aic
       name: ai-compare
@@ -271,7 +271,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-11-06T06:14:30.172814-08:00"
+    created: "2026-11-06T06:49:57.852931-08:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -308,7 +308,7 @@ entries:
       opentelemetry.io/instrumented: "true"
     apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-11-06T06:14:30.172123-08:00"
+    created: "2026-11-06T06:49:57.85225-08:00"
     description: AI Compare OpenTelemetry Edition - Advanced observability-focused
       AI response comparison platform. Features comprehensive GenAI telemetry, token-level
       cost tracking, model performance monitoring, and deep integration with SUSE
@@ -343,7 +343,7 @@ entries:
       catalog.cattle.io/display-name: AI Compare (OpenTelemetry) - AI Compare app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.173969-08:00"
+    created: "2026-11-06T06:49:57.853854-08:00"
     dependencies:
     - alias: aic
       name: ai-compare-opentelemetry
@@ -374,7 +374,7 @@ entries:
         + health-check emitter
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.175688-08:00"
+    created: "2026-11-06T06:49:57.855512-08:00"
     dependencies:
     - alias: aic
       name: ai-compare-opentelemetry
@@ -405,7 +405,7 @@ entries:
       catalog.cattle.io/display-name: AI Compare (SUSE) - AI Compare app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.176395-08:00"
+    created: "2026-11-06T06:49:57.856307-08:00"
     dependencies:
     - alias: aic
       name: ai-compare-suse
@@ -433,7 +433,7 @@ entries:
   hr-assistant:
   - apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.179574-08:00"
+    created: "2026-11-06T06:49:57.862656-08:00"
     dependencies:
     - condition: ollama.enabled
       name: ollama
@@ -463,7 +463,7 @@ entries:
     version: 1.20.0
   - apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.177929-08:00"
+    created: "2026-11-06T06:49:57.861212-08:00"
     dependencies:
     - condition: ollama.enabled
       name: ollama
@@ -496,7 +496,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (Ollama) - HR Assistant app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.185439-08:00"
+    created: "2026-11-06T06:49:57.868049-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant
@@ -525,7 +525,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (Ollama) - HR Assistant app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.183404-08:00"
+    created: "2026-11-06T06:49:57.866033-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant
@@ -554,7 +554,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (Ollama) - HR Assistant app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.182134-08:00"
+    created: "2026-11-06T06:49:57.864747-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant
@@ -584,7 +584,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (Ollama) - Employee Handbook app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.193181-08:00"
+    created: "2026-11-06T06:49:57.873164-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant
@@ -613,7 +613,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (Ollama) - Employee Handbook app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.19099-08:00"
+    created: "2026-11-06T06:49:57.871262-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant
@@ -642,7 +642,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (Ollama) - Employee Handbook app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.187655-08:00"
+    created: "2026-11-06T06:49:57.869968-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant
@@ -673,7 +673,7 @@ entries:
         emitter
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.197741-08:00"
+    created: "2026-11-06T06:49:57.876862-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant
@@ -703,7 +703,7 @@ entries:
         emitter
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.196418-08:00"
+    created: "2026-11-06T06:49:57.875638-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant
@@ -733,7 +733,7 @@ entries:
         emitter
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.195019-08:00"
+    created: "2026-11-06T06:49:57.874446-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant
@@ -763,7 +763,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (Ollama) - HR Policy DB app + dashboard
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.202723-08:00"
+    created: "2026-11-06T06:49:57.88201-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant
@@ -792,7 +792,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (Ollama) - HR Policy DB app + dashboard
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.201445-08:00"
+    created: "2026-11-06T06:49:57.879825-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant
@@ -821,7 +821,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (Ollama) - HR Policy DB app + dashboard
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.200195-08:00"
+    created: "2026-11-06T06:49:57.878629-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant
@@ -851,7 +851,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (Ollama) - Declared topology (CronJob)
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.204304-08:00"
+    created: "2026-11-06T06:49:57.883436-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant
@@ -879,7 +879,7 @@ entries:
   hr-assistant-vllm:
   - apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.217399-08:00"
+    created: "2026-11-06T06:49:57.896509-08:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -911,7 +911,7 @@ entries:
     version: 0.1.17
   - apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.215064-08:00"
+    created: "2026-11-06T06:49:57.893325-08:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -943,7 +943,7 @@ entries:
     version: 0.1.13
   - apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.212314-08:00"
+    created: "2026-11-06T06:49:57.890641-08:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -975,7 +975,7 @@ entries:
     version: 0.1.12
   - apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.221674-08:00"
+    created: "2026-11-06T06:49:57.900487-08:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -1007,7 +1007,7 @@ entries:
     version: 0.1.3
   - apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.220197-08:00"
+    created: "2026-11-06T06:49:57.898945-08:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -1039,7 +1039,7 @@ entries:
     version: 0.1.2
   - apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.209396-08:00"
+    created: "2026-11-06T06:49:57.888057-08:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -1071,7 +1071,7 @@ entries:
     version: 0.1.1
   - apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.206696-08:00"
+    created: "2026-11-06T06:49:57.885623-08:00"
     dependencies:
     - alias: vllm
       condition: vllm.enabled
@@ -1106,7 +1106,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Assistant app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.2321-08:00"
+    created: "2026-11-06T06:49:57.910653-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1135,7 +1135,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Assistant app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.229288-08:00"
+    created: "2026-11-06T06:49:57.907993-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1164,7 +1164,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Assistant app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.227017-08:00"
+    created: "2026-11-06T06:49:57.905726-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1193,7 +1193,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Assistant app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.224366-08:00"
+    created: "2026-11-06T06:49:57.903034-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1223,7 +1223,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - vLLM serving engine
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.234341-08:00"
+    created: "2026-11-06T06:49:57.913305-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1253,7 +1253,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - Employee Handbook app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.244719-08:00"
+    created: "2026-11-06T06:49:57.922772-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1282,7 +1282,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - Employee Handbook app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.242055-08:00"
+    created: "2026-11-06T06:49:57.920561-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1311,7 +1311,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - Employee Handbook app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.239789-08:00"
+    created: "2026-11-06T06:49:57.918094-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1340,7 +1340,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - Employee Handbook app
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.237107-08:00"
+    created: "2026-11-06T06:49:57.915546-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1371,7 +1371,7 @@ entries:
         emitter
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.254359-08:00"
+    created: "2026-11-06T06:49:57.932007-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1401,7 +1401,7 @@ entries:
         emitter
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.252069-08:00"
+    created: "2026-11-06T06:49:57.929809-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1431,7 +1431,7 @@ entries:
         emitter
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.249293-08:00"
+    created: "2026-11-06T06:49:57.927331-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1461,7 +1461,7 @@ entries:
         emitter
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.246884-08:00"
+    created: "2026-11-06T06:49:57.925226-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1491,7 +1491,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - OpenSearch search engine
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.256856-08:00"
+    created: "2026-11-06T06:49:57.934625-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1521,7 +1521,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Policy DB app + dashboard
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.266397-08:00"
+    created: "2026-11-06T06:49:57.94389-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1550,7 +1550,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Policy DB app + dashboard
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.264008-08:00"
+    created: "2026-11-06T06:49:57.941715-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1579,7 +1579,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Policy DB app + dashboard
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.261535-08:00"
+    created: "2026-11-06T06:49:57.93923-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1608,7 +1608,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - HR Policy DB app + dashboard
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.259357-08:00"
+    created: "2026-11-06T06:49:57.937083-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1638,7 +1638,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - Qdrant vector database
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.268841-08:00"
+    created: "2026-11-06T06:49:57.946225-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1668,7 +1668,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - vLLM router
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.271284-08:00"
+    created: "2026-11-06T06:49:57.948332-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1698,7 +1698,7 @@ entries:
       catalog.cattle.io/display-name: HR Assistant (vLLM) - Declared topology (CronJob)
     apiVersion: v2
     appVersion: latest
-    created: "2026-11-06T06:14:30.273469-08:00"
+    created: "2026-11-06T06:49:57.950712-08:00"
     dependencies:
     - alias: hr
       name: hr-assistant-vllm
@@ -1731,7 +1731,7 @@ entries:
       license: MIT
     apiVersion: v2
     appVersion: 0.40.9
-    created: "2026-11-06T06:14:30.274421-08:00"
+    created: "2026-11-06T06:49:57.951671-08:00"
     description: Ollama is an open-source platform for running and managing large
       language models (LLMs) locally, providing a CLI and REST API for model inference,
       deployment, and integration into AI-powered applications.
@@ -1754,7 +1754,7 @@ entries:
       license: MIT
     apiVersion: v2
     appVersion: 0.32.14
-    created: "2026-11-06T06:14:30.273996-08:00"
+    created: "2026-11-06T06:49:57.951243-08:00"
     description: Get up and running with Llama 3.2, Mistral, Gemma 2, and other large
       language models.
     digest: ba32799ea047e239c229ddb1ef1cb667658e8787c08eb245567310fc27528e1b
@@ -1786,7 +1786,7 @@ entries:
       license: MIT
     apiVersion: v2
     appVersion: 0.6.41
-    created: "2026-11-06T06:14:30.276506-08:00"
+    created: "2026-11-06T06:49:57.953611-08:00"
     dependencies:
     - condition: ollama.enabled
       import-values:
@@ -1833,7 +1833,7 @@ entries:
       license: MIT
     apiVersion: v2
     appVersion: 0.20250819.030501
-    created: "2026-11-06T06:14:30.276751-08:00"
+    created: "2026-11-06T06:49:57.953856-08:00"
     description: Pipelines bring modular, customizable workflows to any UI client
       supporting OpenAI API specs and much more! Easily extend functionalities, integrate
       unique logic, and create dynamic workflows with just a few lines of code.
@@ -1864,7 +1864,7 @@ entries:
       license: Apache-2.0
     apiVersion: v2
     appVersion: 3.9.0
-    created: "2026-11-06T06:14:30.277868-08:00"
+    created: "2026-11-06T06:49:57.954978-08:00"
     description: OpenSearch is an open-source, enterprise-grade search and observability
       suite that brings order to unstructured data at scale.
     digest: d48695817df98f6292b7ef30c5c95c643a88a52971a16f3b050dd9125e08b2af
@@ -1886,7 +1886,7 @@ entries:
       license: Apache-2.0
     apiVersion: v2
     appVersion: 3.8.0
-    created: "2026-11-06T06:14:30.277315-08:00"
+    created: "2026-11-06T06:49:57.954424-08:00"
     description: OpenSearch is an open-source, enterprise-grade search and observability
       suite that brings order to unstructured data at scale.
     digest: 21a1f2be8f02fc795279dd8b72dc72d97596b0c3c449ff8387e41799402890f4
@@ -1913,7 +1913,7 @@ entries:
       license: Apache-2.0
     apiVersion: v2
     appVersion: 0.19.0
-    created: "2026-11-06T06:14:30.278657-08:00"
+    created: "2026-11-06T06:49:57.955758-08:00"
     description: A high-throughput and memory-efficient inference and serving engine
       for LLMs.
     digest: 76c4fffb3148c2a04c9a082bd83eaebb8c913ea93f143fe43494face9be8a4a3
@@ -1944,7 +1944,7 @@ entries:
       license: Apache-2.0
     apiVersion: v2
     appVersion: 0.1.13
-    created: "2026-11-06T06:14:30.29599-08:00"
+    created: "2026-11-06T06:49:57.971939-08:00"
     dependencies:
     - alias: kube-prometheus-stack
       condition: kube-prometheus-stack.enabled
@@ -1956,7 +1956,7 @@ entries:
       to scale from single vLLM instance to distributed vLLM deployment without changing
       any application code, monitor the metrics through a web dashboard, and enjoy
       the performance benefits brought by request routing and KV cache offloading.
-    digest: 6552b2bb20679aa9fd83821f443bf593b91c31f9688d1a31fadad31531632b09
+    digest: a6b85bffccbd13a365297ca44bd8dd64799e69bda6335f9b3922617c92b8ae2c
     home: https://apps.rancher.io/applications/vllm-stack
     icon: https://apps.rancher.io/logos/vllm-stack.png
     maintainers:
@@ -1966,4 +1966,4 @@ entries:
     urls:
     - https://github.com/wiredquill/ai-demos/vllm-stack-0.1.13.tgz
     version: 0.1.13
-generated: "2026-11-06T06:14:30.155258-08:00"
+generated: "2026-11-06T06:49:57.829323-08:00"
