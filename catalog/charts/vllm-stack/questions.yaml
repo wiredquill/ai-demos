@@ -173,20 +173,28 @@ questions:
 - variable: routerSpec.serviceType
   group: API Endpoint
   label: Router Service Type
-  description: "The OpenAI-compatible endpoint is http://<release>-router-service.<namespace>.svc/v1 in the cluster. NodePort exposes it on every node for clients outside the cluster (Hermes on another cluster, LiteLLM)."
+  description: "How clients reach the OpenAI-compatible endpoint. NodePort: http://<any node>:<NodePort>/v1 (Hermes used :30400 on the DGX Spark). LoadBalancer: http://<LoadBalancer IP>/v1 (needs MetalLB, kube-vip or a cloud LB), also on the NodePort. ClusterIP: in-cluster only, http://<release>-router-service.<namespace>.svc/v1."
   type: enum
-  default: ClusterIP
+  default: NodePort
   options:
-    - ClusterIP
     - NodePort
     - LoadBalancer
+    - ClusterIP
 - variable: routerSpec.nodePort
   group: API Endpoint
   label: Router NodePort
-  description: "30400 matches the LiteLLM endpoint Hermes used on the DGX Spark (http://<node>:30400/v1)."
+  description: "For NodePort and LoadBalancer (ignored for ClusterIP). 30000-32767; 30400 matches the endpoint Hermes used on the DGX Spark (http://<node>:30400/v1). Must be free on the cluster."
   type: int
   default: 30400
-  show_if: routerSpec.serviceType=NodePort
+  min: 30000
+  max: 32767
+- variable: routerSpec.loadBalancerIP
+  group: API Endpoint
+  label: LoadBalancer IP (optional)
+  description: "Fixed IP to request from the load balancer, e.g. 10.9.0.50 from your MetalLB / kube-vip pool. Leave empty to let it assign one."
+  type: string
+  default: ""
+  show_if: routerSpec.serviceType=LoadBalancer
 - variable: routerSpec.routingLogic
   group: API Endpoint
   label: Routing Logic

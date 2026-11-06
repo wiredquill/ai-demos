@@ -8,6 +8,8 @@
 #  - disabled modelSpec entries (enabled: false) get no PVC and no Service
 #  - modelSpec.storageClass and sharedPvcStorage.storageClass ""/"Default" omit
 #    storageClassName (cluster default class)
+#  - router Service: routerSpec.loadBalancerIP for type LoadBalancer, and
+#    routerSpec.nodePort is kept for LoadBalancer as well as NodePort
 #  - the router no longer references a missing secret key when the API key is
 #    an empty string (the form's "no key")
 #  - the engine/router Deployments' and Services' own metadata.labels say
@@ -439,8 +441,8 @@ diff -ruN a/templates/pvc.yaml b/templates/pvc.yaml
  ---
 diff -ruN a/templates/service-router.yaml b/templates/service-router.yaml
 --- a/templates/service-router.yaml	2026-11-06 05:44:44
-+++ b/templates/service-router.yaml	2026-11-06 05:45:15
-@@ -8,7 +8,7 @@
++++ b/templates/service-router.yaml	2026-11-06 06:10:50
+@@ -8,16 +8,19 @@
    annotations: {{- toYaml .Values.routerSpec.serviceAnnotations | nindent 4 }}
    {{- end }}
    labels:
@@ -449,6 +451,19 @@ diff -ruN a/templates/service-router.yaml b/templates/service-router.yaml
    {{- include "chart.routerLabels" . | nindent 4 }}
  spec:
    type: {{ .Values.routerSpec.serviceType }}
++  {{- if and (eq .Values.routerSpec.serviceType "LoadBalancer") .Values.routerSpec.loadBalancerIP }}
++  loadBalancerIP: {{ .Values.routerSpec.loadBalancerIP | quote }}
++  {{- end }}
+   ports:
+     - name: "router-sport"
+       port: {{ .Values.routerSpec.servicePort }}
+       targetPort: {{ .Values.routerSpec.containerPort }}
+       protocol: TCP
+-      {{- if and (eq .Values.routerSpec.serviceType "NodePort") .Values.routerSpec.nodePort }}
++      {{- if and (has .Values.routerSpec.serviceType (list "NodePort" "LoadBalancer")) .Values.routerSpec.nodePort }}
+       nodePort: {{ .Values.routerSpec.nodePort }}
+       {{- end }}
+     - name: "lmcache-port"
 diff -ruN a/templates/service-vllm.yaml b/templates/service-vllm.yaml
 --- a/templates/service-vllm.yaml
 +++ b/templates/service-vllm.yaml

@@ -23,9 +23,11 @@ spec:
     35B-A3B and gpt-oss 20B/120B, from 16GB GPUs to 80GB / DGX Spark. An
     optional nomic-embed-text-v1 engine stands in for honcho-embed.
 
-    Endpoint for clients: http://vllm-router-service.<namespace>.svc/v1, or
-    http://<node>:30400/v1 with the NodePort option (the same URL Hermes used
-    for LiteLLM on the DGX Spark). Model = the preset's served name.
+    Endpoint for clients: http://<node>:30400/v1 by default (NodePort, the
+    same URL Hermes used for LiteLLM on the DGX Spark), or a LoadBalancer
+    with an optional fixed IP; in the cluster also
+    http://vllm-router-service.<namespace>.svc/v1. Model = the preset's
+    served name.
 
     Observability: the shared SUSE AI OpenTelemetry collector scrapes the
     engine's vLLM metrics (ai-observability-collector 0.3.2 or later, which
@@ -137,8 +139,12 @@ spec:
         routerSpec:
           enableRouter: true
           routingLogic: roundrobin
-          serviceType: ClusterIP
+          # NodePort 30400 by default: http://<node>:30400/v1, the URL Hermes
+          # used for LiteLLM on the DGX Spark. LoadBalancer also keeps 30400
+          # and can request a fixed IP (loadBalancerIP, patched chart).
+          serviceType: NodePort
           nodePort: 30400
+          loadBalancerIP: ""
           imagePullPolicy: IfNotPresent
           otel:
             endpoint: http://opentelemetry-collector-collector.observability.svc.cluster.local:4317
