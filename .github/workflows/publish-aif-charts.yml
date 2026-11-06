@@ -1,0 +1,43 @@
+name: Publish AI Factory Charts
+
+# Packages the blueprint component charts (catalog/components/*) and the
+# hr-assistant base charts onto the aif/charts branch, the git ClusterRepo
+# (catalog/clusterrepos/wiredquill-ai-demos.yaml) SUSE AI Factory reads.
+# Chart versions are immutable: bump a chart's version to ship it.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'catalog/components/**'
+      - 'charts/hr-assistant/**'
+      - 'charts/hr-assistant-vllm/**'
+      - 'charts/ai-compare/**'
+      - 'scripts/publish-aif-charts.sh'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-aif-charts
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Publish
+        run: scripts/publish-aif-charts.sh --push

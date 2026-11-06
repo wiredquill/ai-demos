@@ -1,0 +1,9 @@
+# SUSE AI chart registry, for the blueprints' chartRepo: suse-ai-registry
+# (qdrant in hr-assistant and hr-assistant-vllm). Public: no login needed.
+# Skip it if your Rancher already has a ClusterRepo with this name.
+apiVersion: catalog.cattle.io/v1
+kind: ClusterRepo
+metadata:
+  name: suse-ai-registry
+spec:
+  url: oci://registry.suse.com/ai/charts

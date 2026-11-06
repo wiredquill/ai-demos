@@ -2,7 +2,7 @@
 # Republish third-party charts with an install form for SUSE AI Factory.
 #
 #   suse      SUSE Application Collection charts (dp.apps.rancher.io), for the
-#             wiredquill-ai-demos ClusterRepo (branch aif/hr-assistant-vllm).
+#             wiredquill-ai-demos ClusterRepo (branch aif/charts).
 #   upstream  The equivalent community charts, for the wiredquill-upstream
 #             ClusterRepo (branch aif/upstream-charts). They are the same chart and
 #             app versions as the SUSE ones where upstream has them, so the
