@@ -261,15 +261,26 @@ vllm:
         # the engine is started with both flags. hermes is vLLM's documented
         # tool-call parser for the Qwen2.5-Instruct family.
         vllmConfig:
-          # Share of GPU memory the engine reserves (vLLM's default is 0.9).
-          # A DGX Spark's GPU shares its 128GB with the host, so 0.9 asks for
-          # more than is free at startup and the engine exits. 0.4 holds
-          # Qwen2.5-7B (~15GB) and its KV cache; raise it for larger models.
+          # Startup check only: vLLM exits if this share of GPU memory is not
+          # free. A DGX Spark's GPU shares its 128GB with the host, so vLLM's
+          # default 0.9 fails there; 0.4 passes on the Spark and a 20GB card.
           gpuMemoryUtilization: "0.4"
           extraArgs:
             - "--enable-auto-tool-choice"
             - "--tool-call-parser"
             - "hermes"
+            # Size the KV cache directly; vLLM then ignores
+            # gpuMemoryUtilization for it. A share can't fit both GPUs: 0.4 of
+            # a 20GB card is less than Qwen2.5-7B's 14.3GiB of weights, and
+            # 0.9 of the Spark is more than is free. 2GiB holds ~37k
+            # Qwen2.5-7B tokens (one full 32k request) and fits next to the
+            # weights on a 20GB card.
+            - "--kv-cache-memory-bytes"
+            - "2G"
+            # Use the model's full context if it fits in that cache, else the
+            # longest that does, so the larger models start instead of exiting.
+            - "--max-model-len"
+            - "auto"
   # Shared NFS-backed model cache, disabled by default (per-instance PVC
   # above is enough for a single demo install). Enable + point at a real NFS
   # share to reuse downloaded weights across reinstalls/clusters.

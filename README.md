@@ -94,7 +94,7 @@ blueprint's defaults. Set options in the form, then switch to the YAML tab and
 make any edit there (a trailing space is enough). The Review step must list each
 changed component as customized.
 
-### hr-assistant-vllm 1.9.1: SUSE charts plus the app pods
+### hr-assistant-vllm 1.9.2: SUSE charts plus the app pods
 
 The infrastructure components are SUSE's own charts, so the AI Factory UI shows
 the real chart name and version, just as `simple-chatbot-with-rag` does. SUSE's
@@ -121,11 +121,11 @@ with its own `questions.yaml`. Those charts vendor `charts/hr-assistant-vllm`
 | `vllm` | wiredquill-ai-demos 0.1.10 (SUSE chart + form) | `vllm` | engine (GPU) + router (`vllm-router-service`) |
 | `qdrant` | suse-ai-registry 1.19.0 | `qdrant` | Qdrant (`qdrant:6333`) |
 | `opensearch` | wiredquill-ai-demos 3.9.0 (SUSE chart + form) | `opensearch` | OpenSearch (`opensearch-cluster-master:9200`) |
-| `hr-assistant-vllm-policy-db` | wiredquill-ai-demos 0.1.7 | `hr-policy-db` | HR Policy DB + dashboard (NodePort 30081) |
-| `hr-assistant-vllm-handbook` | wiredquill-ai-demos 0.1.7 | `employee-handbook` | Employee Handbook |
-| `hr-assistant-vllm-app` | wiredquill-ai-demos 0.1.7 | `hr-assistant` | HR Assistant |
-| `hr-assistant-vllm-load-gen` | wiredquill-ai-demos 0.1.7 | `load-gen` | load generator + health-check emitter |
-| `hr-assistant-vllm-topology` | wiredquill-ai-demos 0.1.7 | `topology` | CronJob declaring the SUSE AI topology (1.7.0+) |
+| `hr-assistant-vllm-policy-db` | wiredquill-ai-demos 0.1.9 | `hr-policy-db` | HR Policy DB + dashboard (NodePort 30081) |
+| `hr-assistant-vllm-handbook` | wiredquill-ai-demos 0.1.9 | `employee-handbook` | Employee Handbook |
+| `hr-assistant-vllm-app` | wiredquill-ai-demos 0.1.9 | `hr-assistant` | HR Assistant |
+| `hr-assistant-vllm-load-gen` | wiredquill-ai-demos 0.1.9 | `load-gen` | load generator + health-check emitter |
+| `hr-assistant-vllm-topology` | wiredquill-ai-demos 0.1.9 | `topology` | CronJob declaring the SUSE AI topology (1.7.0+) |
 
 That's eight components and eight pods (1.6.0: seven; 1.7.0 adds the topology
 component, which is a CronJob, not a long-running pod; 1.8.0 moves the app pods
@@ -136,7 +136,9 @@ of GPU memory and declares the topology on the components the SUSE AI view
 shows; 1.9.1 runs the engine on `lmcache-vllm-openai:0.5.6-nvidia-1.7` with Triton
 pointed at its CUDA 13 `ptxas`, so it starts on a DGX Spark: the CUDA 12.8
 `ptxas` in `vllm-openai:0.19.0-5.61` cannot compile for the GB10, `sm_121a`, and
-1.9.0's `--enforce-eager` did not avoid that). SUSE's `vllm` chart provides both the
+1.9.0's `--enforce-eager` did not avoid that; 1.9.2 gives the engine a fixed 2GiB
+KV cache (`--kv-cache-memory-bytes 2G`, `--max-model-len auto`) instead of 40% of
+GPU memory, which is less than Qwen2.5-7B's weights on a 20GB card). SUSE's `vllm` chart provides both the
 engine and the router, and a blueprint can list each `chartName` only once.
 
 Install everything into **one namespace**. The release names are pinned because the
@@ -397,7 +399,7 @@ kubectl annotate blueprint <name> \
 ```
 
 **5. Deploy it.** In Rancher, go to **AI Factory → Blueprints → HR Assistant
-(vLLM) 1.9.1 → Deploy**. Pick the target cluster and a namespace that
+(vLLM) 1.9.2 → Deploy**. Pick the target cluster and a namespace that
 nothing else uses, then review each component (the `vllm` component holds the
 model and HF token).
 To deploy from YAML instead, use an AIWorkload. `componentValues` is keyed by
@@ -415,7 +417,7 @@ spec:
     sourceType: Blueprint
     blueprint:
       name: hr-assistant-vllm
-      version: "1.9.1"
+      version: "1.9.2"
   targetClusters:
     - c-m-xxxxxxxx                   # Rancher cluster ID, not the display name
   targetNamespace: hr-assistant-vllm
