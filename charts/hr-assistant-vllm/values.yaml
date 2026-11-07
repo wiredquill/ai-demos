@@ -330,6 +330,10 @@ replicaCount: 1
 # image for the chat apps), this chart points every app role at that one
 # built image — there is no vLLM-specific reason for two images.
 #
+# main-3114afe: the same app code as main-be07471, published for linux/amd64
+# and linux/arm64 (main-be07471 is amd64 only, so arm64 nodes such as the DGX
+# Spark could not pull it).
+#
 # main-be07471: disables openlit's langchain instrumentor (was tagging
 # apps/rag102.py's ChatOpenAI gen_ai.provider.name=openai, a spurious second
 # inference-engine alongside vllm in the SUSE AI topology). Built from
@@ -337,13 +341,13 @@ replicaCount: 1
 image:
   repository: ghcr.io/wiredquill/ai-demos/genai-demo
   pullPolicy: Always
-  tag: "main-be07471"
+  tag: "main-3114afe"
 
 policyDb:
   image:
     repository: ghcr.io/wiredquill/ai-demos/genai-demo
     pullPolicy: Always
-    tag: "main-be07471"
+    tag: "main-3114afe"
 
 # Qdrant — vector database component.
 #
