@@ -88,6 +88,12 @@ deploy a blueprint, the AI Factory UI shows each component together with the
 install form from its chart's `questions.yaml`. An **AIWorkload** then deploys
 the components to a downstream cluster as Fleet bundles.
 
+**Install-form caveat (aif-ui 2.4.0):** the install wizard drops changes made in
+the form view of the Customize step, and the components install with the
+blueprint's defaults. Set options in the form, then switch to the YAML tab and
+make any edit there (a trailing space is enough). The Review step must list each
+changed component as customized.
+
 ### hr-assistant-vllm 1.8.0: SUSE charts plus the app pods
 
 The infrastructure components are SUSE's own charts, so the AI Factory UI shows
@@ -346,7 +352,8 @@ blueprints don't use it. The OpenShell blueprints need `wiredquill-openshell` to
 [SUSE-Technical-Marketing/can-i](https://github.com/SUSE-Technical-Marketing/can-i)
 (ClusterRepo `suse-tm-can-i`).
 The operator fetches charts from git ClusterRepos at deploy time, which needs
-`Settings.spec.rancherCatalog` set (a Rancher token in a secret). On vimes, use
+`Settings.spec.rancherCatalog` set (a Rancher token in a secret; **AI Factory →
+Settings → Rancher API Access** in the UI). On vimes, use
 `url: https://rancher.cattle-system` and `insecureSkipVerify: true`.
 
 **3. Check that a component's form will render.** This is the endpoint the wizard
@@ -359,7 +366,7 @@ curl -sk -H "Authorization: Bearer $TOKEN" \
 
 **4. Add the blueprints.** Register this repository as a blueprint catalog, so
 Fleet applies every blueprint and keeps them in sync. In **AI Factory →
-Settings → Blueprint Catalogs → Add Catalog** use name `ai-demos`, repository
+Settings → Blueprint Catalogs → Custom Catalogs → Add Catalog** use name `ai-demos`, repository
 `https://github.com/wiredquill/ai-demos.git`, branch `main` and path
 `catalog/blueprints` (no leading `/`). Or add it to the `aif-operator` Helm values:
 ```yaml
