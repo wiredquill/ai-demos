@@ -250,7 +250,7 @@ topology sent components=5 relations=4 status=200
 
 ## 7. SUSE AI Factory blueprint
 
-The `hr-assistant-vllm` blueprint (`catalog/blueprints/hr-assistant-vllm-1-9-0.yaml`)
+The `hr-assistant-vllm` blueprint (`catalog/blueprints/hr-assistant-vllm-1-9-1.yaml`)
 deploys this demo as SUSE's `vllm` (engine + router), `qdrant` and `opensearch`
 charts, plus four app components. Each app pod has a thin chart in
 `charts/hr-assistant-vllm-<component>`, which vendors this chart (alias `hr`) with
@@ -329,5 +329,10 @@ Blueprints") for publishing and installing the blueprint.
   declared relations connect the components the SUSE AI view shows. Needs the
   SUSE AI Declared Topology StackPack 1.2.0. The bundled vLLM engine reserves
   40% of GPU memory (`gpuMemoryUtilization`, was vLLM's 0.9) and runs with
-  `--enforce-eager`, so it starts on a DGX Spark. Blueprint 1.9.0, components
-  0.1.7.
+  `--enforce-eager`, meant to let it start on a DGX Spark (it does not; see
+  0.1.22). Blueprint 1.9.0, components 0.1.7.
+- **0.1.22** — The bundled vLLM engine runs on `lmcache-vllm-openai:0.5.6-nvidia-1.7`
+  (amd64 + arm64) with `TRITON_PTXAS_PATH` / `TRITON_PTXAS_BLACKWELL_PATH` set to
+  its CUDA 13.0 `ptxas`, so it starts on a DGX Spark. The CUDA 12.8 `ptxas` in
+  `vllm-openai:0.19.0-5.61` cannot compile for the GB10 (`sm_121a`), with or
+  without `--enforce-eager`, which is dropped. Blueprint 1.9.1, components 0.1.8.

@@ -94,7 +94,7 @@ blueprint's defaults. Set options in the form, then switch to the YAML tab and
 make any edit there (a trailing space is enough). The Review step must list each
 changed component as customized.
 
-### hr-assistant-vllm 1.9.0: SUSE charts plus the app pods
+### hr-assistant-vllm 1.9.1: SUSE charts plus the app pods
 
 The infrastructure components are SUSE's own charts, so the AI Factory UI shows
 the real chart name and version, just as `simple-chatbot-with-rag` does. SUSE's
@@ -132,8 +132,11 @@ component, which is a CronJob, not a long-running pod; 1.8.0 moves the app pods
 to the multi-arch `genai-demo:main-3114afe` image, so they run on arm64 nodes
 such as the DGX Spark; 1.8.1 points the vLLM router's traces at the shared
 collector's `opentelemetry-collector` Service; 1.9.0 has the engine reserve 40%
-of GPU memory and run with `--enforce-eager`, so it starts on a DGX Spark, and
-declares the topology on the components the SUSE AI view shows). SUSE's `vllm` chart provides both the
+of GPU memory and declares the topology on the components the SUSE AI view
+shows; 1.9.1 runs the engine on `lmcache-vllm-openai:0.5.6-nvidia-1.7` with Triton
+pointed at its CUDA 13 `ptxas`, so it starts on a DGX Spark: the CUDA 12.8
+`ptxas` in `vllm-openai:0.19.0-5.61` cannot compile for the GB10, `sm_121a`, and
+1.9.0's `--enforce-eager` did not avoid that). SUSE's `vllm` chart provides both the
 engine and the router, and a blueprint can list each `chartName` only once.
 
 Install everything into **one namespace**. The release names are pinned because the
@@ -257,7 +260,7 @@ images, moved to [wiredquill/openshell](https://github.com/wiredquill/openshell)
     `opentelemetry-collector` in namespace `observability`);
   - for hr-assistant-vllm 1.7.0+ and hr-assistant 1.2.0+, SUSE Observability
     2.12 or later with the SUSE AI Declared Topology StackPack (1.2.0 for
-    hr-assistant-vllm 1.9.0, hr-assistant-vllm-existing 1.1.0 and hr-assistant
+    hr-assistant-vllm 1.9.0+, hr-assistant-vllm-existing 1.1.0 and hr-assistant
     1.4.0)
     (`sts stackpack test-deploy -d stackpacks/suse-ai-declared-topology`);
   - pull secrets named `application-collection` and `suse-registry` in the target
@@ -394,7 +397,7 @@ kubectl annotate blueprint <name> \
 ```
 
 **5. Deploy it.** In Rancher, go to **AI Factory → Blueprints → HR Assistant
-(vLLM) 1.9.0 → Deploy**. Pick the target cluster and a namespace that
+(vLLM) 1.9.1 → Deploy**. Pick the target cluster and a namespace that
 nothing else uses, then review each component (the `vllm` component holds the
 model and HF token).
 To deploy from YAML instead, use an AIWorkload. `componentValues` is keyed by
@@ -412,7 +415,7 @@ spec:
     sourceType: Blueprint
     blueprint:
       name: hr-assistant-vllm
-      version: "1.9.0"
+      version: "1.9.1"
   targetClusters:
     - c-m-xxxxxxxx                   # Rancher cluster ID, not the display name
   targetNamespace: hr-assistant-vllm
