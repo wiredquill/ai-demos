@@ -118,6 +118,15 @@ questions:
   default: "http://vllm-router-service:80"
   show_if: "vllm.enabled=false"
 
+- variable: model
+  group: "vLLM Deployment"
+  label: "Model Name"
+  description: "Model name the existing vLLM serves (its served model name, as listed by GET /v1/models), e.g. qwen3.8-27b or Qwen/Qwen2.5-7B-Instruct. Sent on every request and shown in SUSE Observability."
+  type: string
+  required: true
+  default: "Qwen/Qwen2.5-7B-Instruct"
+  show_if: "vllm.enabled=false"
+
 - variable: loadGenerator.intervalSeconds
   label: "Load Generation Interval (seconds)"
   type: int
