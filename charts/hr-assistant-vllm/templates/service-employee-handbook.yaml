@@ -6,6 +6,10 @@ metadata:
   labels:
     {{- include "hr-assistant.labels" . | nindent 4 }}
     genai: employee-handbook
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   type: {{ .Values.service.type }}
   ports:

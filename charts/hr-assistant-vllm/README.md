@@ -250,7 +250,7 @@ topology sent components=5 relations=4 status=200
 
 ## 7. SUSE AI Factory blueprint
 
-The `hr-assistant-vllm` blueprint (`catalog/blueprints/hr-assistant-vllm-1-9-2.yaml`)
+The `hr-assistant-vllm` blueprint (`catalog/blueprints/hr-assistant-vllm-1-9-3.yaml`)
 deploys this demo as SUSE's `vllm` (engine + router), `qdrant` and `opensearch`
 charts, plus four app components. Each app pod has a thin chart in
 `charts/hr-assistant-vllm-<component>`, which vendors this chart (alias `hr`) with
@@ -342,3 +342,11 @@ Blueprints") for publishing and installing the blueprint.
   20GB card, so the engine exited with no KV cache memory; vLLM's 0.9 fails on a
   DGX Spark. `gpuMemoryUtilization` stays 0.4, now only vLLM's startup check.
   Blueprint 1.9.2, components 0.1.9.
+- **0.1.24** — The HR Assistant, Employee Handbook and HR Policy DB Services
+  (`service.annotations`) and the bundled router Service
+  (`vllm.routerSpec.serviceAnnotations`) carry
+  `monitor.kubernetes-v2.stackstate.io/http-response-time`, raising SUSE
+  Observability's response-time monitor from 3s to 60s deviating / 120s
+  critical. Every request waits on an LLM answer (~17s average, p95 ~60s on a
+  DGX Spark), so the default held them critical. The engine Service has no
+  annotations field in SUSE's vllm chart. Blueprint 1.9.3, components 0.1.10.
