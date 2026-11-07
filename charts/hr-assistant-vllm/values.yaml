@@ -271,9 +271,9 @@ vllm:
     repository: containers/lmcache-lmstack-router
     tag: "0.1.10-3.116"
     otel:
-      # Service the OpenTelemetry Operator creates for an OpenTelemetryCollector
-      # named "opentelemetry-collector" (SUSE Observability's documented setup).
-      endpoint: "http://opentelemetry-collector-collector.observability.svc.cluster.local:4317"
+      # The shared SUSE AI collector's Service (the ai-observability-collector
+      # chart's alias for the operator's opentelemetry-collector-collector).
+      endpoint: "http://opentelemetry-collector.observability.svc.cluster.local:4317"
       serviceName: hr-assistant-vllm-router
     ingress:
       enabled: false

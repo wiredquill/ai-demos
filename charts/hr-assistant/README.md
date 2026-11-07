@@ -38,12 +38,12 @@ To find the collector URL by hand (e.g. to verify what the chart discovered):
 kubectl get svc -n observability -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | grep opentelemetry
 ```
 
-Then use the resulting service name (commonly
-`opentelemetry-collector-collector`) in the OTLP endpoint:
+Use `opentelemetry-collector`, the Service the ai-observability-collector chart
+creates (the operator's own `opentelemetry-collector-collector` Service reaches the
+same pods):
 
 ```bash
-OTLP_ENDPOINT="http://$(kubectl get svc -n observability -l app.kubernetes.io/name=opentelemetry-collector -o jsonpath='{.items[0].metadata.name}').observability.svc.cluster.local:4318"
-echo "Collector OTLP HTTP endpoint: $OTLP_ENDPOINT"
+OTLP_ENDPOINT=http://opentelemetry-collector.observability.svc.cluster.local:4318
 ```
 
 That value (or the bare service name) is what you paste into the **OTLP
@@ -163,7 +163,7 @@ Or via helm:
 ```bash
 helm repo add ai-demos https://wiredquill.github.io/ai-demos
 helm install hr-assistant ai-demos/hr-assistant -n hr-assistant --create-namespace \
-  --set otlpEndpoint=http://opentelemetry-collector-collector.observability.svc.cluster.local:4318 \
+  --set otlpEndpoint=http://opentelemetry-collector.observability.svc.cluster.local:4318 \
   --set service.type=NodePort \
   --set service.nodePort=30080
 ```
