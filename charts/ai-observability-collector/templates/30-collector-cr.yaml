@@ -263,6 +263,9 @@ spec:
               - set(attributes["suse.ai.component.name"], attributes["service.name"]) where attributes["service.name"] == "vllm" or attributes["service.name"] == "qdrant"
               - set(attributes["suse.ai.component.type"], "inference-engine") where attributes["service.name"] == "vllm"
               - set(attributes["suse.ai.component.type"], "vectordb") where attributes["service.name"] == "qdrant"
+              # SUSE AI 3.0 monitors select on suse_ai_product (e.g.
+              # vllm_gpu_cache_usage_perc{suse_ai_product="vllm"}); 2.x ignores it.
+              - set(attributes["suse.ai.product"], attributes["service.name"]) where attributes["service.name"] == "vllm" or attributes["service.name"] == "qdrant"
               - set(attributes["service.namespace"], attributes["k8s.namespace.name"]) where (attributes["service.name"] == "vllm" or attributes["service.name"] == "qdrant") and attributes["k8s.namespace.name"] != nil
       transform/opensearch:
         error_mode: ignore
@@ -273,6 +276,7 @@ spec:
               - set(attributes["suse.ai.managed"], "true")
               - set(attributes["suse.ai.component.name"], "opensearch")
               - set(attributes["suse.ai.component.type"], "search-engine")
+              - set(attributes["suse.ai.product"], "opensearch")
               - set(attributes["service.namespace"], attributes["k8s.namespace.name"]) where attributes["k8s.namespace.name"] != nil
               - set(attributes["k8s.namespace.name"], "${env:SUSE_AI_NAMESPACE}") where attributes["k8s.namespace.name"] == nil
               - set(attributes["service.instance.id"], Concat(["opensearch", attributes["k8s.namespace.name"]], "-"))
