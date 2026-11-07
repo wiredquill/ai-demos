@@ -1,9 +1,9 @@
 # One relation per data point of the suse_ai_declared_relation gauge, between
-# two SUSE AI components, identified as in declared-component.sty: the
-# per-namespace identifier when the end has source.instance / target.instance,
-# else urn:suse-ai:product:<type>:<name>. The endpoints can
-# be declared components or ones the SUSE AI StackPack syncs; the relation
-# appears once both exist.
+# two SUSE AI components, each end identified as in declared-component.sty:
+# source.instance / target.instance, else source.namespace / target.namespace,
+# else urn:suse-ai:product:<type>:<name>. The endpoints can be declared
+# components or ones the SUSE AI and OpenTelemetry StackPacks create; the
+# relation appears once both exist.
 nodes:
   - _type: "OtelRelationMapping"
     name: "Declared SUSE AI relation"
@@ -29,12 +29,16 @@ nodes:
           'k8s.namespace.name' in resource.attributes && 'source.instance' in datapoint.attributes ?
           'urn:suse-ai:urn:opentelemetry:namespace/' + resource.attributes['k8s.namespace.name'] +
           ':service/' + datapoint.attributes['source.name'] + ':serviceInstance/' + datapoint.attributes['source.instance'] :
+          'source.namespace' in datapoint.attributes && datapoint.attributes['source.namespace'] != '' ?
+          'urn:opentelemetry:namespace/' + datapoint.attributes['source.namespace'] + ':service/' + datapoint.attributes['source.name'] :
           'urn:suse-ai:product:' + datapoint.attributes['source.type'] + ':' + datapoint.attributes['source.name']
       - name: "targetId"
         value: >-
           'k8s.namespace.name' in resource.attributes && 'target.instance' in datapoint.attributes ?
           'urn:suse-ai:urn:opentelemetry:namespace/' + resource.attributes['k8s.namespace.name'] +
           ':service/' + datapoint.attributes['target.name'] + ':serviceInstance/' + datapoint.attributes['target.instance'] :
+          'target.namespace' in datapoint.attributes && datapoint.attributes['target.namespace'] != '' ?
+          'urn:opentelemetry:namespace/' + datapoint.attributes['target.namespace'] + ':service/' + datapoint.attributes['target.name'] :
           'urn:suse-ai:product:' + datapoint.attributes['target.type'] + ':' + datapoint.attributes['target.name']
     output:
       sourceId: "vars.sourceId"

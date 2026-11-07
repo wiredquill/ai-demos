@@ -4,8 +4,17 @@ charts/hr-assistant and charts/hr-assistant-vllm; keep the two in step.
 
 The graph follows this chart's values: the three apps, the inference engine
 (genai.providerName) and the model they call, and Qdrant / OpenSearch when
-they are deployed or pointed at. Names match what the apps and the SUSE AI
-collector report, so declared and inferred components merge.
+they are deployed or pointed at.
+
+The apps, the engine and the databases are declared as the OpenTelemetry
+services SUSE Observability creates for them from live telemetry: their
+service.name (the apps' OTEL_SERVICE_NAME, the engine's provider name, qdrant,
+opensearch) in this release's service.namespace. The SUSE AI Declared Topology
+StackPack (1.2.0+) gives them the same identifier,
+urn:opentelemetry:namespace/<ns>:service/<name>, so declared and observed
+components are one node and the declared relations connect the components the
+SUSE AI views show. The model has no such service (SUSE AI tracks model usage
+per calling app), so it is a declared component of its own.
 */}}
 {{- define "hr-assistant.topologyAttr" -}}
 {{- dict "key" (index . 0) "value" (dict "stringValue" (index . 1)) | toJson -}}
@@ -17,39 +26,46 @@ suse_ai_declared_component data point per component and one
 suse_ai_declared_relation per relation, from scope suse-ai-declared-topology
 on a resource marked suse.ai.topology.declared. No service.name, so the
 OpenTelemetry StackPack does not turn the sender into a service.
-timeUnixNano is set when it is sent (__NOW__).
+timeUnixNano is set when it is sent (__NOW__). Empty attributes are left out.
+
+Components: type, name, type_name, namespace, product.
+Relations: source type and name, target type and name, relation type,
+source namespace, target namespace.
 */}}
 {{- define "hr-assistant.topologyPayload" -}}
 {{- $provider := .Values.genai.providerName -}}
 {{- $model := include "hr-assistant.model" . | trim -}}
-{{- $agents := list "hr-assistant" "hr-policy-db" "employee-handbook" -}}
+{{- $ns := include "hr-assistant.serviceNamespace" . | trim -}}
+{{- $agents := list "HRAssistant" "HRPolicyDatabase" "EmployeeHandbook" -}}
 {{- $components := list -}}
 {{- range $agents -}}
-{{- $components = append $components (list "agent" . "agent") -}}
+{{- $components = append $components (list "agent" . "agent" $ns "") -}}
 {{- end -}}
-{{- $components = append $components (list "inference-engine" $provider (printf "inference-engine.%s" $provider)) -}}
-{{- $components = append $components (list "llm-model" $model (printf "llm-model.%s" $provider)) -}}
+{{- $components = append $components (list "inference-engine" $provider (printf "inference-engine.%s" $provider) $ns $provider) -}}
+{{- $components = append $components (list "llm-model" $model (printf "llm-model.%s" $provider) "" "") -}}
 {{- $relations := list
-  (list "agent" "hr-assistant" "agent" "hr-policy-db" "uses")
-  (list "agent" "hr-assistant" "agent" "employee-handbook" "uses") -}}
+  (list "agent" "HRAssistant" "agent" "HRPolicyDatabase" "uses" $ns $ns)
+  (list "agent" "HRAssistant" "agent" "EmployeeHandbook" "uses" $ns $ns) -}}
 {{- range $agents -}}
-{{- $relations = append $relations (list "agent" . "inference-engine" $provider "uses") -}}
+{{- $relations = append $relations (list "agent" . "inference-engine" $provider "uses" $ns $ns) -}}
 {{- end -}}
-{{- $relations = append $relations (list "inference-engine" $provider "llm-model" $model "runs") -}}
+{{- $relations = append $relations (list "inference-engine" $provider "llm-model" $model "runs" $ns "") -}}
 {{- if or .Values.qdrant.enabled .Values.qdrant.url -}}
-{{- $components = append $components (list "vectordb" "qdrant" "vectordb.qdrant") -}}
-{{- $relations = append $relations (list "agent" "hr-policy-db" "vectordb" "qdrant" "uses") -}}
+{{- $components = append $components (list "vectordb" "qdrant" "vectordb.qdrant" $ns "qdrant") -}}
+{{- $relations = append $relations (list "agent" "HRPolicyDatabase" "vectordb" "qdrant" "uses" $ns $ns) -}}
 {{- end -}}
 {{- if or .Values.opensearch.enabled .Values.opensearch.url -}}
-{{- $components = append $components (list "search-engine" "opensearch" "search-engine.opensearch") -}}
-{{- $relations = append $relations (list "agent" "hr-policy-db" "search-engine" "opensearch" "uses") -}}
+{{- $components = append $components (list "search-engine" "opensearch" "search-engine.opensearch" $ns "opensearch") -}}
+{{- $relations = append $relations (list "agent" "HRPolicyDatabase" "search-engine" "opensearch" "uses" $ns $ns) -}}
 {{- end -}}
 {{- $cpoints := list -}}
 {{- range $components -}}
 {{- $c := . -}}
 {{- $attrs := list -}}
-{{- range $i, $key := list "type" "name" "type_name" -}}
-{{- $attrs = append $attrs (include "hr-assistant.topologyAttr" (list $key (index $c $i)) | fromJson) -}}
+{{- range $i, $key := list "type" "name" "type_name" "namespace" "product" -}}
+{{- with index $c $i -}}
+{{- $attrs = append $attrs (include "hr-assistant.topologyAttr" (list $key .) | fromJson) -}}
+{{- end -}}
 {{- end -}}
 {{- $cpoints = append $cpoints (dict "asInt" "1" "timeUnixNano" "__NOW__" "attributes" $attrs) -}}
 {{- end -}}
@@ -57,8 +73,10 @@ timeUnixNano is set when it is sent (__NOW__).
 {{- range $relations -}}
 {{- $r := . -}}
 {{- $attrs := list -}}
-{{- range $i, $key := list "source.type" "source.name" "target.type" "target.name" "type" -}}
-{{- $attrs = append $attrs (include "hr-assistant.topologyAttr" (list $key (index $r $i)) | fromJson) -}}
+{{- range $i, $key := list "source.type" "source.name" "target.type" "target.name" "type" "source.namespace" "target.namespace" -}}
+{{- with index $r $i -}}
+{{- $attrs = append $attrs (include "hr-assistant.topologyAttr" (list $key .) | fromJson) -}}
+{{- end -}}
 {{- end -}}
 {{- $rpoints = append $rpoints (dict "asInt" "1" "timeUnixNano" "__NOW__" "attributes" $attrs) -}}
 {{- end -}}

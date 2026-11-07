@@ -250,7 +250,7 @@ topology sent components=5 relations=4 status=200
 
 ## 7. SUSE AI Factory blueprint
 
-The `hr-assistant-vllm` blueprint (`catalog/blueprints/hr-assistant-vllm-1-8-1.yaml`)
+The `hr-assistant-vllm` blueprint (`catalog/blueprints/hr-assistant-vllm-1-9-0.yaml`)
 deploys this demo as SUSE's `vllm` (engine + router), `qdrant` and `opensearch`
 charts, plus four app components. Each app pod has a thin chart in
 `charts/hr-assistant-vllm-<component>`, which vendors this chart (alias `hr`) with
@@ -275,8 +275,12 @@ The chart declares the SUSE AI topology to SUSE Observability up front
 the inference engine and model, and Qdrant / OpenSearch, sent as OTLP metrics by
 a post-install Job and a 5-minute CronJob. SUSE Observability shows the whole graph
 before the first request, including the app-to-app and database edges the
-collector infers only intermittently. It needs SUSE Observability 2.12+ with the
-SUSE AI Declared Topology StackPack (`stackpacks/suse-ai-declared-topology`). This
+collector infers only intermittently. The apps, the engine and the databases are
+declared as the OpenTelemetry services SUSE Observability creates for them
+(`urn:opentelemetry:namespace/<service namespace>:service/<service.name>`), so
+declared and observed components are one node and the declared edges connect
+the components the SUSE AI view shows. It needs SUSE Observability 2.12+ with the
+SUSE AI Declared Topology StackPack 1.2.0+ (`stackpacks/suse-ai-declared-topology`). This
 applies to Rancher Apps and `helm install` alike. In the blueprint, the app
 components switch it off and `hr-assistant-vllm-topology` (from blueprint 1.7.0) switches on only
 the topology.
@@ -319,3 +323,11 @@ Blueprints") for publishing and installing the blueprint.
   `opentelemetry-collector.observability.svc.cluster.local:4317`, the shared
   collector's alias Service (was the operator's `opentelemetry-collector-collector`
   Service, which reaches the same pods). Blueprint 1.8.1, components 0.1.6.
+- **0.1.21** — The declared topology names the apps, the engine, Qdrant and
+  OpenSearch as the OpenTelemetry services SUSE Observability creates for them
+  (`HRAssistant`, `vllm`, ... in the release's service namespace), so the
+  declared relations connect the components the SUSE AI view shows. Needs the
+  SUSE AI Declared Topology StackPack 1.2.0. The bundled vLLM engine reserves
+  40% of GPU memory (`gpuMemoryUtilization`, was vLLM's 0.9) and runs with
+  `--enforce-eager`, so it starts on a DGX Spark. Blueprint 1.9.0, components
+  0.1.7.

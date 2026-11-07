@@ -246,7 +246,16 @@ vllm:
         # the engine is started with both flags. hermes is vLLM's documented
         # tool-call parser for the Qwen2.5-Instruct family.
         vllmConfig:
+          # Share of GPU memory the engine reserves (vLLM's default is 0.9).
+          # A DGX Spark's GPU shares its 128GB with the host, so 0.9 asks for
+          # more than is free at startup and the engine exits. 0.4 holds
+          # Qwen2.5-7B (~15GB) and its KV cache; raise it for larger models.
+          gpuMemoryUtilization: "0.4"
           extraArgs:
+            # No torch.compile / CUDA graphs: the image's Triton cannot build
+            # kernels for the GB10 (DGX Spark, sm_121), and the engine exits
+            # with "Internal Triton PTX codegen error". Costs some throughput.
+            - "--enforce-eager"
             - "--enable-auto-tool-choice"
             - "--tool-call-parser"
             - "hermes"

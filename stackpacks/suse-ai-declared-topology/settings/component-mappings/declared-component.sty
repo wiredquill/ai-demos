@@ -3,14 +3,20 @@
 # charts/hr-assistant-vllm templates/topology.yaml) instead of waiting for the
 # SUSE AI collector to infer the component from live spans.
 #
-# The identifier is the SUSE AI collector's own, so a declared component and
-# the one the SUSE AI StackPack syncs are one node. With an `instance` data
-# point attribute (the service.instance.id the component reports) it is the
-# per-namespace one, urn:suse-ai:urn:opentelemetry:namespace/<ns>:service/<name>:serviceInstance/<instance>,
-# so the same application in two namespaces stays two components; without it,
-# urn:suse-ai:product:<type>:<name>, which one name shares across namespaces. The SUSE AI sync is an external topology sync, so its name, type,
-# layer and domain win; this mapping only adds tags, and keeps the component
-# (and the relations below) alive while there is no traffic.
+# The identifier is the one the SUSE AI and OpenTelemetry StackPacks give the
+# same component, so a declared component and the one they create from live
+# telemetry are one node. Their sync wins name, type, layer and domain; this
+# mapping adds tags and keeps the component (and the relations below) alive
+# while there is no traffic. Chosen by the data point's attributes:
+#
+# - `instance` (with a k8s.namespace.name resource attribute):
+#   urn:suse-ai:urn:opentelemetry:namespace/<ns>:service/<name>:serviceInstance/<instance>
+# - `namespace` (the service.namespace the component reports):
+#   urn:opentelemetry:namespace/<namespace>:service/<name>, the OpenTelemetry
+#   service of an application, inference engine or database that reports or is
+#   seen in traces. Its type is `otel service`, like theirs.
+# - neither: urn:suse-ai:product:<type>:<name>, which one name shares across
+#   namespaces.
 nodes:
   - _type: "OtelComponentMapping"
     name: "Declared SUSE AI component"
@@ -33,18 +39,23 @@ nodes:
         value: "datapoint.attributes['type']"
       - name: "name"
         value: "datapoint.attributes['name']"
-      # The SUSE AI StackPack component type, e.g. inference-engine.vllm,
-      # which carries the product's metric bindings and monitors.
+      # `otel service` for the namespace form, like the component the
+      # OpenTelemetry StackPack creates; else the SUSE AI StackPack component
+      # type, e.g. inference-engine.vllm, which carries the product's metric
+      # bindings and monitors. The id checks instance, then namespace (above).
       - name: "typeName"
         value: >-
+          !('instance' in datapoint.attributes && 'k8s.namespace.name' in resource.attributes) && ('namespace' in datapoint.attributes && datapoint.attributes['namespace'] != '') ? 'otel service' :
           'type_name' in datapoint.attributes && datapoint.attributes['type_name'] != '' ?
           datapoint.attributes['type_name'] :
           datapoint.attributes['type']
       - name: "id"
         value: >-
-          'instance' in datapoint.attributes && 'k8s.namespace.name' in resource.attributes ?
+          ('instance' in datapoint.attributes && 'k8s.namespace.name' in resource.attributes) ?
           'urn:suse-ai:urn:opentelemetry:namespace/' + resource.attributes['k8s.namespace.name'] +
           ':service/' + datapoint.attributes['name'] + ':serviceInstance/' + datapoint.attributes['instance'] :
+          ('namespace' in datapoint.attributes && datapoint.attributes['namespace'] != '') ?
+          'urn:opentelemetry:namespace/' + datapoint.attributes['namespace'] + ':service/' + datapoint.attributes['name'] :
           'urn:suse-ai:product:' + datapoint.attributes['type'] + ':' + datapoint.attributes['name']
     output:
       identifier: "vars.id"
@@ -66,6 +77,11 @@ nodes:
             target: "suse.ai.managed"
       optional:
         tags:
+          # The SUSE AI views group services by product (vllm, qdrant, ...).
+          - source: "datapoint.attributes['product']"
+            target: "suse.ai.product"
+          - source: "datapoint.attributes['namespace']"
+            target: "service.namespace"
           - source: "resource.attributes['k8s.namespace.name']"
             target: "k8s.namespace.name"
           - source: "resource.attributes['k8s.cluster.name']"
