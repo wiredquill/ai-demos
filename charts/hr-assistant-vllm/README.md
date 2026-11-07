@@ -312,3 +312,6 @@ Blueprints") for publishing and installing the blueprint.
 - **0.1.18** — App image `genai-demo:main-3114afe`: the same code as
   `main-be07471`, published for linux/amd64 and linux/arm64 (blueprint 1.8.0,
   components 0.1.4).
+- **0.1.19** — With **Enable vLLM Deployment** off, the form asks for the
+  **Model Name** the existing vLLM serves (`model`), next to its router URL.
+  Used by the `hr-assistant-vllm-existing` blueprint.

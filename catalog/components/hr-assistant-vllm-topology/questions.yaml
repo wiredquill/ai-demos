@@ -2,15 +2,10 @@ questions:
 - variable: hr.model
   label: Model served by vLLM
   group: LLM
-  type: enum
+  type: string
   required: true
   default: Qwen/Qwen2.5-7B-Instruct
-  options:
-  - Qwen/Qwen2.5-7B-Instruct
-  - Qwen/Qwen3.6-35B-A3B
-  - meta-llama/Llama-3.3-70B-Instruct
-  - openai/gpt-oss-120b
-  description: Must match the model served by the <b>vllm</b> component. Reported as gen_ai.request.model and sent on every request.
+  description: Model name the vllm router serves (GET /v1/models), e.g. Qwen/Qwen2.5-7B-Instruct, Qwen/Qwen3.6-35B-A3B or qwen3.8-27b. Reported as gen_ai.request.model and sent on every request.
 - variable: hr.otlpEndpoint
   label: OTLP Endpoint
   group: Observability

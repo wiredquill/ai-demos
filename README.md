@@ -136,6 +136,22 @@ select the same **Model served by vLLM** in the three app forms.
 
 The all-in-one `hr-assistant-vllm` chart is unchanged for Rancher Apps installs.
 
+### hr-assistant-vllm-existing 1.0.0: use a vLLM that is already running
+
+The same components without `vllm`: the apps call an existing OpenAI-compatible
+vLLM router, such as the `vllm-production-stack` blueprint. Use it when that
+vLLM already has the GPU, for example a single-GPU DGX Spark, where a second
+engine cannot get GPU memory.
+
+Set **vLLM Router URL** and **Model** on each `hr-assistant-vllm-*` component
+(0.1.5; Model is free text there). The defaults point at `vllm-production-stack`
+installed in namespace `vllm-production-stack`:
+`http://vllm-router-service.vllm-production-stack.svc.cluster.local:80`, model
+`qwen3.8-27b`. Model must be the served name the router lists at `/v1/models`.
+
+For a Rancher Apps install of the all-in-one `hr-assistant-vllm` chart (0.1.19+),
+turn off **Enable vLLM Deployment** and fill in **vLLM Router URL** and **Model Name**.
+
 ### hr-assistant 1.3.0: the Ollama variant, same layout
 
 | Component | Repo / version | Release | Pods |

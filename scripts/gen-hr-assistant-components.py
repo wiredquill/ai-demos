@@ -14,7 +14,7 @@ ROOT = sys.argv[1]
 
 VARIANTS = {
     "hr-assistant-vllm": dict(
-        title="HR Assistant (vLLM)", base_version="0.1.18", version="0.1.4", blueprint="hr-assistant-vllm-1-8-0.yaml",
+        title="HR Assistant (vLLM)", base_version="0.1.19", version="0.1.5", blueprint="hr-assistant-vllm-1-8-0.yaml", free_model=True,
         engine="vllm", engine_desc="SUSE vLLM, Qdrant and OpenSearch", nodeport=30081,
         models=["Qwen/Qwen2.5-7B-Instruct", "Qwen/Qwen3.6-35B-A3B", "meta-llama/Llama-3.3-70B-Instruct", "openai/gpt-oss-120b"],
         llm_values={"vllm": {"enabled": False}, "vllmEndpoint": "http://vllm-router-service:80"},
@@ -64,8 +64,15 @@ Q_OTLP = [
 ]
 
 def q_llm(cfg):
-    model = dict(variable="hr.model", label=cfg["model_label"], group="LLM", type="enum", required=True, default=cfg["models"][0], options=cfg["models"],
-                 description=f"Must match the model served by the <b>{cfg['engine']}</b> component. Reported as gen_ai.request.model and sent on every request.")
+    if cfg.get("free_model"):
+        # Free text: the hr-assistant-vllm-existing blueprint points at an existing
+        # vLLM whose served model name is not one of the presets.
+        model = dict(variable="hr.model", label=cfg["model_label"], group="LLM", type="string", required=True, default=cfg["models"][0],
+                     description=f"Model name the {cfg['engine']} router serves (GET /v1/models), e.g. {', '.join(cfg['models'][:2])} or qwen3.8-27b. "
+                                 "Reported as gen_ai.request.model and sent on every request.")
+    else:
+        model = dict(variable="hr.model", label=cfg["model_label"], group="LLM", type="enum", required=True, default=cfg["models"][0], options=cfg["models"],
+                     description=f"Must match the model served by the <b>{cfg['engine']}</b> component. Reported as gen_ai.request.model and sent on every request.")
     e = cfg["q_endpoint"]
     endpoint = dict(variable=e["variable"], label=e["label"], group="LLM", type="string", required=True, default=e["default"], description=e["description"])
     return [model, endpoint]
