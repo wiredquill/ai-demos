@@ -295,6 +295,12 @@ vllm:
       - ReadWriteMany
   routerSpec:
     enableRouter: true
+    # Same HTTP response-time override as service.annotations: every request
+    # waits on an LLM answer, so the 3s default would hold the router critical.
+    serviceAnnotations:
+      monitor.kubernetes-v2.stackstate.io/http-response-time: >-
+        {"deviatingThreshold": 60.0, "deviatingTimeWindow": "5 minutes",
+        "criticalThreshold": 120.0, "criticalTimeWindow": "10 minutes"}
     # Internal router Service. ALWAYS ClusterIP — external exposure (if
     # needed) is the dedicated Service in routerExposure below, since the
     # packaged subchart's own router Service cannot render nodePort/LB.
@@ -508,6 +514,14 @@ service:
   # Only applied when service.type is NodePort. 30081, not 30080, so this
   # chart can run alongside the Ollama hr-assistant demo on the same cluster.
   nodePort: 30081
+  # Annotations on the HR Assistant, Employee Handbook and HR Policy DB
+  # Services. Each request waits on an LLM answer (~17s on a DGX Spark, p95
+  # ~60s), so SUSE Observability's "HTTP response time above 3s" monitor
+  # would hold them critical. The override raises it for these Services only.
+  annotations:
+    monitor.kubernetes-v2.stackstate.io/http-response-time: >-
+      {"deviatingThreshold": 60.0, "deviatingTimeWindow": "5 minutes",
+      "criticalThreshold": 120.0, "criticalTimeWindow": "10 minutes"}
 
 gpu:
   enabled: false
