@@ -23,6 +23,10 @@ auto-discovery**:
   tracing for Python / Node.js / Java apps via a single annotation.
 - Same verified SUSE AI relay config (infer-* pipelines, tail-sampling,
   topology exporter) as the manual setup — but parameterized.
+- Works with SUSE AI 2.x and 3.0 StackPacks. vLLM, Qdrant and OpenSearch
+  metrics carry `suse.ai.product`, which the 3.0 monitors select on (for
+  example `vllm_gpu_cache_usage_perc{suse_ai_product="vllm"}`); without it the
+  3.0 vLLM, Qdrant and OpenSearch monitors attach to nothing. 2.x ignores it.
 
 ## Requirements
 
