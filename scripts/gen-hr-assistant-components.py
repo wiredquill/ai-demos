@@ -14,7 +14,7 @@ ROOT = sys.argv[1]
 
 VARIANTS = {
     "hr-assistant-vllm": dict(
-        title="HR Assistant (vLLM)", base_version="0.1.21", version="0.1.7", blueprint="hr-assistant-vllm-1-9-0.yaml", free_model=True,
+        title="HR Assistant (vLLM)", base_version="0.1.22", version="0.1.8", blueprint="hr-assistant-vllm-1-9-1.yaml", free_model=True,
         engine="vllm", engine_desc="SUSE vLLM, Qdrant and OpenSearch", nodeport=30081,
         models=["Qwen/Qwen2.5-7B-Instruct", "Qwen/Qwen3.6-35B-A3B", "meta-llama/Llama-3.3-70B-Instruct", "openai/gpt-oss-120b"],
         llm_values={"vllm": {"enabled": False}, "vllmEndpoint": "http://vllm-router-service:80"},

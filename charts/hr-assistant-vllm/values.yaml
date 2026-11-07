@@ -214,6 +214,19 @@ vllm:
       - name: application-collection
   servingEngineSpec:
     enableEngine: true
+    # The engine image is ~4.5GB; do not pull it on every restart.
+    imagePullPolicy: IfNotPresent
+    # Triton needs a ptxas that knows the DGX Spark's GB10 (sm_121a). The CUDA
+    # 12.8 ptxas in vllm-openai:0.19.0-5.61 does not: the engine loads its
+    # weights, then exits with "PTXAS error: Internal Triton PTX codegen
+    # error" (--enforce-eager does not avoid it; vLLM's own Triton kernels
+    # still compile). lmcache-vllm-openai ships the CUDA 13.0 ptxas (sm_100
+    # through sm_121); point Triton at it. Fine on other GPUs too.
+    env:
+      - name: TRITON_PTXAS_PATH
+        value: /usr/lib64/python3.12/site-packages/nvidia/cu13/bin/ptxas
+      - name: TRITON_PTXAS_BLACKWELL_PATH
+        value: /usr/lib64/python3.12/site-packages/nvidia/cu13/bin/ptxas
     labels:
       environment: production
     servicePort: 80
@@ -222,8 +235,10 @@ vllm:
         # UI anchor only; the `name` field below is what resource names use.
         name: hr-assistant-llm
         registry: dp.apps.rancher.io
-        repository: containers/vllm-openai
-        tag: "0.19.0-5.61"
+        # The vllm-production-stack engine image (linux/amd64 + linux/arm64);
+        # it ships the CUDA 13 ptxas set in servingEngineSpec.env.
+        repository: containers/lmcache-vllm-openai
+        tag: "0.5.6-nvidia-1.7"
         modelURL: Qwen/Qwen2.5-7B-Instruct
         # Hugging Face token (set at install time; never commit a real token).
         # The subchart stores it in a Secret and injects HF_TOKEN into vLLM.
@@ -252,10 +267,6 @@ vllm:
           # Qwen2.5-7B (~15GB) and its KV cache; raise it for larger models.
           gpuMemoryUtilization: "0.4"
           extraArgs:
-            # No torch.compile / CUDA graphs: the image's Triton cannot build
-            # kernels for the GB10 (DGX Spark, sm_121), and the engine exits
-            # with "Internal Triton PTX codegen error". Costs some throughput.
-            - "--enforce-eager"
             - "--enable-auto-tool-choice"
             - "--tool-call-parser"
             - "hermes"
