@@ -44,12 +44,12 @@ To find the collector URL by hand (e.g. to verify what the chart discovered):
 kubectl get svc -n observability -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | grep opentelemetry
 ```
 
-Then use the resulting service name (commonly
-`opentelemetry-collector-collector`) in the OTLP endpoint:
+Use `opentelemetry-collector`, the Service the ai-observability-collector chart
+creates (the operator's own `opentelemetry-collector-collector` Service reaches the
+same pods):
 
 ```bash
-OTLP_ENDPOINT="http://$(kubectl get svc -n observability -l app.kubernetes.io/name=opentelemetry-collector -o jsonpath='{.items[0].metadata.name}').observability.svc.cluster.local:4318"
-echo "Collector OTLP HTTP endpoint: $OTLP_ENDPOINT"
+OTLP_ENDPOINT=http://opentelemetry-collector.observability.svc.cluster.local:4318
 ```
 
 That value (or the bare service name) is what you paste into the **OTLP
@@ -189,7 +189,7 @@ Or via helm:
 ```bash
 helm dependency build charts/hr-assistant-vllm   # builds charts/vllm from the local file:// dependency
 helm install hr-assistant-vllm charts/hr-assistant-vllm -n hr-assistant-vllm --create-namespace \
-  --set otlpEndpoint=http://opentelemetry-collector-collector.observability.svc.cluster.local:4318 \
+  --set otlpEndpoint=http://opentelemetry-collector.observability.svc.cluster.local:4318 \
   --set service.type=NodePort \
   --set service.nodePort=30081
 ```
@@ -250,7 +250,7 @@ topology sent components=5 relations=4 status=200
 
 ## 7. SUSE AI Factory blueprint
 
-The `hr-assistant-vllm` blueprint (`catalog/blueprints/hr-assistant-vllm-1-8-0.yaml`)
+The `hr-assistant-vllm` blueprint (`catalog/blueprints/hr-assistant-vllm-1-8-1.yaml`)
 deploys this demo as SUSE's `vllm` (engine + router), `qdrant` and `opensearch`
 charts, plus four app components. Each app pod has a thin chart in
 `charts/hr-assistant-vllm-<component>`, which vendors this chart (alias `hr`) with
@@ -315,3 +315,7 @@ Blueprints") for publishing and installing the blueprint.
 - **0.1.19** — With **Enable vLLM Deployment** off, the form asks for the
   **Model Name** the existing vLLM serves (`model`), next to its router URL.
   Used by the `hr-assistant-vllm-existing` blueprint.
+- **0.1.20** — The vLLM router sends traces to
+  `opentelemetry-collector.observability.svc.cluster.local:4317`, the shared
+  collector's alias Service (was the operator's `opentelemetry-collector-collector`
+  Service, which reaches the same pods). Blueprint 1.8.1, components 0.1.6.

@@ -101,4 +101,4 @@ questions:
   label: Router OTLP gRPC Endpoint
   description: Where the router sends traces (OTLP gRPC, port 4317). Leave blank to disable router tracing.
   type: string
-  default: http://opentelemetry-collector-collector.observability.svc.cluster.local:4317
+  default: http://opentelemetry-collector.observability.svc.cluster.local:4317
