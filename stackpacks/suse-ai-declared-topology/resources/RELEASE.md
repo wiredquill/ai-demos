@@ -1,3 +1,15 @@
+## 1.2.0
+
+- Optional `namespace` (components) and `source.namespace` /
+  `target.namespace` (relations): the component gets the OpenTelemetry
+  service identifier `urn:opentelemetry:namespace/<namespace>:service/<name>`
+  and type `otel service`, the identifier the SUSE AI and OpenTelemetry
+  StackPacks give an application, inference engine or database seen in
+  telemetry. Declared and observed components are then one node, so the
+  declared relations connect the components the SUSE AI views show.
+- Optional `product` (components) sets the `suse.ai.product` tag.
+- Senders without them are unchanged.
+
 ## 1.1.0
 
 - Optional `instance` (components) and `source.instance` / `target.instance`

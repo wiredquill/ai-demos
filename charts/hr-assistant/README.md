@@ -214,7 +214,7 @@ topology sent components=5 relations=4 status=200
 
 ## 7. SUSE AI Factory blueprint
 
-The `hr-assistant` blueprint (`catalog/blueprints/hr-assistant-1-3-0.yaml`) deploys
+The `hr-assistant` blueprint (`catalog/blueprints/hr-assistant-1-4-0.yaml`) deploys
 this demo as SUSE's `ollama`, `qdrant` and `opensearch` charts plus four app
 components. Each app pod has a thin chart in `charts/hr-assistant-<component>`,
 which vendors this chart (alias `hr`) with only its own workload switched on:
@@ -238,8 +238,12 @@ The chart declares the SUSE AI topology to SUSE Observability up front
 the inference engine and model, and Qdrant / OpenSearch, sent as OTLP metrics by
 a post-install Job and a 5-minute CronJob. SUSE Observability shows the whole graph
 before the first request, including the app-to-app and database edges the
-collector infers only intermittently. It needs SUSE Observability 2.12+ with the
-SUSE AI Declared Topology StackPack (`stackpacks/suse-ai-declared-topology`). This
+collector infers only intermittently. The apps, the engine and the databases are
+declared as the OpenTelemetry services SUSE Observability creates for them
+(`urn:opentelemetry:namespace/<service namespace>:service/<service.name>`), so
+declared and observed components are one node and the declared edges connect
+the components the SUSE AI view shows. It needs SUSE Observability 2.12+ with the
+SUSE AI Declared Topology StackPack 1.2.0+ (`stackpacks/suse-ai-declared-topology`). This
 applies to Rancher Apps and `helm install` alike. In the blueprint, the app
 components switch it off and `hr-assistant-topology` (from blueprint 1.2.0) switches on only
 the topology.
@@ -273,3 +277,8 @@ the topology.
 - **1.21.0** — App image `genai-demo:main-3114afe`: the same code as
   `main-be07471`, published for linux/amd64 and linux/arm64 (blueprint 1.3.0,
   components 0.1.3).
+- **1.22.0** — The declared topology names the apps, the engine, Qdrant and
+  OpenSearch as the OpenTelemetry services SUSE Observability creates for them
+  (`HRAssistant`, `ollama`, ... in the release's service namespace), so the
+  declared relations connect the components the SUSE AI view shows. Needs the
+  SUSE AI Declared Topology StackPack 1.2.0. Blueprint 1.4.0, components 0.1.4.

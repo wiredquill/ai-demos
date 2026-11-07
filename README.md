@@ -94,7 +94,7 @@ blueprint's defaults. Set options in the form, then switch to the YAML tab and
 make any edit there (a trailing space is enough). The Review step must list each
 changed component as customized.
 
-### hr-assistant-vllm 1.8.1: SUSE charts plus the app pods
+### hr-assistant-vllm 1.9.0: SUSE charts plus the app pods
 
 The infrastructure components are SUSE's own charts, so the AI Factory UI shows
 the real chart name and version, just as `simple-chatbot-with-rag` does. SUSE's
@@ -121,17 +121,19 @@ with its own `questions.yaml`. Those charts vendor `charts/hr-assistant-vllm`
 | `vllm` | wiredquill-ai-demos 0.1.10 (SUSE chart + form) | `vllm` | engine (GPU) + router (`vllm-router-service`) |
 | `qdrant` | suse-ai-registry 1.19.0 | `qdrant` | Qdrant (`qdrant:6333`) |
 | `opensearch` | wiredquill-ai-demos 3.9.0 (SUSE chart + form) | `opensearch` | OpenSearch (`opensearch-cluster-master:9200`) |
-| `hr-assistant-vllm-policy-db` | wiredquill-ai-demos 0.1.6 | `hr-policy-db` | HR Policy DB + dashboard (NodePort 30081) |
-| `hr-assistant-vllm-handbook` | wiredquill-ai-demos 0.1.6 | `employee-handbook` | Employee Handbook |
-| `hr-assistant-vllm-app` | wiredquill-ai-demos 0.1.6 | `hr-assistant` | HR Assistant |
-| `hr-assistant-vllm-load-gen` | wiredquill-ai-demos 0.1.6 | `load-gen` | load generator + health-check emitter |
-| `hr-assistant-vllm-topology` | wiredquill-ai-demos 0.1.6 | `topology` | CronJob declaring the SUSE AI topology (1.7.0+) |
+| `hr-assistant-vllm-policy-db` | wiredquill-ai-demos 0.1.7 | `hr-policy-db` | HR Policy DB + dashboard (NodePort 30081) |
+| `hr-assistant-vllm-handbook` | wiredquill-ai-demos 0.1.7 | `employee-handbook` | Employee Handbook |
+| `hr-assistant-vllm-app` | wiredquill-ai-demos 0.1.7 | `hr-assistant` | HR Assistant |
+| `hr-assistant-vllm-load-gen` | wiredquill-ai-demos 0.1.7 | `load-gen` | load generator + health-check emitter |
+| `hr-assistant-vllm-topology` | wiredquill-ai-demos 0.1.7 | `topology` | CronJob declaring the SUSE AI topology (1.7.0+) |
 
 That's eight components and eight pods (1.6.0: seven; 1.7.0 adds the topology
 component, which is a CronJob, not a long-running pod; 1.8.0 moves the app pods
 to the multi-arch `genai-demo:main-3114afe` image, so they run on arm64 nodes
 such as the DGX Spark; 1.8.1 points the vLLM router's traces at the shared
-collector's `opentelemetry-collector` Service). SUSE's `vllm` chart provides both the
+collector's `opentelemetry-collector` Service; 1.9.0 has the engine reserve 40%
+of GPU memory and run with `--enforce-eager`, so it starts on a DGX Spark, and
+declares the topology on the components the SUSE AI view shows). SUSE's `vllm` chart provides both the
 engine and the router, and a blueprint can list each `chartName` only once.
 
 Install everything into **one namespace**. The release names are pinned because the
@@ -143,7 +145,7 @@ select the same **Model served by vLLM** in the three app forms.
 
 The all-in-one `hr-assistant-vllm` chart is unchanged for Rancher Apps installs.
 
-### hr-assistant-vllm-existing 1.0.0: use a vLLM that is already running
+### hr-assistant-vllm-existing 1.1.0: use a vLLM that is already running
 
 The same components without `vllm`: the apps call an existing OpenAI-compatible
 vLLM router, such as the `vllm-production-stack` blueprint. Use it when that
@@ -151,7 +153,7 @@ vLLM already has the GPU, for example a single-GPU DGX Spark, where a second
 engine cannot get GPU memory.
 
 Set **vLLM Router URL** and **Model** on each `hr-assistant-vllm-*` component
-(0.1.5; Model is free text there). The defaults point at `vllm-production-stack`
+(0.1.7; Model is free text there). The defaults point at `vllm-production-stack`
 installed in namespace `vllm-production-stack`:
 `http://vllm-router-service.vllm-production-stack.svc.cluster.local:80`, model
 `qwen3.8-27b`. Model must be the served name the router lists at `/v1/models`.
@@ -159,22 +161,22 @@ installed in namespace `vllm-production-stack`:
 For a Rancher Apps install of the all-in-one `hr-assistant-vllm` chart (0.1.19+),
 turn off **Enable vLLM Deployment** and fill in **vLLM Router URL** and **Model Name**.
 
-### hr-assistant 1.3.0: the Ollama variant, same layout
+### hr-assistant 1.4.0: the Ollama variant, same layout
 
 | Component | Repo / version | Release | Pods |
 |---|---|---|---|
 | `ollama` | wiredquill-ai-demos 1.91.0 (SUSE chart + form) | `ollama` | Ollama, GPU (`ollama:11434`) |
 | `qdrant` | suse-ai-registry 1.19.0 | `qdrant` | Qdrant (`qdrant:6333`) |
 | `opensearch` | wiredquill-ai-demos 3.9.0 (SUSE chart + form) | `opensearch` | OpenSearch (`opensearch-cluster-master:9200`) |
-| `hr-assistant-policy-db` | wiredquill-ai-demos 0.1.3 | `hr-policy-db` | HR Policy DB + dashboard (NodePort 30080) |
-| `hr-assistant-handbook` | wiredquill-ai-demos 0.1.3 | `employee-handbook` | Employee Handbook |
-| `hr-assistant-app` | wiredquill-ai-demos 0.1.3 | `hr-assistant` | HR Assistant |
-| `hr-assistant-load-gen` | wiredquill-ai-demos 0.1.3 | `load-gen` | load generator + health-check emitter |
-| `hr-assistant-topology` | wiredquill-ai-demos 0.1.3 | `topology` | CronJob declaring the SUSE AI topology (1.2.0+) |
+| `hr-assistant-policy-db` | wiredquill-ai-demos 0.1.4 | `hr-policy-db` | HR Policy DB + dashboard (NodePort 30080) |
+| `hr-assistant-handbook` | wiredquill-ai-demos 0.1.4 | `employee-handbook` | Employee Handbook |
+| `hr-assistant-app` | wiredquill-ai-demos 0.1.4 | `hr-assistant` | HR Assistant |
+| `hr-assistant-load-gen` | wiredquill-ai-demos 0.1.4 | `load-gen` | load generator + health-check emitter |
+| `hr-assistant-topology` | wiredquill-ai-demos 0.1.4 | `topology` | CronJob declaring the SUSE AI topology (1.2.0+) |
 
 That's eight components and seven pods (1.1.0: seven components; 1.2.0 adds
 the topology component, a CronJob; 1.3.0 moves the app pods to the multi-arch
-image). Ollama pulls its own models at startup,
+image; 1.4.0 declares the topology on the components the SUSE AI view shows). Ollama pulls its own models at startup,
 from **Main Model** and an optional **Additional Model** on its form, so the
 all-in-one chart's model-puller Job isn't used. The republished `ollama` chart
 applies `catalog/charts/ollama/form-friendly-values.patch`:
@@ -254,7 +256,9 @@ images, moved to [wiredquill/openshell](https://github.com/wiredquill/openshell)
   - the shared SUSE AI collector (`charts/ai-observability-collector`, Service
     `opentelemetry-collector` in namespace `observability`);
   - for hr-assistant-vllm 1.7.0+ and hr-assistant 1.2.0+, SUSE Observability
-    2.12 or later with the SUSE AI Declared Topology StackPack 1.0.0
+    2.12 or later with the SUSE AI Declared Topology StackPack (1.2.0 for
+    hr-assistant-vllm 1.9.0, hr-assistant-vllm-existing 1.1.0 and hr-assistant
+    1.4.0)
     (`sts stackpack test-deploy -d stackpacks/suse-ai-declared-topology`);
   - pull secrets named `application-collection` and `suse-registry` in the target
     namespace, or set `hr.imagePullSecrets` in each form.
@@ -390,7 +394,7 @@ kubectl annotate blueprint <name> \
 ```
 
 **5. Deploy it.** In Rancher, go to **AI Factory → Blueprints → HR Assistant
-(vLLM) 1.8.1 → Deploy**. Pick the target cluster and a namespace that
+(vLLM) 1.9.0 → Deploy**. Pick the target cluster and a namespace that
 nothing else uses, then review each component (the `vllm` component holds the
 model and HF token).
 To deploy from YAML instead, use an AIWorkload. `componentValues` is keyed by
@@ -408,7 +412,7 @@ spec:
     sourceType: Blueprint
     blueprint:
       name: hr-assistant-vllm
-      version: "1.8.1"
+      version: "1.9.0"
   targetClusters:
     - c-m-xxxxxxxx                   # Rancher cluster ID, not the display name
   targetNamespace: hr-assistant-vllm
