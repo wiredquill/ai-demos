@@ -243,8 +243,8 @@ replicaCount: 1
 # code takes its default Ollama path. The hr-assistant-vllm chart runs the
 # same image with LLM_PROVIDER=vllm.
 #
-# main-be07471 (built from be074713, identical to main for app/hr-assistant)
-# carries OpenLIT 1.45 + the OTel SDK, the cross-service orchestration and
+# main-3114afe is the same app code as main-be07471, published for linux/amd64
+# and linux/arm64 (main-be07471 is amd64 only). It carries OpenLIT 1.45 + the OTel SDK, the cross-service orchestration and
 # FastAPI server-span instrumentation, the SUSE AI cost/request metrics
 # patches, the qdrant-client migration and background Qdrant/OpenSearch
 # relation refresher, the Milvus idempotency fix, and health_check_emitter.py
@@ -253,13 +253,13 @@ replicaCount: 1
 image:
   repository: ghcr.io/wiredquill/ai-demos/genai-demo
   pullPolicy: Always
-  tag: "main-be07471"
+  tag: "main-3114afe"
 
 policyDb:
   image:
     repository: ghcr.io/wiredquill/ai-demos/genai-demo
     pullPolicy: Always
-    tag: "main-be07471"
+    tag: "main-3114afe"
 
 # Qdrant — vector database component.
 #

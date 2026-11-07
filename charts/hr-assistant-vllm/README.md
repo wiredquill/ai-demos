@@ -250,7 +250,7 @@ topology sent components=5 relations=4 status=200
 
 ## 7. SUSE AI Factory blueprint
 
-The `hr-assistant-vllm` blueprint (`catalog/blueprints/hr-assistant-vllm-1-7-0.yaml`)
+The `hr-assistant-vllm` blueprint (`catalog/blueprints/hr-assistant-vllm-1-8-0.yaml`)
 deploys this demo as SUSE's `vllm` (engine + router), `qdrant` and `opensearch`
 charts, plus four app components. Each app pod has a thin chart in
 `charts/hr-assistant-vllm-<component>`, which vendors this chart (alias `hr`) with
@@ -309,3 +309,6 @@ Blueprints") for publishing and installing the blueprint.
   OpenSearch client spans, so the SUSE AI topology connects hr-policy-db to them.
 - **0.1.17** — Declares the SUSE AI topology up front (`topology.enabled`, on by
   default), for SUSE Observability 2.12+ with the SUSE AI Declared Topology StackPack.
+- **0.1.18** — App image `genai-demo:main-3114afe`: the same code as
+  `main-be07471`, published for linux/amd64 and linux/arm64 (blueprint 1.8.0,
+  components 0.1.4).
