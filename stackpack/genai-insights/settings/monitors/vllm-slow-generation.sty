@@ -1,0 +1,21 @@
+nodes:
+- _type: Monitor
+  name: vLLM slow generation
+  identifier: urn:stackpack:genai-insights:monitor:vllm-slow-generation
+  description: >-
+    p95 time per output token. Above 150 ms users see text stream visibly slowly.
+  intervalSeconds: 60
+  status: ENABLED
+  function: urn:stackpack:common:monitor-function:topological-threshold
+  arguments:
+    threshold: 0.15
+    comparator: GT
+    failureState: DEVIATING
+    queries:
+      topologyQuery: type = "genai served model" and label = "stackpack:suse-ai" and label = "suse.ai.product:vllm"
+      promqlQuery: >-
+        histogram_quantile(0.95, sum by (le) (rate({__name__=~"vllm(:|_)time_per_output_token_seconds_bucket", service_namespace="${tags.service.namespace}", service_name="${tags.service.name}", model_name="${tags.vllm.model.name}"}[5m])))
+      aliasTemplate: Time per output token p95
+      unit: s
+    titleTemplate: vLLM slow generation
+  remediationHint: !include 'remediation-hints/vllm-slow-generation.md.hbs'

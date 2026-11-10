@@ -1,0 +1,21 @@
+nodes:
+- _type: Monitor
+  name: Model latency regression
+  identifier: urn:stackpack:genai-insights:monitor:model-latency-regression
+  description: >-
+    p95 model call duration over 5m compared with the same model's own 6h p95. Fires when calls are 2x slower than that model's norm, so slow-by-design LLMs are not flagged but regressions are.
+  intervalSeconds: 60
+  status: ENABLED
+  function: urn:stackpack:common:monitor-function:topological-threshold
+  arguments:
+    threshold: 2.0
+    comparator: GT
+    failureState: DEVIATING
+    queries:
+      topologyQuery: type = "genai model usage" and label = "stackpack:suse-ai"
+      promqlQuery: >-
+        histogram_quantile(0.95, sum by (le) (rate(gen_ai_client_operation_duration_seconds_bucket{service_namespace="${tags.service.namespace}", service_name="${tags.service.name}", gen_ai_request_model="${tags.gen_ai.request.model}", gen_ai_provider_name="${tags.gen_ai.provider.name}", server_address=~"${tags.suse.ai.monitor.server_address}", server_port=~"${tags.suse.ai.monitor.server_port}"}[5m]))) / histogram_quantile(0.95, sum by (le) (rate(gen_ai_client_operation_duration_seconds_bucket{service_namespace="${tags.service.namespace}", service_name="${tags.service.name}", gen_ai_request_model="${tags.gen_ai.request.model}", gen_ai_provider_name="${tags.gen_ai.provider.name}", server_address=~"${tags.suse.ai.monitor.server_address}", server_port=~"${tags.suse.ai.monitor.server_port}"}[6h])))
+      aliasTemplate: Latency vs 6h baseline (x)
+      unit: short
+    titleTemplate: Model latency regression
+  remediationHint: !include 'remediation-hints/model-latency-regression.md.hbs'

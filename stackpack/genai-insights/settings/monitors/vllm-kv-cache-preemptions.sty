@@ -1,0 +1,21 @@
+nodes:
+- _type: Monitor
+  name: vLLM KV-cache preemptions
+  identifier: urn:stackpack:genai-insights:monitor:vllm-kv-cache-preemptions
+  description: >-
+    vLLM is evicting running requests because the KV cache is full. Each preemption recomputes work and inflates latency.
+  intervalSeconds: 60
+  status: ENABLED
+  function: urn:stackpack:common:monitor-function:topological-threshold
+  arguments:
+    threshold: 0.0
+    comparator: GT
+    failureState: DEVIATING
+    queries:
+      topologyQuery: type = "genai served model" and label = "stackpack:suse-ai" and label = "suse.ai.product:vllm"
+      promqlQuery: >-
+        sum(rate({__name__=~"vllm(:|_)num_preemptions_total", service_namespace="${tags.service.namespace}", service_name="${tags.service.name}", model_name="${tags.vllm.model.name}"}[5m]))
+      aliasTemplate: Preemptions/s
+      unit: short
+    titleTemplate: vLLM KV-cache preemptions
+  remediationHint: !include 'remediation-hints/vllm-kv-cache-preemptions.md.hbs'

@@ -1,0 +1,21 @@
+nodes:
+- _type: Monitor
+  name: vLLM end-to-end latency regression
+  identifier: urn:stackpack:genai-insights:monitor:vllm-e2e-latency-regression
+  description: >-
+    p95 end-to-end request latency over 5m compared with the same model's 6h p95. Long generations are normal for LLMs; this fires when the model gets 2x slower than its own baseline. Replaces the fixed 30 s p99 threshold.
+  intervalSeconds: 60
+  status: ENABLED
+  function: urn:stackpack:common:monitor-function:topological-threshold
+  arguments:
+    threshold: 2.0
+    comparator: GT
+    failureState: DEVIATING
+    queries:
+      topologyQuery: type = "genai served model" and label = "stackpack:suse-ai" and label = "suse.ai.product:vllm"
+      promqlQuery: >-
+        histogram_quantile(0.95, sum by (le) (rate({__name__=~"vllm(:|_)e2e_request_latency_seconds_bucket", service_namespace="${tags.service.namespace}", service_name="${tags.service.name}", model_name="${tags.vllm.model.name}"}[5m]))) / histogram_quantile(0.95, sum by (le) (rate({__name__=~"vllm(:|_)e2e_request_latency_seconds_bucket", service_namespace="${tags.service.namespace}", service_name="${tags.service.name}", model_name="${tags.vllm.model.name}"}[6h])))
+      aliasTemplate: E2E latency vs 6h baseline (x)
+      unit: short
+    titleTemplate: vLLM end-to-end latency regression
+  remediationHint: !include 'remediation-hints/vllm-e2e-latency-regression.md.hbs'
