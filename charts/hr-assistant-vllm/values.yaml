@@ -323,6 +323,9 @@ vllm:
             - path: /
               pathType: Prefix
       tls: []
+  # External access to the vLLM router: ClusterIP (internal only), NodePort or
+  # LoadBalancer. NodePort serves http://<node-ip>:<nodePort>/v1 (empty
+  # nodePort = auto-assigned from 30000-32767).
   routerExposure:
     type: ClusterIP
     nodePort: ""
@@ -351,6 +354,38 @@ vllm:
         - name: http
           port: 80
           targetPort: container-port
+    # Optional external access to the OpenAI-compatible router (/v1/...), e.g.
+    # for an agent (Hermes in OpenShell) running outside the cluster. Renders
+    # only when routerExposure.type is NodePort or LoadBalancer; the in-cluster
+    # router Service above stays ClusterIP either way.
+    - |-
+      {{- $exp := .Values.routerExposure | default dict }}
+      {{- $type := $exp.type | default "ClusterIP" }}
+      {{- if ne $type "ClusterIP" }}
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: {{ .Release.Name }}-router-external
+        labels:
+          app.kubernetes.io/managed-by: helm
+      spec:
+        type: {{ $type }}
+        {{- if and (eq $type "LoadBalancer") $exp.loadBalancerIP }}
+        loadBalancerIP: {{ $exp.loadBalancerIP | quote }}
+        {{- end }}
+        selector:
+          app.kubernetes.io/name: router
+          app.kubernetes.io/instance: {{ .Release.Name }}
+          app.kubernetes.io/component: router
+        ports:
+        - name: http
+          port: {{ .Values.routerSpec.servicePort }}
+          targetPort: {{ .Values.routerSpec.containerPort }}
+          protocol: TCP
+          {{- if and (eq $type "NodePort") $exp.nodePort }}
+          nodePort: {{ $exp.nodePort }}
+          {{- end }}
+      {{- end }}
 
 
 

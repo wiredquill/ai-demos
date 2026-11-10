@@ -232,6 +232,35 @@ questions:
   default: "/data/ai-models"
   show_if: "vllm.enabled=true && vllm.sharedPvcStorage.enabled=true"
 
+# --- vLLM external access (e.g. a Hermes agent running in OpenShell) ---
+- variable: vllm.routerExposure.type
+  group: "vLLM Access"
+  label: "How to access vLLM"
+  description: "ClusterIP: in-cluster only (default). NodePort: reachable at <code>http://&lt;node-ip&gt;:&lt;nodePort&gt;/v1</code> from outside the cluster, e.g. for a Hermes agent running in OpenShell. LoadBalancer: use a cloud/MetalLB load balancer. The OpenAI-compatible API (including tool/function calling) is served by the vLLM router. Tool calling is enabled in the engine by default (<code>--enable-auto-tool-choice --tool-call-parser hermes</code>), which fits the Qwen2.5/Qwen3 models; Llama-3.3 needs <code>llama3_json</code> and gpt-oss needs <code>openai</code>, set via <code>vllm.servingEngineSpec.modelSpec.main.vllmConfig.extraArgs</code>."
+  type: "enum"
+  default: "ClusterIP"
+  options:
+    - "ClusterIP"
+    - "NodePort"
+    - "LoadBalancer"
+  show_if: "vllm.enabled=true"
+
+- variable: vllm.routerExposure.nodePort
+  group: "vLLM Access"
+  label: "vLLM NodePort"
+  description: "Port on every node (30000-32767). Leave blank to let Kubernetes pick one; set a fixed value so the Hermes/OpenShell base URL stays stable, e.g. <code>30800</code> (not 30400, which the OpenShell lab's own vLLM uses on the same node). In the hermes-rancher chart set <i>vLLM endpoint</i> to <code>http://&lt;node-hostname&gt;:&lt;nodePort&gt;/v1</code>; use a hostname, since OpenShell 0.1.5 policies cannot allow raw IPs."
+  type: "string"
+  default: ""
+  show_if: "vllm.enabled=true && vllm.routerExposure.type=NodePort"
+
+- variable: vllm.routerExposure.loadBalancerIP
+  group: "vLLM Access"
+  label: "vLLM LoadBalancer IP"
+  description: "Optional fixed IP for the LoadBalancer Service (MetalLB or cloud). Leave blank for automatic assignment."
+  type: "string"
+  default: ""
+  show_if: "vllm.enabled=true && vllm.routerExposure.type=LoadBalancer"
+
 # --- Vector Database + Search Engine components ---
 - variable: qdrant.enabled
   group: "Observability Demo Components"
