@@ -1,0 +1,21 @@
+nodes:
+- _type: Monitor
+  name: vLLM request queueing
+  identifier: urn:stackpack:genai-insights:monitor:vllm-request-queueing
+  description: >-
+    p95 time requests wait in the vLLM scheduler before running.
+  intervalSeconds: 60
+  status: ENABLED
+  function: urn:stackpack:common:monitor-function:topological-threshold
+  arguments:
+    threshold: 2.0
+    comparator: GT
+    failureState: DEVIATING
+    queries:
+      topologyQuery: type = "genai served model" and label = "stackpack:suse-ai" and label = "suse.ai.product:vllm"
+      promqlQuery: >-
+        histogram_quantile(0.95, sum by (le) (rate({__name__=~"vllm(:|_)request_queue_time_seconds_bucket", service_namespace="${tags.service.namespace}", service_name="${tags.service.name}", model_name="${tags.vllm.model.name}"}[5m])))
+      aliasTemplate: Queue time p95
+      unit: s
+    titleTemplate: vLLM request queueing
+  remediationHint: !include 'remediation-hints/vllm-request-queueing.md.hbs'
