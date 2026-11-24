@@ -1,0 +1,29 @@
+annotations:
+  helm.sh/images: |
+    - image: dp.apps.rancher.io/containers/open-webui:0.13.4-nvidia-4.3
+      name: open-webui
+    - image: dp.apps.rancher.io/containers/redis:8.10.3-2.2
+      name: redis
+  license: MIT
+apiVersion: v2
+appVersion: 0.13.4
+dependencies:
+- condition: ollama.enabled
+  name: ollama
+  repository: oci://dp.apps.rancher.io/charts
+  version: x.x.x
+- alias: tika
+  condition: tika.enabled
+  name: apache-tika
+  repository: oci://dp.apps.rancher.io/charts
+  version: x.x.x
+description: OpenWebUI is a web interface for interacting with LLMs. It offers prompt
+  management, conversation history, multi-model support, RAG integration, role-based
+  access control, and an extensible plugin system for customizing workflows.
+home: https://apps.rancher.io/applications/open-webui
+icon: https://apps.rancher.io/logos/open-webui.png
+maintainers:
+- name: SUSE LLC
+  url: https://www.suse.com/
+name: open-webui
+version: 18.4.0

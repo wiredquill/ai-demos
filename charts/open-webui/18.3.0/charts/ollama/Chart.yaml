@@ -1,0 +1,17 @@
+annotations:
+  helm.sh/images: |
+    - image: dp.apps.rancher.io/containers/ollama:0.40.14-nvidia-2.8
+      name: ollama-nvidia
+  license: MIT
+apiVersion: v2
+appVersion: 0.40.14
+description: Ollama is an open-source platform for running and managing large language
+  models (LLMs) locally, providing a CLI and REST API for model inference, deployment,
+  and integration into AI-powered applications.
+home: https://apps.rancher.io/applications/ollama
+icon: https://apps.rancher.io/logos/ollama.png
+maintainers:
+- name: SUSE LLC
+  url: https://www.suse.com
+name: ollama
+version: 1.95.0

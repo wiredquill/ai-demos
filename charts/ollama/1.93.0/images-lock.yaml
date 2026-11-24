@@ -1,0 +1,18 @@
+apiVersion: v0
+kind: ImagesLock
+metadata:
+  generatedAt: "2026-10-28T12:20:48.141318475Z"
+  generatedBy: SUSE LLC
+chart:
+  name: ollama
+  version: 1.93.0
+  appVersion: 0.40.12
+images:
+  - name: ollama-nvidia
+    image: dp.apps.rancher.io/containers/ollama:0.40.12-nvidia-2.4
+    chart: ollama
+    digests:
+      - digest: sha256:cb84d7ce4c639e4be99824541bae41be4a2a0a949b24a6386ee516b74cac6dd6
+        arch: linux/amd64
+      - digest: sha256:4b34ac3ea0a693589eb4bebf72cdb3720af384771429169356461d9243daa6e0
+        arch: linux/arm64

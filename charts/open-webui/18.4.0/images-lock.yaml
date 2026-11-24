@@ -1,0 +1,42 @@
+apiVersion: v0
+kind: ImagesLock
+metadata:
+  generatedAt: "2026-11-18T01:02:59.114730121Z"
+  generatedBy: SUSE LLC
+chart:
+  name: open-webui
+  version: 18.4.0
+  appVersion: 0.13.4
+images:
+  - name: apache-tika
+    image: dp.apps.rancher.io/containers/apache-tika:4.0.0-1.1
+    chart: apache-tika
+    digests:
+      - digest: sha256:39d39718ae676ae129377473515097a9ee4989e8767122c2b298c01e161612a7
+        arch: linux/amd64
+      - digest: sha256:d7cb2e248f7f2ad2bef44fdd82c6ad467331cc64f1b62813fedd95213ebe3015
+        arch: linux/arm64
+  - name: ollama-nvidia
+    image: dp.apps.rancher.io/containers/ollama:0.40.14-nvidia-2.8
+    chart: ollama
+    digests:
+      - digest: sha256:2a6d9667397d28a39784d5d2ccf9292820892e666bc75cb08f3101cdd36934d8
+        arch: linux/amd64
+      - digest: sha256:7745e3b73c699e602ca06356086bb35a35ae4ed70fd2b0ca448bff5e80bb2c2a
+        arch: linux/arm64
+  - name: open-webui
+    image: dp.apps.rancher.io/containers/open-webui:0.13.4-nvidia-4.3
+    chart: open-webui
+    digests:
+      - digest: sha256:c784fce7dc5a833e047dc69599e1e7407b169b57f63bf83d985230ea67a9cd5d
+        arch: linux/amd64
+      - digest: sha256:a0947072e8c762d5a00f40fc925fdf094462e9c33f52b3924b92d83cc6bb786d
+        arch: linux/arm64
+  - name: redis
+    image: dp.apps.rancher.io/containers/redis:8.10.3-2.2
+    chart: open-webui
+    digests:
+      - digest: sha256:5ad2bf3fe728dd7593eabe4a042ca8c300939718a1b930d3624b514c487fdede
+        arch: linux/amd64
+      - digest: sha256:207ddaa4c9127beedb6d0d6174a381ddb116509b61950521e9a18b13c086b53e
+        arch: linux/arm64

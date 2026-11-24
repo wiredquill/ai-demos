@@ -61,7 +61,6 @@ spec:
           pullPolicy: IfNotPresent
           registry: dp.apps.rancher.io
           repository: containers/open-webui
-          tag: 0.6.41-15.2
           useSlim: false
         imagePullSecrets: []
         ingress:
@@ -299,7 +298,6 @@ spec:
           pullPolicy: IfNotPresent
           registry: dp.apps.rancher.io
           repository: containers/ollama
-          tag: 0.40.14-nvidia-2.8
         imagePullSecrets: []
         ingress:
           annotations: {}
