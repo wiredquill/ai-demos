@@ -2,26 +2,24 @@
 # Defaults mirror the AI Helpdesk blueprint. Hidden fields use show_if.
 questions:
 
-# ===== Model =====
+# ===== Model & GPU =====
 - variable: "ollama.models.pull[0]"
-  group: "Model"
+  group: "Model & GPU"
   label: "Model to download"
   type: "string"
   description: "Model Ollama pulls at start-up, for example <code>qwen2.5:3b</code>, <code>llama3.2:3b</code> or <code>mistral</code>.<br>Keep it in sync with <i>Default chat model</i> in Open WebUI. Browse models at <a href='https://ollama.com/library' target='_blank'>ollama.com/library</a>."
   required: true
   default: "qwen2.5:3b"
 
-
-# ===== GPU =====
 - variable: "ollama.gpu.enabled"
-  group: "GPU"
+  group: "Model & GPU"
   label: "Enable GPU"
   type: "boolean"
   description: "Run inference on a GPU. Needs a node with GPU drivers and the matching device plugin or GPU Operator. Leave off for CPU-only PoCs."
   default: false
 
 - variable: "ollama.gpu.type"
-  group: "GPU"
+  group: "Model & GPU"
   label: "GPU Vendor"
   type: "enum"
   description: "<b>nvidia</b> uses the NVIDIA device plugin.<br><b>amd</b> uses the AMD ROCm device plugin."
@@ -32,7 +30,7 @@ questions:
   show_if: "ollama.gpu.enabled=true"
 
 - variable: "ollama.gpu.number"
-  group: "GPU"
+  group: "Model & GPU"
   label: "GPUs per pod"
   type: "int"
   description: "Number of GPUs to request."
@@ -40,7 +38,7 @@ questions:
   show_if: "ollama.gpu.enabled=true"
 
 - variable: "runtimeClassName"
-  group: "GPU"
+  group: "Model & GPU"
   label: "Runtime Class"
   type: "string"
   description: "Set to <code>nvidia</code> if your cluster requires a runtime class for GPU pods. Leave empty otherwise."
@@ -48,7 +46,7 @@ questions:
   show_if: "ollama.gpu.enabled=true"
 
 - variable: "ollama.gpu.mig.enabled"
-  group: "GPU"
+  group: "Model & GPU"
   label: "Use NVIDIA MIG"
   type: "boolean"
   description: "Schedule onto MIG partitions instead of whole GPUs."

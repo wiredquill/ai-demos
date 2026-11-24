@@ -407,7 +407,7 @@ spec:
         volumes: []
       vendor: suse
     - chartName: open-webui-mcpo
-      chartRepo: application-collection
+      chartRepo: forgejo-blueprints
       chartVersion: 2.0.0
       vendor: suse
   description: |

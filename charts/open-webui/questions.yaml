@@ -2,9 +2,9 @@
 # Defaults mirror the AI Helpdesk blueprint. Hidden fields use show_if.
 questions:
 
-# ===== Service =====
+# ===== Service & Ingress =====
 - variable: "service.type"
-  group: "Service"
+  group: "Service & Ingress"
   label: "Service Type"
   type: "enum"
   description: "How Open WebUI is exposed inside or outside the cluster.<br><b>ClusterIP</b> - in-cluster only (use with Ingress)<br><b>NodePort</b> - reachable on every node<br><b>LoadBalancer</b> - external load balancer"
@@ -16,14 +16,14 @@ questions:
   - "LoadBalancer"
 
 - variable: "service.port"
-  group: "Service"
+  group: "Service & Ingress"
   label: "Service Port"
   type: "int"
   description: "Port the Service listens on."
   default: 80
 
 - variable: "service.nodePort"
-  group: "Service"
+  group: "Service & Ingress"
   label: "NodePort"
   type: "string"
   description: "Port on each node (30000-32767). Leave empty to let Kubernetes pick one."
@@ -31,7 +31,7 @@ questions:
   show_if: "service.type=NodePort"
 
 - variable: "service.loadBalancerIP"
-  group: "Service"
+  group: "Service & Ingress"
   label: "LoadBalancer IP"
   type: "string"
   description: "Request a specific external IP. Leave empty to let the load balancer assign one."
@@ -39,24 +39,22 @@ questions:
   show_if: "service.type=LoadBalancer"
 
 - variable: "service.loadBalancerClass"
-  group: "Service"
+  group: "Service & Ingress"
   label: "LoadBalancer Class"
   type: "string"
   description: "Optional <code>loadBalancerClass</code> (for example <code>metallb</code>). Leave empty for the cluster default."
   default: ""
   show_if: "service.type=LoadBalancer"
 
-
-# ===== Ingress & Certificate =====
 - variable: "ingress.enabled"
-  group: "Ingress & Certificate"
+  group: "Service & Ingress"
   label: "Enable Ingress"
   type: "boolean"
   description: "Expose Open WebUI through an Ingress."
   default: true
 
 - variable: "ingress.class"
-  group: "Ingress & Certificate"
+  group: "Service & Ingress"
   label: "Ingress Class"
   type: "string"
   description: "Ingress class name, for example <code>traefik</code> or <code>nginx</code>."
@@ -64,7 +62,7 @@ questions:
   show_if: "ingress.enabled=true"
 
 - variable: "ingress.host"
-  group: "Ingress & Certificate"
+  group: "Service & Ingress"
   label: "Hostname"
   type: "string"
   description: "DNS name for Open WebUI, for example <code>chat.example.com</code>."
@@ -72,7 +70,7 @@ questions:
   show_if: "ingress.enabled=true"
 
 - variable: "ingress.tls"
-  group: "Ingress & Certificate"
+  group: "Service & Ingress"
   label: "Enable TLS"
   type: "boolean"
   description: "Terminate HTTPS at the Ingress using a certificate stored in a Secret."
@@ -80,7 +78,7 @@ questions:
   show_if: "ingress.enabled=true"
 
 - variable: "ingress.existingSecret"
-  group: "Ingress & Certificate"
+  group: "Service & Ingress"
   label: "TLS Secret Name"
   type: "string"
   description: "Name of the <code>kubernetes.io/tls</code> Secret in this namespace.<br>Create it manually, with a wildcard certificate, or let cert-manager create it by adding a <code>cert-manager.io/cluster-issuer</code> annotation under Advanced."

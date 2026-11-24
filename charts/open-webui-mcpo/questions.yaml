@@ -1,0 +1,33 @@
+# Rancher / SUSE AI Factory install form for the Open WebUI MCPO chart.
+# Defaults mirror the chart defaults used by the AI Helpdesk blueprint.
+questions:
+
+# ===== Service =====
+- variable: "service.type"
+  group: "Service"
+  label: "Service Type"
+  type: "enum"
+  description: "How the MCP proxy is exposed. (Ingress is not offered: the AppCo chart's ingress template is broken in 2.0.0.) <b>ClusterIP</b> is enough when only Open WebUI talks to it (<code>http://open-webui-mcpo:8000</code>)."
+  required: true
+  default: "ClusterIP"
+  options:
+  - "ClusterIP"
+  - "NodePort"
+  - "LoadBalancer"
+
+- variable: "service.port"
+  group: "Service"
+  label: "Service Port"
+  type: "int"
+  description: "Port the Service listens on. Open WebUI's tool server connection in this blueprint uses 8000."
+  default: 8000
+
+
+# ===== Advanced =====
+- variable: "replicaCount"
+  group: "Advanced"
+  label: "Replicas"
+  type: "int"
+  description: "Number of MCP proxy pods."
+  default: 1
+

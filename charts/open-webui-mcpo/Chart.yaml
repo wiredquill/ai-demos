@@ -1,0 +1,16 @@
+annotations:
+  helm.sh/images: |
+    - image: dp.apps.rancher.io/containers/open-webui-mcpo:0.0.20-2.2
+      name: open-webui-mcpo
+  license: MIT
+apiVersion: v2
+appVersion: 0.0.20
+description: Turn any MCP server into a secure, OpenAPI-compatible HTTP endpoint,
+  ready for Open WebUI, AI agents, and REST clients.
+home: https://apps.rancher.io/applications/open-webui-mcpo
+icon: https://apps.rancher.io/logos/open-webui-mcpo.png
+maintainers:
+- name: SUSE LLC
+  url: https://www.suse.com
+name: open-webui-mcpo
+version: 2.0.0

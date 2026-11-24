@@ -1,0 +1,144 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mcp-mcpo-helm.fullname" . }}
+  labels:
+    {{- include "mcp-mcpo-helm.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "mcp-mcpo-helm.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- if not .Values.existingConfigSecret }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if .Values.secretEnv.data }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if .Values.podAnnotations }}
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "mcp-mcpo-helm.selectorLabels" . | nindent 8 }}
+        {{- if .Values.podLabels }}
+        {{- toYaml .Values.podLabels | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with (coalesce .Values.global.imagePullSecrets .Values.imagePullSecrets) }}
+      imagePullSecrets:
+        {{- $imagePullSecrets := list }}
+        {{- range . }}
+          {{- if kindIs "string" . }}
+            {{- $imagePullSecrets = append $imagePullSecrets (dict "name" .) }}
+          {{- else }}
+            {{- $imagePullSecrets = append $imagePullSecrets . }}
+          {{- end }}
+        {{- end }}
+        {{- toYaml $imagePullSecrets | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "mcp-mcpo-helm.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ with (coalesce $.Values.global.imageRegistry $.Values.image.registry) }}{{ . }}/{{ end }}{{ .Values.image.repository }}:{{ or .Values.image.tag .Chart.AppVersion }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "--config"
+            - "/usr/share/mcpo/config.json"
+            - "--port"
+            - "{{ default 8000 .Values.service.port }}"
+            {{- if ne .Values.ingress.path "/" }}
+            - "--path-prefix={{ .Values.ingress.path }}"
+            {{- end }}
+          {{- if or .Values.env .Values.envSecrets .Values.secretEnv.data }}
+          env:
+            {{- range $key, $val := .Values.env }}
+            - name: {{ $key }}
+              value: {{ quote $val }}
+            {{- end }}
+            {{- range $key, $val := .Values.envSecrets }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $val.secretName }}
+                  key: {{ $val.secretKey }}
+            {{- end }}
+            {{- if .Values.secretEnv.data }}
+            {{- range $key, $val := .Values.secretEnv.data }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "mcp-mcpo-helm.fullname" $ }}
+                  key: {{ $key }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /usr/share/mcpo/config.json
+              subPath: config.json
+          # /openapi.json, not /healthz: the image serves no /healthz - it answers 404
+          # both at the root and behind the --path-prefix, so probing it never passes.
+          # /openapi.json is served by FastAPI itself, so it holds across image versions.
+          # startupProbe carries the boot: uvicorn does not bind the port until its
+          # lifespan hook has dialled every configured MCP server one by one, which on
+          # arm64 takes ~1 min, and without this liveness starts counting during that.
+          startupProbe:
+            httpGet:
+              path: /openapi.json
+              port: http
+              scheme: HTTP
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /openapi.json
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /openapi.json
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: config
+          {{- if .Values.existingConfigSecret }}
+          secret:
+            secretName: {{ .Values.existingConfigSecret }}
+          {{- else }}
+          configMap:
+            name: {{ include "mcp-mcpo-helm.fullname" . }}
+          {{- end }}

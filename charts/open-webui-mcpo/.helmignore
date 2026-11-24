@@ -1,0 +1,5 @@
+patches/
+README.md.gotmpl
+/*.changes
+/_*
+
