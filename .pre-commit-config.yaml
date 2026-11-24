@@ -1,0 +1,137 @@
+# Enhanced Pre-commit Configuration for AI Compare
+# Prevents CI failures through comprehensive local quality checks
+# Copy this to .pre-commit-config.yaml after review
+
+repos:
+  # Python Code Formatting (CRITICAL - prevents CI failures)
+  - repo: https://github.com/psf/black
+    rev: 23.7.0
+    hooks:
+      - id: black
+        name: "Format Python code with Black"
+        language_version: python3
+        args: [--line-length=127]
+        files: ^app/.*\.py$
+
+  # Import Sorting (CRITICAL - prevents CI failures)
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        name: "Sort Python imports"
+        args: [--profile=black, --line-length=127]
+        files: ^app/.*\.py$
+
+  # Python Linting (ENHANCED - aligned with CI configuration)
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.0.0
+    hooks:
+      - id: flake8
+        name: "Lint Python code"
+        args: ["--max-line-length=127"]
+        files: ^app/.*\.py$
+        additional_dependencies: [flake8-builtins]
+
+  # Type Checking (NEW - improves code quality)
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.5.1
+    hooks:
+      - id: mypy
+        name: "Type check Python code"
+        # --follow-imports=silent is what makes the exclude below actually work:
+        # without it mypy follows imports out of the checked file and reports
+        # errors inside excluded modules anyway.
+        args: [--ignore-missing-imports, --no-strict-optional, --follow-imports=silent]
+        files: ^app/.*\.py$
+        exclude: ^app/.*/patch/.*\.py$
+        additional_dependencies: [types-requests]
+
+  # Security Scanning (ENHANCED)
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.5
+    hooks:
+      - id: bandit
+        name: "Security scan Python code"
+        args: [--skip, B101]
+        files: ^app/.*\.py$
+        exclude: ^app/python-ollama-open-webui\.py$
+
+  # Documentation Quality (NEW) - Disabled for now due to inherited code
+  # - repo: https://github.com/pycqa/pydocstyle
+  #   rev: 6.3.0
+  #   hooks:
+  #     - id: pydocstyle
+  #       name: "Check docstring style"
+  #       args: [--convention=google, --add-ignore=D100,D104]
+  #       files: ^app/.*\.py$
+
+
+  # File Quality Checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+        name: "Remove trailing whitespace"
+      - id: end-of-file-fixer
+        name: "Ensure files end with newline"
+      - id: check-yaml
+        name: "Validate YAML syntax"
+        files: \.(yaml|yml)$
+        exclude: ^charts/.*/templates/.*\.yaml$
+        args: [--unsafe]
+      - id: check-json
+        name: "Validate JSON syntax"
+        files: \.json$
+      - id: check-merge-conflict
+        name: "Check for merge conflict markers"
+      - id: check-added-large-files
+        name: "Check for large files"
+        args: [--maxkb=1000]
+      - id: mixed-line-ending
+        name: "Check line endings"
+        args: [--fix=lf]
+
+  # Requirements Management (NEW)
+  - repo: https://github.com/jazzband/pip-tools
+    rev: 7.3.0
+    hooks:
+      - id: pip-compile
+        name: "Update requirements"
+        files: ^app/requirements\.in$
+        args: [app/requirements.in, --output-file, app/requirements.txt]
+
+# Configuration
+default_language_version:
+  python: python3.11
+
+# Performance and Feedback
+fail_fast: true  # Stop on first failure for quick feedback
+default_stages: [pre-commit, pre-push]
+
+# Exclude patterns (ENHANCED)
+exclude: |
+  (?x)^(
+    .*\.git/.*|
+    .*/__pycache__/.*|
+    .*/\.pytest_cache/.*|
+    .*/venv/.*|
+    .*/\.venv/.*|
+    .*/htmlcov/.*|
+    .*\.pyc$|
+    .*/migrations/.*|
+    .*/node_modules/.*|
+    bandit-report\.json
+  )$
+
+# CI Integration
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit.com hooks
+
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false

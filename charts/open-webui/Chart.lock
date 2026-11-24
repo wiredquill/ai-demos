@@ -1,0 +1,9 @@
+dependencies:
+- name: ollama
+  repository: oci://dp.apps.rancher.io/charts
+  version: 1.95.0
+- name: apache-tika
+  repository: oci://dp.apps.rancher.io/charts
+  version: 4.0.0
+digest: sha256:df8df256a39a5c29cca37a5791f66b86741195f06119ea49fbe21b689d844512
+generated: "2026-11-17T09:19:51.001940812Z"

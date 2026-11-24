@@ -1,0 +1,432 @@
+apiVersion: ai-factory.suse.com/v1alpha1
+kind: Blueprint
+metadata:
+  labels:
+    ai-factory.suse.com/blueprint-name: ai-helpdesk
+    ai-factory.suse.com/blueprint-version: 1.0.0
+  name: ai-helpdesk-1-0-0
+spec:
+  components:
+    - chartName: open-webui
+      chartRepo: forgejo-blueprints
+      chartVersion: 18.3.0
+      values:
+        affinity: {}
+        annotations: {}
+        args: []
+        clusterDomain: cluster.local
+        command: []
+        commonEnvVars: []
+        containerSecurityContext: {}
+        copyAppData:
+          args: []
+          command: []
+          resources: {}
+        databaseUrl: ""
+        enableOpenaiApi: true
+        extraEnvFrom: []
+        extraEnvVars:
+          - name: DEFAULT_MODELS
+            value: qwen2.5:3b
+          - name: DEFAULT_USER_ROLE
+            value: user
+          - name: ENABLE_SIGNUP
+            value: "true"
+          - name: GLOBAL_LOG_LEVEL
+            value: INFO
+          - name: RAG_EMBEDDING_MODEL
+            value: sentence-transformers/all-MiniLM-L6-v2
+          - name: VECTOR_DB
+            value: chroma
+          - name: INSTALL_NLTK_DATASETS
+            value: "true"
+          - name: TOOL_SERVER_CONNECTIONS
+            value: '[{"url":"http://open-webui-mcpo:8000/memory","path":"openapi.json","type":"openapi","auth_type":"bearer","headers":null,"key":"","config":{"enable":true,"function_name_filter_list":"","access_control":null},"spec_type":"url","spec":"","info":{"id":"","name":"memory","description":"MCP knowledge-graph memory server exposed via mcpo"}}]'
+        extraLabels: {}
+        extraResources: []
+        global:
+          imagePullSecrets: []
+          imageRegistry: ""
+          tls:
+            additionalTrustedCAs: false
+            issuerName: suse-private-ai
+            letsEncrypt:
+              email: none@example.com
+              environment: staging
+              ingress:
+                class: ""
+            source: suse-private-ai
+        hostAliases: []
+        image:
+          pullPolicy: IfNotPresent
+          registry: dp.apps.rancher.io
+          repository: containers/open-webui
+          tag: 0.6.41-15.2
+          useSlim: false
+        imagePullSecrets: []
+        ingress:
+          additionalHosts: []
+          annotations:
+            nginx.ingress.kubernetes.io/proxy-body-size: 50m
+            nginx.ingress.kubernetes.io/ssl-redirect: "true"
+          class: traefik
+          enabled: true
+          existingSecret: wildcard-tls
+          extraLabels: {}
+          host: suse-ollama-webui
+          tls: true
+        livenessProbe: {}
+        logging:
+          components:
+            audio: ""
+            comfyui: ""
+            config: ""
+            db: ""
+            images: ""
+            main: ""
+            models: ""
+            ollama: ""
+            openai: ""
+            rag: ""
+            webhook: ""
+          level: ""
+        managedCertificate:
+          domains:
+            - chat.example.com
+          enabled: false
+          name: mydomain-chat-cert
+        nameOverride: ""
+        namespaceOverride: ""
+        nodeSelector: {}
+        ollama:
+          enabled: false
+          fullnameOverride: open-webui-ollama
+        ollamaUrls:
+          - http://ollama:11434
+        ollamaUrlsFromExtraEnv: false
+        openaiApiKeys: []
+        openaiBaseApiUrls: []
+        persistence:
+          accessModes:
+            - ReadWriteOnce
+          annotations: {}
+          azure:
+            container: ""
+            endpointUrl: ""
+            key: ""
+            keyExistingSecret: ""
+            keyExistingSecretKey: ""
+          enabled: true
+          existingClaim: ""
+          gcs:
+            appCredentialsJson: ""
+            appCredentialsJsonExistingSecret: ""
+            appCredentialsJsonExistingSecretKey: ""
+            bucket: ""
+          provider: local
+          s3:
+            accessKey: ""
+            accessKeyExistingAccessKey: ""
+            accessKeyExistingSecret: ""
+            bucket: ""
+            endpointUrl: ""
+            keyPrefix: ""
+            region: ""
+            secretKey: ""
+            secretKeyExistingSecret: ""
+            secretKeyExistingSecretKey: ""
+          selector: {}
+          size: 20Gi
+          storageClass: ""
+          subPath: ""
+        pipelines:
+          enabled: false
+          extraEnvVars: []
+        podAnnotations: {}
+        podLabels: {}
+        podSecurityContext: {}
+        priorityClassName: ""
+        readinessProbe: {}
+        replicaCount: 1
+        resources: {}
+        revisionHistoryLimit: 10
+        runtimeClassName: ""
+        service:
+          annotations: {}
+          containerPort: 8080
+          labels: {}
+          loadBalancerClass: ""
+          nodePort: ""
+          port: 80
+          type: ClusterIP
+        serviceAccount:
+          annotations: {}
+          automountServiceAccountToken: false
+          create: true
+          enable: true
+          name: existing-sa
+        sso:
+          enableGroupManagement: false
+          enableRoleManagement: false
+          enableSignup: false
+          enabled: false
+          github:
+            clientExistingSecret: ""
+            clientExistingSecretKey: ""
+            clientId: ""
+            clientSecret: ""
+            enabled: false
+          google:
+            clientExistingSecret: ""
+            clientExistingSecretKey: ""
+            clientId: ""
+            clientSecret: ""
+            enabled: false
+          groupManagement:
+            groupsClaim: groups
+          mergeAccountsByEmail: false
+          microsoft:
+            clientExistingSecret: ""
+            clientExistingSecretKey: ""
+            clientId: ""
+            clientSecret: ""
+            enabled: false
+            tenantId: ""
+          oidc:
+            clientExistingSecret: ""
+            clientExistingSecretKey: ""
+            clientId: ""
+            clientSecret: ""
+            enabled: false
+            providerName: SSO
+            providerUrl: ""
+            scopes: openid email profile
+          roleManagement:
+            adminRoles: ""
+            allowedRoles: ""
+            rolesClaim: roles
+          trustedHeader:
+            emailHeader: ""
+            enabled: false
+            nameHeader: ""
+        startupProbe: {}
+        strategy: {}
+        tika:
+          enabled: false
+        tolerations: []
+        topologySpreadConstraints: []
+        volumeMounts:
+          container: []
+          initContainer: []
+        volumes: []
+        websocket:
+          enabled: true
+          manager: redis
+          nodeSelector: {}
+          redis:
+            affinity: {}
+            annotations: {}
+            args: []
+            command: []
+            containerSecurityContext: {}
+            enabled: true
+            image:
+              pullPolicy: IfNotPresent
+              registry: dp.apps.rancher.io
+              repository: containers/redis
+              tag: 8.4.0-2.1
+            labels: {}
+            name: open-webui-redis
+            podSecurityContext: {}
+            pods:
+              annotations: {}
+              labels: {}
+            resources: {}
+            service:
+              annotations: {}
+              containerPort: 6379
+              labels: {}
+              nodePort: ""
+              port: 6379
+              portName: http
+              type: ClusterIP
+            tolerations: []
+          url: redis://open-webui-redis:6379/0
+      vendor: suse
+    - chartName: ollama
+      chartRepo: forgejo-blueprints
+      chartVersion: 1.95.0
+      values:
+        affinity: {}
+        autoscaling:
+          enabled: false
+          maxReplicas: 100
+          minReplicas: 1
+          targetCPUUtilizationPercentage: 80
+        deployment:
+          labels: {}
+        extraArgs: []
+        extraEnv: []
+        extraEnvFrom: []
+        extraObjects: []
+        fullnameOverride: ""
+        gateway:
+          annotations: {}
+          className: ""
+          enabled: false
+          labels: {}
+          listener:
+            allowedRoutes: {}
+            port: 80
+            tls:
+              certificateRefs: []
+              enabled: false
+          name: ""
+        global:
+          imagePullSecrets: []
+          imageRegistry: ""
+        hostIPC: false
+        hostNetwork: false
+        hostPID: false
+        httpRoute:
+          enabled: false
+          hostnames:
+            - ollama.local
+          labels: {}
+          parentRefs: []
+          rules: []
+        image:
+          pullPolicy: IfNotPresent
+          registry: dp.apps.rancher.io
+          repository: containers/ollama
+          tag: 0.40.14-nvidia-2.8
+        imagePullSecrets: []
+        ingress:
+          annotations: {}
+          className: ""
+          enabled: false
+          hosts:
+            - host: ollama.local
+              paths:
+                - path: /
+                  pathType: Prefix
+          tls: []
+        initContainers: []
+        knative:
+          annotations: {}
+          containerConcurrency: 0
+          enabled: false
+          idleTimeoutSeconds: 300
+          modelBootstrap:
+            ttlSecondsAfterFinished: 300
+          responseStartTimeoutSeconds: 300
+          timeoutSeconds: 300
+        lifecycle: {}
+        livenessProbe:
+          enabled: true
+          failureThreshold: 6
+          initialDelaySeconds: 60
+          path: /
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        nameOverride: ""
+        namespaceOverride: ""
+        nodeSelector: {}
+        ollama:
+          gpu:
+            draDriverClass: gpu.nvidia.com
+            draEnabled: false
+            draExistingClaimTemplate: ""
+            enabled: false
+            mig:
+              devices: {}
+              enabled: false
+            number: 1
+            nvidiaResource: nvidia.com/gpu
+            type: nvidia
+          insecure: false
+          models:
+            clean: false
+            create: []
+            pull: []
+            run: []
+          mountPath: ""
+          port: 11434
+        persistentVolume:
+          accessModes:
+            - ReadWriteOnce
+          annotations: {}
+          enabled: true
+          existingClaim: ""
+          size: 30Gi
+          storageClass: ""
+          subPath: ""
+          volumeMode: ""
+          volumeName: ""
+        podAnnotations: {}
+        podLabels: {}
+        podSchedulerName: ""
+        podSecurityContext: {}
+        priorityClassName: ""
+        readinessProbe:
+          enabled: true
+          failureThreshold: 6
+          initialDelaySeconds: 30
+          path: /
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 3
+        replicaCount: 1
+        resources:
+          limits: {}
+          requests: {}
+        revisionHistoryLimit: 10
+        runtimeClassName: ""
+        securityContext: {}
+        service:
+          annotations: {}
+          ipFamilies: []
+          ipFamilyPolicy: ""
+          labels: {}
+          loadBalancerIP: null
+          nodePort: 31434
+          port: 11434
+          type: ClusterIP
+        serviceAccount:
+          annotations: {}
+          automount: true
+          create: true
+          name: ""
+        terminationGracePeriodSeconds: 120
+        tolerations: []
+        topologySpreadConstraints: {}
+        updateStrategy:
+          type: Recreate
+        volumeMounts: []
+        volumes: []
+      vendor: suse
+    - chartName: open-webui-mcpo
+      chartRepo: application-collection
+      chartVersion: 2.0.0
+      vendor: suse
+  description: |
+    AI Helpdesk is a Simple Chatbot with RAG using ollama, open-webui and open-webui-mcpo.
+    This blueprint uses CPU Inference. Suitable for PoCs, quick explorations.
+    Retrieval-augmented generation uses the ChromaDB vector store embedded in
+    open-webui. open-webui is wired to the bundled mcpo proxy, exposing the MCP
+    "memory" server as a tool in chat.
+    open-webui automatically loads Redis (for websocket session management); no
+    separate Redis component needs to be deployed.
+    NOTE: The default chat model qwen2.5:3b is licensed under the Qwen Research
+    License, which permits research use only.
+    See https://huggingface.co/Qwen/Qwen2.5-3B/blob/main/LICENSE.
+    For commercial/production deployments, switch to a different model.
+    Requires a default StorageClass defined in the cluster for persistent volumes.
+    Requires a cert-manager instance running in the cluster.
+    The open-webui chat UI is exposed via Ingress at https://suse-ollama-webui;
+    point a DNS record (or /etc/hosts entry) for the host "suse-ollama-webui"
+    at the cluster's ingress controller to reach it. The hostname can also be patched after deployment.
+  displayName: AI Helpdesk
+  source: Custom
+  version: 1.0.0

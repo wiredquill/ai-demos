@@ -1,0 +1,268 @@
+# Rancher / SUSE AI Factory install form for the Open WebUI chart.
+# Defaults mirror the AI Helpdesk blueprint. Hidden fields use show_if.
+questions:
+
+# ===== Service =====
+- variable: "service.type"
+  group: "Service"
+  label: "Service Type"
+  type: "enum"
+  description: "How Open WebUI is exposed inside or outside the cluster.<br><b>ClusterIP</b> - in-cluster only (use with Ingress)<br><b>NodePort</b> - reachable on every node<br><b>LoadBalancer</b> - external load balancer"
+  required: true
+  default: "ClusterIP"
+  options:
+  - "ClusterIP"
+  - "NodePort"
+  - "LoadBalancer"
+
+- variable: "service.port"
+  group: "Service"
+  label: "Service Port"
+  type: "int"
+  description: "Port the Service listens on."
+  default: 80
+
+- variable: "service.nodePort"
+  group: "Service"
+  label: "NodePort"
+  type: "string"
+  description: "Port on each node (30000-32767). Leave empty to let Kubernetes pick one."
+  default: ""
+  show_if: "service.type=NodePort"
+
+- variable: "service.loadBalancerIP"
+  group: "Service"
+  label: "LoadBalancer IP"
+  type: "string"
+  description: "Request a specific external IP. Leave empty to let the load balancer assign one."
+  default: ""
+  show_if: "service.type=LoadBalancer"
+
+- variable: "service.loadBalancerClass"
+  group: "Service"
+  label: "LoadBalancer Class"
+  type: "string"
+  description: "Optional <code>loadBalancerClass</code> (for example <code>metallb</code>). Leave empty for the cluster default."
+  default: ""
+  show_if: "service.type=LoadBalancer"
+
+
+# ===== Ingress & Certificate =====
+- variable: "ingress.enabled"
+  group: "Ingress & Certificate"
+  label: "Enable Ingress"
+  type: "boolean"
+  description: "Expose Open WebUI through an Ingress."
+  default: true
+
+- variable: "ingress.class"
+  group: "Ingress & Certificate"
+  label: "Ingress Class"
+  type: "string"
+  description: "Ingress class name, for example <code>traefik</code> or <code>nginx</code>."
+  default: "traefik"
+  show_if: "ingress.enabled=true"
+
+- variable: "ingress.host"
+  group: "Ingress & Certificate"
+  label: "Hostname"
+  type: "string"
+  description: "DNS name for Open WebUI, for example <code>chat.example.com</code>."
+  default: "suse-ollama-webui"
+  show_if: "ingress.enabled=true"
+
+- variable: "ingress.tls"
+  group: "Ingress & Certificate"
+  label: "Enable TLS"
+  type: "boolean"
+  description: "Terminate HTTPS at the Ingress using a certificate stored in a Secret."
+  default: true
+  show_if: "ingress.enabled=true"
+
+- variable: "ingress.existingSecret"
+  group: "Ingress & Certificate"
+  label: "TLS Secret Name"
+  type: "string"
+  description: "Name of the <code>kubernetes.io/tls</code> Secret in this namespace.<br>Create it manually, with a wildcard certificate, or let cert-manager create it by adding a <code>cert-manager.io/cluster-issuer</code> annotation under Advanced."
+  default: "wildcard-tls"
+  show_if: "ingress.enabled=true && ingress.tls=true"
+
+
+# ===== Storage =====
+- variable: "persistence.enabled"
+  group: "Storage"
+  label: "Enable Persistence"
+  type: "boolean"
+  description: "Keep chats, users and uploaded documents on a PersistentVolume. Without it all data is lost on restart."
+  default: true
+
+- variable: "persistence.size"
+  group: "Storage"
+  label: "Volume Size"
+  type: "string"
+  description: "Size of the Open WebUI volume, for example <code>20Gi</code>."
+  default: "20Gi"
+  show_if: "persistence.enabled=true"
+
+- variable: "persistence.storageClass"
+  group: "Storage"
+  label: "Storage Class"
+  type: "storageclass"
+  description: "Storage class for the volume. Leave empty to use the cluster default."
+  default: ""
+  show_if: "persistence.enabled=true"
+
+- variable: "persistence.existingClaim"
+  group: "Storage"
+  label: "Existing PVC"
+  type: "string"
+  description: "Re-use an existing PersistentVolumeClaim instead of creating a new one."
+  default: ""
+  show_if: "persistence.enabled=true"
+
+
+# ===== Advanced =====
+- variable: "extraEnvVars[0].name"
+  group: "Advanced"
+  label: "DEFAULT_MODELS (name)"
+  type: "string"
+  description: "Open WebUI is configured through environment variables. The fields below are the entries of <code>extraEnvVars</code> in this blueprint, in order; change the values, not the names. See <a href='https://docs.openwebui.com/getting-started/env-configuration' target='_blank'>the Open WebUI docs</a> for all variables."
+  default: "DEFAULT_MODELS"
+
+- variable: "extraEnvVars[0].value"
+  group: "Advanced"
+  label: "Default chat model"
+  type: "string"
+  description: "Model preselected in the chat UI. Must match a model that Ollama has pulled."
+  default: "qwen2.5:3b"
+
+- variable: "extraEnvVars[1].name"
+  group: "Advanced"
+  label: "DEFAULT_USER_ROLE (name)"
+  type: "string"
+  default: "DEFAULT_USER_ROLE"
+
+- variable: "extraEnvVars[1].value"
+  group: "Advanced"
+  label: "Default role for new users"
+  type: "enum"
+  description: "<b>pending</b> requires an admin to approve each new account."
+  default: "user"
+  options:
+  - "user"
+  - "pending"
+  - "admin"
+
+- variable: "extraEnvVars[2].name"
+  group: "Advanced"
+  label: "ENABLE_SIGNUP (name)"
+  type: "string"
+  default: "ENABLE_SIGNUP"
+
+- variable: "extraEnvVars[2].value"
+  group: "Advanced"
+  label: "Allow self sign-up"
+  type: "enum"
+  description: "Let people create their own accounts."
+  default: "true"
+  options:
+  - "true"
+  - "false"
+
+- variable: "extraEnvVars[3].name"
+  group: "Advanced"
+  label: "GLOBAL_LOG_LEVEL (name)"
+  type: "string"
+  default: "GLOBAL_LOG_LEVEL"
+
+- variable: "extraEnvVars[3].value"
+  group: "Advanced"
+  label: "Log level"
+  type: "enum"
+  default: "INFO"
+  options:
+  - "DEBUG"
+  - "INFO"
+  - "WARNING"
+  - "ERROR"
+  - "CRITICAL"
+
+- variable: "extraEnvVars[4].name"
+  group: "Advanced"
+  label: "RAG_EMBEDDING_MODEL (name)"
+  type: "string"
+  default: "RAG_EMBEDDING_MODEL"
+
+- variable: "extraEnvVars[4].value"
+  group: "Advanced"
+  label: "RAG embedding model"
+  type: "string"
+  description: "Sentence-transformers model used to embed documents for retrieval."
+  default: "sentence-transformers/all-MiniLM-L6-v2"
+
+- variable: "extraEnvVars[5].name"
+  group: "Advanced"
+  label: "VECTOR_DB (name)"
+  type: "string"
+  default: "VECTOR_DB"
+
+- variable: "extraEnvVars[5].value"
+  group: "Advanced"
+  label: "Vector database"
+  type: "enum"
+  description: "Embedded ChromaDB is bundled with Open WebUI."
+  default: "chroma"
+  options:
+  - "chroma"
+
+- variable: "extraEnvVars[6].name"
+  group: "Advanced"
+  label: "INSTALL_NLTK_DATASETS (name)"
+  type: "string"
+  default: "INSTALL_NLTK_DATASETS"
+
+- variable: "extraEnvVars[6].value"
+  group: "Advanced"
+  label: "Install NLTK datasets"
+  type: "enum"
+  description: "Download NLTK data at start-up (needs internet access)."
+  default: "true"
+  options:
+  - "true"
+  - "false"
+
+- variable: "extraEnvVars[7].name"
+  group: "Advanced"
+  label: "TOOL_SERVER_CONNECTIONS (name)"
+  type: "string"
+  default: "TOOL_SERVER_CONNECTIONS"
+
+- variable: "extraEnvVars[7].value"
+  group: "Advanced"
+  label: "Tool server connections (JSON)"
+  type: "multiline"
+  description: "JSON list of tool servers. The default wires in the bundled <code>open-webui-mcpo</code> memory server."
+  default: "[{\"url\":\"http://open-webui-mcpo:8000/memory\",\"path\":\"openapi.json\",\"type\":\"openapi\",\"auth_type\":\"bearer\",\"headers\":null,\"key\":\"\",\"config\":{\"enable\":true,\"function_name_filter_list\":\"\",\"access_control\":null},\"spec_type\":\"url\",\"spec\":\"\",\"info\":{\"id\":\"\",\"name\":\"memory\",\"description\":\"MCP knowledge-graph memory server exposed via mcpo\"}}]"
+
+- variable: "websocket.enabled"
+  group: "Advanced"
+  label: "Enable WebSocket support"
+  type: "boolean"
+  description: "Needed for streaming responses across multiple replicas."
+  default: true
+
+- variable: "websocket.redis.enabled"
+  group: "Advanced"
+  label: "Deploy bundled Redis"
+  type: "boolean"
+  description: "Redis for websocket session management."
+  default: true
+  show_if: "websocket.enabled=true"
+
+- variable: "replicaCount"
+  group: "Advanced"
+  label: "Replicas"
+  type: "int"
+  description: "Number of Open WebUI pods. Keep at 1 unless using an external database."
+  default: 1
+

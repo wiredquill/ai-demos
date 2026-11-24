@@ -1,0 +1,217 @@
+# Rancher / SUSE AI Factory install form for the Ollama chart.
+# Defaults mirror the AI Helpdesk blueprint. Hidden fields use show_if.
+questions:
+
+# ===== Model =====
+- variable: "ollama.models.pull[0]"
+  group: "Model"
+  label: "Model to download"
+  type: "string"
+  description: "Model Ollama pulls at start-up, for example <code>qwen2.5:3b</code>, <code>llama3.2:3b</code> or <code>mistral</code>.<br>Keep it in sync with <i>Default chat model</i> in Open WebUI. Browse models at <a href='https://ollama.com/library' target='_blank'>ollama.com/library</a>."
+  required: true
+  default: "qwen2.5:3b"
+
+
+# ===== GPU =====
+- variable: "ollama.gpu.enabled"
+  group: "GPU"
+  label: "Enable GPU"
+  type: "boolean"
+  description: "Run inference on a GPU. Needs a node with GPU drivers and the matching device plugin or GPU Operator. Leave off for CPU-only PoCs."
+  default: false
+
+- variable: "ollama.gpu.type"
+  group: "GPU"
+  label: "GPU Vendor"
+  type: "enum"
+  description: "<b>nvidia</b> uses the NVIDIA device plugin.<br><b>amd</b> uses the AMD ROCm device plugin."
+  default: "nvidia"
+  options:
+  - "nvidia"
+  - "amd"
+  show_if: "ollama.gpu.enabled=true"
+
+- variable: "ollama.gpu.number"
+  group: "GPU"
+  label: "GPUs per pod"
+  type: "int"
+  description: "Number of GPUs to request."
+  default: 1
+  show_if: "ollama.gpu.enabled=true"
+
+- variable: "runtimeClassName"
+  group: "GPU"
+  label: "Runtime Class"
+  type: "string"
+  description: "Set to <code>nvidia</code> if your cluster requires a runtime class for GPU pods. Leave empty otherwise."
+  default: ""
+  show_if: "ollama.gpu.enabled=true"
+
+- variable: "ollama.gpu.mig.enabled"
+  group: "GPU"
+  label: "Use NVIDIA MIG"
+  type: "boolean"
+  description: "Schedule onto MIG partitions instead of whole GPUs."
+  default: false
+  show_if: "ollama.gpu.enabled=true && ollama.gpu.type=nvidia"
+
+
+# ===== Service =====
+- variable: "service.type"
+  group: "Service"
+  label: "Service Type"
+  type: "enum"
+  description: "<b>ClusterIP</b> is recommended: only Open WebUI needs to reach Ollama.<br><b>NodePort</b> / <b>LoadBalancer</b> expose it outside the cluster."
+  required: true
+  default: "ClusterIP"
+  options:
+  - "ClusterIP"
+  - "NodePort"
+  - "LoadBalancer"
+
+- variable: "service.port"
+  group: "Service"
+  label: "Service Port"
+  type: "int"
+  description: "Port the Service listens on."
+  default: 11434
+
+- variable: "service.nodePort"
+  group: "Service"
+  label: "NodePort"
+  type: "int"
+  description: "Port on each node (30000-32767)."
+  default: 31434
+  show_if: "service.type=NodePort"
+
+- variable: "service.loadBalancerIP"
+  group: "Service"
+  label: "LoadBalancer IP"
+  type: "string"
+  description: "Request a specific external IP. Leave empty to let the load balancer assign one."
+  default: ""
+  show_if: "service.type=LoadBalancer"
+
+
+# ===== Ingress & Certificate =====
+- variable: "ingress.enabled"
+  group: "Ingress & Certificate"
+  label: "Enable Ingress"
+  type: "boolean"
+  description: "Expose the Ollama API through an Ingress. Usually not needed when Open WebUI is in the same cluster."
+  default: false
+
+- variable: "ingress.className"
+  group: "Ingress & Certificate"
+  label: "Ingress Class"
+  type: "string"
+  description: "Ingress class name, for example <code>traefik</code> or <code>nginx</code>."
+  default: "traefik"
+  show_if: "ingress.enabled=true"
+
+- variable: "ingress.hosts[0].host"
+  group: "Ingress & Certificate"
+  label: "Hostname"
+  type: "string"
+  description: "DNS name for the Ollama API."
+  default: "ollama.local"
+  show_if: "ingress.enabled=true"
+
+- variable: "ingress.tls[0].hosts[0]"
+  group: "Ingress & Certificate"
+  label: "TLS Hostname"
+  type: "string"
+  description: "Hostname covered by the certificate. Normally the same as Hostname."
+  default: "ollama.local"
+  show_if: "ingress.enabled=true"
+
+- variable: "ingress.tls[0].secretName"
+  group: "Ingress & Certificate"
+  label: "TLS Secret Name"
+  type: "string"
+  description: "Name of the <code>kubernetes.io/tls</code> Secret in this namespace. Leave empty to use the ingress controller's default certificate."
+  default: ""
+  show_if: "ingress.enabled=true"
+
+
+# ===== Storage =====
+- variable: "persistentVolume.enabled"
+  group: "Storage"
+  label: "Enable Persistence"
+  type: "boolean"
+  description: "Keep downloaded models on a PersistentVolume so they are not pulled again on restart."
+  default: true
+
+- variable: "persistentVolume.size"
+  group: "Storage"
+  label: "Volume Size"
+  type: "string"
+  description: "Size of the models volume. Large models need tens of GiB."
+  default: "30Gi"
+  show_if: "persistentVolume.enabled=true"
+
+- variable: "persistentVolume.storageClass"
+  group: "Storage"
+  label: "Storage Class"
+  type: "storageclass"
+  description: "Storage class for the volume. Leave empty to use the cluster default."
+  default: ""
+  show_if: "persistentVolume.enabled=true"
+
+- variable: "persistentVolume.existingClaim"
+  group: "Storage"
+  label: "Existing PVC"
+  type: "string"
+  description: "Re-use an existing PersistentVolumeClaim instead of creating a new one."
+  default: ""
+  show_if: "persistentVolume.enabled=true"
+
+
+# ===== Advanced =====
+- variable: "extraEnv[0].name"
+  group: "Advanced"
+  label: "OLLAMA_KEEP_ALIVE (name)"
+  type: "string"
+  description: "Extra environment variables for the Ollama container, in order. See <a href='https://docs.ollama.com/faq' target='_blank'>the Ollama FAQ</a>."
+  default: "OLLAMA_KEEP_ALIVE"
+
+- variable: "extraEnv[0].value"
+  group: "Advanced"
+  label: "Keep model loaded for"
+  type: "string"
+  description: "How long a model stays in memory after the last request, for example <code>5m</code>, <code>1h</code> or <code>-1</code> (forever)."
+  default: "5m"
+
+- variable: "extraEnv[1].name"
+  group: "Advanced"
+  label: "OLLAMA_CONTEXT_LENGTH (name)"
+  type: "string"
+  default: "OLLAMA_CONTEXT_LENGTH"
+
+- variable: "extraEnv[1].value"
+  group: "Advanced"
+  label: "Context length (tokens)"
+  type: "string"
+  description: "Default context window. Larger values use more memory."
+  default: "4096"
+
+- variable: "extraEnv[2].name"
+  group: "Advanced"
+  label: "OLLAMA_MAX_LOADED_MODELS (name)"
+  type: "string"
+  default: "OLLAMA_MAX_LOADED_MODELS"
+
+- variable: "extraEnv[2].value"
+  group: "Advanced"
+  label: "Max models loaded at once"
+  type: "string"
+  description: "<code>0</code> lets Ollama decide based on available memory."
+  default: "0"
+
+- variable: "terminationGracePeriodSeconds"
+  group: "Advanced"
+  label: "Termination grace period (s)"
+  type: "int"
+  description: "Time Ollama gets to shut down cleanly."
+  default: 120
+

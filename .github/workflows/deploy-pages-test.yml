@@ -1,0 +1,81 @@
+name: Test GitHub Pages Deployment
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Create test GitHub Pages content
+        run: |
+          mkdir -p public
+
+          # Create a simple test index.yaml with our AI Compare charts
+          cat > public/index.yaml << 'EOF'
+          apiVersion: v1
+          entries:
+            ai-compare:
+            - name: ai-compare
+              version: 0.1.4
+              description: AI Compare - Test deployment
+            ai-compare-suse:
+            - name: ai-compare-suse
+              version: 0.1.4
+              description: AI Compare SUSE Edition - Test deployment
+            ai-compare-opentelemetry:
+            - name: ai-compare-opentelemetry
+              version: 0.1.4
+              description: AI Compare OpenTelemetry Edition - Test deployment
+          generated: "2025-09-25T23:00:00Z"
+          EOF
+
+          # Create test index.html
+          cat > public/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>AI-Demos Pages Test</title>
+              <style>body { font-family: Arial, sans-serif; margin: 40px; }</style>
+          </head>
+          <body>
+              <h1>🧪 GitHub Pages Test Successful!</h1>
+              <p>This confirms the GitHub Pages deployment workflow works correctly.</p>
+              <h2>Test Charts Available:</h2>
+              <ul>
+                  <li>ai-compare v0.1.4</li>
+                  <li>ai-compare-suse v0.1.4</li>
+                  <li>ai-compare-opentelemetry v0.1.4</li>
+              </ul>
+              <p><a href="index.yaml">View Test Index.yaml</a></p>
+              <p>Once verified, this workflow can be applied to greendocs.</p>
+          </body>
+          </html>
+          EOF
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'public'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
